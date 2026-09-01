@@ -1,4 +1,4 @@
-//! Product ADTS / M4A drivers over the vendored engine.
+//! Product ADTS / M4A drivers over the LC engine.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 

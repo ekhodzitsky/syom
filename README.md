@@ -24,6 +24,6 @@ Encoding, remux, video, fragmented MP4, DRM, Opus, MP3, FLAC, HTTP.
 
 ## License
 
-MIT. AAC engine is oxideav-aac (MIT), vendored. See [NOTICE](NOTICE) for
-the AAC patent disclaimer (Via LA). Code is free; patent questions are
-the shipper's.
+MIT. AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7). See
+[NOTICE](NOTICE) for the AAC patent disclaimer (Via LA). Code is free;
+patent questions are the shipper's.

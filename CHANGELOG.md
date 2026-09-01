@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7), not oxideav-aac.
+  HE-AAC SBR/PS (AOT 5 / 29) is `Media`. rustfft IMDCT stays, with
+  pre/post twiddles owned here and tested against the naive §4.6.11 sum.
+
 ## [0.2.0] - 2026-09-01
 
 ### Added

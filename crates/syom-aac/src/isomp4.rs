@@ -1,4 +1,5 @@
 //! Minimal ISOBMFF (MP4/M4A) demuxer for the in-tree AAC path.
+#![allow(clippy::all)]
 //!
 //! Scope: locate the first AAC audio track and extract its
 //! AudioSpecificConfig plus the byte ranges of every compressed sample, which
