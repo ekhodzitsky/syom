@@ -1,0 +1,11 @@
+[package]
+name = "syom-aac"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "AAC-LC / HE-AAC decoder (rustfft IMDCT) for speech ingest"
+
+[dependencies]
+rustfft.workspace = true

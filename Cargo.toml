@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = ["crates/syom-aac"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+repository = "https://github.com/ekhodzitsky/syom"
+authors = ["Evgeny Khodzitsky"]
+
+[workspace.dependencies]
+rustfft = "6"
+
+[package]
+name = "syom"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "On-device audio extract. syom — съём. SYOM: Speech Yielded from Original Media."
+readme = "README.md"
+
+[dependencies]
+clap = { version = "4", features = ["derive", "env"] }
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+syom-aac = { path = "crates/syom-aac" }
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
