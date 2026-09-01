@@ -35,6 +35,44 @@ fn test_bytes_to_pcm16_decodes_aac_mp4_fixture() -> Result<(), SyomError> {
 }
 
 #[test]
+fn test_aac_mp4_native_matches_lavc_golden() -> Result<(), SyomError> {
+    // Minted once offline with ffmpeg 8.1.1 native AAC:
+    // `-vn -ac 1 -ar 48000 -f s16le`. Runtime does not shell to ffmpeg.
+    let gold = include_bytes!("goldens/aac_mp4_48k_mono.s16");
+    let decoded = syom_aac::decode(AAC_MP4).map_err(SyomError::from)?;
+    assert_eq!(decoded.sample_rate, 48_000);
+    let ch = decoded
+        .channels
+        .first()
+        .ok_or_else(|| crate::error::media("aac empty"))?;
+    assert_eq!(ch.len().saturating_mul(2), gold.len());
+    let mut max_lsb = 0u32;
+    let mut ps = 0.0f64;
+    let mut pe = 0.0f64;
+    let mut peak = 0u16;
+    for (i, chunk) in gold.chunks_exact(2).enumerate() {
+        let gv = i16::from_le_bytes([chunk[0], chunk[1]]);
+        peak = peak.max(gv.unsigned_abs());
+        let sample = ch.get(i).copied().unwrap_or(0.0);
+        let ov = (sample * 32768.0).round().clamp(-32768.0, 32767.0) as i16;
+        max_lsb = max_lsb.max((i32::from(gv) - i32::from(ov)).unsigned_abs());
+        let gs = f64::from(gv);
+        ps += gs * gs;
+        let e = gs - f64::from(ov);
+        pe += e * e;
+    }
+    assert!(peak >= 1000, "lavc golden peak {peak} is inaudible");
+    assert!(max_lsb <= 1, "lecture native max lsb {max_lsb}");
+    let snr = if pe == 0.0 {
+        200.0
+    } else {
+        10.0 * (ps / pe).log10()
+    };
+    assert!(snr >= 70.0, "lecture native SNR {snr} dB");
+    Ok(())
+}
+
+#[test]
 fn test_wav_round_trip_16k_mono() -> Result<(), SyomError> {
     let pcm = vec![0u8, 64, 0, 128];
     let wav = wav::encode_16k_mono_s16(&pcm);
