@@ -121,6 +121,58 @@ fn tns_identity_order_zero_is_noop() -> Result<(), Error> {
     Ok(())
 }
 
+#[test]
+fn tns_order1_changes_spectrum() -> Result<(), Error> {
+    // length=num_swb so the filter starts at sfb 0 (bins 0..). Order-1 AR
+    // leaves spec[0] (empty history) and must move spec[1]. Stub Ok(()) fails.
+    let ics = long_ics(40);
+    let mut spec = vec![0.0f64; 1024];
+    spec[0] = 1.0;
+    spec[1] = 0.5;
+    let tns = TnsData {
+        windows: vec![TnsWindow {
+            coef_res: true,
+            filters: vec![TnsFilter {
+                length: ics.num_swb,
+                order: 1,
+                direction: false,
+                coef_compress: false,
+                coef: vec![4],
+            }],
+        }],
+    };
+    tns::apply(&mut spec, &tns, &ics, 3)?;
+    assert!(
+        (spec[1] - 0.5).abs() > 1e-9,
+        "order-1 TNS left spec[1]={}; filter is a stub if unchanged",
+        spec[1]
+    );
+    Ok(())
+}
+
+#[test]
+fn kbd_window_differs_from_sine_on_nonzero_spec() -> Result<(), Error> {
+    use super::filterbank::Filterbank;
+    let mut spec = vec![0.0f64; 1024];
+    spec[3] = 4_000_000.0;
+    let mut sine_ics = long_ics(1);
+    sine_ics.window_shape = WindowShape::Sine;
+    let mut kbd_ics = long_ics(1);
+    kbd_ics.window_shape = WindowShape::Kbd;
+    let pcm_sine = Filterbank::new().synthesize(&spec, &sine_ics)?;
+    let pcm_kbd = Filterbank::new().synthesize(&spec, &kbd_ics)?;
+    let max_d = pcm_sine
+        .iter()
+        .zip(pcm_kbd.iter())
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0f64, f64::max);
+    assert!(
+        max_d > 1.0,
+        "KBD vs sine PCM max abs {max_d} — window is unused if this is 0"
+    );
+    Ok(())
+}
+
 /// Minimal LC SCE: silence, ONLY_LONG, 48 kHz, max_sfb=1, book 0.
 fn silent_sce_payload() -> Vec<u8> {
     let mut w = BitWriter::new();
@@ -205,5 +257,38 @@ fn long_start_and_stop_synthesize() -> Result<(), Error> {
         let pcm = fb.synthesize(&spec, &ics)?;
         assert_eq!(pcm.len(), 1024);
     }
+    Ok(())
+}
+
+#[test]
+fn start_stop_windows_change_second_frame_pcm() -> Result<(), Error> {
+    // First-frame left half is the same window; the right half becomes overlap.
+    // LongStart then LongStop must differ from OnlyLong then OnlyLong on frame 2.
+    use super::filterbank::Filterbank;
+    let mut spec = vec![0.0f64; 1024];
+    spec[3] = 4_000_000.0;
+    let mut start = long_ics(1);
+    start.window_sequence = WindowSequence::LongStart;
+    let mut stop = long_ics(1);
+    stop.window_sequence = WindowSequence::LongStop;
+    let long = long_ics(1);
+
+    let mut fb_ss = Filterbank::new();
+    let _ = fb_ss.synthesize(&spec, &start)?;
+    let pcm_ss = fb_ss.synthesize(&spec, &stop)?;
+
+    let mut fb_ll = Filterbank::new();
+    let _ = fb_ll.synthesize(&spec, &long)?;
+    let pcm_ll = fb_ll.synthesize(&spec, &long)?;
+
+    let max_d = pcm_ss
+        .iter()
+        .zip(pcm_ll.iter())
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0f64, f64::max);
+    assert!(
+        max_d > 1.0,
+        "start/stop overlap max abs {max_d} — treated as only_long if this is 0"
+    );
     Ok(())
 }

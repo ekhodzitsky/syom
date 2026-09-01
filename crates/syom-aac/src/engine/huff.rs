@@ -132,9 +132,11 @@ pub fn decode_tuple(br: &mut BitReader<'_>, cb: u8, out: &mut [i32]) -> Result<u
         }
         11 => {
             unsigned_pair(idx, 17, out);
+            // §4.6.3.3: signs for each non-zero, then escape_sequence
+            // for each magnitude-16. lavc writes the same order.
+            apply_signs(br, out, 2)?;
             decode_esc(br, &mut out[0])?;
             decode_esc(br, &mut out[1])?;
-            apply_signs(br, out, 2)?;
             Ok(2)
         }
         _ => Err(Error::InvalidCodebook(cb)),
@@ -181,6 +183,7 @@ fn decode_esc(br: &mut BitReader<'_>, v: &mut i32) -> Result<()> {
     if v.abs() != 16 {
         return Ok(());
     }
+    let neg = *v < 0;
     let mut n = 4u32;
     while br.read_bit()? {
         n += 1;
@@ -189,6 +192,7 @@ fn decode_esc(br: &mut BitReader<'_>, v: &mut i32) -> Result<()> {
         }
     }
     let off = br.read(n)?;
-    *v = (1i32 << n) + off as i32;
+    let mag = (1i32 << n) + off as i32;
+    *v = if neg { -mag } else { mag };
     Ok(())
 }

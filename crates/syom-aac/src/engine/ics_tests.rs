@@ -3,9 +3,12 @@
 use super::adts::AdtsHeader;
 use super::asc::AudioSpecificConfig;
 use super::bits::{BitReader, BitWriter};
+use super::decode::StreamDecoder;
 use super::error::Error;
 use super::ics::{IcsInfo, WindowSequence};
+use super::ics_body::parse_ics;
 use super::section::SectionData;
+use super::stereo::MsInfo;
 
 #[test]
 fn adts_lc_48k_mono_header() -> Result<(), Error> {
@@ -114,5 +117,45 @@ fn section_single_zero_band() -> Result<(), Error> {
     assert_eq!(ics.window_sequence, WindowSequence::OnlyLong);
     let sec = SectionData::parse(&mut br, &ics)?;
     assert_eq!(sec.sfb_cb[0][0], 0);
+    Ok(())
+}
+
+#[test]
+fn lecture_frame1_eight_short_cpe_decodes() -> Result<(), Error> {
+    // First real audio packet of the committed AAC_MP4 lecture fixture:
+    // CPE, common_window, eight_short, book-11 left. Must not InvalidCodebook(12).
+    let p: &[u8] = &[
+        0x21, 0x45, 0x6c, 0xff, 0xff, 0xfc, 0xc5, 0x92, 0x96, 0x46, 0x59, 0x29, 0x65, 0x23, 0x7f,
+        0xaf, 0x5c, 0x78, 0xff, 0x5f, 0xdf, 0xce, 0xaf, 0xff, 0x8f, 0xdf, 0xce, 0xbd, 0xbf, 0xfa,
+        0x7e, 0x3c, 0xe8, 0x6d, 0x4e, 0xcd, 0xba, 0xe6, 0x33, 0x06, 0xaa, 0x4e, 0xab, 0x3b, 0x9a,
+        0x5b, 0xd1, 0x4a, 0x74, 0xc9, 0x59, 0x5a, 0x2c, 0x3b, 0x1f, 0xcb, 0x65, 0xff, 0x96, 0xc1,
+        0x14, 0x68, 0x08, 0x6d, 0xe9, 0x90, 0x48, 0x28, 0x9e, 0x77, 0x5d, 0x69, 0x88, 0xe6, 0xab,
+        0x11, 0x08, 0x62, 0x67, 0xca, 0x26, 0x7c, 0xa2, 0x61, 0x2a, 0x1c, 0xb0, 0x9f, 0x80, 0xf3,
+        0x8b, 0x38, 0x12, 0x13, 0x30, 0x34, 0x68, 0xd1, 0xad, 0xfe, 0xbd, 0x71, 0xe3, 0xfd, 0x7f,
+        0x7f, 0x3a, 0xbf, 0xfe, 0x3f, 0x7f, 0x3a, 0xf6, 0xff, 0xe9, 0xf8, 0xf3, 0xa0, 0x00, 0x00,
+        0x00, 0x00, 0x01, 0xc0,
+    ];
+    let mut br = BitReader::new(p);
+    assert_eq!(br.read(3)?, 1); // CPE
+    let _tag = br.read(4)?;
+    assert!(br.read_bit()?); // common_window
+    let ics = IcsInfo::parse(&mut br, 3, true)?;
+    assert!(ics.window_sequence.is_eight_short());
+    assert_eq!(ics.max_sfb, 5);
+    assert_eq!(ics.num_window_groups, 4);
+    let _ms = MsInfo::parse(&mut br, &ics)?;
+    let left = parse_ics(&mut br, 3, 2, Some(&ics))?;
+    let right = parse_ics(&mut br, 3, 2, Some(&ics))?;
+    assert!(
+        left.spec.iter().any(|&x| x != 0.0),
+        "left ICS of lecture frame 1 was silent"
+    );
+    assert_eq!(right.spec.len(), left.spec.len());
+
+    let mut dec = StreamDecoder::new();
+    let frame = dec.decode_raw_data_block(2, 3, 48_000, 2, 1, p)?;
+    assert_eq!(frame.channels, 2);
+    assert_eq!(frame.planar[0].len(), 1024);
+    assert_eq!(frame.planar[1].len(), 1024);
     Ok(())
 }

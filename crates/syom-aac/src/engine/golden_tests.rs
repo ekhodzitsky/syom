@@ -33,11 +33,14 @@ fn adts_wrap(payload: &[u8], ch: u8, fs_index: u8) -> Vec<u8> {
     out
 }
 
+/// Audible LC: `2^(0.25*(188-100)) = 2^22` so one quant-1 bin peaks around 4k LSB.
+const AUDIBLE_GAIN: u8 = 188;
+
 fn sce_book1(indices: &[usize], max_sfb: u8) -> Vec<u8> {
     let mut w = BitWriter::new();
     w.write(0, 3);
     w.write(0, 4);
-    w.write(100, 8);
+    w.write(u32::from(AUDIBLE_GAIN), 8);
     w.write_bit(false);
     w.write(0, 2);
     w.write_bit(false);
@@ -112,7 +115,7 @@ fn sine_lc_matches_naive_imdct_within_1lsb() -> Result<(), Error> {
     let idx = quad_idx(0, 0, 0, 1);
     let payload = sce_book1(&[idx], 1);
     let mut spec = vec![0.0f64; FRAME];
-    spec[3] = invquant(1);
+    spec[3] = invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
     let expected = naive_sine_window_long(&spec);
 
     let mut dec = StreamDecoder::new();
@@ -155,9 +158,10 @@ fn noise_lc_scattered_quads_within_1lsb() -> Result<(), Error> {
         [1, -1, 1, -1],
     ];
     let mut spec = vec![0.0f64; FRAME];
+    let gain = super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
     for (b, q) in quads.iter().enumerate() {
         for (i, &c) in q.iter().enumerate() {
-            spec[b * 4 + i] = invquant(c);
+            spec[b * 4 + i] = invquant(c) * gain;
         }
     }
     let expected = naive_sine_window_long(&spec);
@@ -182,6 +186,61 @@ fn committed_sine_and_noise_goldens() -> Result<(), Error> {
     Ok(())
 }
 
+fn write_golden(stem: &str, payload: &[u8], expected: &[f64]) {
+    let adts = adts_wrap(payload, 1, 3);
+    let pcm: Vec<u8> = expected
+        .iter()
+        .copied()
+        .flat_map(|v| to_s16(v).to_le_bytes())
+        .collect();
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/engine/goldens");
+    std::fs::write(dir.join(format!("{stem}.adts")), adts).expect("write adts");
+    std::fs::write(dir.join(format!("{stem}.s16")), pcm).expect("write s16");
+}
+
+/// Offline mint: `MINT_GOLDENS=1 cargo test -p syom-aac mint_audible_goldens`.
+/// Expected PCM is naive §4.6.11, not this decoder's output.
+#[test]
+fn mint_audible_goldens() -> Result<(), Error> {
+    if std::env::var("MINT_GOLDENS").is_err() {
+        return Ok(());
+    }
+    let idx = quad_idx(0, 0, 0, 1);
+    let sine_payload = sce_book1(&[idx], 1);
+    let mut sine_spec = vec![0.0f64; FRAME];
+    sine_spec[3] = invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
+    write_golden("sine", &sine_payload, &naive_sine_window_long(&sine_spec));
+
+    let idxs = [
+        quad_idx(1, 0, -1, 0),
+        quad_idx(0, 1, 0, -1),
+        quad_idx(-1, 0, 1, 0),
+        quad_idx(0, -1, 0, 1),
+        quad_idx(1, -1, 1, -1),
+    ];
+    let noise_payload = sce_book1(&idxs, 5);
+    let quads = [
+        [1, 0, -1, 0],
+        [0, 1, 0, -1],
+        [-1, 0, 1, 0],
+        [0, -1, 0, 1],
+        [1, -1, 1, -1],
+    ];
+    let gain = super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
+    let mut noise_spec = vec![0.0f64; FRAME];
+    for (b, q) in quads.iter().enumerate() {
+        for (i, &c) in q.iter().enumerate() {
+            noise_spec[b * 4 + i] = invquant(c) * gain;
+        }
+    }
+    write_golden(
+        "noise",
+        &noise_payload,
+        &naive_sine_window_long(&noise_spec),
+    );
+    Ok(())
+}
+
 fn check_golden(adts: &[u8], gold: &[u8]) -> Result<(), Error> {
     let (hdr, off) = AdtsHeader::parse(adts)?;
     let mut dec = StreamDecoder::new();
@@ -191,6 +250,15 @@ fn check_golden(adts: &[u8], gold: &[u8]) -> Result<(), Error> {
         .flat_map(|&v| to_s16(v).to_le_bytes())
         .collect();
     assert_eq!(got.len(), gold.len());
+    let peak = gold
+        .chunks_exact(2)
+        .map(|c| i16::from_le_bytes([c[0], c[1]]).unsigned_abs())
+        .max()
+        .unwrap_or(0);
+    assert!(
+        peak >= 1000,
+        "golden peak {peak} LSB is inaudible; 1 LSB / 90 dB would be vacuous"
+    );
     let mut max_lsb = 0u32;
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
