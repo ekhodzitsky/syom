@@ -2,10 +2,10 @@ syom
 Copyright (c) 2026 Evgeny Khodzitsky
 Licensed under the MIT License. See LICENSE.
 
-The AAC spectral / SBR / PS engine under crates/syom-aac/src/engine/ is
-vendored from oxideav-aac (MIT), © Karpelès Lab Inc., with a pure-std
-bit I/O shim (no oxideav-core). ISO-BMFF demux and product glue are
-in-tree (from gigastt-pro gigastt-aac / kover-aac).
+The AAC-LC engine under crates/syom-aac/src/engine/ is original
+(ISO/IEC 14496-3 / 13818-7). ISO-BMFF demux and product glue are
+in-tree. Huffman / SWB tables are ISO numbers, not a third-party
+decoder dump.
 
 AAC patent exposure is a property of the format (Via LA / former MPEG LA
 pool), not of this implementation. The same exposure applies to FFmpeg

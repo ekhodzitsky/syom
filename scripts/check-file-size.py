@@ -16,10 +16,8 @@ def is_test(path: Path) -> bool:
 
 
 def is_vendored_aac(path: Path) -> bool:
-    parts = path.parts
-    if "syom-aac" not in parts:
-        return False
-    return "engine" in parts or path.name == "isomp4.rs"
+    # ISO-BMFF demux only. The LC engine is original and is capped.
+    return path.name == "isomp4.rs"
 
 
 def line_count(path: Path) -> int:

@@ -1,4 +1,4 @@
-//! Product ADTS / M4A drivers over the vendored engine.
+//! Product ADTS / M4A drivers over the LC engine.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -315,7 +315,6 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
                 &mut pcm,
             ) {
                 Ok(_) => {}
-                Err(_) if !pcm.is_empty() => continue,
                 Err(e) => {
                     return Err(AacError::decode(format!(
                         "aac: decode failed at frame {idx}: {e:?}"
@@ -358,7 +357,6 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
             payload,
         ) {
             Ok(frame) => frame,
-            Err(_) if out.is_some() => continue,
             Err(e) => {
                 return Err(AacError::decode(format!(
                     "aac: decode failed at frame {idx}: {e:?}"

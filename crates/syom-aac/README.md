@@ -1,10 +1,9 @@
 # syom-aac
 
-AAC-LC / HE-AAC for [syom](https://github.com/ekhodzitsky/syom) extract.
+AAC-LC for [syom](https://github.com/ekhodzitsky/syom) extract.
 Product path: MP4 `mp4a` / ADTS → native-rate planar f32. `rustfft` for
-IMDCT; otherwise std + the vendored engine.
+IMDCT with owned pre/post twiddles. HE-AAC SBR/PS is Media.
 
-Engine vendored from oxideav-aac (MIT) via gigastt-pro `gigastt-aac`.
 Demux: ISO-BMFF `mp4a` + `esds` AudioSpecificConfig.
 
 Comments under `src/engine/` cite **ISO/IEC 14496-3** (MPEG-4 Audio)

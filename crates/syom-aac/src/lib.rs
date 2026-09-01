@@ -1,15 +1,13 @@
 //! # syom-aac
 //!
-//! **AAC-LC / HE-AAC** decoder for speech ingest (ADTS + M4A).
+//! **AAC-LC** decoder for speech ingest (ADTS + M4A). HE-AAC is Media.
 //!
 //! ## Engine
 //!
-//! Spectral / SBR / PS decode is vendored from oxideav-aac (MIT) under
-//! [`engine`], with a pure-`std` bit I/O shim (no oxideav-core).
-//! Engine comments cite ISO/IEC 14496-3 section numbers (`§4.6.x`);
-//! those are spec pins, not Kover product docs.
+//! Spectral decode is original AAC-LC (ISO/IEC 14496-3 / 13818-7).
+//! HE-AAC SBR/PS (AOT 5 / 29) is rejected as Media. Comments cite
+//! spec section numbers (`§4.6.x`).
 
-#![allow(clippy::all)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod decode;

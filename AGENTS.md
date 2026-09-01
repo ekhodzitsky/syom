@@ -7,7 +7,7 @@
 > MP4/M4A (AAC `mp4a` or PCM `sowt`/`twos`/`ipcm`/`lpcm`/`raw `)/ADTS/WAV → 16 kHz s16le mono. Opus is a later pack, not a fork.
 
 Repository: https://github.com/ekhodzitsky/syom  
-License: MIT (engine oxideav-aac MIT). AAC patents: see NOTICE.  
+License: MIT (AAC-LC engine original). AAC patents: see NOTICE.  
 Status: private.
 
 ## Product
@@ -31,7 +31,7 @@ JSON is not the contract. Bytes are. kover spawns this binary.
 ## Stack
 
 - Rust 2024, pin in `rust-toolchain.toml`.
-- Decoder crate `syom-aac` (vendored oxideav-aac + rustfft IMDCT).
+- Decoder crate `syom-aac` (original AAC-LC + rustfft IMDCT).
 - No Python, no ffmpeg, no `symphonia` on the product path.
 - Remux / video bitstream stay in kover. This repo does not copy video.
 
@@ -45,12 +45,12 @@ python3 scripts/check-file-size.py
 python3 scripts/check-changelog.py
 ```
 
-No `unwrap` / `expect` in `syom` (clippy deny). `syom-aac` engine is
-vendored (`#![allow(clippy::all)]`). Tests return `Result` and use `?`.
-`thiserror` in the library surface. `tracing`, never `println!` (stdout
-may be WAV). Implementation files ≤ 400 lines. Test files ≤ 500.
-`lib.rs` / `main.rs` are module trees only. Tests live in sibling
-`foo_tests.rs`. Engine / `isomp4.rs` are exempt from the line cap.
+No `unwrap` / `expect` in `syom` (clippy deny). Tests return `Result`
+and use `?`. `thiserror` in the library surface. `tracing`, never
+`println!` (stdout may be WAV). Implementation files ≤ 400 lines.
+Test files ≤ 500. `lib.rs` / `main.rs` are module trees only. Tests
+live in sibling `foo_tests.rs`. `isomp4.rs` is exempt from the line
+cap. The LC engine is not.
 
 ## Git
 
@@ -68,5 +68,5 @@ Keep a Changelog + SemVer. One workspace version (`syom -V`).
   `workspace.package.version`, merge, then
   `git tag -a vX.Y.Z -m "syom X.Y.Z"` on that commit.
 
-AAC lives here (`syom-aac`, oxideav-aac MIT). kover/sluh spawn this
+AAC lives here (`syom-aac`, original LC). kover/sluh spawn this
 binary. Do not grow a second decoder in those repos.

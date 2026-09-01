@@ -80,6 +80,25 @@ fn test_bytes_to_pcm16_accepts_ipcm_lpcm_raw() -> Result<(), SyomError> {
 }
 
 #[test]
+fn test_bytes_to_pcm16_rejects_heaac_aot5_as_media() -> Result<(), SyomError> {
+    let mut bytes = AAC_MP4.to_vec();
+    let needle = [0x05u8, 0x80, 0x80, 0x80, 0x05, 0x11, 0x90];
+    let pos = bytes
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .ok_or_else(|| crate::error::media("fixture missing DecoderSpecificInfo"))?;
+    let asc = pos + 5;
+    let slot = bytes
+        .get_mut(asc)
+        .ok_or_else(|| crate::error::media("fixture ASC"))?;
+    *slot = 0x29; // AOT 5, same leftover bits as 0x11
+    match bytes_to_pcm16(&bytes) {
+        Err(SyomError::Media(_)) => Ok(()),
+        other => panic!("expected Media for HE-AAC AOT 5, got {other:?}"),
+    }
+}
+
+#[test]
 fn test_bytes_to_pcm16_rejects_alac_mp4_as_media() -> Result<(), SyomError> {
     let mut mp4 = write_mp4(b"VV", &tone_s16le(16, 1_000))?;
     patch_fourcc(&mut mp4, b"sowt", b"alac")?;
