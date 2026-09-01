@@ -4,7 +4,7 @@
 >
 > **съём.** SYOM: Speech Yielded from Original Media.
 >
-> MP4/M4A/ADTS/WAV → 16 kHz s16le mono. Opus is a later pack, not a fork.
+> MP4/M4A (AAC `mp4a` or PCM `sowt`/`twos`/`ipcm`/`lpcm`/`raw `)/ADTS/WAV → 16 kHz s16le mono. Opus is a later pack, not a fork.
 
 Repository: https://github.com/ekhodzitsky/syom  
 License: MIT (engine oxideav-aac MIT). AAC patents: see NOTICE.  

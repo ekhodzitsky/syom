@@ -12,10 +12,10 @@ use std::path::PathBuf;
     version,
     about = "On-device audio extract",
     long_about = "syom — съём. SYOM: Speech Yielded from Original Media.\n\
-MP4/M4A/ADTS/WAV in. 16 kHz s16le mono out. No cloud. No ffmpeg."
+MP4/M4A (AAC or PCM), ADTS, WAV in. 16 kHz s16le mono out. No cloud. No ffmpeg."
 )]
 pub struct Cli {
-    /// Input file (MP4, M4A, ADTS AAC, or PCM WAV).
+    /// Input file (MP4/M4A AAC or PCM, ADTS AAC, or PCM WAV).
     pub input: PathBuf,
     /// Output path. `.pcm` is raw s16le; anything else is WAV. `-` is WAV on stdout.
     #[arg(short, long)]

@@ -4,7 +4,7 @@
 
 On-device audio extract. One Rust CLI. No cloud. No ffmpeg.
 
-MP4 / M4A / ADTS AAC / PCM WAV in. **16 kHz s16le mono** out.
+MP4 / M4A (AAC `mp4a` or PCM `sowt`/`twos`/`ipcm`/`lpcm`/`raw `) / ADTS AAC / PCM WAV in. **16 kHz s16le mono** out.
 
 ```sh
 syom lecture.mp4 -o lecture.wav
