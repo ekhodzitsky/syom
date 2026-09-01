@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Lecture fixture native-rate PCM is checked against a committed lavc
+  golden (ffmpeg 8.1.1 native AAC, 48 kHz mono s16, minted once offline).
+  Max abs ≤ 1 LSB, SNR ≥ 70 dB. Runtime does not spawn ffmpeg.
+
 ### Fixed
 
 - MP4 audio `elst.media_time` is honoured (AAC encoder delay). The lecture
