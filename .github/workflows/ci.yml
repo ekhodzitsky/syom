@@ -19,6 +19,8 @@ jobs:
         run: cargo fmt --check
       - name: file size
         run: python3 scripts/check-file-size.py
+      - name: changelog
+        run: python3 scripts/check-changelog.py
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: tests
