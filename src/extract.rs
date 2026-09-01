@@ -1,6 +1,7 @@
-//! Bytes in → 16 kHz s16le mono. WAV, ADTS, M4A/MP4 AAC.
+//! Bytes in → 16 kHz s16le mono. WAV, ADTS, M4A/MP4 AAC or PCM.
 
 use crate::error::{SyomError, media};
+use crate::pcm_mp4;
 use crate::resample::to_pcm16_mono_16k;
 use crate::wav;
 use std::path::Path;
@@ -17,6 +18,24 @@ pub fn bytes_to_pcm16(bytes: &[u8]) -> Result<Vec<u8>, SyomError> {
     if wav::sniff_wav(bytes) {
         return wav::decode_wav(bytes);
     }
+    if syom_aac::sniff_is_isobmff(bytes) {
+        return mp4_to_pcm16(bytes);
+    }
+    aac_to_pcm16(bytes)
+}
+
+fn mp4_to_pcm16(bytes: &[u8]) -> Result<Vec<u8>, SyomError> {
+    let fcc = pcm_mp4::sound_format(bytes)?;
+    if pcm_mp4::is_pcm(fcc) {
+        return pcm_mp4::to_pcm16(bytes);
+    }
+    if fcc == *b"mp4a" {
+        return aac_to_pcm16(bytes);
+    }
+    Err(pcm_mp4::format_err(fcc))
+}
+
+fn aac_to_pcm16(bytes: &[u8]) -> Result<Vec<u8>, SyomError> {
     let decoded = syom_aac::decode(bytes)?;
     let ch = decoded.channels.len();
     if ch == 0 {

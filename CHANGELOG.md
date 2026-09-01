@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- MP4 PCM sound tracks (`sowt`, `twos`, `ipcm`, `lpcm`, `raw `) extract to
+  16 kHz s16le mono. Other sample fourccs stay `Media`.
+
 ## [0.1.0] - 2026-09-01
 
 ### Added
