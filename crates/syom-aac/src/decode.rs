@@ -294,17 +294,7 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     if matches!(mode, ChannelMode::Mono) {
         let mut pcm = Vec::with_capacity(reserve);
         for (idx, &(off, len)) in track.frames.iter().enumerate() {
-            let end = off
-                .checked_add(u64::from(len))
-                .ok_or_else(|| AacError::format("aac: sample range overflow"))?
-                as usize;
-            let start = off as usize;
-            if end > data.len() {
-                return Err(AacError::format("aac: sample range past end of file"));
-            }
-            let payload = data
-                .get(start..end)
-                .ok_or_else(|| AacError::format("aac: sample range past end of file"))?;
+            let payload = sample_payload(data, off, len)?;
             match dec.decode_raw_mono_f32(
                 asc.aot,
                 asc.sampling_frequency_index,
@@ -326,28 +316,18 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
                 return Err(AacError::too_long(observed_s, opts.max_duration_secs));
             }
         }
-        if pcm.is_empty() {
-            return Err(AacError::NotAac);
-        }
-        return Ok(DecodedAac {
-            sample_rate: core_rate,
-            channels: vec![pcm],
-        });
+        return after_edit(
+            DecodedAac {
+                sample_rate: core_rate,
+                channels: vec![pcm],
+            },
+            track.skip_samples(core_rate),
+        );
     }
 
     let mut out: Option<Out> = None;
     for (idx, &(off, len)) in track.frames.iter().enumerate() {
-        let end = off
-            .checked_add(u64::from(len))
-            .ok_or_else(|| AacError::format("aac: sample range overflow"))?
-            as usize;
-        let start = off as usize;
-        if end > data.len() {
-            return Err(AacError::format("aac: sample range past end of file"));
-        }
-        let payload = data
-            .get(start..end)
-            .ok_or_else(|| AacError::format("aac: sample range past end of file"))?;
+        let payload = sample_payload(data, off, len)?;
         let frame = match dec.decode_raw_data_block(
             asc.aot,
             asc.sampling_frequency_index,
@@ -376,7 +356,29 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
             Some(o) => o.push(&frame, mode, opts)?,
         }
     }
-    out.map(Out::finish).ok_or(AacError::NotAac)
+    after_edit(
+        out.map(Out::finish).ok_or(AacError::NotAac)?,
+        track.skip_samples(core_rate),
+    )
+}
+
+fn sample_payload(data: &[u8], off: u64, len: u32) -> Result<&[u8]> {
+    let end = off
+        .checked_add(u64::from(len))
+        .ok_or_else(|| AacError::format("aac: sample range overflow"))? as usize;
+    data.get(off as usize..end)
+        .ok_or_else(|| AacError::format("aac: sample range past end of file"))
+}
+
+fn after_edit(mut decoded: DecodedAac, skip: usize) -> Result<DecodedAac> {
+    for ch in &mut decoded.channels {
+        let n = skip.min(ch.len());
+        ch.drain(..n);
+    }
+    if decoded.channels.iter().all(Vec::is_empty) {
+        return Err(AacError::NotAac);
+    }
+    Ok(decoded)
 }
 
 #[cfg(test)]

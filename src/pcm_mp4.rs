@@ -23,7 +23,12 @@ pub(crate) fn to_pcm16(mp4: &[u8]) -> Result<Vec<u8>, SyomError> {
     let (ch, bits, rate) = audio_params(trak)?;
     let le = fcc != *b"twos";
     let unsigned = bits == 8;
-    let samples = pcm_to_f32(&raw, ch, bits, le, unsigned)?;
+    let mut samples = pcm_to_f32(&raw, ch, bits, le, unsigned)?;
+    let skip = skip_samples(trak, rate)?.saturating_mul(usize::from(ch));
+    if skip > samples.len() {
+        return Err(media("elst past end of pcm"));
+    }
+    samples.drain(..skip);
     to_pcm16_mono_16k(&samples, usize::from(ch), rate)
 }
 
@@ -39,6 +44,52 @@ fn sound_trak(mp4: &[u8]) -> Result<&[u8], SyomError> {
         }
     }
     Err(media("no sound track"))
+}
+
+/// `elst.media_time` in native samples, or 0 if the box is missing / empty.
+fn skip_samples(trak: &[u8], sample_rate: u32) -> Result<usize, SyomError> {
+    let Some(elst) = find(trak, *b"elst")? else {
+        return Ok(0);
+    };
+    let Some(mdhd) = find(trak, *b"mdhd")? else {
+        return Ok(0);
+    };
+    let version = *elst.first().ok_or_else(|| media("elst"))?;
+    let n = be_u32(elst, 4)? as usize;
+    let mut pos = 8usize;
+    let mut start = 0i64;
+    for _ in 0..n {
+        let (mt, next) = if version == 1 {
+            let end = pos.checked_add(16).ok_or_else(|| media("elst"))?;
+            let slice = elst.get(pos + 8..end).ok_or_else(|| media("elst"))?;
+            let bytes: [u8; 8] = slice.try_into().map_err(|_| media("elst"))?;
+            (i64::from_be_bytes(bytes), pos.saturating_add(20))
+        } else {
+            (
+                i64::from(be_u32(elst, pos.saturating_add(4))? as i32),
+                pos.saturating_add(12),
+            )
+        };
+        if mt >= 0 {
+            start = mt;
+            break;
+        }
+        pos = next;
+    }
+    if start <= 0 || sample_rate == 0 {
+        return Ok(0);
+    }
+    let mdhd_ver = *mdhd.first().ok_or_else(|| media("mdhd"))?;
+    let ts_off = if mdhd_ver == 1 { 20 } else { 12 };
+    let timescale = be_u32(mdhd, ts_off)?;
+    if timescale == 0 {
+        return Ok(0);
+    }
+    let n = u64::try_from(start)
+        .map_err(|_| media("elst"))?
+        .saturating_mul(u64::from(sample_rate))
+        / u64::from(timescale);
+    usize::try_from(n).map_err(|_| media("elst"))
 }
 
 fn handler_of(trak: &[u8]) -> Result<[u8; 4], SyomError> {
