@@ -11,10 +11,15 @@ fn test_bytes_to_pcm16_rejects_garbage() {
 
 #[test]
 fn test_bytes_to_pcm16_decodes_aac_mp4_fixture() -> Result<(), SyomError> {
+    let track = syom_aac::parse_aac_track(AAC_MP4).map_err(SyomError::from)?;
+    assert_eq!(track.skip_samples(48_000), 1024);
     let pcm = bytes_to_pcm16(AAC_MP4)?;
-    assert!(
-        pcm.len() >= 4_000 && pcm.len() <= 16_000,
-        "expected ~0.25 s of 16 kHz s16le, got {} bytes",
+    // Audio elst.media_time=1024 @ 48 kHz: drop the encoder-delay frame,
+    // then 12×1024 → 4096 samples @ 16 kHz = 8192 bytes.
+    assert_eq!(
+        pcm.len(),
+        8192,
+        "expected encoder-delay skip (8192 bytes @ 16 kHz), got {}",
         pcm.len()
     );
     let energy: i32 = pcm

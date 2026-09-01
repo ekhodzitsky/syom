@@ -19,7 +19,8 @@
 //!   skipped; if no usable AAC track remains, a clean error is returned.
 //!
 //! Boxes parsed: `ftyp` (sniff only), `moov/trak/mdia/minf/stbl`, `hdlr`
-//! (handler `soun`), `stsd` (`mp4a` entry → `esds` → ES_Descriptor(0x03) →
+//! (handler `soun`), `mdhd` (media timescale), `edts`/`elst` (encoder delay),
+//! `stsd` (`mp4a` entry → `esds` → ES_Descriptor(0x03) →
 //! DecoderConfigDescriptor(0x04) → DecoderSpecificInfo(0x05) = ASC),
 //! `stts` (total sample count for the duration budget), `stsc`, `stsz`,
 //! `stco`/`co64` (sample → byte-range mapping).
@@ -40,6 +41,23 @@ pub struct AacTrack {
     pub total_samples: u64,
     /// `(offset, len)` of every audio sample in decode order.
     pub frames: Vec<(u64, u32)>,
+    /// First non-empty `elst.media_time` (ISO-BMFF media timescale), or 0.
+    pub edit_start: u64,
+    /// `mdhd` timescale for `edit_start`. 0 if the box is missing.
+    pub media_timescale: u32,
+}
+
+impl AacTrack {
+    /// Native-rate samples to drop after decode (AAC encoder delay).
+    #[must_use]
+    pub fn skip_samples(&self, sample_rate: u32) -> usize {
+        if self.edit_start == 0 || self.media_timescale == 0 || sample_rate == 0 {
+            return 0;
+        }
+        let n = self.edit_start.saturating_mul(u64::from(sample_rate))
+            / u64::from(self.media_timescale);
+        usize::try_from(n).unwrap_or(usize::MAX)
+    }
 }
 
 /// 4-byte box type.
@@ -476,11 +494,52 @@ fn parse_stbl(data: &[u8], stbl: BoxHdr) -> Result<(Vec<u8>, SampleTable)> {
     Ok((asc, table))
 }
 
+/// First `elst` entry with `media_time >= 0` (media timescale), else 0.
+fn parse_elst_start(body: &[u8]) -> Result<u64> {
+    let version = *body
+        .first()
+        .ok_or_else(|| AacError::format("isomp4: truncated elst"))?;
+    let count = read_u32(body, 4)? as usize;
+    let mut pos = 8usize;
+    for _ in 0..count {
+        let (media_time, next) = if version == 1 {
+            let hi = u64::from(read_u32(body, pos + 8)?);
+            let lo = u64::from(read_u32(body, pos + 12)?);
+            (
+                i64::from_be_bytes(((hi << 32) | lo).to_be_bytes()),
+                pos + 20,
+            )
+        } else if version == 0 {
+            (i64::from(read_u32(body, pos + 4)? as i32), pos + 12)
+        } else {
+            return Err(AacError::format("isomp4: unsupported elst version"));
+        };
+        if media_time >= 0 {
+            return Ok(media_time as u64);
+        }
+        pos = next;
+    }
+    Ok(0)
+}
+
+fn parse_mdhd_timescale(body: &[u8]) -> Result<u32> {
+    let version = *body
+        .first()
+        .ok_or_else(|| AacError::format("isomp4: truncated mdhd"))?;
+    let off = match version {
+        0 => 12usize,
+        1 => 20usize,
+        _ => return Err(AacError::format("isomp4: unsupported mdhd version")),
+    };
+    read_u32(body, off)
+}
+
 /// Walk one `mdia` box: is it sound (`hdlr` = 'soun'), and if so parse its
-/// `minf/stbl`. Returns `None` for non-sound tracks.
-fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable)>> {
+/// `minf/stbl` and `mdhd` timescale. Returns `None` for non-sound tracks.
+fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable, u32)>> {
     let mut is_sound = false;
     let mut table = None;
+    let mut timescale = 0u32;
     for child in BoxIter::new(data, mdia.content_start, mdia.content_end) {
         let (hdr, typ) = child?;
         match &typ {
@@ -490,6 +549,9 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable)
                     .get(hdr.content_start + 8..hdr.content_start + 12)
                     .ok_or_else(|| AacError::format("isomp4: truncated hdlr"))?;
                 is_sound = handler == b"soun";
+            }
+            b"mdhd" => {
+                timescale = parse_mdhd_timescale(&data[hdr.content_start..hdr.content_end])?;
             }
             b"minf" => {
                 for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
@@ -504,7 +566,7 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable)
     }
     if is_sound {
         let table = table.ok_or_else(|| AacError::format("isomp4: sound track without stbl"))?;
-        Ok(Some(table))
+        Ok(Some((table.0, table.1, timescale)))
     } else {
         Ok(None)
     }
@@ -578,27 +640,45 @@ pub fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
             if track.is_some() {
                 continue;
             }
+            let mut edit_start = 0u64;
+            let mut mdia_track = None;
             for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
                 let (shdr, styp) = sub?;
-                if &styp == b"mdia" {
-                    // A broken or non-AAC sound track must not sink the whole
-                    // file: skip it and keep looking for a usable AAC track
-                    // (mirrors symphonia's default-track pick). Structural
-                    // box-walk errors above stay fatal.
-                    if let Ok(Some(t)) = parse_mdia(data, shdr) {
-                        track = Some(t);
-                        break;
+                match &styp {
+                    b"edts" => {
+                        for ed in BoxIter::new(data, shdr.content_start, shdr.content_end) {
+                            let (ehdr, etyp) = ed?;
+                            if &etyp == b"elst" {
+                                edit_start =
+                                    parse_elst_start(&data[ehdr.content_start..ehdr.content_end])?;
+                            }
+                        }
                     }
+                    b"mdia" => {
+                        // A broken or non-AAC sound track must not sink the
+                        // whole file: skip it and keep looking for a usable
+                        // AAC track. Structural box-walk errors stay fatal.
+                        if let Ok(Some(t)) = parse_mdia(data, shdr) {
+                            mdia_track = Some(t);
+                        }
+                    }
+                    _ => {}
                 }
+            }
+            if let Some((asc, table, timescale)) = mdia_track {
+                track = Some((asc, table, timescale, edit_start));
             }
         }
     }
-    let (asc, table) = track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
+    let (asc, table, media_timescale, edit_start) =
+        track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
     let frames = build_frame_index(data.len(), &table)?;
     Ok(AacTrack {
         asc,
         total_samples: table.total_samples,
         frames,
+        edit_start,
+        media_timescale,
     })
 }
 
@@ -762,9 +842,38 @@ mod tests {
         hdlr.extend_from_slice(b"soun");
         hdlr.extend_from_slice(&[0u8; 12]);
 
-        let mut mdia_body = bx(b"hdlr", &hdlr);
+        let mut mdhd = vec![0u8; 4];
+        mdhd.extend_from_slice(&[0u8; 8]);
+        mdhd.extend_from_slice(&48_000u32.to_be_bytes());
+        mdhd.extend_from_slice(&0u32.to_be_bytes());
+        mdhd.extend_from_slice(&0x55c4_0000u32.to_be_bytes());
+
+        let mut mdia_body = bx(b"mdhd", &mdhd);
+        mdia_body.extend_from_slice(&bx(b"hdlr", &hdlr));
         mdia_body.extend_from_slice(&bx(b"minf", &bx(b"stbl", &stbl_body)));
         bx(b"trak", &bx(b"mdia", &mdia_body))
+    }
+
+    fn aac_trak_with_elst(
+        sample_count: u32,
+        sample_size: u32,
+        chunk_offset: u32,
+        media_time: i32,
+    ) -> Vec<u8> {
+        let trak = aac_trak(sample_count, sample_size, chunk_offset);
+        // Insert edts/elst after the 8-byte trak header, before mdia.
+        let mut elst = vec![0u8; 4];
+        elst.extend_from_slice(&1u32.to_be_bytes());
+        elst.extend_from_slice(&250u32.to_be_bytes());
+        elst.extend_from_slice(&(media_time as u32).to_be_bytes());
+        elst.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+        let edts = bx(b"edts", &bx(b"elst", &elst));
+        let mut out = trak[..8].to_vec();
+        out.extend_from_slice(&edts);
+        out.extend_from_slice(&trak[8..]);
+        let size = out.len() as u32;
+        out[..4].copy_from_slice(&size.to_be_bytes());
+        out
     }
 
     fn aac_trak(sample_count: u32, sample_size: u32, chunk_offset: u32) -> Vec<u8> {
@@ -810,6 +919,7 @@ mod tests {
         assert_eq!(track.asc, ASC);
         assert_eq!(track.total_samples, 100);
         assert_eq!(track.frames.len(), 100);
+        assert_eq!(track.skip_samples(48_000), 0);
         let mdat_payload = (data.len() - 700) as u64;
         for (i, &(off, len)) in track.frames.iter().enumerate() {
             assert_eq!(len, 7);
@@ -825,6 +935,23 @@ mod tests {
         let data = m4a(100, 7, Some(&alac));
         let track = parse_aac_track(&data).expect("valid AAC track behind a broken one");
         assert_eq!(track.frames.len(), 100);
+    }
+
+    #[test]
+    fn test_elst_media_time_is_skip_samples() {
+        let build = |off: u32| {
+            let mut data = ftyp();
+            data.extend_from_slice(&bx(b"moov", &aac_trak_with_elst(4, 7, off, 1024)));
+            data
+        };
+        let mdat_off = (build(0).len() + 8) as u32;
+        let mut data = build(mdat_off);
+        data.extend_from_slice(&bx(b"mdat", &vec![0xAAu8; 28]));
+        let track = parse_aac_track(&data).expect("elst M4A must parse");
+        assert_eq!(track.edit_start, 1024);
+        assert_eq!(track.media_timescale, 48_000);
+        assert_eq!(track.skip_samples(48_000), 1024);
+        assert_eq!(track.frames.len(), 4);
     }
 
     #[test]

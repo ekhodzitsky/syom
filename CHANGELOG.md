@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- MP4 audio `elst.media_time` is honoured (AAC encoder delay). The lecture
+  fixture drops the 1024-sample priming frame before the 16 kHz resample.
+  ADTS and PCM tracks without a non-zero edit are unchanged.
+
 ### Changed
 
 - AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7), not oxideav-aac.
