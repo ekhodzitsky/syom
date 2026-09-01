@@ -42,6 +42,7 @@ cargo fmt --check
 cargo test --workspace --lib --bins
 cargo clippy --all-targets -- -D warnings
 python3 scripts/check-file-size.py
+python3 scripts/check-changelog.py
 ```
 
 No `unwrap` / `expect` in `syom` (clippy deny). `syom-aac` engine is
@@ -55,3 +56,17 @@ may be WAV). Implementation files ≤ 400 lines. Test files ≤ 500.
 
 Do not commit on `main` after bootstrap. One concern per branch.
 Isolated worktree while a PR is open.
+
+## Versioning
+
+Keep a Changelog + SemVer. One workspace version (`syom -V`).
+
+- Pre-1.0: new input/output formats bump **y**; fixes bump **z**.
+- Every user-visible PR adds a bullet under `## [Unreleased]`.
+- Cutting a release (one PR, no other features): move Unreleased
+  under `## [X.Y.Z] - YYYY-MM-DD`, leave empty Unreleased, set
+  `workspace.package.version`, merge, then
+  `git tag -a vX.Y.Z -m "syom X.Y.Z"` on that commit.
+
+AAC lives here (`syom-aac`, oxideav-aac MIT). kover/sluh spawn this
+binary. Do not grow a second decoder in those repos.
