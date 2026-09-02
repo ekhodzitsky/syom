@@ -257,11 +257,10 @@ impl StreamDecoder {
             Some(ext) => dec.process_frame(ext, &core)?,
             None => dec.upsample_frame(&core)?,
         };
-        let planar = out
-            .into_iter()
-            .map(|ch| ch.into_iter().map(|x| x as f32).collect())
-            .collect();
-        Ok((planar, fs_sbr))
+        Ok((
+            super::sbr_decoder::planes_f32(out, self.mix_down_mono),
+            fs_sbr,
+        ))
     }
 
     fn finish_sce(

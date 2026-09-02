@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `unbounded()` / Split emits two planes on mono LC+SBR (lavc implicit
   HE-AACv2 PS), including LATM/LOAS. Goldens are interleaved lavc s16.
 - After SBR is active, a malformed SBR fill is `Err`, not dropped.
+- Mono mix-down after SBR/PS is one rule (ADTS, M4A, LATM). LATM
+  honours the duration cap while decoding, not after the whole PCM.
 
 
 

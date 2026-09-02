@@ -81,19 +81,6 @@ impl Out {
     }
 }
 
-/// lavc implicit PS: mono LC+SBR is HE-AACv2 stereo (dual-mono until
-/// `ps_data`). Split must emit two planes at the SBR rate.
-pub(crate) fn maybe_he_v2_stereo(mut frame: DecodedFrame, core_rate: u32) -> DecodedFrame {
-    if frame.channels == 1
-        && frame.sample_rate == core_rate.saturating_mul(2)
-        && let Some(ch) = frame.planar.first().cloned()
-    {
-        frame.planar.push(ch);
-        frame.channels = 2;
-    }
-    frame
-}
-
 pub(crate) fn push_frame(
     out: &mut Option<Out>,
     frame: &DecodedFrame,

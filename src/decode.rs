@@ -6,7 +6,7 @@ use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
 use crate::isomp4::{self, sniff_is_isobmff};
 use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
-use crate::out::{INV_S16, Out, maybe_he_v2_stereo, push_adts_mono, push_frame};
+use crate::out::{INV_S16, Out, push_adts_mono, push_frame};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
@@ -108,11 +108,8 @@ fn decode_adts(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
             )?;
         } else {
             let frame = dec.decode_frame(&hdr, payload).map_err(|e| {
-                AacError::decode(format!(
-                    "aac: decode failed at frame {frames_decoded}: {e:?}"
-                ))
+                AacError::decode(format!("aac: decode failed at frame {frames_decoded}: {e}"))
             })?;
-            let frame = maybe_he_v2_stereo(frame, hdr.sample_rate());
             push_frame(&mut out, &frame, opts)?;
         }
         frames_decoded += 1;
@@ -194,10 +191,10 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
             1,
             payload,
         ) {
-            Ok(frame) => maybe_he_v2_stereo(frame, asc.sample_rate),
+            Ok(frame) => frame,
             Err(e) => {
                 return Err(AacError::decode(format!(
-                    "aac: decode failed at frame {idx}: {e:?}"
+                    "aac: decode failed at frame {idx}: {e}"
                 )));
             }
         };
@@ -245,8 +242,12 @@ fn after_edit(mut decoded: DecodedAac, skip: usize) -> Result<DecodedAac> {
 
 fn decode_latm(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     let mix = matches!(opts.channel_mode, ChannelMode::Mono);
-    let (rate, planar) = crate::engine::latm::decode_loas_planar(data, mix)
-        .map_err(|e| AacError::decode(format!("latm: {e:?}")))?;
+    let (rate, planar) = crate::engine::latm::decode_loas_planar(
+        data,
+        mix,
+        opts.max_frames(opts.max_decode_sample_rate),
+    )
+    .map_err(AacError::from)?;
     if rate == 0 || rate > opts.max_sample_rate {
         return Err(AacError::sample_rate(rate, opts.max_sample_rate));
     }
