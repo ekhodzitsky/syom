@@ -334,8 +334,9 @@ impl ExtensionPayload {
             ExtensionType::Fill => parse_fill(reader, cnt),
             ExtensionType::FillData => parse_fill_data(reader, cnt),
             ExtensionType::DynamicRange => parse_dynamic_range(reader, cnt),
-            // `from_bits` already converted these to errors.
-            ExtensionType::SbrData | ExtensionType::SbrDataCrc => unreachable!(),
+            ExtensionType::SbrData | ExtensionType::SbrDataCrc => {
+                Err(Error::UnsupportedExtensionSbr(raw))
+            }
         }
     }
 

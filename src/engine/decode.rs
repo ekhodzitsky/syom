@@ -20,7 +20,6 @@ use super::tns;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DecodedFrame {
-    pub pcm: Vec<i16>,
     pub planar: Vec<Vec<f32>>,
     pub channels: usize,
     pub sample_rate: u32,
@@ -76,7 +75,6 @@ impl StreamDecoder {
     ) -> Result<DecodedFrame> {
         let sample_rate = self.decode_into_bufs(aot, fs_index, sample_rate, payload)?;
         Ok(DecodedFrame {
-            pcm: Vec::new(),
             planar: self.frame_ch.clone(),
             channels: self.frame_ch.len(),
             sample_rate,
@@ -159,7 +157,9 @@ impl StreamDecoder {
                             self.sbr_hdr = Some(ext.header);
                             pending_sbr = Some(ext);
                         }
-                        Ok(_) | Err(_) => {}
+                        Ok(_) => {}
+                        Err(e) if self.sbr_active => return Err(e),
+                        Err(_) => {}
                     }
                     let used = br.bit_position().saturating_sub(start);
                     let need = u64::from(cnt).saturating_mul(8);

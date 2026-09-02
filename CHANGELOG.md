@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer returns core-rate silence.
 - `unbounded()` / Split emits two planes on mono LC+SBR (lavc implicit
   HE-AACv2 PS), including LATM/LOAS. Goldens are interleaved lavc s16.
+- After SBR is active, a malformed SBR fill is `Err`, not dropped.
 
 ## [0.2.0] - 2026-09-01
 

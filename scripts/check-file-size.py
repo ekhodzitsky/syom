@@ -26,12 +26,10 @@ def is_vendored_aac(path: Path) -> bool:
         "ps_",
         "extension_payload",
         "crc",
-        "latm",
     )
     return name.startswith(prefixes) or name in {
         "extension_payload.rs",
         "crc.rs",
-        "latm.rs",
     }
 
 

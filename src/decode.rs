@@ -243,7 +243,6 @@ fn after_edit(mut decoded: DecodedAac, skip: usize) -> Result<DecodedAac> {
     Ok(decoded)
 }
 
-#[rustfmt::skip]
 fn decode_latm(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     let mix = matches!(opts.channel_mode, ChannelMode::Mono);
     let (rate, planar) = crate::engine::latm::decode_loas_planar(data, mix)
@@ -251,10 +250,19 @@ fn decode_latm(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     if rate == 0 || rate > opts.max_sample_rate {
         return Err(AacError::sample_rate(rate, opts.max_sample_rate));
     }
-    let channels: Vec<Vec<f32>> = planar.into_iter().map(|ch| ch.into_iter().map(|v| v * INV_S16).collect()).collect();
+    let channels: Vec<Vec<f32>> = planar
+        .into_iter()
+        .map(|ch| ch.into_iter().map(|v| v * INV_S16).collect())
+        .collect();
     let n = channels.first().map(Vec::len).unwrap_or(0);
     if n > opts.max_frames(rate) {
-        return Err(AacError::too_long(n as f64 / f64::from(rate.max(1)), opts.max_duration_secs));
+        return Err(AacError::too_long(
+            n as f64 / f64::from(rate.max(1)),
+            opts.max_duration_secs,
+        ));
     }
-    Ok(DecodedAac { sample_rate: rate, channels })
+    Ok(DecodedAac {
+        sample_rate: rate,
+        channels,
+    })
 }
