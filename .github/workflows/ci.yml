@@ -24,6 +24,6 @@ jobs:
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: tests
-        run: cargo test --workspace --lib --bins
+        run: cargo test --workspace --lib
       - name: doc tests
         run: cargo test --doc

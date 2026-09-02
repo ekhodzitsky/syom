@@ -46,12 +46,6 @@ impl Default for DecodeOptions {
 impl DecodeOptions {
     /// Mono + lecture caps (same as [`Default`]).
     #[inline]
-    pub fn product() -> Self {
-        Self::default()
-    }
-
-    /// Speech-ingest caps (alias of [`Self::product`]).
-    #[inline]
     pub fn speech() -> Self {
         Self::default()
     }

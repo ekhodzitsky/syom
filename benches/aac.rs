@@ -1,7 +1,7 @@
 //! In-process AAC decode vs Rust peers (bytes → PCM).
 //!
-//! oxideav-aac 0.1.7 links but has no decode entry (parser-only). C peers
-//! (lavc / libfdk) are not linked here; see BENCH.md.
+//! oxideav-aac is parser-only (not a decode peer). C peers (lavc / libfdk)
+//! are not linked here; see BENCH.md.
 
 use std::hint::black_box;
 use std::io::Cursor;

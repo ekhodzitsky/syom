@@ -3,8 +3,8 @@
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-02.
 
-oxideav-aac 0.1.7 links but has no decode API. C lavc/libfdk are not
-linked (`c-peers-unavailable`).
+oxideav-aac is parser-only (not linked). C lavc/libfdk are not linked
+(`c-peers-unavailable`).
 
 Sample counts (planar samples, ch0-equivalent), `syom::decode` (`speech()`):
 

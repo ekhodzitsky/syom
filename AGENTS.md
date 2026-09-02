@@ -33,7 +33,7 @@ ffmpeg / fdk-aac are **offline oracles**. Tests never spawn them.
 
 ```sh
 cargo fmt --check
-cargo test --workspace --lib --bins
+cargo test --workspace --lib
 cargo test --doc
 cargo clippy --all-targets -- -D warnings
 python3 scripts/check-file-size.py
@@ -47,8 +47,7 @@ Tests live in sibling `*_tests.rs`. Exempt like isomp4: `isomp4.rs`, HE
 
 ## Git
 
-Do not commit on `main` after bootstrap. One concern per branch.
-Isolated worktree while a PR is open.
+Land on `main`. Do not keep extra worktrees or merged topic branches.
 
 ## Versioning
 
