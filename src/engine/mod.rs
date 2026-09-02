@@ -2,15 +2,6 @@
 //!
 //! Product entry is [`decode::StreamDecoder`].
 
-#![allow(
-    clippy::manual_is_multiple_of,
-    clippy::manual_div_ceil,
-    clippy::collapsible_if,
-    clippy::single_match,
-    clippy::unnecessary_cast,
-    clippy::manual_repeat_n
-)]
-
 pub mod adts;
 pub mod asc;
 pub mod bits;

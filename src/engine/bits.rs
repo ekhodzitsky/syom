@@ -118,7 +118,7 @@ impl<'a> BitReader<'a> {
     #[cfg(test)]
     #[must_use]
     pub fn is_byte_aligned(&self) -> bool {
-        self.bit_position() % 8 == 0
+        self.bit_position().is_multiple_of(8)
     }
 
     /// Alias of [`Self::byte_align`].
