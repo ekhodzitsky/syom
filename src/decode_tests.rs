@@ -14,35 +14,25 @@ fn assert_native_matches_lavc(
     assert_native_matches_lavc_with(input, gold, rate, label, &DecodeOptions::speech())
 }
 
-fn assert_native_matches_lavc_with(
-    input: &[u8],
-    gold: &[u8],
-    rate: u32,
-    label: &str,
-    opts: &DecodeOptions,
-) -> Result<(), AacError> {
-    let decoded = crate::decode_with(input, opts)?;
-    assert_eq!(decoded.sample_rate, rate, "{label} sample rate");
-    let ch = decoded
-        .channels
-        .first()
-        .ok_or_else(|| AacError::decode("aac empty"))?;
-    assert_eq!(
-        ch.len().saturating_mul(2),
-        gold.len(),
-        "{label} native length {} vs golden {}",
-        ch.len().saturating_mul(2),
-        gold.len()
-    );
+fn deinterleave_s16(gold: &[u8], n_ch: usize) -> Vec<Vec<i16>> {
+    let mut planes = vec![Vec::new(); n_ch.max(1)];
+    for (i, chunk) in gold.chunks_exact(2).enumerate() {
+        planes[i % n_ch].push(i16::from_le_bytes([chunk[0], chunk[1]]));
+    }
+    planes
+}
+
+fn score_plane(ours: &[f32], gold: &[i16], label: &str) {
+    assert_eq!(ours.len(), gold.len(), "{label} plane length");
     let mut max_lsb = 0u32;
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
     let mut peak = 0u16;
-    for (i, chunk) in gold.chunks_exact(2).enumerate() {
-        let gv = i16::from_le_bytes([chunk[0], chunk[1]]);
+    for (i, &gv) in gold.iter().enumerate() {
         peak = peak.max(gv.unsigned_abs());
-        let sample = f64::from(ch.get(i).copied().unwrap_or(0.0));
-        let ov = (sample * 32768.0).round().clamp(-32768.0, 32767.0) as i16;
+        let ov = (f64::from(ours.get(i).copied().unwrap_or(0.0)) * 32768.0)
+            .round()
+            .clamp(-32768.0, 32767.0) as i16;
         max_lsb = max_lsb.max((i32::from(gv) - i32::from(ov)).unsigned_abs());
         let gs = f64::from(gv);
         ps += gs * gs;
@@ -57,6 +47,53 @@ fn assert_native_matches_lavc_with(
         10.0 * (ps / pe).log10()
     };
     assert!(snr >= 70.0, "{label} native SNR {snr} dB");
+}
+
+fn assert_native_matches_lavc_with(
+    input: &[u8],
+    gold: &[u8],
+    rate: u32,
+    label: &str,
+    opts: &DecodeOptions,
+) -> Result<(), AacError> {
+    let decoded = crate::decode_with(input, opts)?;
+    assert_eq!(decoded.sample_rate, rate, "{label} sample rate");
+    let n = decoded
+        .channels
+        .first()
+        .map(Vec::len)
+        .ok_or_else(|| AacError::decode("aac empty"))?;
+    assert!(n > 0, "{label} empty pcm");
+    assert_eq!(gold.len() % 2, 0, "{label} odd golden");
+    let gold_i16 = gold.len() / 2;
+    assert_eq!(gold_i16 % n, 0, "{label} golden not a multiple of {n}");
+    let gold_ch = gold_i16 / n;
+    assert!(
+        gold_ch == 1 || gold_ch == 2,
+        "{label} golden channels {gold_ch}"
+    );
+    match opts.channel_mode {
+        ChannelMode::Split => assert_eq!(
+            decoded.channels.len(),
+            gold_ch,
+            "{label} split channels {} vs golden {gold_ch} (missing PS?)",
+            decoded.channels.len()
+        ),
+        ChannelMode::Mono => assert_eq!(decoded.channels.len(), 1, "{label} speech not mono"),
+    }
+    let planes = deinterleave_s16(gold, gold_ch);
+    if matches!(opts.channel_mode, ChannelMode::Mono) && gold_ch == 2 {
+        let mix: Vec<i16> = planes[0]
+            .iter()
+            .zip(&planes[1])
+            .map(|(l, r)| ((i32::from(*l) + i32::from(*r)) / 2) as i16)
+            .collect();
+        score_plane(&decoded.channels[0], &mix, label);
+    } else {
+        for (i, plane) in planes.iter().enumerate() {
+            score_plane(&decoded.channels[i], plane, &format!("{label} ch{i}"));
+        }
+    }
     Ok(())
 }
 
@@ -205,6 +242,24 @@ fn he48_speech_decode_len() -> Result<(), AacError> {
         48_000,
         "he48-m4a-speech",
     )
+}
+
+#[test]
+fn he48_adts_unbounded_is_ps_stereo() -> Result<(), AacError> {
+    let d = crate::decode_with(
+        include_bytes!("goldens/he48.adts"),
+        &DecodeOptions::unbounded(),
+    )?;
+    assert_eq!(d.sample_rate, 48_000);
+    assert_eq!(
+        d.channels.len(),
+        2,
+        "HE-AACv2 Split must emit PS stereo, got {} ch n={}",
+        d.channels.len(),
+        d.channels.first().map(Vec::len).unwrap_or(0)
+    );
+    assert_eq!(d.channels[0].len(), d.channels[1].len());
+    Ok(())
 }
 
 #[test]

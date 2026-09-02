@@ -41,9 +41,10 @@ group and the fair RSS row):
 - **LC M4A wall:** syom 168.22 µs vs Symphonia 173.05 µs. syom honours
   `elst` (11264 samples); Symphonia does not (12288).
 - **LC allocs + peak RSS:** syom ≤ both linked decode peers.
-- **HE:** only syom reconstructs SBR/PS to full-band PCM (`speech()`
-  and `unbounded()`). rusty/symphonia times are core-only or no-decode
-  — not the same job.
+- **HE:** only syom reconstructs SBR/PS to full-band PCM. `speech()` is
+  1 plane; `unbounded()` Split is 2 planes (lavc implicit HE-AACv2 PS,
+  dual-mono on these fixtures). rusty/symphonia times are core-only or
+  no-decode — not the same job. benches call `decode()` (`speech()`).
 - **oxideav-aac:** parser-only on crates.io — not a decode peer.
 - **Correctness** on committed fixtures via `syom::decode` / `decode_with`:
   vs lavc native s16, max abs ≤ 1 LSB, SNR ≥ 70 dB, peak ≥ 1000
