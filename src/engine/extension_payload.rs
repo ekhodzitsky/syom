@@ -85,7 +85,9 @@
 //!   *not* consume bits for these types so a future SBR round can
 //!   take over without a wire-format incompatibility.
 
-use crate::engine::bits::{BitReader, BitWriter};
+use crate::engine::bits::BitReader;
+#[cfg(test)]
+use crate::engine::bits::BitWriter;
 
 use crate::engine::{Error, Result};
 
@@ -133,6 +135,7 @@ impl ExtensionType {
     ///   4-bit value for any other value not in
     ///   `{0b0000, 0b0001, 0b1011, 0b1101, 0b1110}`. Table 4.59 /
     ///   Table 40 list these as "reserved".
+    #[cfg(test)]
     pub fn from_bits(value: u8) -> Result<Self> {
         match value {
             0b0000 => Ok(ExtensionType::Fill),
@@ -161,6 +164,7 @@ impl ExtensionType {
     }
 
     /// Convert back to the 4-bit wire value used by Table 4.51.
+    #[cfg(test)]
     pub fn as_u8(self) -> u8 {
         match self {
             ExtensionType::Fill => 0b0000,
@@ -323,6 +327,7 @@ impl ExtensionPayload {
     /// [`Error::ExtensionPayloadInvalid`] — Table 4.51's
     /// `extension_type` field itself is 4 bits, so a zero-byte FIL
     /// has no room for it.
+    #[cfg(test)]
     pub fn parse(reader: &mut BitReader<'_>, cnt: u32) -> Result<Self> {
         if cnt == 0 {
             return Err(Error::ExtensionPayloadInvalid);
@@ -400,6 +405,7 @@ impl ExtensionPayload {
     /// Returns the byte count consumed (matching Table 4.51's
     /// returned `n`). Surfaces caller-side field violations as
     /// [`Error::ExtensionPayloadInvalid`].
+    #[cfg(test)]
     pub fn write(&self, writer: &mut BitWriter) -> Result<u32> {
         match self {
             ExtensionPayload::Fill { cnt, other_bits } => write_fill(writer, *cnt, other_bits),
@@ -410,6 +416,7 @@ impl ExtensionPayload {
 
     /// Total byte count this `extension_payload` consumed on the
     /// wire — Table 4.51's returned `n`.
+    #[cfg(test)]
     pub fn byte_length(&self) -> u32 {
         match self {
             ExtensionPayload::Fill { cnt, .. } => *cnt,
@@ -450,6 +457,7 @@ impl DynamicRangeInfo {
 
     /// Resolved `drc_num_bands` per Table 4.52. Always equals
     /// `bands.len()`.
+    #[cfg(test)]
     pub fn num_bands(&self) -> usize {
         self.bands.len()
     }
@@ -478,6 +486,7 @@ fn parse_fill(reader: &mut BitReader<'_>, cnt: u32) -> Result<ExtensionPayload> 
     Ok(ExtensionPayload::Fill { cnt, other_bits })
 }
 
+#[cfg(test)]
 fn write_fill(writer: &mut BitWriter, cnt: u32, other_bits: &[u8]) -> Result<u32> {
     if cnt == 0 {
         return Err(Error::ExtensionPayloadInvalid);
@@ -519,6 +528,7 @@ fn parse_fill_data(reader: &mut BitReader<'_>, cnt: u32) -> Result<ExtensionPayl
     Ok(ExtensionPayload::FillData { cnt })
 }
 
+#[cfg(test)]
 fn write_fill_data(writer: &mut BitWriter, cnt: u32) -> Result<u32> {
     if cnt == 0 {
         return Err(Error::ExtensionPayloadInvalid);
@@ -614,6 +624,7 @@ fn parse_dynamic_range(reader: &mut BitReader<'_>, cnt: u32) -> Result<Extension
     Ok(ExtensionPayload::DynamicRange(drc))
 }
 
+#[cfg(test)]
 fn write_dynamic_range(writer: &mut BitWriter, drc: &DynamicRangeInfo) -> Result<u32> {
     // Caller-side invariant checks (every numeric field cap from
     // Table 4.52).
@@ -709,6 +720,7 @@ fn parse_excluded_channels(reader: &mut BitReader<'_>) -> Result<ExcludedChannel
     Ok(ExcludedChannels { exclude_mask })
 }
 
+#[cfg(test)]
 fn write_excluded_channels(writer: &mut BitWriter, ex: &ExcludedChannels) -> Result<()> {
     if ex.exclude_mask.is_empty() || ex.exclude_mask.len() % 7 != 0 {
         // Table 4.53 emits exclude_mask bits in fixed groups of 7;
@@ -762,6 +774,7 @@ fn read_packed_bits(reader: &mut BitReader<'_>, n_bits: u32) -> Result<Vec<u8>> 
     Ok(out)
 }
 
+#[cfg(test)]
 fn write_packed_bits(writer: &mut BitWriter, bytes: &[u8], n_bits: u32) -> Result<()> {
     let mut remaining = n_bits;
     let mut idx = 0;

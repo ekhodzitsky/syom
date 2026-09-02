@@ -25,6 +25,7 @@ pub fn fill_count(br: &mut BitReader<'_>) -> Result<u32> {
 }
 
 /// `fill_element()` — 4-bit count, optional 8-bit escape, then `count` bytes.
+#[cfg(test)]
 pub fn skip_fil(br: &mut BitReader<'_>) -> Result<()> {
     let count = fill_count(br)?;
     br.skip(count.saturating_mul(8))?;

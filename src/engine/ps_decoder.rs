@@ -75,13 +75,6 @@ impl PsDecoder {
         }
     }
 
-    /// Whether a decodable `ps_data()` has been received — before
-    /// this, the caller outputs the mono signal on both channels.
-    #[must_use]
-    pub fn active(&self) -> bool {
-        self.active
-    }
-
     /// Process one stereo frame.
     ///
     /// * `payload` — the raw `sbr_extension()` body bytes carrying

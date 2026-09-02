@@ -2,7 +2,6 @@
 //!
 //! Product entry is [`decode::StreamDecoder`].
 
-#![allow(dead_code)] // round-trip / table helpers are test-driven
 #![allow(
     clippy::manual_is_multiple_of,
     clippy::manual_div_ceil,
@@ -15,6 +14,7 @@
 pub mod adts;
 pub mod asc;
 pub mod bits;
+#[cfg(test)]
 pub mod crc;
 pub mod decode;
 mod decode_cpe;

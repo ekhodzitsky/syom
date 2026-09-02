@@ -8,6 +8,7 @@ use super::sf::{self, ScaleFactors};
 use super::spectrum::{self, PulseData};
 
 /// One channel's decoded spectrum (window-major) plus the tools it needs.
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ChannelBody {
     /// ICS of this channel (shared with the pair when `common_window`).

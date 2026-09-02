@@ -101,6 +101,7 @@ impl Filterbank {
     }
 
     /// Synthesize 1024 PCM samples from a 1024-bin window-major spectrum.
+    #[cfg(test)]
     pub fn synthesize(&mut self, spec: &[f32], ics: &IcsInfo) -> Result<Vec<f32>> {
         let mut out = Vec::new();
         self.synthesize_into(spec, ics, &mut out)?;

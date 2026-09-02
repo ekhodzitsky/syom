@@ -47,6 +47,7 @@ pub enum Error {
     /// LATM program/layer geometry is outside the AAC-single-stream subset.
     LatmConfigOutOfRange,
     /// LATM CRC mismatch.
+    #[allow(dead_code)]
     LatmCrcMismatch,
     /// LATM payload without a prior `StreamMuxConfig`.
     LatmNoPreviousMuxConfig,
@@ -63,6 +64,7 @@ pub enum Error {
     /// Parametric stereo payload invalid.
     PsDataInvalid,
     /// FIL `extension_payload` SBR type without a body (legacy skip).
+    #[allow(dead_code)]
     UnsupportedExtensionSbr(u8),
     /// FIL reserved `extension_type`.
     UnsupportedExtensionType(u8),

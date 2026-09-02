@@ -35,6 +35,7 @@ fn fit_u8(rows: &mut Vec<Vec<u8>>, groups: usize, n: usize) {
 
 impl SectionData {
     /// Parse Table 17 run-length codebook assignment.
+    #[cfg(test)]
     pub fn parse(br: &mut BitReader<'_>, ics: &IcsInfo) -> Result<Self> {
         let mut out = Self::default();
         out.parse_into(br, ics)?;

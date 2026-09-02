@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Product is a zero-dep AAC library (`cargo add syom`), not a 16 kHz
   extract CLI. WAV-in, MP4 PCM, resample, clap, tracing, thiserror, and
   rustfft are gone. Output is planar `f32` at native rate. Caps:
-  `DecodeOptions::speech()` / `unbounded()`.
+  `DecodeOptions::speech()` / `unbounded()`. Next cut is **0.3.0**.
+- Crate root is decode / sniff / options. ISO-BMFF demux (`parse_aac_track`)
+  is crate-private.
 - LC decode is f32 from spectrum through IMDCT/OLA. ICS/spectrum
   buffers are reused across frames. On the committed LC fixtures,
   in-process wall time is ≤ Symphonia and ≪ rusty_aac; allocs and
