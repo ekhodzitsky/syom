@@ -276,7 +276,7 @@ fn mint_audible_goldens() -> Result<(), Error> {
     Ok(())
 }
 
-/// Offline: `MINT_TNS=1 cargo test -p syom-aac mint_tns_adts`.
+/// Offline: `MINT_TNS=1 cargo test --lib mint_tns_adts`.
 #[test]
 fn mint_tns_adts() -> Result<(), Error> {
     if std::env::var("MINT_TNS").is_err() {
@@ -297,14 +297,13 @@ fn mint_tns_adts() -> Result<(), Error> {
 }
 
 fn check_golden(adts: &[u8], gold: &[u8]) -> Result<(), Error> {
-    let (hdr, off) = AdtsHeader::parse(adts)?;
-    let mut dec = StreamDecoder::new();
-    let frame = dec.decode_frame(&hdr, &adts[off..])?;
-    let got: Vec<u8> = frame.planar[0]
-        .iter()
-        .flat_map(|&v| to_s16(f64::from(v)).to_le_bytes())
-        .collect();
-    assert_eq!(got.len(), gold.len());
+    let decoded = crate::decode_with(adts, &crate::DecodeOptions::unbounded())
+        .map_err(|_| Error::Format("golden decode"))?;
+    let ch = decoded
+        .channels
+        .first()
+        .ok_or(Error::Format("golden empty"))?;
+    assert_eq!(ch.len().saturating_mul(2), gold.len());
     let peak = gold
         .chunks_exact(2)
         .map(|c| i16::from_le_bytes([c[0], c[1]]).unsigned_abs())
@@ -317,9 +316,11 @@ fn check_golden(adts: &[u8], gold: &[u8]) -> Result<(), Error> {
     let mut max_lsb = 0u32;
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
-    for (g, o) in gold.chunks_exact(2).zip(got.chunks_exact(2)) {
+    for (i, g) in gold.chunks_exact(2).enumerate() {
         let gv = i16::from_le_bytes([g[0], g[1]]);
-        let ov = i16::from_le_bytes([o[0], o[1]]);
+        let ov = (f64::from(ch.get(i).copied().unwrap_or(0.0)) * 32768.0)
+            .round()
+            .clamp(-32768.0, 32767.0) as i16;
         max_lsb = max_lsb.max((i32::from(gv) - i32::from(ov)).unsigned_abs());
         let gs = f64::from(gv);
         let es = gs - f64::from(ov);

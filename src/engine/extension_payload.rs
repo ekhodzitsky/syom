@@ -26,11 +26,10 @@
 //!   [`DynamicRangeInfo`]).
 //!
 //! The SBR-data extension types defined by ISO/IEC 13818-7 Table 40
-//! are surfaced as [`Error::UnsupportedExtensionSbr`] by the default
-//! [`ExtensionPayload::parse`] (so the byte-exact AAC-LC decode path
-//! stays untouched). [`ExtensionPayload::parse_with_sbr`] routes them
-//! into [`crate::engine::sbr_extension::SbrExtensionData`], which
-//! `StreamDecoder` then reconstructs:
+//! are surfaced as [`Error::UnsupportedExtensionSbr`] by the
+//! test-only [`ExtensionPayload::parse`]. [`ExtensionPayload::parse_with_sbr`]
+//! routes them into [`crate::engine::sbr_extension::SbrExtensionData`],
+//! which `StreamDecoder` then reconstructs:
 //!
 //! * `EXT_SBR_DATA` (`0b1101`).
 //! * `EXT_SBR_DATA_CRC` (`0b1110`).
@@ -39,22 +38,10 @@
 //! [`Error::UnsupportedExtensionType`] carrying the literal 4-bit
 //! value as read from the wire.
 //!
-//! ## Why a parser / writer pair, and why now
-//!
-//! The Phase 1 `raw_data_block()` walker (round 121) recognises
-//! FIL but skips its payload bytes opaque. Round 160's
-//! `FrameAssembler::push_fill` accepts an opaque payload byte
-//! slice. Neither side decodes or encodes the structured
-//! `extension_payload()` body — and the FIL element is where the
-//! DRC metadata (per-band gain factors), encoder-identifier fill
-//! bytes, and the SBR enhancement bytes ride. This module is
-//! the §4.4.2.7 wire-level decode/encode for the three non-SBR
-//! extension types whose body layouts are fully specified by
-//! fixed-width fields (no Huffman, no spectral context). The
-//! intent is that downstream rounds plug this module into
-//! `FrameAssembler::push_fill` /
-//! `Walker::next_element` to surface a typed `extension_payload`
-//! per FIL element.
+//! FIL is where DRC, fill bytes, and SBR ride. This module is the
+//! §4.4.2.7 wire decode (and test-only encode) for the three non-SBR
+//! types with fixed-width bodies. `StreamDecoder` calls
+//! [`ExtensionPayload::parse_with_sbr`] after `fill_count`.
 //!
 //! ## Returned byte count
 //!
@@ -63,10 +50,8 @@
 //! own byte count starting from `n = 1` (the leading byte
 //! containing the 4-bit `extension_type` nibble plus four of the
 //! body's "presence" flags); each subsequent 8-bit-wide field set
-//! is `n++`. [`ExtensionPayload::parse`] and [`ExtensionPayload::write`]
-//! both expose this byte count via the returned
-//! [`ExtensionPayload::bytes_consumed`] / [`ExtensionPayload::byte_length`]
-//! accessors.
+//! is `n++`. [`ExtensionPayload::parse`] / [`ExtensionPayload::write`]
+//! (test-only) and [`DynamicRangeInfo::byte_length`] expose that count.
 //!
 //! ## What this module does *not* cover
 //!
@@ -77,13 +62,10 @@
 //!   surrounding PCE (the surrounding PCE may not be known at
 //!   parse time — e.g. when the DRC FIL precedes the PCE in
 //!   independent-program multiplexes).
-//! * The SBR-data extension types (Table 40
-//!   `EXT_SBR_DATA` / `EXT_SBR_DATA_CRC`) are surfaced as
-//!   [`Error::UnsupportedExtensionSbr`] — their bodies are the
-//!   `sbr_extension_data()` syntax which needs the QMF / patching
-//!   back-end. This module's writer / parser deliberately does
-//!   *not* consume bits for these types so a future SBR round can
-//!   take over without a wire-format incompatibility.
+//! * [`ExtensionPayload::parse`] (test-only) still rejects
+//!   `EXT_SBR_DATA` / `EXT_SBR_DATA_CRC` as
+//!   [`Error::UnsupportedExtensionSbr`]. Product FIL uses
+//!   [`ExtensionPayload::parse_with_sbr`].
 
 use crate::engine::bits::BitReader;
 #[cfg(test)]
@@ -112,12 +94,12 @@ pub enum ExtensionType {
     /// Body is the Table 4.52 `dynamic_range_info()` block.
     DynamicRange,
     /// `EXT_SBR_DATA` (`0b1101`) — SBR enhancement (ISO/IEC
-    /// 13818-7 Table 40). This crate does not parse the
-    /// `sbr_extension_data()` body yet.
+    /// 13818-7 Table 40). [`ExtensionPayload::parse_with_sbr`]
+    /// consumes `sbr_extension_data()`.
     SbrData,
     /// `EXT_SBR_DATA_CRC` (`0b1110`) — SBR enhancement with CRC
-    /// (ISO/IEC 13818-7 Table 40). This crate does not parse the
-    /// `sbr_extension_data()` body yet.
+    /// (ISO/IEC 13818-7 Table 40). [`ExtensionPayload::parse_with_sbr`]
+    /// consumes `sbr_extension_data()`.
     SbrDataCrc,
 }
 
@@ -129,8 +111,7 @@ impl ExtensionType {
     ///
     /// * [`Error::UnsupportedExtensionSbr`] for `0b1101`
     ///   (`EXT_SBR_DATA`) and `0b1110` (`EXT_SBR_DATA_CRC`) — the
-    ///   bodies are the SBR `sbr_extension_data()` syntax which
-    ///   this crate does not parse.
+    ///   test-only parser leaves QMF to [`Self::parse_with_sbr`].
     /// * [`Error::UnsupportedExtensionType`] carrying the raw
     ///   4-bit value for any other value not in
     ///   `{0b0000, 0b0001, 0b1011, 0b1101, 0b1110}`. Table 4.59 /
@@ -321,9 +302,8 @@ impl ExtensionPayload {
     /// Parse an `extension_payload(cnt)` from `reader`.
     ///
     /// `cnt` is the FIL element's payload byte count after the
-    /// §4.4.2.7 `esc_count` escape resolution (the same value the
-    /// existing [`crate::engine::raw_data_block::Walker`] computes via
-    /// `read_fill_count`). `cnt == 0` is rejected as
+    /// §4.4.2.7 `esc_count` escape resolution (the same value
+    /// [`crate::engine::skip::fill_count`] returns). `cnt == 0` is rejected as
     /// [`Error::ExtensionPayloadInvalid`] — Table 4.51's
     /// `extension_type` field itself is 4 bits, so a zero-byte FIL
     /// has no room for it.

@@ -12,9 +12,6 @@ struct C {
 }
 
 impl C {
-    #[allow(dead_code)]
-    const ZERO: Self = Self { re: 0.0, im: 0.0 };
-
     fn new(re: f32, im: f32) -> Self {
         Self { re, im }
     }

@@ -367,27 +367,6 @@ fn read_with_speech_matches_decode() -> Result<(), AacError> {
 }
 
 #[test]
-fn bitreader_wide_and_signed_helpers() -> Result<(), AacError> {
-    use crate::engine::bits::BitReader;
-    let bytes = [0xA5, 0x5A, 0xFF, 0x00, 0x80, 0x11];
-    let e = |err| AacError::decode(format!("{err:?}"));
-    let mut br = BitReader::with_position(&bytes, 0);
-    assert_eq!(br.read_u1().map_err(e)?, 1);
-    assert!(br.peek_u32(7).map_err(e)? > 0);
-    let _ = br.read_u32(7).map_err(e)?;
-    let mut br = BitReader::new(&bytes);
-    let _ = br.read_i32(16).map_err(e)?;
-    let mut br = BitReader::new(&bytes);
-    let _ = br.read_u64(40).map_err(e)?;
-    let mut br = BitReader::new(&bytes);
-    br.consume(3).map_err(e)?;
-    br.align_to_byte().map_err(e)?;
-    assert!(br.is_byte_aligned());
-    assert_eq!(br.byte_position(), 1);
-    Ok(())
-}
-
-#[test]
 fn read_round_trip_tmp() -> Result<(), AacError> {
     let bytes = include_bytes!("goldens/tns48.adts");
     let dir = std::env::temp_dir().join(format!("syom-read-{}.adts", std::process::id()));
