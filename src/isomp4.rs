@@ -1,9 +1,8 @@
 //! Minimal ISOBMFF (MP4/M4A) demuxer for the in-tree AAC path.
-#![allow(clippy::all, clippy::unwrap_used, clippy::expect_used)]
 //!
 //! Scope: locate the first AAC audio track and extract its
-//! AudioSpecificConfig plus the byte ranges of every compressed sample, which
-//! the AAC decoder then feeds to the AAC decoder. Everything else the container
+//! AudioSpecificConfig plus the byte ranges of every compressed sample.
+//! Everything else the container
 //! can carry is skipped, never interpreted:
 //!
 //! * `meta` / `ilst` / `udta` (tags, artwork) — walked past, not parsed;
@@ -954,7 +953,7 @@ mod tests {
         };
         let mdat_off = (build(0).len() + 8) as u32;
         let mut data = build(mdat_off);
-        data.extend_from_slice(&bx(b"mdat", &vec![0xAAu8; 28]));
+        data.extend_from_slice(&bx(b"mdat", &[0xAAu8; 28]));
         let track = parse_aac_track(&data).expect("elst M4A must parse");
         assert_eq!(track.edit_start, 1024);
         assert_eq!(track.media_timescale, 48_000);

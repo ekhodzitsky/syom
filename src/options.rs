@@ -1,4 +1,4 @@
-//! Decode options for speech-ingest (16 kHz mono, duration cap).
+//! Decode options: channel mode and duration / rate caps.
 
 /// Hard upper bound on buffered compressed input (1 GiB).
 ///

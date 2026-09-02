@@ -22,7 +22,7 @@ let pcm = syom::decode(&bytes)?; // planar f32, bitstream rate
 `decode` / `decode_bytes` / `decode_with` / `read` / `read_with` plus
 `sniff_aac` / `sniff_is_adts` / `sniff_is_latm` / `sniff_is_isobmff`.
 Caps: `DecodeOptions::speech()` (default) / `unbounded()`. Encode is not v1.
-CLI is examples only.
+No product CLI.
 
 AAC-LC + HE-AAC v1/v2 (SBR/PS) from ADTS, M4A/ISOBMFF `mp4a`+ASC, LATM/LOAS.
 Honour `elst.media_time`. Own IMDCT/FFT. Own error enum.

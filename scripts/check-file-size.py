@@ -48,7 +48,6 @@ def line_count(path: Path) -> int:
 def main() -> int:
     failed = False
     files = sorted(ROOT.glob("src/**/*.rs"))
-    files += sorted(ROOT.glob("crates/*/src/**/*.rs"))
     for path in files:
         if is_vendored_aac(path):
             continue
