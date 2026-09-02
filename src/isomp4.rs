@@ -32,7 +32,7 @@ use crate::error::{AacError, Result};
 
 /// One extracted AAC audio track: the codec configuration and the location of
 /// every compressed sample (each sample is one AAC `raw_data_block()`).
-pub struct AacTrack {
+pub(crate) struct AacTrack {
     /// AudioSpecificConfig bytes (esds DecoderSpecificInfo).
     pub asc: Vec<u8>,
     /// Total samples per channel declared by `stts` (each AAC frame covers
@@ -49,7 +49,7 @@ pub struct AacTrack {
 impl AacTrack {
     /// Native-rate samples to drop after decode (AAC encoder delay).
     #[must_use]
-    pub fn skip_samples(&self, sample_rate: u32) -> usize {
+    pub(crate) fn skip_samples(&self, sample_rate: u32) -> usize {
         if self.edit_start == 0 || self.media_timescale == 0 || sample_rate == 0 {
             return 0;
         }
@@ -622,7 +622,7 @@ fn build_frame_index(data_len: usize, table: &SampleTable) -> Result<Vec<(u64, u
 ///
 /// Errors are all clean `AacError` returns; no input can panic or index out
 /// of bounds.
-pub fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
+pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
     let mut moov = None;
     for top in BoxIter::new(data, 0, data.len()) {
         let (hdr, typ) = top?;
@@ -688,7 +688,7 @@ pub fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
 }
 
 /// True when `data` opens with a plausible ISOBMFF `ftyp` box.
-pub fn sniff_is_m4a(data: &[u8]) -> bool {
+pub(crate) fn sniff_is_m4a(data: &[u8]) -> bool {
     if data.len() < 8 {
         return false;
     }

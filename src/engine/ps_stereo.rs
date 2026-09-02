@@ -124,12 +124,6 @@ impl PsStereo {
         self.opd_hist = [vec![0.0; n_bands], vec![0.0; n_bands]];
     }
 
-    /// The stereo band count in force.
-    #[must_use]
-    pub fn n_bands(&self) -> usize {
-        self.n_bands
-    }
-
     /// Process one stereo frame: mix `s` (mono hybrid) and `d`
     /// (de-correlated hybrid) into `(l, r)` hybrid signals per the
     /// resolved parameters. `config` must agree with `n_bands`.

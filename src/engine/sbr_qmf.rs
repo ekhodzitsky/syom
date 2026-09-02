@@ -420,6 +420,7 @@ impl SynthesisQmf {
 
 /// §4.6.18.4.3 / Figure 4.44 — the 32-channel downsampled synthesis QMF
 /// bank (output at the core rate).
+#[cfg(test)]
 #[derive(Debug, Clone)]
 pub struct DownsampledSynthesisQmf {
     /// The Figure 4.44 synthesis history `v`.
@@ -429,12 +430,14 @@ pub struct DownsampledSynthesisQmf {
     n_mat: Vec<Complex>,
 }
 
+#[cfg(test)]
 impl Default for DownsampledSynthesisQmf {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(test)]
 impl DownsampledSynthesisQmf {
     /// A fresh downsampled synthesis bank with an all-zero history.
     #[must_use]

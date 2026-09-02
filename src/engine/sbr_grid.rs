@@ -70,6 +70,7 @@ impl FrameClass {
     }
 
     /// The 2-bit `bs_frame_class` wire value.
+    #[cfg(test)]
     pub fn to_bits(self) -> u32 {
         match self {
             FrameClass::FixFix => 0,

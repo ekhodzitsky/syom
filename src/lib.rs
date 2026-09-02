@@ -11,7 +11,7 @@ mod sniff;
 
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
 pub use error::{AacError, Result};
-pub use isomp4::{AacTrack, parse_aac_track, sniff_is_isobmff, sniff_is_m4a};
+pub use isomp4::sniff_is_isobmff;
 pub use options::{
     ChannelMode, DEFAULT_MAX_DECODE_SAMPLE_RATE, DEFAULT_MAX_DURATION_SECS,
     DEFAULT_MAX_INPUT_BYTES, DEFAULT_MAX_SAMPLE_RATE, DecodeOptions,

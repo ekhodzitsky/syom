@@ -58,6 +58,7 @@ pub struct Patches {
 
 impl Patches {
     /// `numPatches`.
+    #[cfg(test)]
     #[inline]
     #[must_use]
     pub fn num_patches(&self) -> usize {

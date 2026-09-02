@@ -96,6 +96,7 @@ impl<'a> BitReader<'a> {
     }
 
     /// Construct a reader starting at `byte_pos`.
+    #[cfg(test)]
     #[must_use]
     pub fn with_position(data: &'a [u8], byte_pos: usize) -> Self {
         Self {
@@ -107,18 +108,21 @@ impl<'a> BitReader<'a> {
     }
 
     /// Byte index of the next bit.
+    #[cfg(test)]
     #[must_use]
     pub fn byte_position(&self) -> usize {
         (self.bit_position() / 8) as usize
     }
 
     /// True when `bit_position` is a multiple of 8.
+    #[cfg(test)]
     #[must_use]
     pub fn is_byte_aligned(&self) -> bool {
         self.bit_position() % 8 == 0
     }
 
     /// Alias of [`Self::byte_align`].
+    #[cfg(test)]
     pub fn align_to_byte(&mut self) -> Result<()> {
         self.byte_align()
     }
@@ -150,11 +154,13 @@ impl<'a> BitReader<'a> {
     }
 
     /// One-bit unsigned.
+    #[cfg(test)]
     pub fn read_u1(&mut self) -> Result<u32> {
         self.read(1)
     }
 
     /// Signed `n`-bit two's complement.
+    #[cfg(test)]
     pub fn read_i32(&mut self, n: u32) -> Result<i32> {
         let u = self.read(n)?;
         if n == 0 {
@@ -169,6 +175,7 @@ impl<'a> BitReader<'a> {
     }
 
     /// Up to 64 bits (reads in 32-bit chunks).
+    #[cfg(test)]
     pub fn read_u64(&mut self, n: u32) -> Result<u64> {
         if n <= 32 {
             return Ok(u64::from(self.read(n)?));
@@ -197,6 +204,7 @@ impl<'a> BitReader<'a> {
     }
 
     /// Alias of [`Self::skip`].
+    #[cfg(test)]
     pub fn consume(&mut self, n: u32) -> Result<()> {
         self.skip(n)
     }
@@ -273,6 +281,7 @@ impl BitWriter {
     }
 
     /// Append one bit.
+    #[cfg(test)]
     pub fn write_bit(&mut self, bit: bool) {
         self.write(u32::from(bit), 1);
     }

@@ -3,7 +3,6 @@
 //! Pre/post twiddles live here. The fast path is proven against the naive sum
 //! in `imdct_tests.rs`.
 
-use std::cell::RefCell;
 use std::sync::LazyLock;
 
 #[derive(Clone, Copy)]
@@ -13,6 +12,7 @@ struct C {
 }
 
 impl C {
+    #[allow(dead_code)]
     const ZERO: Self = Self { re: 0.0, im: 0.0 };
 
     fn new(re: f32, im: f32) -> Self {
@@ -193,7 +193,9 @@ pub fn imdct_into_f32(spec: &[f32], out: &mut [f32]) {
 }
 
 /// Fast IMDCT into f64 `out` (tests / legacy).
+#[cfg(test)]
 pub fn imdct_into(spec: &[f64], out: &mut [f64]) {
+    use std::cell::RefCell;
     thread_local! {
         static SPEC: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };
         static TMP: RefCell<Vec<f32>> = const { RefCell::new(Vec::new()) };

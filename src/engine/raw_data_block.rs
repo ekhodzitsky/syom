@@ -9,21 +9,27 @@ pub enum IdSynEle {
     /// Channel pair.
     Cpe = 1,
     /// Coupling channel.
+    #[allow(dead_code)]
     Cce = 2,
     /// LFE.
     Lfe = 3,
     /// Data stream.
+    #[allow(dead_code)]
     Dse = 4,
     /// Program config.
+    #[allow(dead_code)]
     Pce = 5,
     /// Fill.
+    #[allow(dead_code)]
     Fil = 6,
     /// End.
+    #[allow(dead_code)]
     End = 7,
 }
 
 impl IdSynEle {
     /// Map a 3-bit wire value.
+    #[cfg(test)]
     #[must_use]
     pub fn from_bits(bits: u8) -> Self {
         match bits & 0b111 {
