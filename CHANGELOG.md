@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   padding `56 e5 00` is not treated as HE.
 - `speech()` / `decode()` apply SBR on HE-AAC. The mono fast path no
   longer returns core-rate silence.
+- `unbounded()` / Split emits two planes on mono LC+SBR (lavc implicit
+  HE-AACv2 PS). Goldens are interleaved lavc s16.
 
 
 

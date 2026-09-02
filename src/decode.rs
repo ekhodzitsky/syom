@@ -6,7 +6,7 @@ use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
 use crate::isomp4::{self, sniff_is_isobmff};
 use crate::options::{ChannelMode, DecodeOptions};
-use crate::out::{INV_S16, Out, push_adts_mono, push_frame};
+use crate::out::{INV_S16, Out, maybe_he_v2_stereo, push_adts_mono, push_frame};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
 /// Hard cap on buffered input size (same rationale as the historical MP3 path).
@@ -115,6 +115,7 @@ fn decode_adts(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
                     "aac: decode failed at frame {frames_decoded}: {e:?}"
                 ))
             })?;
+            let frame = maybe_he_v2_stereo(frame, hdr.sample_rate());
             push_frame(&mut out, &frame, opts)?;
         }
         frames_decoded += 1;
@@ -196,7 +197,7 @@ fn decode_m4a(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
             1,
             payload,
         ) {
-            Ok(frame) => frame,
+            Ok(frame) => maybe_he_v2_stereo(frame, asc.sample_rate),
             Err(e) => {
                 return Err(AacError::decode(format!(
                     "aac: decode failed at frame {idx}: {e:?}"
