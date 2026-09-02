@@ -1,56 +1,48 @@
 # syom — Agent Guide
 
-> On-device audio extract. One CLI. No cloud. No ffmpeg.
+> just aac. Pure-Rust AAC-LC / HE-AAC decoder. Zero `[dependencies]`.
 >
-> **съём.** SYOM: Speech Yielded from Original Media.
+> **съём.** SYOM: Speech Yielded from Original Media — the AAC crate.
 >
-> MP4/M4A (AAC `mp4a` or PCM `sowt`/`twos`/`ipcm`/`lpcm`/`raw `)/ADTS/WAV → 16 kHz s16le mono. Opus is a later pack, not a fork.
+> `cargo add syom`. One call, planar `f32` at native rate.
 
 Repository: https://github.com/ekhodzitsky/syom  
-License: MIT (AAC-LC engine original). AAC patents: see NOTICE.  
+License: MIT (AAC-LC engine original; HE SBR/PS from in-tree tables). AAC patents: see NOTICE.  
 Status: private.
 
 ## Product
 
-`syom FILE -o OUT.wav` writes 16 kHz mono PCM (WAV or raw `.pcm`).
-No models. No network. Missing input is a hard error.
+Library, not a 16 kHz extract CLI. Empty product `[dependencies]`. No C/FFI,
+ffmpeg, rustfft, clap, tracing, thiserror, Symphonia on the product path.
 
-Forbidden: cloud decode, ffmpeg, Symphonia, API keys, telemetry.
-
-## CLI (v1)
-
-```sh
-syom lecture.mp4 -o lecture.wav
-syom lecture.mp4 -o lecture.pcm
+```rust
+let pcm = syom::decode(&bytes)?; // planar f32, bitstream rate
 ```
 
-No `serve`. No microphone. stdout is WAV only with `-o -`.
+`decode` / `decode_bytes` / `decode_with` / `read` / `read_with` plus
+`sniff_aac` / `sniff_is_adts` / `sniff_is_latm` / `sniff_is_isobmff`.
+Caps: `DecodeOptions::speech()` (default) / `unbounded()`. Encode is not v1.
+CLI is examples only.
 
-JSON is not the contract. Bytes are. kover spawns this binary.
+AAC-LC + HE-AAC v1/v2 (SBR/PS) from ADTS, M4A/ISOBMFF `mp4a`+ASC, LATM/LOAS.
+Honour `elst.media_time`. Own IMDCT/FFT. Own error enum.
 
-## Stack
-
-- Rust 2024, pin in `rust-toolchain.toml`.
-- Decoder crate `syom-aac` (original AAC-LC + rustfft IMDCT).
-- No Python, no ffmpeg, no `symphonia` on the product path.
-- Remux / video bitstream stay in kover. This repo does not copy video.
+ffmpeg / fdk-aac are **offline oracles**. Tests never spawn them.
 
 ## Checks
 
 ```sh
 cargo fmt --check
-cargo test --workspace --lib --bins
+cargo test --lib --bins --doc
 cargo clippy --all-targets -- -D warnings
 python3 scripts/check-file-size.py
 python3 scripts/check-changelog.py
 ```
 
-No `unwrap` / `expect` in `syom` (clippy deny). Tests return `Result`
-and use `?`. `thiserror` in the library surface. `tracing`, never
-`println!` (stdout may be WAV). Implementation files ≤ 400 lines.
-Test files ≤ 500. `lib.rs` / `main.rs` are module trees only. Tests
-live in sibling `foo_tests.rs`. `isomp4.rs` is exempt from the line
-cap. The LC engine is not.
+No `unwrap` / `expect` in lib (clippy deny). Tests return `Result` and use
+`?`. Impl files ≤ 400 lines. Test files ≤ 500. `lib.rs` is a module tree.
+Tests live in sibling `*_tests.rs`. Exempt like isomp4: `isomp4.rs`, HE
+`sbr_*` / `ps_*` / `extension_payload` / `crc`.
 
 ## Git
 
@@ -59,14 +51,9 @@ Isolated worktree while a PR is open.
 
 ## Versioning
 
-Keep a Changelog + SemVer. One workspace version (`syom -V`).
+Keep a Changelog + SemVer. Crate version is `syom` (`Cargo.toml` package).
 
 - Pre-1.0: new input/output formats bump **y**; fixes bump **z**.
 - Every user-visible PR adds a bullet under `## [Unreleased]`.
-- Cutting a release (one PR, no other features): move Unreleased
-  under `## [X.Y.Z] - YYYY-MM-DD`, leave empty Unreleased, set
-  `workspace.package.version`, merge, then
-  `git tag -a vX.Y.Z -m "syom X.Y.Z"` on that commit.
 
-AAC lives here (`syom-aac`, original LC). kover/sluh spawn this
-binary. Do not grow a second decoder in those repos.
+kover/sluh spawn or link this crate. Do not grow a second AAC decoder there.

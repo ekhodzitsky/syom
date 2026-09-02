@@ -1,23 +1,95 @@
-//! Typed failures. No path leakage beyond the user-facing message.
+//! Typed errors for the AAC reader (stable `Display`, no `anyhow`).
 
-#[derive(Debug, thiserror::Error)]
-pub enum SyomError {
-    #[error("media: {0}")]
-    Media(String),
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
+use std::fmt;
+use std::io;
+
+/// Result alias for this crate.
+pub type Result<T> = std::result::Result<T, AacError>;
+
+/// Errors produced while sniffing or decoding AAC / M4A streams.
+#[derive(Debug)]
+pub enum AacError {
+    /// Underlying `Read` / `Seek` failure.
+    Io(io::Error),
+    /// Stream is not ADTS or M4A/AAC.
+    NotAac,
+    /// Sample rate is zero or above the configured ceiling.
+    UnsupportedSampleRate { rate: u32, max: u32 },
+    /// Decoded (or declared) duration exceeds the configured budget.
+    TooLong { observed_secs: f64, max_secs: f64 },
+    /// Stream length unknown (required for bounded full-buffer decode).
+    StreamLengthUnknown,
+    /// Structural / demux failure.
+    Format(String),
+    /// Decoder engine rejected a frame (or panicked inside the firewall).
+    Decode(String),
 }
 
-impl From<syom_aac::AacError> for SyomError {
-    fn from(e: syom_aac::AacError) -> Self {
-        Self::Media(e.to_string())
+impl AacError {
+    #[inline]
+    pub fn format(msg: impl Into<String>) -> Self {
+        Self::Format(msg.into())
+    }
+
+    #[inline]
+    pub fn decode(msg: impl Into<String>) -> Self {
+        Self::Decode(msg.into())
+    }
+
+    #[inline]
+    pub fn too_long(observed_secs: f64, max_secs: f64) -> Self {
+        Self::TooLong {
+            observed_secs,
+            max_secs,
+        }
+    }
+
+    #[inline]
+    pub fn sample_rate(rate: u32, max: u32) -> Self {
+        Self::UnsupportedSampleRate { rate, max }
+    }
+
+    /// Whether this should surface as generic unsupported-format upstream.
+    pub fn is_format_class(&self) -> bool {
+        matches!(
+            self,
+            Self::NotAac | Self::Format(_) | Self::StreamLengthUnknown
+        )
     }
 }
 
-pub(crate) fn media(msg: impl Into<String>) -> SyomError {
-    SyomError::Media(msg.into())
+impl fmt::Display for AacError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "{e}"),
+            Self::NotAac => write!(f, "Unsupported audio format"),
+            Self::UnsupportedSampleRate { rate, max } => {
+                write!(f, "Unsupported sample rate: {rate}Hz (max {max}Hz)")
+            }
+            Self::TooLong {
+                observed_secs,
+                max_secs,
+            } => write!(
+                f,
+                "Audio file too long ({observed_secs:.0}s). Maximum supported: {max_secs:.0}s."
+            ),
+            Self::StreamLengthUnknown => write!(f, "aac: stream length unknown"),
+            Self::Format(msg) | Self::Decode(msg) => write!(f, "{msg}"),
+        }
+    }
 }
 
-#[cfg(test)]
-#[path = "error_tests.rs"]
-mod error_tests;
+impl std::error::Error for AacError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<io::Error> for AacError {
+    fn from(value: io::Error) -> Self {
+        Self::Io(value)
+    }
+}

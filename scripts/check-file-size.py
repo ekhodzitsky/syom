@@ -16,8 +16,23 @@ def is_test(path: Path) -> bool:
 
 
 def is_vendored_aac(path: Path) -> bool:
-    # ISO-BMFF demux only. The LC engine is original and is capped.
-    return path.name == "isomp4.rs"
+    # ISO-BMFF demux and HE-AAC SBR/PS tables (QMF, Huffman, PS).
+    # The LC engine is original and stays capped.
+    name = path.name
+    if name == "isomp4.rs":
+        return True
+    prefixes = (
+        "sbr_",
+        "ps_",
+        "extension_payload",
+        "crc",
+        "latm",
+    )
+    return name.startswith(prefixes) or name in {
+        "extension_payload.rs",
+        "crc.rs",
+        "latm.rs",
+    }
 
 
 def line_count(path: Path) -> int:

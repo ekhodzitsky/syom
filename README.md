@@ -1,29 +1,62 @@
 # syom
 
-**съём.** SYOM: Speech Yielded from Original Media.
+just aac.
 
-On-device audio extract. One Rust CLI. No cloud. No ffmpeg.
+Pure-Rust **AAC-LC / HE-AAC** decoder. Zero crates on the product path.
+Read ADTS, LATM/LOAS, and M4A/ISOBMFF `mp4a`. Output is planar `f32` at the
+bitstream's native sample rate (HE = 2× core).
 
-MP4 / M4A (AAC `mp4a` or PCM `sowt`/`twos`/`ipcm`/`lpcm`/`raw `) / ADTS AAC / PCM WAV in. **16 kHz s16le mono** out.
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![deps](https://img.shields.io/badge/deps-zero-success.svg)](Cargo.toml)
 
-```sh
-syom lecture.mp4 -o lecture.wav
-syom lecture.mp4 -o lecture.pcm
-syom clip.aac -o clip.wav
-syom take.wav -o take16k.wav
+## Why
+
+[symphonia](https://github.com/pdeljanov/Symphonia) is a multi-format
+pipeline. [rusty_aac](https://crates.io/crates/rusty_aac) is LC (SBR
+signalled, not reconstructed). [oxideav-aac](https://crates.io/crates/oxideav-aac)
+on crates.io is a parser. **syom is the AAC crate**: one call, LC + HE v1/v2,
+hard RAM/duration caps, no extra dependencies.
+
+| | syom | rusty_aac | symphonia | oxideav-aac 0.1 |
+|---|---|---|---|---|
+| AAC-LC | yes | yes | yes | parse only |
+| HE-AAC v1/v2 (SBR/PS) | yes | signalled | no | tables |
+| ADTS / M4A / LATM | yes | ADTS + AU | via formats | ADTS parse |
+| Default deps | **none** | none | several | oxideav-core |
+| Output | planar `f32`, native rate | interleaved | packets | — |
+| Duration / RAM caps | yes (`speech` / `unbounded`) | no | no | — |
+| One-call `decode(&[u8])` | yes | no | no | no |
+
+## Install
+
+```toml
+[dependencies]
+syom = "0.2"
 ```
 
-`-o` defaults to `out.wav`. `.pcm` / `.raw` / `.s16` write headerless s16le.
-`-o -` writes WAV to stdout.
+Requires **Rust 1.97**, edition 2024.
 
-kover and sluh spawn this binary. They do not link the decoder.
+## Quick start
 
-## Not in v1
+```rust
+fn main() -> syom::Result<()> {
+    assert!(syom::decode(&[]).is_err());
+    let _ = syom::DecodeOptions::speech();
+    let _ = syom::DecodeOptions::unbounded();
+    Ok(())
+}
+```
 
-Encoding, remux, video, fragmented MP4, DRM, Opus, MP3, FLAC, HTTP.
+From a path: `syom::read("clip.m4a")?`. Caps:
+`decode_with(bytes, &DecodeOptions::speech().with_channel_mode(syom::ChannelMode::Split))`.
+
+Correctness vs FFmpeg libavcodec native s16: max abs ≤ 1 LSB, SNR ≥ 70 dB
+on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, HE ADTS / M4A,
+LATM). Runtime does not spawn ffmpeg.
+
+Encode is not v1. No resample.
 
 ## License
 
 MIT. AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7). See
-[NOTICE](NOTICE) for the AAC patent disclaimer (Via LA). Code is free;
-patent questions are the shipper's.
+[NOTICE](NOTICE) for the AAC patent disclaimer (Via LA).

@@ -12,20 +12,21 @@ CARGO = ROOT / "Cargo.toml"
 LOG = ROOT / "CHANGELOG.md"
 
 
-def workspace_version() -> str:
+def package_version() -> str:
     text = CARGO.read_text(encoding="utf-8")
     in_pkg = False
     for line in text.splitlines():
-        if line.strip() == "[workspace.package]":
+        stripped = line.strip()
+        if stripped in ("[workspace.package]", "[package]"):
             in_pkg = True
             continue
         if in_pkg and line.startswith("["):
             break
         if in_pkg:
-            m = re.match(r'version\s*=\s*"([^"]+)"', line.strip())
+            m = re.match(r'version\s*=\s*"([^"]+)"', stripped)
             if m:
                 return m.group(1)
-    raise SystemExit("FAIL: workspace.package.version missing in Cargo.toml")
+    raise SystemExit("FAIL: package version missing in Cargo.toml")
 
 
 def main() -> int:
@@ -39,7 +40,7 @@ def main() -> int:
     if "keepachangelog.com" not in body or "semver.org" not in body:
         print("FAIL: CHANGELOG.md must cite Keep a Changelog and SemVer")
         return 1
-    ver = workspace_version()
+    ver = package_version()
     heading = f"## [{ver}]"
     if heading not in body:
         print(f"FAIL: CHANGELOG.md has no {heading} (Cargo.toml is {ver})")

@@ -1,16 +1,26 @@
-//! On-device audio extract. Container in, 16 kHz s16le mono out.
+#![doc = include_str!("../README.md")]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
-pub mod cli;
-pub mod error;
+mod decode;
+mod engine;
+mod error;
+mod isomp4;
+mod options;
+mod sniff;
 
-pub(crate) mod boxes;
-pub(crate) mod extract;
-pub(crate) mod pcm_mp4;
-pub(crate) mod resample;
-pub(crate) mod table;
-pub(crate) mod wav;
+pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
+pub use error::{AacError, Result};
+pub use isomp4::{AacTrack, parse_aac_track, sniff_is_isobmff, sniff_is_m4a};
+pub use options::{
+    ChannelMode, DEFAULT_MAX_DECODE_SAMPLE_RATE, DEFAULT_MAX_DURATION_SECS,
+    DEFAULT_MAX_INPUT_BYTES, DEFAULT_MAX_SAMPLE_RATE, DecodeOptions,
+};
+pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
 
 #[cfg(test)]
-mod aac_fixture;
+#[path = "decode_tests.rs"]
+mod decode_tests;
+
 #[cfg(test)]
-mod mp4_fixture;
+#[path = "error_tests.rs"]
+mod error_tests;

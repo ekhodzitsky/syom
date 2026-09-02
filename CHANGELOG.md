@@ -7,27 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Product is a zero-dep AAC library (`cargo add syom`), not a 16 kHz
+  extract CLI. WAV-in, MP4 PCM, resample, clap, tracing, thiserror, and
+  rustfft are gone. Output is planar `f32` at native rate. Caps:
+  `DecodeOptions::speech()` / `unbounded()`.
+
 ### Added
 
-- Lecture fixture native-rate PCM is checked against a committed lavc
-  golden (ffmpeg 8.1.1 native AAC, 48 kHz mono s16, minted once offline).
-  Max abs ≤ 1 LSB, SNR ≥ 70 dB. Runtime does not spawn ffmpeg.
-- 44.1 kHz mono M4A (elst 1024) and 48 kHz mono ADTS LC sine fixtures vs
-  lavc native goldens, same 1 LSB / 70 dB bar. A hand-built 48 kHz ADTS
-  with order-1 TNS is checked the same way. PNS uses lavc's LCG seed
-  (`0x1f2e3d4c`). Runtime does not spawn ffmpeg.
+- HE-AAC v1/v2 (SBR/PS) and LATM/LOAS on the same decode path. Committed
+  lavc native goldens (max abs ≤ 1 LSB, SNR ≥ 70 dB) for lecture M4A,
+  44.1 M4A, ADTS sine, TNS, PNS-heavy LC, HE ADTS/M4A, and LATM.
+  Runtime does not spawn ffmpeg.
+- Owned IMDCT/FFT (no rustfft). PNS polarity matches lavc PCM.
 
 ### Fixed
 
-- MP4 audio `elst.media_time` is honoured (AAC encoder delay). The lecture
-  fixture drops the 1024-sample priming frame before the 16 kHz resample.
-  ADTS and PCM tracks without a non-zero edit are unchanged.
-
-### Changed
-
-- AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7), not oxideav-aac.
-  HE-AAC SBR/PS (AOT 5 / 29) is `Media`. rustfft IMDCT stays, with
-  pre/post twiddles owned here and tested against the naive §4.6.11 sum.
+- MP4 audio `elst.media_time` is honoured (AAC encoder delay).
+- Implicit SBR `0x2b7` probe requires `sbrPresentFlag == 1` so LC ASC
+  padding `56 e5 00` is not treated as HE.
 
 ## [0.2.0] - 2026-09-01
 
