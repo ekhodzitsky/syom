@@ -12,3 +12,4 @@ lcov.info
 *.m4a
 *.mp4
 *.pcm
+!src/goldens/*.m4a

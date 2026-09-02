@@ -7,25 +7,27 @@ use super::sf::ScaleFactors;
 use super::swb::{long_offsets, short_offsets};
 
 /// LCG suggested by §4.6.13.3 ("one multiply-accumulate per random value").
+///
+/// ISO leaves the generator non-normative. Seed and int-as-float mapping
+/// match FFmpeg libavcodec (`ac->random_state = 0x1f2e3d4c`).
 #[derive(Clone, Copy, Debug)]
 pub struct Lcg {
     state: u32,
 }
 
 impl Lcg {
-    /// Arbitrary non-zero seed; energy is normalised away.
+    /// lavc `ff_aac_decode_init` seed.
     #[must_use]
     pub fn new() -> Self {
-        Self { state: 0x5e6d_7a7e }
+        Self { state: 0x1f2e_3d4c }
     }
 
-    fn next_f64(&mut self) -> f64 {
+    fn next_i32(&mut self) -> i32 {
         self.state = self
             .state
             .wrapping_mul(1_664_525)
             .wrapping_add(1_013_904_223);
-        // Map to [-1, 1).
-        (f64::from(self.state as i32) + 0.5) / 2_147_483_648.0
+        self.state as i32
     }
 }
 
@@ -41,8 +43,8 @@ pub struct PairPns<'a> {
     pub ms_used: Option<&'a [Vec<bool>]>,
     /// The other channel's `sfb_cb`.
     pub other_cb: Option<&'a [Vec<u8>]>,
-    /// Shared random vector for a correlated band.
-    pub shared: &'a mut Option<Vec<f64>>,
+    /// Shared random vector for a correlated band (pre-normalise).
+    pub shared: &'a mut Option<Vec<f32>>,
 }
 
 /// Fill NOISE_HCB bands. When the pair is noise on both sides and `ms_used`,
@@ -78,7 +80,8 @@ pub fn apply(
                 continue;
             }
             let nrg = *sf.noise_nrg.get(g).and_then(|v| v.get(sfb)).unwrap_or(&0);
-            let target = (0.25 * f64::from(nrg)).exp2();
+            // lavc: `sf = -powf(2, sfo/4)` then `scale = sf / sqrt(energy)`.
+            let target = -(0.25 * nrg as f32).exp2();
             let correlated = pair.as_ref().is_some_and(|p| {
                 p.ms_used
                     .and_then(|ms| ms.get(g).and_then(|v| v.get(sfb)).copied())
@@ -90,7 +93,7 @@ pub fn apply(
             });
             for b in 0..glen {
                 let w = wbase + b;
-                let mut vec = if correlated {
+                let vec = if correlated {
                     if let Some(p) = pair.as_mut() {
                         if let Some(s) = p.shared.as_ref() {
                             s.clone()
@@ -105,7 +108,7 @@ pub fn apply(
                 } else {
                     rand_vec(rng, width)
                 };
-                let mut energy = 0.0f64;
+                let mut energy = 0.0f32;
                 for &x in &vec {
                     energy += x * x;
                 }
@@ -114,11 +117,8 @@ pub fn apply(
                 } else {
                     0.0
                 };
-                for x in &mut vec {
-                    *x *= scale;
-                }
                 for (i, &x) in vec.iter().enumerate() {
-                    spec[w * win_len + start + i] = x;
+                    spec[w * win_len + start + i] = f64::from(x * scale);
                 }
             }
             if !correlated && let Some(p) = pair.as_mut() {
@@ -130,6 +130,7 @@ pub fn apply(
     Ok(())
 }
 
-fn rand_vec(rng: &mut Lcg, n: usize) -> Vec<f64> {
-    (0..n).map(|_| rng.next_f64()).collect()
+fn rand_vec(rng: &mut Lcg, n: usize) -> Vec<f32> {
+    // lavc float decoder: `cfo[k] = ac->random_state` (int → float).
+    (0..n).map(|_| rng.next_i32() as f32).collect()
 }

@@ -8,6 +8,7 @@ use super::error::Error;
 use super::ics::{IcsInfo, WindowSequence};
 use super::ics_body::parse_ics;
 use super::section::SectionData;
+use super::skip::ID_SCE;
 use super::stereo::MsInfo;
 
 #[test]
@@ -157,5 +158,56 @@ fn lecture_frame1_eight_short_cpe_decodes() -> Result<(), Error> {
     assert_eq!(frame.channels, 2);
     assert_eq!(frame.planar[0].len(), 1024);
     assert_eq!(frame.planar[1].len(), 1024);
+    Ok(())
+}
+
+#[test]
+fn tns48_adts_has_nonzero_order_tns() -> Result<(), Error> {
+    // Hand-built LC SCE with order-1 TNS. Stubbing TNS must fail the
+    // lavc golden in extract_tests; this asserts the bitstream carries it.
+    let data: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../src/goldens/tns48.adts"
+    ));
+    let mut pos = 0usize;
+    let mut order_gt0 = 0usize;
+    let mut tns_some = 0usize;
+    let mut sce_ok = 0usize;
+    let mut sce_err = 0usize;
+    while pos + 7 < data.len() {
+        let (hdr, off) = AdtsHeader::parse(&data[pos..])?;
+        let fl = usize::from(hdr.aac_frame_length);
+        if pos.saturating_add(fl) > data.len() {
+            break;
+        }
+        let payload = data
+            .get(pos.saturating_add(off)..pos.saturating_add(fl))
+            .ok_or(Error::UnexpectedEnd)?;
+        let mut br = BitReader::new(payload);
+        if br.bits_remaining() >= 7 && br.read(3)? as u8 == ID_SCE {
+            let _tag = br.read(4)?;
+            match parse_ics(&mut br, hdr.sampling_frequency_index, 2, None) {
+                Ok(body) => {
+                    sce_ok += 1;
+                    if let Some(tns) = body.tns {
+                        tns_some += 1;
+                        if tns
+                            .windows
+                            .iter()
+                            .any(|w| w.filters.iter().any(|f| f.order > 0))
+                        {
+                            order_gt0 += 1;
+                        }
+                    }
+                }
+                Err(_) => sce_err += 1,
+            }
+        }
+        pos = pos.saturating_add(fl);
+    }
+    assert!(
+        order_gt0 > 0,
+        "tns48.adts has no order>0 TNS (order_gt0={order_gt0} tns_some={tns_some} sce_ok={sce_ok} sce_err={sce_err})"
+    );
     Ok(())
 }

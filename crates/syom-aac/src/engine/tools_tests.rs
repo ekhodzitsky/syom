@@ -94,8 +94,36 @@ fn pns_fills_noise_band_energy() -> Result<(), Error> {
     let mut rng = Lcg::new();
     pns::apply(&mut spec, &ics, &sections, &sf, 3, &mut rng, None)?;
     let nrg: f64 = spec.iter().map(|x| x * x).sum();
-    // target = 2^(0.25*0) = 1, width=4 → L2 = 1
-    assert!((nrg.sqrt() - 1.0).abs() < 1e-9, "PNS L2 {nrg}");
+    // |target| = 2^(0.25*0) = 1, width=4 → L2 = 1
+    assert!((nrg.sqrt() - 1.0).abs() < 1e-5, "PNS L2 {nrg}");
+    Ok(())
+}
+
+#[test]
+fn pns_noise_band_matches_lavc_lcg() -> Result<(), Error> {
+    // FFmpeg libavcodec float PNS (aacdec_proc_template.c): seed 0x1f2e3d4c,
+    // LCG 1664525/1013904223, int-as-float, scale = -2^(nrg/4) / sqrt(energy).
+    // 48 kHz long sfb 0 is 4 bins. nrg=0 → |L2|=1, first bin negative.
+    let ics = long_ics(1);
+    let mut spec = vec![0.0f64; 1024];
+    let sections = SectionData {
+        sfb_cb: vec![vec![NOISE_HCB]],
+    };
+    let sf = ScaleFactors {
+        sf: vec![vec![0]],
+        is_pos: vec![vec![0]],
+        noise_nrg: vec![vec![0]],
+    };
+    let mut rng = Lcg::new();
+    pns::apply(&mut spec, &ics, &sections, &sf, 3, &mut rng, None)?;
+    let got = [spec[0], spec[1], spec[2], spec[3]];
+    let want = [-0.443_143_16, 0.548_071_74, -0.398_949_89, 0.586_583_67];
+    for (i, (g, w)) in got.iter().zip(want.iter()).enumerate() {
+        assert!(
+            (g - w).abs() < 1e-6,
+            "PNS bin {i} {g} != lavc {w} (seed/mapping drift)"
+        );
+    }
     Ok(())
 }
 
@@ -159,8 +187,14 @@ fn kbd_window_differs_from_sine_on_nonzero_spec() -> Result<(), Error> {
     sine_ics.window_shape = WindowShape::Sine;
     let mut kbd_ics = long_ics(1);
     kbd_ics.window_shape = WindowShape::Kbd;
-    let pcm_sine = Filterbank::new().synthesize(&spec, &sine_ics)?;
-    let pcm_kbd = Filterbank::new().synthesize(&spec, &kbd_ics)?;
+    // First-frame left half is sine (no previous shape). Difference is the
+    // right half, which is overlap into frame 2.
+    let mut fb_s = Filterbank::new();
+    let _ = fb_s.synthesize(&spec, &sine_ics)?;
+    let pcm_sine = fb_s.synthesize(&spec, &sine_ics)?;
+    let mut fb_k = Filterbank::new();
+    let _ = fb_k.synthesize(&spec, &kbd_ics)?;
+    let pcm_kbd = fb_k.synthesize(&spec, &kbd_ics)?;
     let max_d = pcm_sine
         .iter()
         .zip(pcm_kbd.iter())

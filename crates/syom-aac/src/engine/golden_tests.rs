@@ -61,6 +61,39 @@ fn sce_book1(indices: &[usize], max_sfb: u8) -> Vec<u8> {
     w.finish()
 }
 
+/// Same as [`sce_book1`] with one order-1 TNS filter over `max_sfb`.
+fn sce_book1_tns(indices: &[usize], max_sfb: u8) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(u32::from(AUDIBLE_GAIN), 8);
+    w.write_bit(false);
+    w.write(0, 2);
+    w.write_bit(false);
+    w.write(u32::from(max_sfb), 6);
+    w.write_bit(false);
+    w.write(1, 4);
+    w.write(u32::from(max_sfb), 5);
+    for _ in 0..max_sfb {
+        w.write(0, 1);
+    }
+    w.write_bit(false); // pulse
+    w.write_bit(true); // tns
+    w.write(1, 2); // n_filt
+    w.write_bit(true); // coef_res 4-bit
+    w.write(u32::from(max_sfb), 6); // length from the top
+    w.write(1, 5); // order 1
+    w.write_bit(false); // direction
+    w.write_bit(false); // no compress
+    w.write(4, 4); // coef
+    w.write_bit(false); // gain
+    for &idx in indices {
+        w.write(u32::from(H1_CODE[idx]), u32::from(H1_LEN[idx]));
+    }
+    w.write(7, 3);
+    w.finish()
+}
+
 fn snr_db(signal: &[f64], other: &[f64]) -> f64 {
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
@@ -238,6 +271,27 @@ fn mint_audible_goldens() -> Result<(), Error> {
         &noise_payload,
         &naive_sine_window_long(&noise_spec),
     );
+    Ok(())
+}
+
+/// Offline: `MINT_TNS=1 cargo test -p syom-aac mint_tns_adts`.
+#[test]
+fn mint_tns_adts() -> Result<(), Error> {
+    if std::env::var("MINT_TNS").is_err() {
+        return Ok(());
+    }
+    let idxs = [
+        quad_idx(1, 0, -1, 0),
+        quad_idx(0, 1, 0, -1),
+        quad_idx(-1, 0, 1, 0),
+        quad_idx(0, -1, 0, 1),
+        quad_idx(1, -1, 1, -1),
+    ];
+    let payload = sce_book1_tns(&idxs, 5);
+    let adts = adts_wrap(&payload, 1, 3);
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../src/goldens/tns48.adts");
+    std::fs::write(&path, adts).map_err(|_| Error::UnexpectedEnd)?;
     Ok(())
 }
 
