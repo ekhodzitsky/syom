@@ -64,6 +64,7 @@ fn assert_native_matches_lavc_with(
 fn sniff_rejects_short_and_mp3ish() {
     assert!(!sniff_is_adts(&[]));
     assert!(!sniff_is_adts(&[0xFF, 0xFB, 0, 0, 0, 0]));
+    assert!(!sniff_is_adts(&[0xFF, 0xF1, 0x3C, 0, 0, 0]));
     assert!(!sniff_is_latm(&[]));
     assert!(!sniff_aac(b"hello"));
 }
@@ -161,6 +162,52 @@ fn he_sbr_upsample_is_not_media() -> Result<(), AacError> {
 }
 
 #[test]
+fn he48_first_frame_sbr_rate() -> Result<(), AacError> {
+    use crate::engine::adts::AdtsHeader;
+    use crate::engine::decode::StreamDecoder;
+    let he = include_bytes!("goldens/he48.adts");
+    let (hdr, off) = AdtsHeader::parse(he).map_err(|e| AacError::decode(format!("{e:?}")))?;
+    let fl = usize::from(hdr.aac_frame_length);
+    let payload = &he[off..fl];
+    let mut dec = StreamDecoder::new();
+    let frame = dec
+        .decode_frame(&hdr, payload)
+        .map_err(|e| AacError::decode(format!("{e:?}")))?;
+    assert_eq!(frame.sample_rate, 48_000, "decode_frame he first rate");
+    let mut dec = StreamDecoder::new();
+    let mut pcm = Vec::new();
+    let rate = dec
+        .decode_raw_mono_f32(
+            hdr.audio_object_type(),
+            hdr.sampling_frequency_index,
+            hdr.sample_rate(),
+            hdr.channel_configuration,
+            1,
+            payload,
+            &mut pcm,
+        )
+        .map_err(|e| AacError::decode(format!("{e:?}")))?;
+    assert_eq!(rate, 48_000, "mono_f32 he first rate n={}", pcm.len());
+    Ok(())
+}
+
+#[test]
+fn he48_speech_decode_len() -> Result<(), AacError> {
+    assert_native_matches_lavc(
+        include_bytes!("goldens/he48.adts"),
+        include_bytes!("goldens/he48.s16"),
+        48_000,
+        "he48-adts-speech",
+    )?;
+    assert_native_matches_lavc(
+        include_bytes!("goldens/he48.m4a"),
+        include_bytes!("goldens/he48_m4a.s16"),
+        48_000,
+        "he48-m4a-speech",
+    )
+}
+
+#[test]
 fn he48_adts_native_matches_lavc_golden() -> Result<(), AacError> {
     assert_native_matches_lavc_with(
         include_bytes!("goldens/he48.adts"),
@@ -218,6 +265,30 @@ fn split_sine48_has_one_channel() -> Result<(), AacError> {
     assert_eq!(d.channels.len(), 1);
     assert_eq!(d.sample_rate, 48_000);
     assert!(d.channels[0].iter().any(|s| s.abs() > 1e-4));
+    Ok(())
+}
+
+#[test]
+fn lecture_unbounded_is_stereo_split() -> Result<(), AacError> {
+    let m4a = include_bytes!("goldens/lecture.m4a");
+    let d = crate::decode_with(m4a, &DecodeOptions::unbounded())?;
+    assert_eq!(d.sample_rate, 48_000);
+    assert_eq!(d.channels.len(), 2);
+    assert_eq!(d.channels[0].len(), d.channels[1].len());
+    assert!(d.channels[0].iter().any(|s| s.abs() > 1e-4));
+    Ok(())
+}
+
+#[test]
+fn read_with_speech_matches_decode() -> Result<(), AacError> {
+    let bytes = include_bytes!("goldens/sine48.adts");
+    let dir = std::env::temp_dir().join(format!("syom-readw-{}.adts", std::process::id()));
+    std::fs::write(&dir, bytes)?;
+    let a = crate::read_with(&dir, &DecodeOptions::speech())?;
+    let _ = std::fs::remove_file(&dir);
+    let b = decode(bytes)?;
+    assert_eq!(a.sample_rate, b.sample_rate);
+    assert_eq!(a.channels.len(), b.channels.len());
     Ok(())
 }
 

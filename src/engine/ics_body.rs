@@ -17,7 +17,7 @@ pub struct ChannelBody {
     /// Absolute scalefactors / IS / PNS energies.
     pub sf: ScaleFactors,
     /// Inverse-quantised, scalefactor-applied spectrum (PNS bands still 0).
-    pub spec: Vec<f64>,
+    pub spec: Vec<f32>,
     /// Optional TNS payload.
     pub tns: Option<super::tns::TnsData>,
 }
@@ -26,17 +26,52 @@ pub struct ChannelBody {
 pub fn parse_ics(
     br: &mut BitReader<'_>,
     fs_index: u8,
-    _aot: u8,
+    aot: u8,
     common: Option<&IcsInfo>,
 ) -> Result<ChannelBody> {
+    let mut quant = Vec::new();
+    let mut spec = Vec::new();
+    let mut sections = SectionData::default();
+    let mut sf = ScaleFactors::default();
+    let (ics, tns) = parse_ics_into(
+        br,
+        fs_index,
+        aot,
+        common,
+        &mut quant,
+        &mut spec,
+        &mut sections,
+        &mut sf,
+    )?;
+    Ok(ChannelBody {
+        ics,
+        sections,
+        sf,
+        spec,
+        tns,
+    })
+}
+
+/// Parse into caller-owned buffers (capacity reused across frames).
+#[allow(clippy::too_many_arguments)]
+pub fn parse_ics_into(
+    br: &mut BitReader<'_>,
+    fs_index: u8,
+    _aot: u8,
+    common: Option<&IcsInfo>,
+    quant: &mut Vec<i32>,
+    spec: &mut Vec<f32>,
+    sections: &mut SectionData,
+    sf: &mut ScaleFactors,
+) -> Result<(IcsInfo, Option<super::tns::TnsData>)> {
     let global_gain = br.read(8)? as u8;
     let ics = if let Some(shared) = common {
-        shared.clone()
+        *shared
     } else {
         IcsInfo::parse(br, fs_index, false)?
     };
-    let sections = SectionData::parse(br, &ics)?;
-    let sf = sf::parse(br, &ics, &sections.sfb_cb, global_gain)?;
+    sections.parse_into(br, &ics)?;
+    sf::parse_into(br, &ics, &sections.sfb_cb, global_gain, sf)?;
     let pulse_present = br.read_bit()?;
     let pulse = if pulse_present {
         if ics.window_sequence.is_eight_short() {
@@ -56,16 +91,10 @@ pub fn parse_ics(
     if gain_present {
         return Err(Error::Format("gain_control_data is SSR, not LC"));
     }
-    let mut quant = spectrum::parse_quant(br, &ics, &sections, fs_index)?;
+    spectrum::parse_quant_into(br, &ics, sections, fs_index, quant)?;
     if let Some(p) = pulse.as_ref() {
-        spectrum::apply_pulse(&mut quant, fs_index, p)?;
+        spectrum::apply_pulse(quant, fs_index, p)?;
     }
-    let spec = spectrum::rescale(&quant, &ics, &sections, &sf, fs_index)?;
-    Ok(ChannelBody {
-        ics,
-        sections,
-        sf,
-        spec,
-        tns,
-    })
+    spectrum::rescale_into(quant, &ics, sections, sf, fs_index, spec)?;
+    Ok((ics, tns))
 }

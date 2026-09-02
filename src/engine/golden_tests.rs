@@ -94,12 +94,12 @@ fn sce_book1_tns(indices: &[usize], max_sfb: u8) -> Vec<u8> {
     w.finish()
 }
 
-fn snr_db(signal: &[f64], other: &[f64]) -> f64 {
+fn snr_db(signal: &[f64], other: &[f32]) -> f64 {
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
     for (&s, &o) in signal.iter().zip(other.iter()) {
         ps += s * s;
-        let e = s - o;
+        let e = s - f64::from(o);
         pe += e * e;
     }
     if pe == 0.0 {
@@ -108,10 +108,10 @@ fn snr_db(signal: &[f64], other: &[f64]) -> f64 {
     10.0 * (ps / pe).log10()
 }
 
-fn max_abs(a: &[f64], b: &[f64]) -> f64 {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).abs())
+fn max_abs(got: &[f32], exp: &[f64]) -> f64 {
+    got.iter()
+        .zip(exp.iter())
+        .map(|(&g, &e)| (f64::from(g) - e).abs())
         .fold(0.0, f64::max)
 }
 
@@ -148,7 +148,7 @@ fn sine_lc_matches_naive_imdct_within_1lsb() -> Result<(), Error> {
     let idx = quad_idx(0, 0, 0, 1);
     let payload = sce_book1(&[idx], 1);
     let mut spec = vec![0.0f64; FRAME];
-    spec[3] = invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
+    spec[3] = f64::from(invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN)));
     let expected = naive_sine_window_long(&spec);
 
     let mut dec = StreamDecoder::new();
@@ -161,7 +161,7 @@ fn sine_lc_matches_naive_imdct_within_1lsb() -> Result<(), Error> {
     assert!(snr >= 90.0, "sine SNR {snr} dB");
 
     let gold_s16: Vec<i16> = expected.iter().copied().map(to_s16).collect();
-    let got_s16: Vec<i16> = got.iter().copied().map(to_s16).collect();
+    let got_s16: Vec<i16> = got.iter().copied().map(|v| to_s16(f64::from(v))).collect();
     let max_lsb = gold_s16
         .iter()
         .zip(got_s16.iter())
@@ -194,7 +194,7 @@ fn noise_lc_scattered_quads_within_1lsb() -> Result<(), Error> {
     let gain = super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
     for (b, q) in quads.iter().enumerate() {
         for (i, &c) in q.iter().enumerate() {
-            spec[b * 4 + i] = invquant(c) * gain;
+            spec[b * 4 + i] = f64::from(invquant(c) * gain);
         }
     }
     let expected = naive_sine_window_long(&spec);
@@ -241,7 +241,7 @@ fn mint_audible_goldens() -> Result<(), Error> {
     let idx = quad_idx(0, 0, 0, 1);
     let sine_payload = sce_book1(&[idx], 1);
     let mut sine_spec = vec![0.0f64; FRAME];
-    sine_spec[3] = invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN));
+    sine_spec[3] = f64::from(invquant(1) * super::spectrum::sf_gain(i32::from(AUDIBLE_GAIN)));
     write_golden("sine", &sine_payload, &naive_sine_window_long(&sine_spec));
 
     let idxs = [
@@ -263,7 +263,7 @@ fn mint_audible_goldens() -> Result<(), Error> {
     let mut noise_spec = vec![0.0f64; FRAME];
     for (b, q) in quads.iter().enumerate() {
         for (i, &c) in q.iter().enumerate() {
-            noise_spec[b * 4 + i] = invquant(c) * gain;
+            noise_spec[b * 4 + i] = f64::from(invquant(c) * gain);
         }
     }
     write_golden(
@@ -300,7 +300,7 @@ fn check_golden(adts: &[u8], gold: &[u8]) -> Result<(), Error> {
     let frame = dec.decode_frame(&hdr, &adts[off..])?;
     let got: Vec<u8> = frame.planar[0]
         .iter()
-        .flat_map(|&v| to_s16(v).to_le_bytes())
+        .flat_map(|&v| to_s16(f64::from(v)).to_le_bytes())
         .collect();
     assert_eq!(got.len(), gold.len());
     let peak = gold
@@ -344,7 +344,10 @@ fn adts_sine_roundtrip_via_header() -> Result<(), Error> {
     let frame = dec.decode_frame(&hdr, &adts[off..])?;
     assert_eq!(frame.sample_rate, 48_000);
     assert_eq!(frame.channels, 1);
-    let energy: f64 = frame.planar[0].iter().map(|x| x * x).sum();
+    let energy: f64 = frame.planar[0]
+        .iter()
+        .map(|x| f64::from(*x) * f64::from(*x))
+        .sum();
     assert!(energy > 0.0, "ADTS sine was silent");
     Ok(())
 }

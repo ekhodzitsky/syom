@@ -6,6 +6,7 @@ mod engine;
 mod error;
 mod isomp4;
 mod options;
+mod out;
 mod sniff;
 
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};

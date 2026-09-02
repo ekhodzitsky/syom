@@ -216,3 +216,66 @@ fn tns48_adts_has_nonzero_order_tns() -> Result<(), Error> {
     );
     Ok(())
 }
+
+#[test]
+fn parse_ics_rejects_gain_control() -> Result<(), Error> {
+    let mut w = BitWriter::new();
+    w.write(100, 8);
+    w.write_bit(false);
+    w.write(0, 2);
+    w.write_bit(false);
+    w.write(1, 6);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(1, 5);
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write_bit(true);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    assert!(parse_ics(&mut br, 3, 2, None).is_err());
+    Ok(())
+}
+
+#[test]
+fn parse_ics_pulse_on_long_window() -> Result<(), Error> {
+    let mut w = BitWriter::new();
+    w.write(100, 8);
+    w.write_bit(false);
+    w.write(0, 2);
+    w.write_bit(false);
+    w.write(1, 6);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(1, 5);
+    w.write_bit(true);
+    w.write(0, 2);
+    w.write(0, 6);
+    w.write(0, 5);
+    w.write(1, 4);
+    w.write_bit(false);
+    w.write_bit(false);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    let body = parse_ics(&mut br, 3, 2, None)?;
+    assert_eq!(body.spec.len(), 1024);
+    Ok(())
+}
+
+#[test]
+fn parse_ics_rejects_pulse_on_eight_short() -> Result<(), Error> {
+    let mut w = BitWriter::new();
+    w.write(100, 8);
+    w.write_bit(false);
+    w.write(2, 2);
+    w.write_bit(false);
+    w.write(1, 4);
+    w.write(0, 7);
+    w.write(0, 4);
+    w.write(1, 3);
+    w.write_bit(true);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    assert!(parse_ics(&mut br, 3, 2, None).is_err());
+    Ok(())
+}

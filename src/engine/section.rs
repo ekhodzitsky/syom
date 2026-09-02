@@ -16,15 +16,33 @@ pub const INTENSITY_HCB2: u8 = 14;
 pub const INTENSITY_HCB: u8 = 15;
 
 /// Per-group codebook map `sfb_cb[g][sfb]`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SectionData {
     /// `sfb_cb[group][sfb]` for `sfb in 0..max_sfb`.
     pub sfb_cb: Vec<Vec<u8>>,
 }
 
+fn fit_u8(rows: &mut Vec<Vec<u8>>, groups: usize, n: usize) {
+    if rows.len() < groups {
+        rows.resize(groups, Vec::new());
+    }
+    rows.truncate(groups);
+    for row in rows.iter_mut() {
+        row.clear();
+        row.resize(n, 0);
+    }
+}
+
 impl SectionData {
     /// Parse Table 17 run-length codebook assignment.
     pub fn parse(br: &mut BitReader<'_>, ics: &IcsInfo) -> Result<Self> {
+        let mut out = Self::default();
+        out.parse_into(br, ics)?;
+        Ok(out)
+    }
+
+    /// Fill `self`, reusing inner row capacity.
+    pub fn parse_into(&mut self, br: &mut BitReader<'_>, ics: &IcsInfo) -> Result<()> {
         let esc = if ics.window_sequence.is_eight_short() {
             7u32
         } else {
@@ -35,9 +53,11 @@ impl SectionData {
         } else {
             5
         };
-        let mut sfb_cb = Vec::with_capacity(ics.num_window_groups as usize);
-        for _ in 0..ics.num_window_groups {
-            let mut cb = vec![0u8; ics.max_sfb as usize];
+        let groups = ics.num_window_groups as usize;
+        let max_sfb = ics.max_sfb as usize;
+        fit_u8(&mut self.sfb_cb, groups, max_sfb);
+        for g in 0..groups {
+            let cb = &mut self.sfb_cb[g];
             let mut k = 0u32;
             while k < u32::from(ics.max_sfb) {
                 let sect_cb = br.read(4)? as u8;
@@ -60,9 +80,8 @@ impl SectionData {
                 }
                 k += sect_len;
             }
-            sfb_cb.push(cb);
         }
-        Ok(SectionData { sfb_cb })
+        Ok(())
     }
 }
 

@@ -31,6 +31,10 @@ symphonia = { version = "0.5", default-features = false, features = ["aac", "iso
 name = "aac"
 harness = false
 
+[[bench]]
+name = "mem"
+harness = false
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Product is a zero-dep AAC library (`cargo add syom`). Output is planar
   `f32` at native rate. Caps: `DecodeOptions::speech()` / `unbounded()`.
+- LC decode is f32 from spectrum through IMDCT/OLA. ICS/spectrum
+  buffers are reused across frames. On the committed LC fixtures,
+  in-process wall time is ≤ Symphonia and ≪ rusty_aac; allocs and
+  peak RSS are ≤ both linked decode peers (`BENCH.md`).
 
 ### Added
 
@@ -25,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MP4 audio `elst.media_time` is honoured (AAC encoder delay).
 - Implicit SBR `0x2b7` probe requires `sbrPresentFlag == 1` so LC ASC
   padding `56 e5 00` is not treated as HE.
+- `speech()` / `decode()` apply SBR on HE-AAC. The mono fast path no
+  longer returns core-rate silence.
 
 
 

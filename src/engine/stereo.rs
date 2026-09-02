@@ -68,8 +68,8 @@ impl MsInfo {
 
 /// Inverse M/S: `l' = m+s`, `r' = m-s`, skipping IS and PNS bands.
 pub fn apply_ms(
-    left: &mut [f64],
-    right: &mut [f64],
+    left: &mut [f32],
+    right: &mut [f32],
     ics: &IcsInfo,
     left_sec: &SectionData,
     right_sec: &SectionData,
@@ -125,8 +125,8 @@ pub fn apply_ms(
 
 /// Derive the right channel from the left on intensity-coded bands.
 pub fn apply_intensity(
-    left: &[f64],
-    right: &mut [f64],
+    left: &[f32],
+    right: &mut [f32],
     ics: &IcsInfo,
     right_sec: &SectionData,
     sf: &ScaleFactors,
@@ -159,7 +159,7 @@ pub fn apply_intensity(
                 1.0
             };
             let pos = *sf.is_pos.get(g).and_then(|v| v.get(sfb)).unwrap_or(&0);
-            let scale = sign * invert * (0.5f64).powf(0.25 * f64::from(pos));
+            let scale = (sign * invert * (0.5f64).powf(0.25 * f64::from(pos))) as f32;
             let start = *offsets.get(sfb).ok_or(Error::SpectrumInvalid)? as usize;
             let end = *offsets.get(sfb + 1).ok_or(Error::SpectrumInvalid)? as usize;
             for b in 0..glen {
