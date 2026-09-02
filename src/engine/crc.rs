@@ -302,7 +302,7 @@ mod tests {
         let full_gen = poly.generator() | (1u64 << k); // include xᵏ
         // Build the dividend M(x)·xᵏ as a big sequence of bits.
         let mut dividend: Vec<bool> = message_bits.to_vec();
-        dividend.extend(std::iter::repeat(false).take(k as usize));
+        dividend.extend(std::iter::repeat_n(false, k as usize));
 
         // Long division over GF(2), MSB-first, tracking a window of the
         // most recent (k+1) bits implicitly via a running register.

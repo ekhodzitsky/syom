@@ -151,7 +151,7 @@ fn skip_mux_tail(br: &mut BitReader<'_>) -> Result<()> {
                 }
             }
         } else {
-            let n = br.read(8)? as u32 + 1;
+            let n = br.read(8)? + 1;
             br.skip(n)?;
         }
     }
@@ -172,7 +172,7 @@ fn latm_value(br: &mut BitReader<'_>) -> Result<u32> {
 
 fn read_payload(br: &mut BitReader<'_>, cfg: &MuxCfg) -> Result<Vec<u8>> {
     let nbytes = if cfg.frame_length_type == 1 {
-        ((cfg.frame_length + 7) / 8) as usize
+        cfg.frame_length.div_ceil(8) as usize
     } else {
         let mut n = 0u32;
         loop {

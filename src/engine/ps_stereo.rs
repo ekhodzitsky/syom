@@ -270,7 +270,7 @@ impl PsStereo {
         if ps.enable_ipdopd {
             // Zero-extended, band-count-mapped phase indices.
             let nr = ps.config.nr_ipdopd_par();
-            let native = if ps.config.iid_mode % 3 == 0 {
+            let native = if ps.config.iid_mode.is_multiple_of(3) {
                 10
             } else if ps.config.iid_mode % 3 == 1 {
                 20

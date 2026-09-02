@@ -79,14 +79,13 @@ impl AudioSpecificConfig {
         };
         // Implicit SBR: syncExtensionType 0x2b7, AOT 5/29, sbrPresentFlag=1.
         // LC padding `56 e5 00` peeks as 0x2b7 + AOT 5 with flag 0 — ignore it.
-        if !sbr_present && reader.bits_remaining() >= 17 {
-            if reader.peek_u32(11).ok() == Some(0x2b7) {
-                let _ = reader.read(11)?;
-                let ext = read_aot(reader)?;
-                if (ext == AOT_SBR || ext == AOT_PS) && reader.read_bit()? {
-                    sbr_present = true;
-                    ps_present = ps_present || ext == AOT_PS;
-                }
+        if !sbr_present && reader.bits_remaining() >= 17 && reader.peek_u32(11).ok() == Some(0x2b7)
+        {
+            let _ = reader.read(11)?;
+            let ext = read_aot(reader)?;
+            if (ext == AOT_SBR || ext == AOT_PS) && reader.read_bit()? {
+                sbr_present = true;
+                ps_present = ps_present || ext == AOT_PS;
             }
         }
         let output_sample_rate = if sbr_present {

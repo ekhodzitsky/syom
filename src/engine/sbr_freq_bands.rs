@@ -461,7 +461,7 @@ impl HiLoTables {
 
         // fTableLow(k) = fTableHigh(i(k)):
         //   i(0) = 0; i(k) = 2*k - ((1 - (-1)^NHigh)/2)  for k != 0.
-        let parity = (1 - if n_high % 2 == 0 { 1 } else { -1 }) / 2; // 0 if NHigh even, 1 if odd
+        let parity = (1 - if n_high.is_multiple_of(2) { 1 } else { -1 }) / 2; // 0 if NHigh even, 1 if odd
         let mut f_table_low = Vec::with_capacity(n_low + 1);
         for k in 0..=n_low {
             let i_k = if k == 0 {
