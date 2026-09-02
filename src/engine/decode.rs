@@ -5,9 +5,8 @@ use super::bits::BitReader;
 use super::error::{Error, Result};
 use super::extension_payload::ExtensionPayload;
 use super::filterbank::Filterbank;
-use super::ics::IcsInfo;
 use super::ics_body::parse_ics_into;
-use super::pns::{self, Lcg};
+use super::pns::Lcg;
 use super::raw_data_block::IdSynEle;
 use super::sbr_decoder::SbrDecoder;
 use super::sbr_extension::SbrExtensionData;
@@ -15,8 +14,6 @@ use super::sbr_header::SbrHeader;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
 use super::skip::*;
-use super::stereo::{self, MsInfo};
-use super::tns;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DecodedFrame {
@@ -27,24 +24,24 @@ pub struct DecodedFrame {
 
 #[derive(Debug, Default)]
 pub struct StreamDecoder {
-    fb_l: Filterbank,
-    fb_r: Filterbank,
-    rng: Lcg,
+    pub(crate) fb_l: Filterbank,
+    pub(crate) fb_r: Filterbank,
+    pub(crate) rng: Lcg,
     pub mix_down_mono: bool,
     sbr: Option<SbrDecoder>,
     sbr_hdr: Option<SbrHeader>,
     sbr_active: bool,
-    pcm_l: Vec<f32>,
-    pcm_r: Vec<f32>,
+    pub(crate) pcm_l: Vec<f32>,
+    pub(crate) pcm_r: Vec<f32>,
     frame_ch: Vec<Vec<f32>>,
     n_ch: usize,
-    quant: Vec<i32>,
-    spec_l: Vec<f32>,
-    spec_r: Vec<f32>,
-    sections_l: SectionData,
-    sections_r: SectionData,
-    sf_l: ScaleFactors,
-    sf_r: ScaleFactors,
+    pub(crate) quant: Vec<i32>,
+    pub(crate) spec_l: Vec<f32>,
+    pub(crate) spec_r: Vec<f32>,
+    pub(crate) sections_l: SectionData,
+    pub(crate) sections_r: SectionData,
+    pub(crate) sf_l: ScaleFactors,
+    pub(crate) sf_r: ScaleFactors,
     fast_mono: bool,
 }
 
@@ -261,138 +258,5 @@ impl StreamDecoder {
             super::sbr_decoder::planes_f32(out, self.mix_down_mono),
             fs_sbr,
         ))
-    }
-
-    fn finish_sce(
-        &mut self,
-        id: u8,
-        tag: u8,
-        ics: IcsInfo,
-        tns: Option<&tns::TnsData>,
-        fs_index: u8,
-    ) -> Result<()> {
-        pns::apply(
-            &mut self.spec_l,
-            &ics,
-            &self.sections_l,
-            &self.sf_l,
-            fs_index,
-            &mut self.rng,
-            None,
-        )?;
-        if let Some(t) = tns {
-            tns::apply(&mut self.spec_l, t, &ics, fs_index)?;
-        }
-        if id == ID_CPE && tag & 0x10 != 0 {
-            self.fb_r
-                .synthesize_into(&self.spec_l, &ics, &mut self.pcm_r)
-        } else {
-            self.fb_l
-                .synthesize_into(&self.spec_l, &ics, &mut self.pcm_l)
-        }
-    }
-
-    fn decode_cpe(
-        &mut self,
-        br: &mut BitReader<'_>,
-        fs_index: u8,
-        aot: u8,
-        _tag: u8,
-    ) -> Result<()> {
-        let common_window = br.read_bit()?;
-        let (ics_common, ms) = if common_window {
-            let ics = super::ics::IcsInfo::parse(br, fs_index, true)?;
-            let ms = MsInfo::parse(br, &ics)?;
-            (Some(ics), Some(ms))
-        } else {
-            (None, None)
-        };
-        let (ics_l, tns_l) = parse_ics_into(
-            br,
-            fs_index,
-            aot,
-            ics_common.as_ref(),
-            &mut self.quant,
-            &mut self.spec_l,
-            &mut self.sections_l,
-            &mut self.sf_l,
-        )?;
-        let (ics_r, tns_r) = parse_ics_into(
-            br,
-            fs_index,
-            aot,
-            ics_common.as_ref(),
-            &mut self.quant,
-            &mut self.spec_r,
-            &mut self.sections_r,
-            &mut self.sf_r,
-        )?;
-        if let Some(ms) = ms.as_ref() {
-            stereo::apply_ms(
-                &mut self.spec_l,
-                &mut self.spec_r,
-                &ics_l,
-                &self.sections_l,
-                &self.sections_r,
-                ms,
-                fs_index,
-            )?;
-        }
-        let ms_used = ms.as_ref().map(|m| m.used.clone());
-        let mut shared = None;
-        {
-            let mut pair = pns::PairPns {
-                ms_used: ms_used.as_deref(),
-                other_cb: Some(&self.sections_r.sfb_cb),
-                shared: &mut shared,
-            };
-            pns::apply(
-                &mut self.spec_l,
-                &ics_l,
-                &self.sections_l,
-                &self.sf_l,
-                fs_index,
-                &mut self.rng,
-                Some(&mut pair),
-            )?;
-        }
-        {
-            let mut pair = pns::PairPns {
-                ms_used: ms_used.as_deref(),
-                other_cb: Some(&self.sections_l.sfb_cb),
-                shared: &mut shared,
-            };
-            pns::apply(
-                &mut self.spec_r,
-                &ics_r,
-                &self.sections_r,
-                &self.sf_r,
-                fs_index,
-                &mut self.rng,
-                Some(&mut pair),
-            )?;
-        }
-        if let Some(ms) = ms.as_ref() {
-            stereo::apply_intensity(
-                &self.spec_l,
-                &mut self.spec_r,
-                &ics_r,
-                &self.sections_r,
-                &self.sf_r,
-                ms,
-                fs_index,
-            )?;
-        }
-        if let Some(t) = tns_l.as_ref() {
-            tns::apply(&mut self.spec_l, t, &ics_l, fs_index)?;
-        }
-        if let Some(t) = tns_r.as_ref() {
-            tns::apply(&mut self.spec_r, t, &ics_r, fs_index)?;
-        }
-        self.fb_l
-            .synthesize_into(&self.spec_l, &ics_l, &mut self.pcm_l)?;
-        self.fb_r
-            .synthesize_into(&self.spec_r, &ics_r, &mut self.pcm_r)?;
-        Ok(())
     }
 }

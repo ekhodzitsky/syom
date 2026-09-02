@@ -17,6 +17,7 @@ pub mod asc;
 pub mod bits;
 pub mod crc;
 pub mod decode;
+mod decode_cpe;
 pub(crate) mod error;
 pub mod extension_payload;
 pub mod filterbank;
