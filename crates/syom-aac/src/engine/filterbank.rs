@@ -82,7 +82,7 @@ impl Default for Filterbank {
 }
 
 impl Filterbank {
-    /// Zero overlap, no previous shape (first frame uses its own shape on both halves).
+    /// Zero overlap, previous shape sine (lavc `use_kb_window[1]` starts at 0).
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -121,7 +121,7 @@ impl Filterbank {
     }
 
     fn windowed(&mut self, spec: &[f64], ics: &IcsInfo) -> Result<Vec<f64>> {
-        let left = self.prev_shape.unwrap_or(ics.window_shape);
+        let left = self.prev_shape.unwrap_or(WindowShape::Sine);
         let right = ics.window_shape;
         match ics.window_sequence {
             WindowSequence::OnlyLong | WindowSequence::LongStart | WindowSequence::LongStop => {

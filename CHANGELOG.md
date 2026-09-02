@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lecture fixture native-rate PCM is checked against a committed lavc
   golden (ffmpeg 8.1.1 native AAC, 48 kHz mono s16, minted once offline).
   Max abs ≤ 1 LSB, SNR ≥ 70 dB. Runtime does not spawn ffmpeg.
+- 44.1 kHz mono M4A (elst 1024) and 48 kHz mono ADTS LC sine fixtures vs
+  lavc native goldens, same 1 LSB / 70 dB bar. A hand-built 48 kHz ADTS
+  with order-1 TNS is checked the same way. PNS uses lavc's LCG seed
+  (`0x1f2e3d4c`). Runtime does not spawn ffmpeg.
 
 ### Fixed
 

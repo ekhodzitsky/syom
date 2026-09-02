@@ -34,18 +34,25 @@ fn test_bytes_to_pcm16_decodes_aac_mp4_fixture() -> Result<(), SyomError> {
     Ok(())
 }
 
-#[test]
-fn test_aac_mp4_native_matches_lavc_golden() -> Result<(), SyomError> {
-    // Minted once offline with ffmpeg 8.1.1 native AAC:
-    // `-vn -ac 1 -ar 48000 -f s16le`. Runtime does not shell to ffmpeg.
-    let gold = include_bytes!("goldens/aac_mp4_48k_mono.s16");
-    let decoded = syom_aac::decode(AAC_MP4).map_err(SyomError::from)?;
-    assert_eq!(decoded.sample_rate, 48_000);
+fn assert_native_matches_lavc(
+    input: &[u8],
+    gold: &[u8],
+    rate: u32,
+    label: &str,
+) -> Result<(), SyomError> {
+    let decoded = syom_aac::decode(input).map_err(SyomError::from)?;
+    assert_eq!(decoded.sample_rate, rate, "{label} sample rate");
     let ch = decoded
         .channels
         .first()
         .ok_or_else(|| crate::error::media("aac empty"))?;
-    assert_eq!(ch.len().saturating_mul(2), gold.len());
+    assert_eq!(
+        ch.len().saturating_mul(2),
+        gold.len(),
+        "{label} native length {} vs golden {}",
+        ch.len().saturating_mul(2),
+        gold.len()
+    );
     let mut max_lsb = 0u32;
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
@@ -61,15 +68,68 @@ fn test_aac_mp4_native_matches_lavc_golden() -> Result<(), SyomError> {
         let e = gs - f64::from(ov);
         pe += e * e;
     }
-    assert!(peak >= 1000, "lavc golden peak {peak} is inaudible");
-    assert!(max_lsb <= 1, "lecture native max lsb {max_lsb}");
+    assert!(peak >= 1000, "{label} lavc golden peak {peak} is inaudible");
+    assert!(max_lsb <= 1, "{label} native max lsb {max_lsb}");
     let snr = if pe == 0.0 {
         200.0
     } else {
         10.0 * (ps / pe).log10()
     };
-    assert!(snr >= 70.0, "lecture native SNR {snr} dB");
+    assert!(snr >= 70.0, "{label} native SNR {snr} dB");
     Ok(())
+}
+
+#[test]
+fn test_aac_mp4_native_matches_lavc_golden() -> Result<(), SyomError> {
+    // Minted once offline with ffmpeg 8.1.1 native AAC:
+    // `-vn -ac 1 -ar 48000 -f s16le`. Runtime does not shell to ffmpeg.
+    assert_native_matches_lavc(
+        AAC_MP4,
+        include_bytes!("goldens/aac_mp4_48k_mono.s16"),
+        48_000,
+        "AAC_MP4",
+    )
+}
+
+#[test]
+fn test_sine441_m4a_native_matches_lavc_golden() -> Result<(), SyomError> {
+    let m4a = include_bytes!("goldens/sine441.m4a");
+    let track = syom_aac::parse_aac_track(m4a).map_err(SyomError::from)?;
+    assert_eq!(track.skip_samples(44_100), 1024);
+    let pcm = bytes_to_pcm16(m4a)?;
+    assert!(pcm_energy(&pcm) > 1_000, "sine441 product was silent");
+    assert_native_matches_lavc(
+        m4a,
+        include_bytes!("goldens/sine441_44k.s16"),
+        44_100,
+        "sine441",
+    )
+}
+
+#[test]
+fn test_sine48_adts_native_matches_lavc_golden() -> Result<(), SyomError> {
+    let adts = include_bytes!("goldens/sine48.adts");
+    let pcm = bytes_to_pcm16(adts)?;
+    assert!(pcm_energy(&pcm) > 1_000, "sine48 product was silent");
+    assert_native_matches_lavc(
+        adts,
+        include_bytes!("goldens/sine48_48k.s16"),
+        48_000,
+        "sine48",
+    )
+}
+
+#[test]
+fn test_tns48_adts_native_matches_lavc_golden() -> Result<(), SyomError> {
+    let adts = include_bytes!("goldens/tns48.adts");
+    let pcm = bytes_to_pcm16(adts)?;
+    assert!(pcm_energy(&pcm) > 1_000, "tns48 product was silent");
+    assert_native_matches_lavc(
+        adts,
+        include_bytes!("goldens/tns48_48k.s16"),
+        48_000,
+        "tns48",
+    )
 }
 
 #[test]
