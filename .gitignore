@@ -1,0 +1,15 @@
+/target
+**/*.rs.bk
+.DS_Store
+.idea/
+.vscode/
+*.swp
+coverage/
+lcov.info
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.mp4
+*.pcm
+!src/goldens/*.m4a

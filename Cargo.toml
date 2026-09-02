@@ -1,0 +1,40 @@
+[package]
+name = "syom"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+authors = ["Evgeny Khodzitsky"]
+description = "just aac. Pure-Rust AAC-LC / HE-AAC decoder (ADTS, M4A, LATM)."
+readme = "README.md"
+repository = "https://github.com/ekhodzitsky/syom"
+homepage = "https://github.com/ekhodzitsky/syom"
+documentation = "https://docs.rs/syom"
+keywords = ["aac", "adts", "m4a", "he-aac", "decoder"]
+categories = ["multimedia::audio"]
+publish = false
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+
+[dependencies]
+# Intentionally empty — pure std.
+
+[dev-dependencies]
+criterion = "0.8"
+oxideav-aac = "0.1.7"
+rusty_aac = "0.5.0"
+symphonia = { version = "0.5", default-features = false, features = ["aac", "isomp4"] }
+
+[[bench]]
+name = "aac"
+harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
