@@ -2,17 +2,25 @@
 
 use super::error::{Error, Result};
 use super::ics::{IcsInfo, WindowSequence, WindowShape};
-use super::imdct::imdct_into;
+use super::imdct::imdct_into_f32;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 use std::sync::LazyLock;
 
 const N_L: usize = 2048;
 const N_S: usize = 256;
 
-static SINE_LONG: LazyLock<Vec<f64>> = LazyLock::new(|| sine_left(1024));
-static SINE_SHORT: LazyLock<Vec<f64>> = LazyLock::new(|| sine_left(128));
-static KBD_LONG: LazyLock<Vec<f64>> = LazyLock::new(|| kbd_left(1024, 4.0));
-static KBD_SHORT: LazyLock<Vec<f64>> = LazyLock::new(|| kbd_left(128, 6.0));
+fn to_array<const N: usize>(v: Vec<f64>) -> [f32; N] {
+    let mut a = [0.0f32; N];
+    for (d, s) in a.iter_mut().zip(v) {
+        *d = s as f32;
+    }
+    a
+}
+
+static SINE_LONG: LazyLock<[f32; 1024]> = LazyLock::new(|| to_array(sine_left(1024)));
+static SINE_SHORT: LazyLock<[f32; 128]> = LazyLock::new(|| to_array(sine_left(128)));
+static KBD_LONG: LazyLock<[f32; 1024]> = LazyLock::new(|| to_array(kbd_left(1024, 4.0)));
+static KBD_SHORT: LazyLock<[f32; 128]> = LazyLock::new(|| to_array(kbd_left(128, 6.0)));
 
 fn bessel_i0(x: f64) -> f64 {
     let half_x = x / 2.0;
@@ -57,7 +65,7 @@ fn sine_left(half: usize) -> Vec<f64> {
         .collect()
 }
 
-fn half(n: usize, shape: WindowShape) -> &'static [f64] {
+fn half(n: usize, shape: WindowShape) -> &'static [f32] {
     match (n, shape) {
         (N_L, WindowShape::Sine) => SINE_LONG.as_slice(),
         (N_L, WindowShape::Kbd) => KBD_LONG.as_slice(),
@@ -70,9 +78,9 @@ fn half(n: usize, shape: WindowShape) -> &'static [f64] {
 /// Per-channel overlap-add state.
 #[derive(Clone, Debug)]
 pub struct Filterbank {
-    overlap: Vec<f64>,
+    overlap: [f32; LONG_WINDOW_LEN],
     prev_shape: Option<WindowShape>,
-    scratch: Vec<f64>,
+    scratch: [f32; N_L],
 }
 
 impl Default for Filterbank {
@@ -86,14 +94,14 @@ impl Filterbank {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            overlap: vec![0.0; LONG_WINDOW_LEN],
+            overlap: [0.0; LONG_WINDOW_LEN],
             prev_shape: None,
-            scratch: vec![0.0; N_L],
+            scratch: [0.0; N_L],
         }
     }
 
     /// Synthesize 1024 PCM samples from a 1024-bin window-major spectrum.
-    pub fn synthesize(&mut self, spec: &[f64], ics: &IcsInfo) -> Result<Vec<f64>> {
+    pub fn synthesize(&mut self, spec: &[f32], ics: &IcsInfo) -> Result<Vec<f32>> {
         let mut out = Vec::new();
         self.synthesize_into(spec, ics, &mut out)?;
         Ok(out)
@@ -102,23 +110,27 @@ impl Filterbank {
     /// Write one frame into `dst`.
     pub fn synthesize_into(
         &mut self,
-        spec: &[f64],
+        spec: &[f32],
         ics: &IcsInfo,
-        dst: &mut Vec<f64>,
+        dst: &mut Vec<f32>,
     ) -> Result<()> {
         self.windowed(spec, ics)?;
         let half_n = LONG_WINDOW_LEN;
-        dst.clear();
-        dst.reserve(half_n);
-        for i in 0..half_n {
-            dst.push(self.scratch[i] + self.overlap[i]);
-            self.overlap[i] = self.scratch[half_n + i];
+        dst.resize(half_n, 0.0);
+        let (left, right) = self.scratch.split_at(half_n);
+        for ((d, o), (&s, &next)) in dst
+            .iter_mut()
+            .zip(self.overlap.iter_mut())
+            .zip(left.iter().zip(right.iter()))
+        {
+            *d = s + *o;
+            *o = next;
         }
         self.prev_shape = Some(ics.window_shape);
         Ok(())
     }
 
-    fn windowed(&mut self, spec: &[f64], ics: &IcsInfo) -> Result<()> {
+    fn windowed(&mut self, spec: &[f32], ics: &IcsInfo) -> Result<()> {
         let left = self.prev_shape.unwrap_or(WindowShape::Sine);
         let right = ics.window_shape;
         match ics.window_sequence {
@@ -131,7 +143,7 @@ impl Filterbank {
 
     fn long_windowed(
         &mut self,
-        spec: &[f64],
+        spec: &[f32],
         left: WindowShape,
         right: WindowShape,
         seq: WindowSequence,
@@ -139,33 +151,27 @@ impl Filterbank {
         if spec.len() != LONG_WINDOW_LEN {
             return Err(Error::FilterbankInvalid);
         }
-        if self.scratch.len() != N_L {
-            self.scratch.resize(N_L, 0.0);
-        }
-        imdct_into(spec, &mut self.scratch);
+        imdct_into_f32(spec, &mut self.scratch);
         apply_long_window(&mut self.scratch, left, right, seq);
         Ok(())
     }
 
     fn short_windowed(
         &mut self,
-        spec: &[f64],
+        spec: &[f32],
         left: WindowShape,
         right: WindowShape,
     ) -> Result<()> {
         if spec.len() != 8 * SHORT_WINDOW_LEN {
             return Err(Error::FilterbankInvalid);
         }
-        if self.scratch.len() != N_L {
-            self.scratch.resize(N_L, 0.0);
-        }
         self.scratch.fill(0.0);
         let start = (N_L - N_S) / 4;
         let hop = N_S / 2;
-        let mut x = [0.0f64; N_S];
+        let mut x = [0.0f32; N_S];
         for j in 0..8 {
             let coeffs = &spec[j * SHORT_WINDOW_LEN..(j + 1) * SHORT_WINDOW_LEN];
-            imdct_into(coeffs, &mut x);
+            imdct_into_f32(coeffs, &mut x);
             let this_left = if j == 0 { left } else { right };
             let lh = half(N_S, this_left);
             let rh = half(N_S, right);
@@ -181,7 +187,7 @@ impl Filterbank {
     }
 }
 
-fn apply_long_window(z: &mut [f64], left: WindowShape, right: WindowShape, seq: WindowSequence) {
+fn apply_long_window(z: &mut [f32], left: WindowShape, right: WindowShape, seq: WindowSequence) {
     let half_l = N_L / 2;
     let lh = half(N_L, left);
     let rh = half(N_L, right);

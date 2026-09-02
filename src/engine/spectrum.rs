@@ -12,23 +12,31 @@ use std::sync::LazyLock;
 /// `SF_OFFSET` in §4.6.2.3.3 — scalefactor 100 is unit gain.
 pub const SF_OFFSET: i32 = 100;
 
-static POW43: LazyLock<[f64; 8192]> = LazyLock::new(|| {
-    let mut t = [0.0f64; 8192];
+static POW43: LazyLock<[f32; 8192]> = LazyLock::new(|| {
+    let mut t = [0.0f32; 8192];
     for (i, slot) in t.iter_mut().enumerate() {
-        let a = i as f64;
+        let a = i as f32;
         *slot = a * a.cbrt();
+    }
+    t
+});
+
+static SF_GAIN: LazyLock<[f32; 256]> = LazyLock::new(|| {
+    let mut t = [0.0f32; 256];
+    for (i, slot) in t.iter_mut().enumerate() {
+        *slot = (0.25 * (i as f32 - SF_OFFSET as f32)).exp2();
     }
     t
 });
 
 /// Inverse-quantise one coefficient (§4.6.1.3).
 #[must_use]
-pub fn invquant(q: i32) -> f64 {
+pub fn invquant(q: i32) -> f32 {
     let a = q.unsigned_abs() as usize;
     let mag = if a < POW43.len() {
         POW43[a]
     } else {
-        let x = q.abs() as f64;
+        let x = q.abs() as f32;
         x * x.cbrt()
     };
     if q < 0 { -mag } else { mag }
@@ -36,8 +44,12 @@ pub fn invquant(q: i32) -> f64 {
 
 /// `2^(0.25 * (sf - 100))`.
 #[must_use]
-pub fn sf_gain(sf: i32) -> f64 {
-    (0.25 * f64::from(sf - SF_OFFSET)).exp2()
+pub fn sf_gain(sf: i32) -> f32 {
+    if (0..256).contains(&sf) {
+        SF_GAIN[sf as usize]
+    } else {
+        (0.25 * (sf - SF_OFFSET) as f32).exp2()
+    }
 }
 
 /// Pulse record after Table 4.7.
@@ -64,16 +76,22 @@ impl PulseData {
     }
 }
 
-/// Huffman `spectral_data()` into a 1024-bin window-major quantised spectrum.
-pub fn parse_quant(
+/// Fill `quant` (cleared / resized, capacity reused).
+pub fn parse_quant_into(
     br: &mut BitReader<'_>,
     ics: &IcsInfo,
     sections: &SectionData,
     fs_index: u8,
-) -> Result<Vec<i32>> {
+    quant: &mut Vec<i32>,
+) -> Result<()> {
     let win_len = ics.window_len();
     let nwin = ics.num_windows as usize;
-    let mut quant = vec![0i32; nwin * win_len];
+    let n = nwin * win_len;
+    if quant.len() != n {
+        quant.resize(n, 0);
+    } else {
+        quant.fill(0);
+    }
     let offsets = if ics.window_sequence.is_eight_short() {
         short_offsets(fs_index)?
     } else {
@@ -96,25 +114,44 @@ pub fn parse_quant(
             }
             let width = end - start;
             let bins = width * glen;
-            let mut filled = 0usize;
-            while filled < bins {
-                let n = huff::decode_tuple(br, cb, &mut tuple)?;
-                for &sample in tuple.iter().take(n) {
-                    if filled >= bins {
+            if glen == 1 {
+                let base = wbase * win_len + start;
+                if base + width > quant.len() {
+                    return Err(Error::SpectrumInvalid);
+                }
+                let mut filled = 0usize;
+                while filled < width {
+                    let n = huff::decode_tuple(br, cb, &mut tuple)?;
+                    let take = n.min(width - filled);
+                    quant[base + filled..base + filled + take].copy_from_slice(&tuple[..take]);
+                    filled += take;
+                    if take < n {
                         break;
                     }
-                    let b = filled / width;
-                    let i = filled % width;
-                    let w = wbase + b;
-                    let idx = w * win_len + start + i;
-                    *quant.get_mut(idx).ok_or(Error::SpectrumInvalid)? = sample;
-                    filled += 1;
+                }
+            } else {
+                let mut filled = 0usize;
+                while filled < bins {
+                    let n = huff::decode_tuple(br, cb, &mut tuple)?;
+                    for &sample in tuple.iter().take(n) {
+                        if filled >= bins {
+                            break;
+                        }
+                        let b = filled / width;
+                        let i = filled % width;
+                        let idx = (wbase + b) * win_len + start + i;
+                        if idx >= quant.len() {
+                            return Err(Error::SpectrumInvalid);
+                        }
+                        quant[idx] = sample;
+                        filled += 1;
+                    }
                 }
             }
         }
         wbase += glen;
     }
-    Ok(quant)
+    Ok(())
 }
 
 /// §4.6.13 pulse reconstruction on a long-window quantised spectrum.
@@ -140,17 +177,22 @@ pub fn apply_pulse(quant: &mut [i32], fs_index: u8, pulse: &PulseData) -> Result
     Ok(())
 }
 
-/// Inverse quant + scalefactor gain into a window-major f64 spectrum.
-pub fn rescale(
+/// Fill `spec` (cleared / resized, capacity reused).
+pub fn rescale_into(
     quant: &[i32],
     ics: &IcsInfo,
     sections: &SectionData,
     sf: &ScaleFactors,
     fs_index: u8,
-) -> Result<Vec<f64>> {
+    spec: &mut Vec<f32>,
+) -> Result<()> {
     let win_len = ics.window_len();
     let nwin = ics.num_windows as usize;
-    let mut spec = vec![0.0f64; nwin * win_len];
+    let n = nwin * win_len;
+    if spec.len() != n {
+        spec.resize(n, 0.0);
+    }
+    spec.fill(0.0);
     let offsets = if ics.window_sequence.is_eight_short() {
         short_offsets(fs_index)?
     } else {
@@ -170,13 +212,14 @@ pub fn rescale(
             let end = *offsets.get(sfb + 1).ok_or(Error::SpectrumInvalid)? as usize;
             for b in 0..glen {
                 let w = wbase + b;
+                let base = w * win_len;
                 for i in start..end {
-                    let idx = w * win_len + i;
+                    let idx = base + i;
                     spec[idx] = invquant(*quant.get(idx).unwrap_or(&0)) * gain;
                 }
             }
         }
         wbase += glen;
     }
-    Ok(spec)
+    Ok(())
 }

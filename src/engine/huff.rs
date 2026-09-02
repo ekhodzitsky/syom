@@ -10,6 +10,9 @@ struct HuffTree {
     left: Vec<u16>,
     right: Vec<u16>,
     leaf: Vec<i16>,
+    /// 12-bit prefix → (symbol, nbits). `nbits == 0` ⇒ code longer than 12.
+    lut_sym: [i16; 4096],
+    lut_len: [u8; 4096],
 }
 
 impl HuffTree {
@@ -17,6 +20,8 @@ impl HuffTree {
         let mut left = vec![0u16];
         let mut right = vec![0u16];
         let mut leaf = vec![-1i16];
+        let mut lut_sym = [-1i16; 4096];
+        let mut lut_len = [0u8; 4096];
         for (idx, (&l, &c)) in len.iter().zip(code.iter()).enumerate() {
             let mut node = 0u16;
             for b in (0..l).rev() {
@@ -42,11 +47,33 @@ impl HuffTree {
                 }
             }
             leaf[node as usize] = idx as i16;
+            if l > 0 && l <= 12 {
+                let shift = 12 - l;
+                let base = (c as usize) << shift;
+                for extra in 0..(1usize << shift) {
+                    lut_sym[base + extra] = idx as i16;
+                    lut_len[base + extra] = l;
+                }
+            }
         }
-        Self { left, right, leaf }
+        Self {
+            left,
+            right,
+            leaf,
+            lut_sym,
+            lut_len,
+        }
     }
 
     fn decode(&self, br: &mut BitReader<'_>) -> Result<usize> {
+        if let Some(p) = br.try_peek12() {
+            let p = p as usize;
+            let n = self.lut_len[p];
+            if n != 0 {
+                br.eat(u32::from(n));
+                return Ok(self.lut_sym[p] as usize);
+            }
+        }
         let mut node = 0u16;
         loop {
             let bit = br.read_bit()?;

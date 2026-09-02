@@ -8,12 +8,12 @@ use super::error::{Error, Result};
 /// LOAS `AudioSyncStream` syncword.
 pub const LOAS_SYNC: u32 = 0x2B7;
 
-/// Decode a LOAS/LATM byte stream to planar f64 (filterbank scale) + rate.
-pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<Vec<f64>>)> {
+/// Decode a LOAS/LATM byte stream to planar f32 (filterbank scale) + rate.
+pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<Vec<f32>>)> {
     let mut pos = 0usize;
     let mut dec = StreamDecoder::new();
     dec.mix_down_mono = mix_down_mono;
-    let mut tracks: Vec<Vec<f64>> = Vec::new();
+    let mut tracks: Vec<Vec<f32>> = Vec::new();
     let mut rate = 0u32;
     let mut mux: Option<MuxCfg> = None;
     while pos + 3 <= data.len() {
@@ -180,3 +180,7 @@ fn read_payload(br: &mut BitReader<'_>, cfg: &MuxCfg) -> Result<Vec<u8>> {
     }
     Ok(out)
 }
+
+#[cfg(test)]
+#[path = "latm_tests.rs"]
+mod latm_tests;

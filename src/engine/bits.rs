@@ -2,41 +2,97 @@
 
 use super::error::{Error, Result};
 
-/// MSB-first reader. High bit of each byte is consumed first.
+/// MSB-first reader. Upcoming bits sit in the high end of `cache`.
 #[derive(Clone, Copy)]
 pub struct BitReader<'a> {
     data: &'a [u8],
-    pos: usize,
+    /// Next unread byte (bytes before this are already in `cache` or consumed).
+    byte_pos: usize,
+    cache: u64,
+    ncache: u32,
 }
 
 impl<'a> BitReader<'a> {
     /// Start at bit 0 of `data`.
     #[must_use]
     pub fn new(data: &'a [u8]) -> Self {
-        Self { data, pos: 0 }
+        Self {
+            data,
+            byte_pos: 0,
+            cache: 0,
+            ncache: 0,
+        }
     }
 
     /// Bits already consumed.
     #[must_use]
     pub fn bit_position(&self) -> u64 {
-        self.pos as u64
+        (self.byte_pos as u64)
+            .saturating_mul(8)
+            .saturating_sub(u64::from(self.ncache))
     }
 
     /// Remaining bits in the slice.
     #[must_use]
     pub fn bits_remaining(&self) -> u64 {
-        (self.data.len() * 8).saturating_sub(self.pos) as u64
+        (self.data.len() * 8) as u64 - self.bit_position()
+    }
+
+    #[inline(always)]
+    fn refill(&mut self) {
+        if self.ncache > 56 {
+            return;
+        }
+        let rem = self.data.len().saturating_sub(self.byte_pos);
+        if rem == 0 {
+            return;
+        }
+        if self.ncache == 0 && rem >= 8 {
+            let s = &self.data[self.byte_pos..self.byte_pos + 8];
+            self.cache = u64::from_be_bytes([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]);
+            self.byte_pos += 8;
+            self.ncache = 64;
+            return;
+        }
+        while self.ncache <= 56 && self.byte_pos < self.data.len() {
+            self.cache |= u64::from(self.data[self.byte_pos]) << (56 - self.ncache);
+            self.byte_pos += 1;
+            self.ncache += 8;
+        }
     }
 
     /// Next bit, or [`Error::UnexpectedEnd`].
+    #[inline(always)]
     pub fn read_bit(&mut self) -> Result<bool> {
-        let byte = self.pos / 8;
-        if byte >= self.data.len() {
-            return Err(Error::UnexpectedEnd);
+        if self.ncache == 0 {
+            self.refill();
+            if self.ncache == 0 {
+                return Err(Error::UnexpectedEnd);
+            }
         }
-        let shift = 7 - (self.pos % 8);
-        self.pos += 1;
-        Ok(((self.data[byte] >> shift) & 1) == 1)
+        let b = self.cache & (1u64 << 63) != 0;
+        self.cache <<= 1;
+        self.ncache -= 1;
+        Ok(b)
+    }
+
+    /// 12-bit lookahead after refill, or `None` if the stream is short.
+    #[inline(always)]
+    pub fn try_peek12(&mut self) -> Option<u32> {
+        if self.ncache < 12 {
+            self.refill();
+            if self.ncache < 12 {
+                return None;
+            }
+        }
+        Some((self.cache >> 52) as u32)
+    }
+
+    /// Consume `n` bits already sitting in the cache (`n <= ncache`).
+    #[inline(always)]
+    pub fn eat(&mut self, n: u32) {
+        self.cache <<= n;
+        self.ncache -= n;
     }
 
     /// Construct a reader starting at `byte_pos`.
@@ -44,20 +100,22 @@ impl<'a> BitReader<'a> {
     pub fn with_position(data: &'a [u8], byte_pos: usize) -> Self {
         Self {
             data,
-            pos: byte_pos.saturating_mul(8),
+            byte_pos: byte_pos.min(data.len()),
+            cache: 0,
+            ncache: 0,
         }
     }
 
     /// Byte index of the next bit.
     #[must_use]
     pub fn byte_position(&self) -> usize {
-        self.pos / 8
+        (self.bit_position() / 8) as usize
     }
 
     /// True when `bit_position` is a multiple of 8.
     #[must_use]
     pub fn is_byte_aligned(&self) -> bool {
-        self.pos % 8 == 0
+        self.bit_position() % 8 == 0
     }
 
     /// Alias of [`Self::byte_align`].
@@ -66,6 +124,7 @@ impl<'a> BitReader<'a> {
     }
 
     /// Next `n` bits as the low bits of a `u32` (`n` in `0..=32`).
+    #[inline(always)]
     pub fn read(&mut self, n: u32) -> Result<u32> {
         if n == 0 {
             return Ok(0);
@@ -73,10 +132,15 @@ impl<'a> BitReader<'a> {
         if n > 32 {
             return Err(Error::Format("bit read wider than 32"));
         }
-        let mut v = 0u32;
-        for _ in 0..n {
-            v = (v << 1) | u32::from(self.read_bit()?);
+        if self.ncache < n {
+            self.refill();
+            if self.ncache < n {
+                return Err(Error::UnexpectedEnd);
+            }
         }
+        let v = (self.cache >> (64 - n)) as u32;
+        self.cache <<= n;
+        self.ncache -= n;
         Ok(v)
     }
 
@@ -114,12 +178,22 @@ impl<'a> BitReader<'a> {
         Ok((hi << 32) | lo)
     }
 
-    /// Look ahead without consuming.
+    /// Look ahead without consuming. May refill the cache.
+    #[inline(always)]
     pub fn peek_u32(&mut self, n: u32) -> Result<u32> {
-        let saved = self.pos;
-        let v = self.read(n);
-        self.pos = saved;
-        v
+        if n == 0 {
+            return Ok(0);
+        }
+        if n > 32 {
+            return Err(Error::Format("bit read wider than 32"));
+        }
+        if self.ncache < n {
+            self.refill();
+            if self.ncache < n {
+                return Err(Error::UnexpectedEnd);
+            }
+        }
+        Ok((self.cache >> (64 - n)) as u32)
     }
 
     /// Alias of [`Self::skip`].
@@ -129,19 +203,33 @@ impl<'a> BitReader<'a> {
 
     /// Skip `n` bits.
     pub fn skip(&mut self, n: u32) -> Result<()> {
-        let n = n as usize;
-        if self.bits_remaining() < n as u64 {
+        if self.bits_remaining() < u64::from(n) {
             return Err(Error::UnexpectedEnd);
         }
-        self.pos += n;
+        let mut left = n;
+        if left <= self.ncache {
+            self.cache <<= left;
+            self.ncache -= left;
+            return Ok(());
+        }
+        left -= self.ncache;
+        self.cache = 0;
+        self.ncache = 0;
+        self.byte_pos += (left / 8) as usize;
+        left %= 8;
+        if left > 0 {
+            self.refill();
+            self.cache <<= left;
+            self.ncache -= left;
+        }
         Ok(())
     }
 
     /// Pad to the next byte boundary (0–7 bits discarded).
     pub fn byte_align(&mut self) -> Result<()> {
-        let rem = self.pos % 8;
+        let rem = (self.bit_position() % 8) as u32;
         if rem != 0 {
-            self.skip((8 - rem) as u32)?;
+            self.skip(8 - rem)?;
         }
         Ok(())
     }

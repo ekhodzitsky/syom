@@ -1089,3 +1089,7 @@ mod tests {
         assert!(format!("{err:?}").contains("no AAC audio track"), "{err:?}");
     }
 }
+
+#[cfg(test)]
+#[path = "isomp4_tests.rs"]
+mod isomp4_tests;

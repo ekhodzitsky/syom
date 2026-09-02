@@ -52,7 +52,7 @@ impl WindowShape {
 }
 
 /// Parsed `ics_info()` plus derived grouping.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct IcsInfo {
     /// Table 4.128 window sequence.
     pub window_sequence: WindowSequence,

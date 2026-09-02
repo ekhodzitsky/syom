@@ -50,7 +50,7 @@ pub struct PairPns<'a> {
 /// Fill NOISE_HCB bands. When the pair is noise on both sides and `ms_used`,
 /// reuse `shared` so the pair is correlated (§4.6.13.3).
 pub fn apply(
-    spec: &mut [f64],
+    spec: &mut [f32],
     ics: &IcsInfo,
     sections: &SectionData,
     sf: &ScaleFactors,
@@ -120,7 +120,7 @@ pub fn apply(
                     0.0
                 };
                 for (i, &x) in vec.iter().enumerate() {
-                    spec[w * win_len + start + i] = f64::from(x * scale);
+                    spec[w * win_len + start + i] = x * scale;
                 }
             }
             if !correlated && let Some(p) = pair.as_mut() {

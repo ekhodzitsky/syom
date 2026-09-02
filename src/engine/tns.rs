@@ -139,7 +139,7 @@ fn decode_lpc(order: usize, coef_res_bits: u32, compress: bool, coef: &[u8]) -> 
     Ok(a)
 }
 
-fn ar_filter(spec: &mut [f64], start: usize, size: usize, inc: i32, lpc: &[f64]) {
+fn ar_filter(spec: &mut [f32], start: usize, size: usize, inc: i32, lpc: &[f64]) {
     let order = lpc.len().saturating_sub(1);
     if size == 0 || order == 0 {
         return;
@@ -148,7 +148,7 @@ fn ar_filter(spec: &mut [f64], start: usize, size: usize, inc: i32, lpc: &[f64])
     let mut pos = 0usize;
     let mut idx = start as isize;
     for _ in 0..size {
-        let x = spec[idx as usize];
+        let x = f64::from(spec[idx as usize]);
         let mut y = x;
         let mut hidx = pos;
         for &coeff in lpc.iter().take(order + 1).skip(1) {
@@ -159,7 +159,7 @@ fn ar_filter(spec: &mut [f64], start: usize, size: usize, inc: i32, lpc: &[f64])
             y -= coeff * hist[hidx];
         }
         hist[pos] = y;
-        spec[idx as usize] = y;
+        spec[idx as usize] = y as f32;
         pos += 1;
         if pos == order {
             pos = 0;
@@ -169,7 +169,7 @@ fn ar_filter(spec: &mut [f64], start: usize, size: usize, inc: i32, lpc: &[f64])
 }
 
 /// §4.6.9.3 `tns_decode_frame` on a window-major spectrum.
-pub fn apply(spec: &mut [f64], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Result<()> {
+pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Result<()> {
     let win_len = ics.window_len();
     let offsets = if ics.window_sequence.is_eight_short() {
         short_offsets(fs_index)?

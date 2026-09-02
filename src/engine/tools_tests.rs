@@ -33,14 +33,19 @@ fn pulse_adds_amplitude_on_zero_bin() -> Result<(), Error> {
     spectrum::apply_pulse(&mut quant, 3, &pulse)?;
     // k starts at swb 0 offset 0, plus offset 0 → bin 0; quant[0] was 0 so subtract amp.
     assert_eq!(quant[0], -3);
+    quant[0] = 2;
+    spectrum::apply_pulse(&mut quant, 3, &pulse)?;
+    assert_eq!(quant[0], 5);
+    assert!(spectrum::invquant(9000).abs() > 1.0);
+    assert!(spectrum::sf_gain(300) > 0.0);
     Ok(())
 }
 
 #[test]
 fn ms_dematrix_is_m_plus_s() -> Result<(), Error> {
     let ics = long_ics(1);
-    let mut left = vec![0.0f64; 1024];
-    let mut right = vec![0.0f64; 1024];
+    let mut left = vec![0.0f32; 1024];
+    let mut right = vec![0.0f32; 1024];
     left[0] = 3.0; // m
     right[0] = 1.0; // s
     let sec = SectionData {
@@ -59,8 +64,8 @@ fn ms_dematrix_is_m_plus_s() -> Result<(), Error> {
 #[test]
 fn intensity_scales_right_from_left() -> Result<(), Error> {
     let ics = long_ics(1);
-    let mut left = vec![0.0f64; 1024];
-    let mut right = vec![0.0f64; 1024];
+    let mut left = vec![0.0f32; 1024];
+    let mut right = vec![0.0f32; 1024];
     left[0] = 8.0;
     let right_sec = SectionData {
         sfb_cb: vec![vec![INTENSITY_HCB]],
@@ -82,7 +87,7 @@ fn intensity_scales_right_from_left() -> Result<(), Error> {
 #[test]
 fn pns_fills_noise_band_energy() -> Result<(), Error> {
     let ics = long_ics(1);
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     let sections = SectionData {
         sfb_cb: vec![vec![NOISE_HCB]],
     };
@@ -93,7 +98,7 @@ fn pns_fills_noise_band_energy() -> Result<(), Error> {
     };
     let mut rng = Lcg::new();
     pns::apply(&mut spec, &ics, &sections, &sf, 3, &mut rng, None)?;
-    let nrg: f64 = spec.iter().map(|x| x * x).sum();
+    let nrg: f32 = spec.iter().map(|x| x * x).sum();
     // |target| = 2^(0.25*0) = 1, width=4 → L2 = 1
     assert!((nrg.sqrt() - 1.0).abs() < 1e-5, "PNS L2 {nrg}");
     Ok(())
@@ -106,7 +111,7 @@ fn pns_noise_band_matches_lavc_lcg() -> Result<(), Error> {
     // so PCM polarity matches lavc (lavc's spectral minus is an IMDCT artifact).
     // 48 kHz long sfb 0 is 4 bins. nrg=0 → |L2|=1, first bin positive.
     let ics = long_ics(1);
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     let sections = SectionData {
         sfb_cb: vec![vec![NOISE_HCB]],
     };
@@ -117,7 +122,7 @@ fn pns_noise_band_matches_lavc_lcg() -> Result<(), Error> {
     };
     let mut rng = Lcg::new();
     pns::apply(&mut spec, &ics, &sections, &sf, 3, &mut rng, None)?;
-    let got = [spec[0], spec[1], spec[2], spec[3]];
+    let got = [spec[0], spec[1], spec[2], spec[3]].map(f64::from);
     let want = [0.443_143_16, -0.548_071_74, 0.398_949_89, -0.586_583_67];
     for (i, (g, w)) in got.iter().zip(want.iter()).enumerate() {
         assert!(
@@ -131,7 +136,7 @@ fn pns_noise_band_matches_lavc_lcg() -> Result<(), Error> {
 #[test]
 fn tns_identity_order_zero_is_noop() -> Result<(), Error> {
     let ics = long_ics(2);
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     spec[10] = 1.0;
     let tns = TnsData {
         windows: vec![TnsWindow {
@@ -155,7 +160,7 @@ fn tns_order1_changes_spectrum() -> Result<(), Error> {
     // length=num_swb so the filter starts at sfb 0 (bins 0..). Order-1 AR
     // leaves spec[0] (empty history) and must move spec[1]. Stub Ok(()) fails.
     let ics = long_ics(40);
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     spec[0] = 1.0;
     spec[1] = 0.5;
     let tns = TnsData {
@@ -182,7 +187,7 @@ fn tns_order1_changes_spectrum() -> Result<(), Error> {
 #[test]
 fn kbd_window_differs_from_sine_on_nonzero_spec() -> Result<(), Error> {
     use super::filterbank::Filterbank;
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     spec[3] = 4_000_000.0;
     let mut sine_ics = long_ics(1);
     sine_ics.window_shape = WindowShape::Sine;
@@ -200,7 +205,7 @@ fn kbd_window_differs_from_sine_on_nonzero_spec() -> Result<(), Error> {
         .iter()
         .zip(pcm_kbd.iter())
         .map(|(a, b)| (a - b).abs())
-        .fold(0.0f64, f64::max);
+        .fold(0.0f32, f32::max);
     assert!(
         max_d > 1.0,
         "KBD vs sine PCM max abs {max_d} — window is unused if this is 0"
@@ -275,7 +280,7 @@ fn cpe_common_window_two_channels() -> Result<(), Error> {
 fn long_start_and_stop_synthesize() -> Result<(), Error> {
     use super::filterbank::Filterbank;
     let mut fb = Filterbank::new();
-    let spec = vec![0.0f64; 1024];
+    let spec = vec![0.0f32; 1024];
     for seq in [
         WindowSequence::LongStart,
         WindowSequence::EightShort,
@@ -300,7 +305,7 @@ fn start_stop_windows_change_second_frame_pcm() -> Result<(), Error> {
     // First-frame left half is the same window; the right half becomes overlap.
     // LongStart then LongStop must differ from OnlyLong then OnlyLong on frame 2.
     use super::filterbank::Filterbank;
-    let mut spec = vec![0.0f64; 1024];
+    let mut spec = vec![0.0f32; 1024];
     spec[3] = 4_000_000.0;
     let mut start = long_ics(1);
     start.window_sequence = WindowSequence::LongStart;
@@ -320,11 +325,39 @@ fn start_stop_windows_change_second_frame_pcm() -> Result<(), Error> {
         .iter()
         .zip(pcm_ll.iter())
         .map(|(a, b)| (a - b).abs())
-        .fold(0.0f64, f64::max);
+        .fold(0.0f32, f32::max);
     assert!(
         max_d > 1.0,
         "start/stop overlap max abs {max_d} — treated as only_long if this is 0"
     );
+    Ok(())
+}
+
+#[test]
+fn dse_pce_lfe_with_silent_end() -> Result<(), Error> {
+    let mut w = BitWriter::new();
+    w.write(4, 3); // DSE
+    w.write(0, 4);
+    w.write_bit(false);
+    w.write(0, 8);
+    w.write(3, 3); // LFE
+    w.write(0, 4);
+    w.write(100, 8);
+    w.write_bit(false);
+    w.write(0, 2);
+    w.write_bit(false);
+    w.write(1, 6);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(1, 5);
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write(7, 3);
+    let mut dec = StreamDecoder::new();
+    let frame = dec.decode_raw_data_block(2, 3, 48_000, 1, 1, &w.finish())?;
+    assert_eq!(frame.channels, 1);
+    assert!(dec.decode_raw_data_block(1, 3, 48_000, 1, 1, &[0]).is_err());
     Ok(())
 }
 
@@ -386,6 +419,41 @@ fn skip_fil_dse_pce_consume_empty_bodies() -> Result<(), Error> {
     let mut br = BitReader::new(&bytes);
     skip_fil(&mut br)?;
     skip_dse(&mut br)?;
+    skip_pce(&mut br)?;
+    Ok(())
+}
+
+#[test]
+fn skip_fil_escape_dse_align_pce_mix() -> Result<(), Error> {
+    use super::bits::BitReader;
+    use super::skip::{fill_count, skip_dse, skip_pce};
+    let mut w = BitWriter::new();
+    w.write(15, 4);
+    w.write(2, 8);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    assert_eq!(fill_count(&mut br)?, 16);
+
+    let mut w = BitWriter::new();
+    w.write(0, 4);
+    w.write_bit(true);
+    w.write(0, 8);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    skip_dse(&mut br)?;
+
+    let mut w = BitWriter::new();
+    w.write(0, 4 + 2 + 4 + 4 + 4 + 4 + 2 + 3 + 4);
+    w.write_bit(true);
+    w.write(0, 4);
+    w.write_bit(true);
+    w.write(0, 4);
+    w.write_bit(true);
+    w.write(0, 3);
+    w.write_bit(false);
+    w.write(0, 8);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
     skip_pce(&mut br)?;
     Ok(())
 }

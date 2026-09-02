@@ -14,6 +14,8 @@ struct SfTree {
     left: Vec<u16>,
     right: Vec<u16>,
     leaf: Vec<i16>,
+    lut_sym: [i16; 4096],
+    lut_len: [u8; 4096],
 }
 
 impl SfTree {
@@ -21,6 +23,8 @@ impl SfTree {
         let mut left = vec![0u16];
         let mut right = vec![0u16];
         let mut leaf = vec![-1i16];
+        let mut lut_sym = [-1i16; 4096];
+        let mut lut_len = [0u8; 4096];
         for (idx, (&l, &c)) in SF_LEN.iter().zip(SF_CODE.iter()).enumerate() {
             let mut node = 0u16;
             for b in (0..l).rev() {
@@ -46,11 +50,33 @@ impl SfTree {
                 }
             }
             leaf[node as usize] = idx as i16;
+            if l > 0 && l <= 12 {
+                let shift = 12 - l;
+                let base = (c as usize) << shift;
+                for extra in 0..(1usize << shift) {
+                    lut_sym[base + extra] = idx as i16;
+                    lut_len[base + extra] = l;
+                }
+            }
         }
-        Self { left, right, leaf }
+        Self {
+            left,
+            right,
+            leaf,
+            lut_sym,
+            lut_len,
+        }
     }
 
     fn decode(&self, br: &mut BitReader<'_>) -> Result<i8> {
+        if let Some(p) = br.try_peek12() {
+            let p = p as usize;
+            let n = self.lut_len[p];
+            if n != 0 {
+                br.eat(u32::from(n));
+                return Ok(self.lut_sym[p] as i8 - 60);
+            }
+        }
         let mut node = 0u16;
         loop {
             let bit = br.read_bit()?;
@@ -74,7 +100,7 @@ impl SfTree {
 static SF_TREE: LazyLock<SfTree> = LazyLock::new(SfTree::build);
 
 /// Absolute scalefactors / IS positions / PNS energies per (group, sfb).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ScaleFactors {
     /// Spectrum scalefactor (valid on Huffman bands).
     pub sf: Vec<Vec<i32>>,
@@ -84,18 +110,30 @@ pub struct ScaleFactors {
     pub noise_nrg: Vec<Vec<i32>>,
 }
 
-/// Decode Table 4.53 and accumulate three DPCM tracks (§4.6.2 / §4.6.8 / §4.6.13).
-pub fn parse(
+fn fit_i32(rows: &mut Vec<Vec<i32>>, groups: usize, n: usize) {
+    if rows.len() < groups {
+        rows.resize(groups, Vec::new());
+    }
+    rows.truncate(groups);
+    for row in rows.iter_mut() {
+        row.clear();
+        row.resize(n, 0);
+    }
+}
+
+/// Fill `out`, reusing inner row capacity.
+pub fn parse_into(
     br: &mut BitReader<'_>,
     ics: &IcsInfo,
     sfb_cb: &[Vec<u8>],
     global_gain: u8,
-) -> Result<ScaleFactors> {
+    out: &mut ScaleFactors,
+) -> Result<()> {
     let groups = ics.num_window_groups as usize;
     let max_sfb = ics.max_sfb as usize;
-    let mut sf = vec![vec![0i32; max_sfb]; groups];
-    let mut is_pos = vec![vec![0i32; max_sfb]; groups];
-    let mut noise_nrg = vec![vec![0i32; max_sfb]; groups];
+    fit_i32(&mut out.sf, groups, max_sfb);
+    fit_i32(&mut out.is_pos, groups, max_sfb);
+    fit_i32(&mut out.noise_nrg, groups, max_sfb);
     let mut last_sf = i32::from(global_gain);
     let mut last_is = 0i32;
     let mut last_nrg = i32::from(global_gain) - NOISE_OFFSET - 256;
@@ -108,7 +146,7 @@ pub fn parse(
             }
             if is_intensity(cb) {
                 last_is += i32::from(SF_TREE.decode(br)?);
-                is_pos[g][sfb] = last_is;
+                out.is_pos[g][sfb] = last_is;
             } else if is_noise(cb) {
                 if noise_pcm_flag {
                     noise_pcm_flag = false;
@@ -116,18 +154,14 @@ pub fn parse(
                 } else {
                     last_nrg += i32::from(SF_TREE.decode(br)?);
                 }
-                noise_nrg[g][sfb] = last_nrg;
+                out.noise_nrg[g][sfb] = last_nrg;
             } else {
                 last_sf += i32::from(SF_TREE.decode(br)?);
-                sf[g][sfb] = last_sf;
+                out.sf[g][sfb] = last_sf;
             }
         }
     }
-    Ok(ScaleFactors {
-        sf,
-        is_pos,
-        noise_nrg,
-    })
+    Ok(())
 }
 
 /// Table 4.A.1 decode of one DPCM delta (tests / encoder helpers).
