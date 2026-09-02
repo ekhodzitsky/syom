@@ -9,8 +9,8 @@ use super::decode::StreamDecoder;
 use super::error::Error;
 use super::ics::{IcsInfo, WindowSequence};
 use super::ics_body::parse_ics;
+use super::raw_data_block::IdSynEle;
 use super::section::SectionData;
-use super::skip::ID_SCE;
 use super::stereo::MsInfo;
 
 #[test]
@@ -191,7 +191,7 @@ fn tns48_adts_has_nonzero_order_tns() -> Result<(), Error> {
             .get(pos.saturating_add(off)..pos.saturating_add(fl))
             .ok_or(Error::UnexpectedEnd)?;
         let mut br = BitReader::new(payload);
-        if br.bits_remaining() >= 7 && br.read(3)? as u8 == ID_SCE {
+        if br.bits_remaining() >= 7 && IdSynEle::from_bits(br.read(3)? as u8) == IdSynEle::Sce {
             let _tag = br.read(4)?;
             match parse_ics(&mut br, hdr.sampling_frequency_index, 2, None) {
                 Ok(body) => {

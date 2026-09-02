@@ -13,10 +13,10 @@ use super::sbr_extension::SbrExtensionData;
 use super::sbr_header::SbrHeader;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
-use super::skip::{
-    ID_CCE, ID_CPE, ID_DSE, ID_END, ID_FIL, ID_LFE, ID_PCE, ID_SCE, fill_count, skip_cce, skip_dse,
-    skip_pce,
-};
+use super::skip::{fill_count, skip_cce, skip_dse, skip_pce};
+
+/// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
+pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DecodedFrame {
@@ -100,16 +100,12 @@ impl StreamDecoder {
             if br.bits_remaining() < 3 {
                 break;
             }
-            let id = br.read(3)? as u8;
+            let id = IdSynEle::from_bits(br.read(3)? as u8);
             match id {
-                ID_END => break,
-                ID_SCE | ID_LFE => {
-                    last_syn = if id == ID_SCE {
-                        IdSynEle::Sce
-                    } else {
-                        IdSynEle::Lfe
-                    };
-                    let tag = br.read(4)? as u8;
+                IdSynEle::End => break,
+                IdSynEle::Sce | IdSynEle::Lfe => {
+                    last_syn = id;
+                    let _tag = br.read(4)?;
                     let (ics, tns) = parse_ics_into(
                         &mut br,
                         fs_index,
@@ -120,10 +116,10 @@ impl StreamDecoder {
                         &mut self.sections_l,
                         &mut self.sf_l,
                     )?;
-                    self.finish_sce(id, tag, ics, tns.as_ref(), fs_index)?;
+                    self.finish_sce(ics, tns.as_ref(), fs_index)?;
                     self.push_pcm(false);
                 }
-                ID_CPE => {
+                IdSynEle::Cpe => {
                     last_syn = IdSynEle::Cpe;
                     let tag = br.read(4)? as u8;
                     self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
@@ -139,10 +135,10 @@ impl StreamDecoder {
                         self.push_pcm(true);
                     }
                 }
-                ID_CCE => skip_cce(&mut br, fs_index, core_aot)?,
-                ID_DSE => skip_dse(&mut br)?,
-                ID_PCE => skip_pce(&mut br)?,
-                ID_FIL => {
+                IdSynEle::Cce => skip_cce(&mut br, fs_index, core_aot)?,
+                IdSynEle::Dse => skip_dse(&mut br)?,
+                IdSynEle::Pce => skip_pce(&mut br)?,
+                IdSynEle::Fil => {
                     let cnt = fill_count(&mut br)?;
                     let fs_sbr = sample_rate.saturating_mul(2);
                     let start = br.bit_position();
@@ -167,7 +163,6 @@ impl StreamDecoder {
                         br.skip((need - used) as u32)?;
                     }
                 }
-                other => return Err(Error::UnsupportedElement(other)),
             }
         }
         if self.fast_mono && pending_sbr.is_none() && !self.sbr_active {
@@ -204,7 +199,6 @@ impl StreamDecoder {
         self.fast_mono = false;
         self.mix_down_mono = was;
         let rate = rate?;
-        const INV_S16: f32 = 1.0 / 32768.0;
         let src = if self.sbr_active {
             self.frame_ch.first().map(Vec::as_slice).unwrap_or(&[])
         } else {

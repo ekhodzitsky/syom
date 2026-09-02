@@ -2,11 +2,12 @@
 
 use crate::engine::adts::AdtsHeader;
 use crate::engine::asc::AudioSpecificConfig;
+use crate::engine::decode::INV_S16;
 use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
 use crate::isomp4::{self, sniff_is_isobmff};
 use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
-use crate::out::{INV_S16, Out, push_adts_mono, push_frame};
+use crate::out::{Out, push_adts_mono, push_frame};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).

@@ -36,8 +36,6 @@ pub enum Error {
     SpectrumInvalid,
     /// Filterbank `spec` length disagrees with `window_sequence`.
     FilterbankInvalid,
-    /// Channel element the LC decoder does not reconstruct (kept for skip).
-    UnsupportedElement(u8),
     /// Generic structural reject (PCE/LTP/predictor on the LC path).
     Format(&'static str),
     /// LOAS syncword was not `0x2B7`.
@@ -91,7 +89,6 @@ impl fmt::Display for Error {
             Self::HuffmanInvalid => write!(f, "aac: Huffman codeword invalid"),
             Self::SpectrumInvalid => write!(f, "aac: spectral geometry invalid"),
             Self::FilterbankInvalid => write!(f, "aac: filterbank length mismatch"),
-            Self::UnsupportedElement(e) => write!(f, "aac: unsupported id_syn_ele {e}"),
             Self::Format(msg) => write!(f, "aac: {msg}"),
             Self::LoasSyncInvalid => write!(f, "aac: LOAS sync invalid"),
             Self::LatmAudioMuxVersionAReserved => write!(f, "aac: LATM audioMuxVersionA reserved"),

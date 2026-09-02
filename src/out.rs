@@ -1,13 +1,10 @@
 //! PCM accumulation for ADTS / M4A / split-channel decode.
 
 use crate::engine::adts::AdtsHeader;
-use crate::engine::decode::{DecodedFrame, StreamDecoder};
+use crate::engine::decode::{DecodedFrame, INV_S16, StreamDecoder};
 use crate::engine::error::Error as EngineError;
 use crate::error::{AacError, Result};
 use crate::options::DecodeOptions;
-
-/// Filterbank scale is ±32768; this matches the historical i16→f32 map.
-pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
 
 pub(crate) struct Out {
     sample_rate: u32,

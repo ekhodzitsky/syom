@@ -4,16 +4,6 @@ use super::bits::BitReader;
 use super::error::Result;
 use super::ics_body::parse_ics;
 
-/// `id_syn_ele` values — Table 4.71.
-pub const ID_SCE: u8 = 0;
-pub const ID_CPE: u8 = 1;
-pub const ID_CCE: u8 = 2;
-pub const ID_LFE: u8 = 3;
-pub const ID_DSE: u8 = 4;
-pub const ID_PCE: u8 = 5;
-pub const ID_FIL: u8 = 6;
-pub const ID_END: u8 = 7;
-
 /// `fill_element()` count field (bytes of `extension_payload`).
 pub fn fill_count(br: &mut BitReader<'_>) -> Result<u32> {
     let mut count = br.read(4)?;
