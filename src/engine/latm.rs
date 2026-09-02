@@ -60,6 +60,9 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
         if tracks.is_empty() {
             tracks = vec![Vec::new(); frame.planar.len().max(1)];
         }
+        while tracks.len() < frame.planar.len() {
+            tracks.push(Vec::new());
+        }
         for (i, ch) in frame.planar.iter().enumerate() {
             if let Some(dst) = tracks.get_mut(i) {
                 dst.extend_from_slice(ch);
