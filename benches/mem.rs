@@ -176,5 +176,5 @@ fn main() {
             let _ = symphonia_all(bytes, ext);
         });
     }
-    println!("oxideav-aac: parser-only, no PCM");
+    println!("oxideav-aac: parser-only, not linked");
 }
