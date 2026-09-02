@@ -287,6 +287,23 @@ fn he48_m4a_native_matches_lavc_golden() -> Result<(), AacError> {
 }
 
 #[test]
+fn he48_latm_native_matches_lavc_golden() -> Result<(), AacError> {
+    assert_native_matches_lavc_with(
+        include_bytes!("goldens/he48.latm"),
+        include_bytes!("goldens/he48.s16"),
+        48_000,
+        "he48-latm",
+        &DecodeOptions::unbounded(),
+    )?;
+    assert_native_matches_lavc(
+        include_bytes!("goldens/he48.latm"),
+        include_bytes!("goldens/he48.s16"),
+        48_000,
+        "he48-latm-speech",
+    )
+}
+
+#[test]
 fn speech_caps_reject_long_duration() {
     let o = DecodeOptions::speech().with_max_duration_secs(0.01);
     let adts = include_bytes!("goldens/sine48.adts");

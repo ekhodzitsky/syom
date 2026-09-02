@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - HE-AAC v1/v2 (SBR/PS) and LATM/LOAS on the same decode path. Committed
   lavc native goldens (max abs ≤ 1 LSB, SNR ≥ 70 dB) for lecture M4A,
-  44.1 M4A, ADTS sine, TNS, PNS-heavy LC, HE ADTS/M4A, and LATM.
+  44.1 M4A, ADTS sine, TNS, PNS-heavy LC, HE ADTS/M4A/LATM, and LC LATM.
   Runtime does not spawn ffmpeg.
 - Owned IMDCT/FFT (no rustfft). PNS polarity matches lavc PCM.
 
