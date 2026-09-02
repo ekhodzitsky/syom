@@ -296,3 +296,7 @@ impl BitWriter {
         self.buf
     }
 }
+
+#[cfg(test)]
+#[path = "bits_tests.rs"]
+mod bits_tests;
