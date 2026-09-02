@@ -28,10 +28,9 @@
 //! The SBR-data extension types defined by ISO/IEC 13818-7 Table 40
 //! are surfaced as [`Error::UnsupportedExtensionSbr`] by the default
 //! [`ExtensionPayload::parse`] (so the byte-exact AAC-LC decode path
-//! stays untouched). The dedicated [`ExtensionPayload::parse_with_sbr`]
-//! entry instead routes them into the §4.4.2.8
-//! [`crate::engine::sbr_extension::SbrExtensionData`] side-info walker (the SBR
-//! back-end DSP is still not applied):
+//! stays untouched). [`ExtensionPayload::parse_with_sbr`] routes them
+//! into [`crate::engine::sbr_extension::SbrExtensionData`], which
+//! `StreamDecoder` then reconstructs:
 //!
 //! * `EXT_SBR_DATA` (`0b1101`).
 //! * `EXT_SBR_DATA_CRC` (`0b1110`).
@@ -347,12 +346,8 @@ impl ExtensionPayload {
     ///
     /// Unlike [`Self::parse`] (which surfaces
     /// [`Error::UnsupportedExtensionSbr`] for the SBR types so the
-    /// byte-exact AAC-LC decode path stays untouched), this entry decodes
-    /// the SBR bitstream side info: the §4.4.2.8 `sbr_extension_data()`
-    /// header + element framing keyed off the surrounding channel
-    /// element. The SBR back-end DSP (QMF / HF patching / envelope
-    /// adjustment) is still not applied — this only recovers the decoded
-    /// side info.
+    /// byte-exact AAC-LC decode path stays untouched), this entry
+    /// parses `sbr_extension_data()` for `StreamDecoder::apply_sbr`.
     ///
     /// * `id_aac` — the AAC core element this FIL follows
     ///   ([`crate::engine::raw_data_block::IdSynEle::Sce`] / `Cpe`); selects the

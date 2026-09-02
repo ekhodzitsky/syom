@@ -17,8 +17,6 @@ pub enum AacError {
     UnsupportedSampleRate { rate: u32, max: u32 },
     /// Decoded (or declared) duration exceeds the configured budget.
     TooLong { observed_secs: f64, max_secs: f64 },
-    /// Stream length unknown (required for bounded full-buffer decode).
-    StreamLengthUnknown,
     /// Structural / demux failure.
     Format(String),
     /// Decoder engine rejected a frame.
@@ -51,10 +49,7 @@ impl AacError {
 
     /// Whether this should surface as generic unsupported-format upstream.
     pub fn is_format_class(&self) -> bool {
-        matches!(
-            self,
-            Self::NotAac | Self::Format(_) | Self::StreamLengthUnknown
-        )
+        matches!(self, Self::NotAac | Self::Format(_))
     }
 }
 
@@ -73,7 +68,6 @@ impl fmt::Display for AacError {
                 f,
                 "Audio file too long ({observed_secs:.0}s). Maximum supported: {max_secs:.0}s."
             ),
-            Self::StreamLengthUnknown => write!(f, "aac: stream length unknown"),
             Self::Format(msg) | Self::Decode(msg) => write!(f, "{msg}"),
         }
     }
@@ -91,5 +85,11 @@ impl std::error::Error for AacError {
 impl From<io::Error> for AacError {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
+    }
+}
+
+impl From<crate::engine::error::Error> for AacError {
+    fn from(value: crate::engine::error::Error) -> Self {
+        Self::decode(value.to_string())
     }
 }

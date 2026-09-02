@@ -11,8 +11,8 @@ use crate::engine::latm::decode_loas_planar;
 fn decode_loas_resync_and_empty_is_error() {
     let mut data = vec![0u8, 0, 0];
     data.extend_from_slice(&[0x2B, 0xE0, 0x00]);
-    assert!(decode_loas_planar(&[0, 1, 2], false).is_err());
-    assert!(decode_loas_planar(&[], false).is_err());
+    assert!(decode_loas_planar(&[0, 1, 2], false, usize::MAX).is_err());
+    assert!(decode_loas_planar(&[], false, usize::MAX).is_err());
 }
 
 #[test]

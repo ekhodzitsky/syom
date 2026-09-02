@@ -175,29 +175,8 @@ impl SbrDecoder {
             // frame without SBR/PS payload (Annex 8.A.3); the whole
             // 32-band spectrum counts as SBR-covered for the partial
             // reset.
-            let mut emitted = false;
-            if n_ch == 1 {
-                if let Some(ps) = self.ps.as_mut() {
-                    let x_input = build_x_input(&x_cols, &x_low);
-                    if let Some((lq, rq)) = ps.dec.process(None, &x_input, 32)? {
-                        let mut pcm_l = Vec::with_capacity(LF * 64);
-                        let mut pcm_r = Vec::with_capacity(LF * 64);
-                        for l in 0..LF {
-                            pcm_l.extend_from_slice(&ch.synthesis.push_slot(&lq[l])?);
-                            pcm_r.extend_from_slice(&ps.synthesis_r.push_slot(&rq[l])?);
-                        }
-                        out.push(pcm_l);
-                        out.push(pcm_r);
-                        emitted = true;
-                    }
-                }
-            }
-            if !emitted {
-                let mut pcm = Vec::with_capacity(LF * 64);
-                for x in &x_cols {
-                    pcm.extend_from_slice(&ch.synthesis.push_slot(x)?);
-                }
-                out.push(pcm);
+            if n_ch != 1 || !emit_ps(ch, self.ps.as_mut(), &x_cols, &x_low, None, 32, &mut out)? {
+                out.push(synth_mono(ch, &x_cols)?);
             }
             // No Y for this frame; the next frame's lTemp splice sees
             // an empty previous envelope span.
@@ -382,30 +361,17 @@ impl SbrDecoder {
                     synthesis_r: SynthesisQmf::new(),
                 });
             }
-            let mut emitted = false;
-            if n_ch == 1 {
-                if let Some(ps) = self.ps.as_mut() {
-                    let x_input = build_x_input(&x_cols, &x_low);
-                    let kx_plus_m = (bands.k_x + bands.m).max(0) as usize;
-                    if let Some((lq, rq)) = ps.dec.process(ps_payload, &x_input, kx_plus_m)? {
-                        let mut pcm_l = Vec::with_capacity(LF * 64);
-                        let mut pcm_r = Vec::with_capacity(LF * 64);
-                        for l in 0..LF {
-                            pcm_l.extend_from_slice(&ch.synthesis.push_slot(&lq[l])?);
-                            pcm_r.extend_from_slice(&ps.synthesis_r.push_slot(&rq[l])?);
-                        }
-                        out.push(pcm_l);
-                        out.push(pcm_r);
-                        emitted = true;
-                    }
-                }
-            }
-            if !emitted {
-                let mut pcm = Vec::with_capacity(LF * 64);
-                for x in &x_cols {
-                    pcm.extend_from_slice(&ch.synthesis.push_slot(x)?);
-                }
-                out.push(pcm);
+            let kx_plus_m = (bands.k_x + bands.m).max(0) as usize;
+            if !emit_ps(
+                ch,
+                self.ps.as_mut(),
+                &x_cols,
+                &x_low,
+                ps_payload,
+                kx_plus_m,
+                &mut out,
+            )? {
+                out.push(synth_mono(ch, &x_cols)?);
             }
 
             // Thread cross-frame state.
@@ -427,6 +393,61 @@ impl SbrDecoder {
 /// columns followed by `LOOKAHEAD` slots taken from `XLow` beyond the
 /// frame (`XLow(k, l + tHFAdj)`, `k < 5` — the split bands the hybrid
 /// filterbank consumes ahead of time).
+pub(crate) fn planes_f32(out: Vec<Vec<f64>>, mix_down_mono: bool) -> Vec<Vec<f32>> {
+    let mut planar: Vec<Vec<f32>> = out
+        .into_iter()
+        .map(|ch| ch.into_iter().map(|x| x as f32).collect())
+        .collect();
+    if mix_down_mono {
+        if planar.len() > 1 {
+            let r = planar.remove(1);
+            let n = planar[0].len().min(r.len());
+            for i in 0..n {
+                planar[0][i] = 0.5 * (planar[0][i] + r[i]);
+            }
+            planar.truncate(1);
+        }
+    } else if planar.len() == 1 {
+        planar.push(planar[0].clone());
+    }
+    planar
+}
+
+fn synth_mono(ch: &mut ChannelState, x_cols: &[[Complex; 64]]) -> Result<Vec<f64>> {
+    let mut pcm = Vec::with_capacity(LF * 64);
+    for x in x_cols {
+        pcm.extend_from_slice(&ch.synthesis.push_slot(x)?);
+    }
+    Ok(pcm)
+}
+
+fn emit_ps(
+    ch: &mut ChannelState,
+    ps: Option<&mut PsState>,
+    x_cols: &[[Complex; 64]],
+    x_low: &[[Complex; 32]],
+    payload: Option<&[u8]>,
+    kx_plus_m: usize,
+    out: &mut Vec<Vec<f64>>,
+) -> Result<bool> {
+    let Some(ps) = ps else {
+        return Ok(false);
+    };
+    let x_input = build_x_input(x_cols, x_low);
+    let Some((lq, rq)) = ps.dec.process(payload, &x_input, kx_plus_m)? else {
+        return Ok(false);
+    };
+    let mut pcm_l = Vec::with_capacity(LF * 64);
+    let mut pcm_r = Vec::with_capacity(LF * 64);
+    for l in 0..LF {
+        pcm_l.extend_from_slice(&ch.synthesis.push_slot(&lq[l])?);
+        pcm_r.extend_from_slice(&ps.synthesis_r.push_slot(&rq[l])?);
+    }
+    out.push(pcm_l);
+    out.push(pcm_r);
+    Ok(true)
+}
+
 fn build_x_input(x_cols: &[[Complex; 64]], x_low: &[[Complex; 32]]) -> Vec<[Complex; 64]> {
     let mut v = Vec::with_capacity(LF + LOOKAHEAD);
     v.extend_from_slice(x_cols);

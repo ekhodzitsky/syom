@@ -9,7 +9,11 @@ use super::error::{Error, Result};
 pub const LOAS_SYNC: u32 = 0x2B7;
 
 /// Decode a LOAS/LATM byte stream to planar f32 (filterbank scale) + rate.
-pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<Vec<f32>>)> {
+pub fn decode_loas_planar(
+    data: &[u8],
+    mix_down_mono: bool,
+    max_samples: usize,
+) -> Result<(u32, Vec<Vec<f32>>)> {
     let mut pos = 0usize;
     let mut dec = StreamDecoder::new();
     dec.mix_down_mono = mix_down_mono;
@@ -38,7 +42,7 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
         }
         let cfg = mux.as_ref().ok_or(Error::LatmNoPreviousMuxConfig)?;
         let payload = read_payload(&mut br, cfg)?;
-        let mut frame = dec.decode_raw_data_block(
+        let frame = dec.decode_raw_data_block(
             cfg.asc.aot,
             cfg.asc.sampling_frequency_index,
             cfg.asc.sample_rate,
@@ -46,14 +50,6 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
             1,
             &payload,
         )?;
-        if !mix_down_mono
-            && frame.channels == 1
-            && frame.sample_rate == cfg.asc.sample_rate.saturating_mul(2)
-            && let Some(ch) = frame.planar.first().cloned()
-        {
-            frame.planar.push(ch);
-            frame.channels = 2;
-        }
         if rate == 0 {
             rate = frame.sample_rate;
         }
@@ -67,6 +63,9 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
             if let Some(dst) = tracks.get_mut(i) {
                 dst.extend_from_slice(ch);
             }
+        }
+        if tracks.first().map(Vec::len).unwrap_or(0) > max_samples {
+            return Err(Error::Format("latm: too long"));
         }
         pos = end;
     }

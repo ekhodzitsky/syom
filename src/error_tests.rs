@@ -13,11 +13,6 @@ fn display_and_source_cover_variants() -> Result<()> {
     assert_eq!(AacError::NotAac.to_string(), "Unsupported audio format");
     assert!(AacError::sample_rate(8, 4).to_string().contains("8Hz"));
     assert!(AacError::too_long(9.0, 1.0).to_string().contains("9s"));
-    assert!(
-        AacError::StreamLengthUnknown
-            .to_string()
-            .contains("unknown")
-    );
     assert_eq!(AacError::format("f").to_string(), "f");
     assert_eq!(AacError::decode("d").to_string(), "d");
     assert!(AacError::NotAac.is_format_class());
