@@ -33,7 +33,8 @@ ffmpeg / fdk-aac are **offline oracles**. Tests never spawn them.
 
 ```sh
 cargo fmt --check
-cargo test --lib --bins --doc
+cargo test --workspace --lib --bins
+cargo test --doc
 cargo clippy --all-targets -- -D warnings
 python3 scripts/check-file-size.py
 python3 scripts/check-changelog.py

@@ -21,7 +21,7 @@ pub enum AacError {
     StreamLengthUnknown,
     /// Structural / demux failure.
     Format(String),
-    /// Decoder engine rejected a frame (or panicked inside the firewall).
+    /// Decoder engine rejected a frame.
     Decode(String),
 }
 

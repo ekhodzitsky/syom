@@ -1,5 +1,7 @@
 //! Huffman 1–11 and Table 4.A.1 scalefactor codebook.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::bits::{BitReader, BitWriter};
 use super::huff;
 use super::sf::decode_dpcm;

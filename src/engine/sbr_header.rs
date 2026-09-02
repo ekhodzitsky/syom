@@ -212,6 +212,8 @@ fn read_u8(reader: &mut BitReader<'_>, n: u32) -> Result<u8> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::BitWriter;
 

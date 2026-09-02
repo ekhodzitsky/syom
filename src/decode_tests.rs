@@ -1,5 +1,7 @@
 //! Public decode path: sniff, caps, lavc native goldens.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::{
     AacError, ChannelMode, DecodeOptions, decode, decode_bytes, read, sniff_aac, sniff_is_adts,
     sniff_is_latm,

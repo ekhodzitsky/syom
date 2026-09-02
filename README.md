@@ -41,7 +41,9 @@ Requires **Rust 1.97**, edition 2024.
 ```rust
 fn main() -> syom::Result<()> {
     assert!(syom::decode(&[]).is_err());
-    let _ = syom::DecodeOptions::speech();
+    assert!(!syom::sniff_aac(b"ID3"));
+    let speech = syom::DecodeOptions::speech();
+    assert_eq!(speech.channel_mode, syom::ChannelMode::Mono);
     let _ = syom::DecodeOptions::unbounded();
     Ok(())
 }

@@ -92,7 +92,10 @@ fn read_box(data: &[u8], pos: usize) -> Result<Option<(BoxHdr, FourCc)>> {
             let ext = data
                 .get(pos + 8..pos.saturating_add(16))
                 .ok_or_else(|| AacError::format("isomp4: truncated 64-bit box size"))?;
-            (u64::from_be_bytes(ext.try_into().expect("8 bytes")), 16u64)
+            let arr: [u8; 8] = ext
+                .try_into()
+                .map_err(|_| AacError::format("isomp4: truncated 64-bit box size"))?;
+            (u64::from_be_bytes(arr), 16u64)
         }
         0 => {
             // "to end of file" box: only legal at top level; treat the rest
@@ -326,7 +329,10 @@ fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
     let b = data
         .get(pos..pos + 4)
         .ok_or_else(|| AacError::format("isomp4: truncated table"))?;
-    Ok(u32::from_be_bytes(b.try_into().expect("4 bytes")))
+    let arr: [u8; 4] = b
+        .try_into()
+        .map_err(|_| AacError::format("isomp4: truncated table"))?;
+    Ok(u32::from_be_bytes(arr))
 }
 
 fn parse_stsz(data: &[u8], file_len: usize) -> Result<Vec<u32>> {
@@ -709,6 +715,8 @@ pub fn sniff_is_isobmff(data: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     //! Crafted-structure tests: every malformed/adversarial shape must be a
     //! clean error, never a panic and never an oversized allocation.
 

@@ -85,6 +85,8 @@ pub fn limiter_table(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
 
     fn bands(f_low: Vec<i32>) -> HiLoTables {

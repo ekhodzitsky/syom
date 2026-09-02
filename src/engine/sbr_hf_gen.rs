@@ -160,7 +160,7 @@ pub fn build_patches(f_master: &[i32], k0: i32, k_x: i32, m: i32, fs_sbr: u32) -
 
     // Trailing small-patch trim: drop a final patch narrower than 3
     // subbands when more than one patch was built.
-    if num.len() > 1 && *num.last().unwrap() < 3 {
+    if num.len() > 1 && num.last().is_some_and(|&n| n < 3) {
         num.pop();
         start.pop();
     }
@@ -333,6 +333,8 @@ pub fn generate_hf(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
 
     /// Table 4.175 spot values.

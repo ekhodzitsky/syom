@@ -489,6 +489,8 @@ impl DownsampledSynthesisQmf {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
 
     /// Table 4.A.89 spot values, straight from the printed table.

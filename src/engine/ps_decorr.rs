@@ -369,6 +369,8 @@ impl PsDecorr {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::ps_hybrid::HybridConfig;
 

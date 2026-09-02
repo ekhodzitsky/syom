@@ -307,6 +307,8 @@ fn check_num_env(num_env: usize) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::BitWriter;
 

@@ -450,6 +450,8 @@ fn effective_amp_res(header: &SbrHeader, grid: &crate::engine::sbr_grid::SbrGrid
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::sbr_element::{SbrChannel, SbrElement};
     use crate::engine::sbr_envelope::{SbrEnvelopeData, SbrNoiseData};

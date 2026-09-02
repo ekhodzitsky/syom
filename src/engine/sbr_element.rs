@@ -339,6 +339,8 @@ fn read_flag(reader: &mut BitReader<'_>) -> Result<bool> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::{BitReader, BitWriter};
     use crate::engine::sbr_freq_bands::{HiLoTables, k0, k2, master_table};

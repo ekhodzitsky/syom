@@ -287,6 +287,8 @@ pub fn stream_mux_config_crc(config_bits: &[bool]) -> u8 {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
 
     /// Reference long-division CRC: compute the remainder of

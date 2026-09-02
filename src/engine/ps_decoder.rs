@@ -193,6 +193,8 @@ fn hold_element(config: PsConfig) -> PsData {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::BitWriter;
     use crate::engine::ps_hybrid::{LOOKAHEAD, NUM_QMF_SLOTS};

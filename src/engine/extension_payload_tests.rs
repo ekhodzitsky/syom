@@ -1,5 +1,7 @@
 //! FIL `extension_payload` parse/write (non-SBR types).
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::bits::{BitReader, BitWriter};
 use super::error::Error;
 use super::extension_payload::{

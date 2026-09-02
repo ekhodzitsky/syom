@@ -536,6 +536,8 @@ pub const NOISE_TABLE: [(f64, f64); 512] = [
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::NOISE_TABLE;
 
     /// Table 4.A.91 spot values (first, last, and an interior row).
