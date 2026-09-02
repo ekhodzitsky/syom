@@ -39,7 +39,6 @@ fn engine_error_display_covers_variants() {
         Error::HuffmanInvalid,
         Error::SpectrumInvalid,
         Error::FilterbankInvalid,
-        Error::UnsupportedElement(2),
         Error::Format("x"),
         Error::LoasSyncInvalid,
         Error::LatmAudioMuxVersionAReserved,

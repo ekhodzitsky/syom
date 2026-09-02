@@ -6,15 +6,12 @@ use super::error::Result;
 use super::ics::IcsInfo;
 use super::ics_body::parse_ics_into;
 use super::pns;
-use super::skip::ID_CPE;
 use super::stereo::{self, MsInfo};
 use super::tns;
 
 impl StreamDecoder {
     pub(crate) fn finish_sce(
         &mut self,
-        id: u8,
-        tag: u8,
         ics: IcsInfo,
         tns: Option<&tns::TnsData>,
         fs_index: u8,
@@ -31,13 +28,8 @@ impl StreamDecoder {
         if let Some(t) = tns {
             tns::apply(&mut self.spec_l, t, &ics, fs_index)?;
         }
-        if id == ID_CPE && tag & 0x10 != 0 {
-            self.fb_r
-                .synthesize_into(&self.spec_l, &ics, &mut self.pcm_r)
-        } else {
-            self.fb_l
-                .synthesize_into(&self.spec_l, &ics, &mut self.pcm_l)
-        }
+        self.fb_l
+            .synthesize_into(&self.spec_l, &ics, &mut self.pcm_l)
     }
 
     pub(crate) fn decode_cpe(
