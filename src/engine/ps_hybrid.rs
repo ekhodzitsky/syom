@@ -372,6 +372,8 @@ pub fn synthesize(config: HybridConfig, rows: &[Vec<Complex>]) -> Vec<[Complex; 
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
 
     fn frame_from(f: impl Fn(usize, usize) -> Complex) -> Vec<[Complex; 64]> {

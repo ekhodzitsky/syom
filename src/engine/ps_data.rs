@@ -494,6 +494,8 @@ fn skip_bits(reader: &mut BitReader<'_>, mut n: i64) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::BitWriter;
 

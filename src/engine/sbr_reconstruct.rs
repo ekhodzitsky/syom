@@ -236,6 +236,8 @@ impl NoiseScalefactors {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::sbr_freq_bands::{HiLoTables, k0, k2, master_table};
     use crate::engine::sbr_grid::FrameClass;

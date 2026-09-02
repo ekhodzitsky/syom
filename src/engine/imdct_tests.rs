@@ -1,5 +1,7 @@
 //! Fast IMDCT vs the naive §4.6.11.3.1 sum.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::{imdct, imdct_naive};
 
 fn max_err(n: usize, spec: &[f64]) -> f64 {

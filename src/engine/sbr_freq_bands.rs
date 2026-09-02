@@ -248,7 +248,7 @@ fn master_linear(k0_val: i32, k2_val: i32, bs_alter_scale: bool) -> Result<Vec<i
         if d <= 0 {
             return Err(Error::SbrFreqBandInvalid);
         }
-        let next = *f_master.last().unwrap() + d;
+        let next = *f_master.last().ok_or(Error::SbrFreqBandInvalid)? + d;
         f_master.push(next);
     }
     Ok(f_master)
@@ -333,7 +333,7 @@ fn warped_region(k_lo: i32, k_hi: i32, bands: f64, warp: f64) -> Result<Vec<i32>
         if d <= 0 {
             return Err(Error::SbrFreqBandInvalid);
         }
-        let next = *v_k.last().unwrap() + d;
+        let next = *v_k.last().ok_or(Error::SbrFreqBandInvalid)? + d;
         v_k.push(next);
     }
     Ok(v_k)
@@ -384,7 +384,7 @@ fn warped_region_upper(
         if d <= 0 {
             return Err(Error::SbrFreqBandInvalid);
         }
-        let next = *v_k1.last().unwrap() + d;
+        let next = *v_k1.last().ok_or(Error::SbrFreqBandInvalid)? + d;
         v_k1.push(next);
     }
     Ok(v_k1)
@@ -506,6 +506,8 @@ impl HiLoTables {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     //! Truth is the ISO/IEC 14496-3 §4.6.18.3.2 closed-form algorithm
     //! (Figures 4.39 / 4.40 and the §4.6.18.3.2.2 derivations). Each
     //! expected value below is computed by hand from those formulas for

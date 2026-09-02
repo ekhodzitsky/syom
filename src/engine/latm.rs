@@ -38,7 +38,7 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
         }
         let cfg = mux.as_ref().ok_or(Error::LatmNoPreviousMuxConfig)?;
         let payload = read_payload(&mut br, cfg)?;
-        let frame = dec.decode_raw_data_block(
+        let mut frame = dec.decode_raw_data_block(
             cfg.asc.aot,
             cfg.asc.sampling_frequency_index,
             cfg.asc.sample_rate,
@@ -46,6 +46,14 @@ pub fn decode_loas_planar(data: &[u8], mix_down_mono: bool) -> Result<(u32, Vec<
             1,
             &payload,
         )?;
+        if !mix_down_mono
+            && frame.channels == 1
+            && frame.sample_rate == cfg.asc.sample_rate.saturating_mul(2)
+            && let Some(ch) = frame.planar.first().cloned()
+        {
+            frame.planar.push(ch);
+            frame.channels = 2;
+        }
         if rate == 0 {
             rate = frame.sample_rate;
         }

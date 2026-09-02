@@ -1,5 +1,7 @@
 //! Extra ISOBMFF branches: 64-bit sizes, esds flags, co64, elst/mdhd v1, wave.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::{
     BoxHdr, extract_asc, parse_elst_start, parse_esds, parse_mdhd_timescale, parse_stco,
     parse_stsc, read_box, read_desc_len, sniff_is_m4a,

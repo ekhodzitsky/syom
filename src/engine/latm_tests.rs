@@ -1,5 +1,7 @@
 //! LATM mux config / payload helper branches.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::{MuxCfg, latm_value, read_frame_len, skip_mux_tail};
 use crate::engine::bits::{BitReader, BitWriter};
 use crate::engine::error::Error;

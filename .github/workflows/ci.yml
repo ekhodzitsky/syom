@@ -25,3 +25,5 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: tests
         run: cargo test --workspace --lib --bins
+      - name: doc tests
+        run: cargo test --doc

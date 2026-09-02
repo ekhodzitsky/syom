@@ -3,6 +3,8 @@
 //! Expected PCM is the naive §4.6.11 IMDCT + sine window (first-frame
 //! overlap with zeros). Runtime does not shell to ffmpeg.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::adts::{ADTS_HEADER_BYTES_NO_CRC, AdtsHeader};
 use super::bits::BitWriter;
 use super::decode::StreamDecoder;

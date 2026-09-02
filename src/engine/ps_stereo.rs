@@ -365,6 +365,8 @@ fn mix_rb(c: f64, rho: f64) -> (f64, f64, f64, f64) {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::{BitReader, BitWriter};
     use crate::engine::ps_data::PsIndexState;

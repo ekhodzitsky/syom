@@ -1,5 +1,7 @@
 //! ICS grouping, ADTS, ASC, section_data.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::adts::AdtsHeader;
 use super::asc::AudioSpecificConfig;
 use super::bits::{BitReader, BitWriter};

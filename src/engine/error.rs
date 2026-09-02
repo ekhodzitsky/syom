@@ -18,7 +18,7 @@ pub enum Error {
     AdtsReservedSampleRateIndex,
     /// `aac_frame_length` smaller than the header.
     AdtsFrameLengthTooSmall,
-    /// `audioObjectType` is not AAC-LC (2). HE-AAC (5/29) is Media.
+    /// `audioObjectType` is not LC (2) or HE-AAC (5/29).
     UnsupportedAot(u8),
     /// `frameLengthFlag == 1` (960-line) is out of v1.
     UnsupportedFrameLength,

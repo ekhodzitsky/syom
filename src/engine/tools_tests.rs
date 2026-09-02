@@ -1,5 +1,7 @@
 //! LC tools: TNS, MS, intensity, PNS, pulse, ICS sequences, SCE/CPE.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::bits::BitWriter;
 use super::decode::StreamDecoder;
 use super::error::Error;

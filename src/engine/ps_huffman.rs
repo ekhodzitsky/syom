@@ -367,6 +367,8 @@ pub fn ps_huff_dec(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used, clippy::expect_used)]
+
     use super::*;
     use crate::engine::bits::{BitReader, BitWriter};
 

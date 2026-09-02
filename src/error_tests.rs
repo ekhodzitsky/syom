@@ -1,5 +1,7 @@
 //! `AacError` Display / source / format-class.
 
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use super::{AacError, Result};
 use std::io;
 

@@ -2,10 +2,8 @@
 //!
 //! Product entry is [`decode::StreamDecoder`].
 
-#![allow(dead_code)]
+#![allow(dead_code)] // round-trip / table helpers are test-driven
 #![allow(
-    clippy::unwrap_used,
-    clippy::expect_used,
     clippy::manual_is_multiple_of,
     clippy::manual_div_ceil,
     clippy::collapsible_if,
@@ -64,8 +62,7 @@ pub mod stereo;
 pub mod swb;
 pub mod tns;
 
-#[allow(unused_imports)]
-pub use error::Error;
+pub(crate) use error::Error;
 pub use error::Result;
 
 #[cfg(test)]
