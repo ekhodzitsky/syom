@@ -233,7 +233,7 @@ fn write_golden(stem: &str, payload: &[u8], expected: &[f64]) {
     std::fs::write(dir.join(format!("{stem}.s16")), pcm).expect("write s16");
 }
 
-/// Offline mint: `MINT_GOLDENS=1 cargo test -p syom-aac mint_audible_goldens`.
+/// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_audible_goldens`.
 /// Expected PCM is naive §4.6.11, not this decoder's output.
 #[test]
 fn mint_audible_goldens() -> Result<(), Error> {

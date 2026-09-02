@@ -5,12 +5,9 @@ use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
 use crate::isomp4::{self, sniff_is_isobmff};
-use crate::options::{ChannelMode, DecodeOptions};
+use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
 use crate::out::{INV_S16, Out, maybe_he_v2_stereo, push_adts_mono, push_frame};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
-
-/// Hard cap on buffered input size (same rationale as the historical MP3 path).
-const MAX_INPUT_BYTES: usize = 1 << 30; // 1 GiB
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
 #[derive(Debug, Clone)]
@@ -43,7 +40,7 @@ pub fn read_with(path: impl AsRef<std::path::Path>, opts: &DecodeOptions) -> Res
 
 /// Decode ADTS, M4A, or LATM/LOAS bytes under `opts`.
 pub fn decode_with(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
-    if data.len() > MAX_INPUT_BYTES {
+    if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
         return Err(AacError::too_long(
             data.len() as f64 / 40_000.0, // rough lower bound only for message
             opts.max_duration_secs,

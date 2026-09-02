@@ -1,6 +1,6 @@
 //! `AudioSpecificConfig` — ISO/IEC 14496-3 §1.6.2.1 Table 1.15.
 //!
-//! v1 accepts AOT 2 (AAC-LC) only. AOT 5 / 29 (HE-AAC SBR / PS) is Media.
+//! LC core (AOT 2). Outer AOT 5/29 unwraps to LC + SBR/PS.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::BitReader;
