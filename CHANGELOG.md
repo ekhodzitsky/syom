@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-03
+
 ### Changed
 
 - Product is a zero-dep AAC library (`cargo add syom`), not a 16 kHz
   extract CLI. WAV-in, MP4 PCM, resample, clap, tracing, thiserror, and
   rustfft are gone. Output is planar `f32` at native rate. Caps:
-  `DecodeOptions::speech()` / `unbounded()`. Next cut is **0.3.0**.
+  `DecodeOptions::speech()` / `unbounded()`.
 - Crate root is decode / sniff / options. ISO-BMFF demux (`parse_aac_track`)
   is crate-private.
 - LC decode is f32 from spectrum through IMDCT/OLA. ICS/spectrum
@@ -57,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   via kover-aac / gigastt-aac; rustfft IMDCT. This repo is the AAC
   home: kover and sluh spawn the binary; they do not link the decoder.
 
-[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ekhodzitsky/syom/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ekhodzitsky/syom/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ekhodzitsky/syom/releases/tag/v0.1.0
