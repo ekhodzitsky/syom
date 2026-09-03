@@ -31,7 +31,7 @@ hard RAM/duration caps, no extra dependencies.
 
 ```toml
 [dependencies]
-syom = "0.2"
+syom = "0.3"
 ```
 
 Requires **Rust 1.97**, edition 2024.
