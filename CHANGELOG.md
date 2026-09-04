@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Compatible crate versions in `Cargo.lock` (`cc` 1.4.5,
+  `wasm-bindgen` 0.2.127). Product `[dependencies]` stay empty.
+
 ## [0.3.0] - 2026-09-03
 
 ### Changed
