@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Streaming decode API: `Decoder` (resumable push decoder for ADTS and
+  LATM/LOAS byte streams — `feed` arbitrary chunks, the `on_frame`
+  callback fires once per decoded AAC frame, `finish` flushes and drops a
+  partial trailing frame) and `decode_streaming` (slice-based, any
+  container incl. M4A/ISOBMFF). Frames are delivered as `Frame` — planar
+  f32 in [-1, 1] borrowing decoder scratch, valid for the callback only —
+  with `StreamInfo` tallies at the end. The callback returns `Result` so
+  consumers can abort mid-stream. Peak PCM RAM is O(frame). Push decoding
+  rejects M4A input (`moov` needs random access).
+
+### Changed
+
+- One-shot `decode_with` now layers on the streaming core. Two visible
+  consequences: ADTS input with leading junk resyncs to the first valid
+  frame instead of answering `NotAac`, and an over-long LATM stream fails
+  mid-decode with `TooLong` instead of a decode-class "latm: too long".
+- M4A `elst` encoder delay is skipped pre-emission (a skip counter over
+  decoded frames) instead of a post-hoc PCM shift; decoded output is
+  unchanged.
+
 ### Fixed
 
 - Multichannel frames (≥ 3 channels or a PCE) decode each channel through its

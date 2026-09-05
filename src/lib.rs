@@ -6,8 +6,8 @@ mod engine;
 mod error;
 mod isomp4;
 mod options;
-mod out;
 mod sniff;
+mod stream;
 
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
 pub use error::{AacError, Result};
@@ -17,6 +17,7 @@ pub use options::{
     DEFAULT_MAX_INPUT_BYTES, DEFAULT_MAX_SAMPLE_RATE, DecodeOptions,
 };
 pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
+pub use stream::{Decoder, Frame, StreamInfo, decode_streaming};
 
 #[cfg(test)]
 #[path = "decode_tests.rs"]
@@ -25,6 +26,18 @@ mod decode_tests;
 #[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
+
+#[cfg(test)]
+#[path = "stream_tests.rs"]
+mod stream_tests;
+
+#[cfg(test)]
+#[path = "stream_latm_tests.rs"]
+mod stream_latm_tests;
+
+#[cfg(test)]
+#[path = "stream_m4a_tests.rs"]
+mod stream_m4a_tests;
 
 #[cfg(test)]
 #[path = "error_tests.rs"]
