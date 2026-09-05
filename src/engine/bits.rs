@@ -38,6 +38,19 @@ impl<'a> BitReader<'a> {
         (self.data.len() * 8) as u64 - self.bit_position()
     }
 
+    /// Copy of bits `[start, end)` of the underlying data, MSB-first
+    /// (transmission order). Used to re-feed a parsed region to the
+    /// LATM `StreamMuxConfig()` CRC.
+    #[must_use]
+    pub fn bits_range(&self, start: u64, end: u64) -> Vec<bool> {
+        let mut out = Vec::with_capacity(end.saturating_sub(start) as usize);
+        for pos in start..end {
+            let byte = self.data[(pos / 8) as usize];
+            out.push(byte & (0x80 >> (pos % 8)) != 0);
+        }
+        out
+    }
+
     #[inline(always)]
     fn refill(&mut self) {
         if self.ncache > 56 {

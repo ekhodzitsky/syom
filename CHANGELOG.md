@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- LATM/LOAS `StreamMuxConfig()` `crcCheckSum` is verified (CRC-8,
+  §1.8.4.5) instead of discarded; a mismatch rejects the stream.
+
 ### Changed
 
 - Compatible crate versions in `Cargo.lock` (`cc` 1.4.5,
