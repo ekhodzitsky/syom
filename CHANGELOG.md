@@ -30,12 +30,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged.
 - Bench refresh (BENCH.md, 2026-09-05): symphonia dev-dep bumped to 0.6
   and oxideav-aac 0.1.7 added as a decode peer (the published tarball
-  does decode — ADTS LC + SBR + PS). LC ADTS wall is now a statistical
-  tie with symphonia 0.6; syom still leads LC M4A, HE (~30×/18× vs
-  oxideav), and 5.1, and loses only the lc_adts alloc-count cell
-  narrowly (32 vs 30).
+  does decode — ADTS LC + SBR + PS). syom leads LC ADTS/M4A wall, HE
+  (~30×/18× vs oxideav), and 5.1.
 
 ### Fixed
+
+- One-shot mono decode no longer pays streaming-layer overhead: ADTS/LATM
+  mono frames decode straight into the output plane (no per-frame scratch
+  or callback copy), `decode_streaming` iterates the input slice zero-copy
+  instead of buffering it, and ADTS output planes are pre-sized from a
+  frame-header walk. LC ADTS wall 225 → 216 µs (symphonia 0.6: 222 µs),
+  allocs/iter 32 → 27, alloc bytes/iter 146 → 70 KiB (BENCH.md,
+  2026-09-05).
 
 - Multichannel frames (≥ 3 channels or a PCE) decode each channel through its
   own filterbank state; previously the shared L/R filterbanks bled

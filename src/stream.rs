@@ -27,43 +27,18 @@
 //! # Ok::<(), syom::AacError>(())
 //! ```
 
-use crate::engine::adts::AdtsHeader;
-use crate::engine::bits::BitReader;
 use crate::engine::decode::StreamDecoder;
 use crate::engine::error::Error as EngineError;
-use crate::engine::latm::{LOAS_SYNC, MuxCfg, read_payload};
+use crate::engine::latm::MuxCfg;
 use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
 use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
-use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
+mod frame;
 mod m4a;
+mod pump;
 
-/// One decoded AAC frame: planar f32 in [-1, 1], one plane per channel.
-///
-/// The planes borrow decoder scratch and are valid **only for the duration
-/// of the frame callback** — copy them out to keep them.
-pub struct Frame<'a> {
-    /// Native sample rate after SBR (2× the core rate for HE-AAC).
-    pub sample_rate: u32,
-    /// Per-channel sample count in this frame.
-    pub samples: usize,
-    /// Planes in the same channel order as [`crate::DecodedAac`].
-    pub planar: &'a [&'a [f32]],
-}
-
-/// Tallies from a finished stream decode.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StreamInfo {
-    /// Native sample rate of the stream (0 if nothing decodable was seen).
-    pub sample_rate: u32,
-    /// Channels per emitted frame (0 if nothing decodable was seen).
-    pub channels: usize,
-    /// Payload frames decoded, including edit-list-skipped ones.
-    pub aac_frames: u64,
-    /// Output samples per channel after any `elst` skip.
-    pub samples: u64,
-}
+pub use frame::{Frame, StreamInfo};
 
 /// Container the push decoder has locked onto.
 enum Container {
@@ -139,14 +114,18 @@ impl Decoder {
                 self.opts.max_duration_secs,
             ));
         }
-        self.buf.extend_from_slice(bytes);
+        // Take the buffer so `pump` can borrow it while mutating `self`.
+        let mut buf = std::mem::take(&mut self.buf);
+        buf.extend_from_slice(bytes);
         let mut cb = on_frame;
-        self.pump(&mut cb, false)?;
+        let res = self.pump(&buf, None, None, &mut cb, false);
         // Compact the consumed prefix so `buf` stays O(frame + fresh input).
-        if self.pos >= 64 * 1024 && self.pos >= self.buf.len() / 2 {
-            self.buf.drain(..self.pos);
+        if res.is_ok() && self.pos >= 64 * 1024 && self.pos >= buf.len() / 2 {
+            buf.drain(..self.pos);
             self.pos = 0;
         }
+        self.buf = buf;
+        res?;
         Ok(bytes.len())
     }
 
@@ -156,8 +135,42 @@ impl Decoder {
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        let buf = std::mem::take(&mut self.buf);
         let mut cb = on_frame;
-        self.pump(&mut cb, true)?;
+        self.pump(&buf, None, None, &mut cb, true)?;
+        self.tallies()
+    }
+
+    /// One-shot over a complete slice (ADTS/LATM): sniffs and pumps without
+    /// copying the input into the push buffer. Equivalent to one `feed` of
+    /// the whole slice plus `finish`.
+    fn decode_slice<F>(mut self, data: &[u8], on_frame: F) -> Result<StreamInfo>
+    where
+        F: FnMut(Frame<'_>) -> Result<()>,
+    {
+        let mut cb = on_frame;
+        self.pump(data, None, None, &mut cb, true)?;
+        self.tallies()
+    }
+
+    /// One-shot mono over a complete slice: decode straight into `dst`,
+    /// skipping the per-frame scratch + callback copy. Caller guarantees
+    /// [`ChannelMode::Mono`]; `est_frames` pre-sizes `dst` after frame 1.
+    fn decode_slice_mono(
+        mut self,
+        data: &[u8],
+        est_frames: Option<usize>,
+        dst: &mut Vec<f32>,
+    ) -> Result<StreamInfo> {
+        fn ignore(_: Frame<'_>) -> Result<()> {
+            Ok(())
+        }
+        self.pump(data, Some(dst), est_frames, &mut ignore, true)?;
+        self.tallies()
+    }
+
+    /// Terminal tallies; [`AacError::NotAac`] when nothing decodable was seen.
+    fn tallies(&self) -> Result<StreamInfo> {
         if self.emitted == 0 {
             return Err(match self.container {
                 // One-shot LATM reports an empty LOAS stream as decode-class.
@@ -171,204 +184,6 @@ impl Decoder {
             channels,
             aac_frames: self.aac_frames,
             samples: self.samples_out,
-        })
-    }
-
-    fn pump<F>(&mut self, on_frame: &mut F, final_flush: bool) -> Result<()>
-    where
-        F: FnMut(Frame<'_>) -> Result<()>,
-    {
-        if matches!(self.container, Container::Unknown) {
-            let avail = &self.buf[self.pos..];
-            if avail.len() < 8 && !final_flush {
-                return Ok(()); // wait for enough bytes to sniff
-            }
-            if sniff_is_isobmff(avail) {
-                return Err(AacError::format(
-                    "aac: M4A/ISOBMFF needs random access; use decode_streaming",
-                ));
-            }
-            // Sniff order and ADTS fallback mirror `decode_with`.
-            self.container = if sniff_is_adts(avail) || !sniff_is_latm(avail) {
-                Container::Adts
-            } else {
-                Container::Latm
-            };
-        }
-        match self.container {
-            Container::Adts => self.pump_adts(on_frame),
-            Container::Latm => self.pump_latm(on_frame),
-            Container::Unknown => Ok(()),
-        }
-    }
-
-    fn pump_adts<F>(&mut self, on_frame: &mut F) -> Result<()>
-    where
-        F: FnMut(Frame<'_>) -> Result<()>,
-    {
-        loop {
-            let avail = &self.buf[self.pos..];
-            let (hdr, payload_off) = match AdtsHeader::parse(avail) {
-                Ok(v) => v,
-                // Partial header: wait for more bytes (finish drops it).
-                Err(EngineError::UnexpectedEnd) => return Ok(()),
-                // Definite garbage: resync one byte, like the one-shot loop.
-                Err(_) => {
-                    self.pos += 1;
-                    continue;
-                }
-            };
-            let frame_len = usize::from(hdr.aac_frame_length);
-            if avail.len() < frame_len {
-                return Ok(()); // partial frame: wait (finish drops it)
-            }
-            let payload = &avail[payload_off..frame_len];
-            let mono = matches!(self.opts.channel_mode, ChannelMode::Mono);
-            let idx = self.aac_frames;
-            let rate = if mono {
-                self.mono_scratch.clear();
-                self.dec
-                    .decode_raw_mono_f32(
-                        hdr.audio_object_type(),
-                        hdr.sampling_frequency_index,
-                        hdr.sample_rate(),
-                        hdr.channel_configuration,
-                        hdr.number_of_raw_data_blocks_in_frame,
-                        payload,
-                        &mut self.mono_scratch,
-                    )
-                    .map_err(|e| {
-                        AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}"))
-                    })?
-            } else {
-                self.dec
-                    .decode_frame_scaled(
-                        hdr.audio_object_type(),
-                        hdr.sampling_frequency_index,
-                        hdr.sample_rate(),
-                        hdr.channel_configuration,
-                        payload,
-                    )
-                    .map_err(|e| {
-                        AacError::decode(format!("aac: decode failed at frame {idx}: {e}"))
-                    })?
-            };
-            self.pos += frame_len;
-            self.aac_frames += 1;
-            self.emit(rate, on_frame)?;
-        }
-    }
-
-    fn pump_latm<F>(&mut self, on_frame: &mut F) -> Result<()>
-    where
-        F: FnMut(Frame<'_>) -> Result<()>,
-    {
-        loop {
-            let avail = &self.buf[self.pos..];
-            if avail.len() < 3 {
-                return Ok(()); // retain the trailing bytes across feeds
-            }
-            let v = (u32::from(avail[0]) << 16) | (u32::from(avail[1]) << 8) | u32::from(avail[2]);
-            if v >> 13 != LOAS_SYNC {
-                self.pos += 1; // byte-scan resync, like the one-shot loop
-                continue;
-            }
-            let mux_len = (v & 0x1FFF) as usize;
-            if avail.len() < 3 + mux_len {
-                return Ok(()); // partial LOAS frame: wait (finish drops it)
-            }
-            let body = &avail[3..3 + mux_len];
-            let mut br = BitReader::new(body);
-            let use_same = br.read_bit().map_err(AacError::from)?;
-            if !use_same {
-                self.mux = Some(MuxCfg::parse(&mut br).map_err(AacError::from)?);
-            }
-            let cfg = self
-                .mux
-                .as_ref()
-                .ok_or(EngineError::LatmNoPreviousMuxConfig)
-                .map_err(AacError::from)?;
-            let (aot, fs, sr, ch) = (
-                cfg.asc.aot,
-                cfg.asc.sampling_frequency_index,
-                cfg.asc.sample_rate,
-                cfg.asc.channel_configuration,
-            );
-            let payload = read_payload(&mut br, cfg).map_err(AacError::from)?;
-            let mono = matches!(self.opts.channel_mode, ChannelMode::Mono);
-            let rate = if mono {
-                self.mono_scratch.clear();
-                self.dec
-                    .decode_raw_mono_f32(aot, fs, sr, ch, 1, &payload, &mut self.mono_scratch)
-                    .map_err(AacError::from)?
-            } else {
-                self.dec
-                    .decode_frame_scaled(aot, fs, sr, ch, &payload)
-                    .map_err(AacError::from)?
-            };
-            self.pos += 3 + mux_len;
-            self.aac_frames += 1;
-            self.emit(rate, on_frame)?;
-        }
-    }
-
-    /// Caps + consistency for one decoded frame, then the callback.
-    fn emit<F>(&mut self, rate: u32, on_frame: &mut F) -> Result<()>
-    where
-        F: FnMut(Frame<'_>) -> Result<()>,
-    {
-        let mono = matches!(self.opts.channel_mode, ChannelMode::Mono);
-        let (n_ch, n_samples) = if mono {
-            (1, self.mono_scratch.len())
-        } else {
-            let planes = self.dec.frame_planes();
-            (planes.len(), planes.first().map_or(0, Vec::len))
-        };
-        if n_ch == 0 {
-            return Ok(()); // channel-less frame: consumed, not emitted
-        }
-        match self.locked {
-            None => {
-                if rate == 0 || rate > self.opts.max_sample_rate {
-                    return Err(AacError::sample_rate(rate, self.opts.max_sample_rate));
-                }
-                self.locked = Some((rate, n_ch));
-                self.max_samples = self.opts.max_frames(rate);
-            }
-            Some((r, c)) => {
-                if rate != r {
-                    return Err(AacError::decode(format!(
-                        "aac: sample rate changed mid-stream ({r}Hz → {rate}Hz)"
-                    )));
-                }
-                if c != n_ch {
-                    return Err(AacError::decode(format!(
-                        "aac: channel count changed mid-stream ({c} → {n_ch})"
-                    )));
-                }
-            }
-        }
-        self.samples_decoded += n_samples as u64;
-        if self.samples_decoded > self.max_samples as u64 {
-            let observed_s = self.samples_decoded as f64 / f64::from(rate.max(1));
-            return Err(AacError::too_long(observed_s, self.opts.max_duration_secs));
-        }
-        self.samples_out += n_samples as u64;
-        self.emitted += 1;
-        // Borrow the planes for the duration of the callback only.
-        let mono_plane: [&[f32]; 1];
-        let split_planes: Vec<&[f32]>;
-        let planar: &[&[f32]] = if mono {
-            mono_plane = [self.mono_scratch.as_slice()];
-            &mono_plane
-        } else {
-            split_planes = self.dec.frame_planes().iter().map(Vec::as_slice).collect();
-            &split_planes
-        };
-        on_frame(Frame {
-            sample_rate: rate,
-            samples: n_samples,
-            planar,
         })
     }
 }
@@ -391,8 +206,23 @@ where
     if sniff_is_isobmff(data) {
         return m4a::stream_m4a(data, opts, on_frame);
     }
-    let mut dec = Decoder::new(opts.clone());
-    let mut cb = on_frame;
-    dec.feed(data, &mut cb)?;
-    dec.finish(&mut cb)
+    Decoder::new(opts.clone()).decode_slice(data, on_frame)
+}
+
+/// One-shot mono fast path for [`crate::decode_with`]: append each frame's
+/// mixed-mono samples straight into `dst` — no per-frame scratch, no
+/// callback copy. ADTS/LATM only; M4A keeps the [`decode_streaming`] path.
+pub(crate) fn decode_streaming_mono_into(
+    data: &[u8],
+    opts: &DecodeOptions,
+    est_frames: Option<usize>,
+    dst: &mut Vec<f32>,
+) -> Result<StreamInfo> {
+    if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
+        return Err(AacError::too_long(
+            data.len() as f64 / 40_000.0, // rough lower bound only for message
+            opts.max_duration_secs,
+        ));
+    }
+    Decoder::new(opts.clone()).decode_slice_mono(data, est_frames, dst)
 }
