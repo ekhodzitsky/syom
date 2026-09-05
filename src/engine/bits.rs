@@ -294,9 +294,18 @@ impl BitWriter {
     }
 
     /// Append one bit.
-    #[cfg(test)]
+    // Used by the LC encoder (enc_*); allow until enc_frame lands.
+    #[allow(dead_code)]
     pub fn write_bit(&mut self, bit: bool) {
         self.write(u32::from(bit), 1);
+    }
+
+    /// Bits written so far (before the final byte-align pad).
+    // Used by the LC encoder rate loop (enc_frame); allow until it lands.
+    #[allow(dead_code)]
+    #[must_use]
+    pub fn bit_len(&self) -> u64 {
+        (self.buf.len() as u64) * 8 + u64::from(self.bits)
     }
 
     /// Pad with zeros to a byte boundary and return the bytes.

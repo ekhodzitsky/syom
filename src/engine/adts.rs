@@ -1,6 +1,6 @@
 //! ADTS fixed + variable header — ISO/IEC 13818-7 §1.A.2.2.
 
-use super::bits::BitReader;
+use super::bits::{BitReader, BitWriter};
 use super::error::{Error, Result};
 
 /// 12-bit ADTS syncword.
@@ -102,10 +102,41 @@ impl AdtsHeader {
             .copied()
             .unwrap_or(0)
     }
-
     /// `audioObjectType` = wire profile + 1 (§1.A.2).
     #[must_use]
     pub fn audio_object_type(&self) -> u8 {
         self.profile + 1
     }
+
+    /// Serialize as the 56-bit no-CRC header (`protection_absent` on the wire
+    /// is always 1; the encoder never writes a CRC). Exactly 7 bytes.
+    // Used by the LC encoder (enc_frame); allow until it lands.
+    #[allow(dead_code)]
+    #[must_use]
+    pub fn write(&self) -> [u8; ADTS_HEADER_BYTES_NO_CRC] {
+        let mut w = BitWriter::new();
+        w.write(u32::from(ADTS_SYNCWORD), 12);
+        w.write_bit(self.mpeg_version_mpeg2);
+        w.write(0, 2); // layer
+        w.write_bit(true); // protection_absent
+        w.write(u32::from(self.profile), 2);
+        w.write(u32::from(self.sampling_frequency_index), 4);
+        w.write_bit(false); // private_bit
+        w.write(u32::from(self.channel_configuration), 3);
+        w.write(0, 4); // original/copy, home, copyright bits
+        w.write(u32::from(self.aac_frame_length), 13);
+        w.write(u32::from(self.adts_buffer_fullness), 11);
+        w.write(
+            u32::from(self.number_of_raw_data_blocks_in_frame.saturating_sub(1)),
+            2,
+        );
+        let bytes = w.finish();
+        let mut out = [0u8; ADTS_HEADER_BYTES_NO_CRC];
+        out.copy_from_slice(&bytes);
+        out
+    }
 }
+
+#[cfg(test)]
+#[path = "adts_tests.rs"]
+mod adts_tests;

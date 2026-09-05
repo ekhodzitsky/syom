@@ -3,12 +3,27 @@
 //! LC core (AOT 2). Outer AOT 5/29 unwraps to LC + SBR/PS.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
-use super::bits::BitReader;
+use super::bits::{BitReader, BitWriter};
 use super::error::{Error, Result};
 
 const AOT_LC: u8 = 2;
 const AOT_SBR: u8 = 5;
 const AOT_PS: u8 = 29;
+
+/// Serialize a bare LC ASC: AOT 2 + rate index + channels + 3 zero GA bits
+/// (`frameLengthFlag` / `dependsOnCoreCoder` / `extensionFlag`). Two bytes
+/// for any table rate (explicit 24-bit rates are never emitted).
+// Used by the M4A muxer (m4a_write); allow until it lands.
+#[allow(dead_code)]
+#[must_use]
+pub fn write_lc(fs_index: u8, channel_configuration: u8) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    w.write(u32::from(AOT_LC), 5);
+    w.write(u32::from(fs_index), 4);
+    w.write(u32::from(channel_configuration), 4);
+    w.write(0, 3);
+    w.finish()
+}
 
 /// Parsed `AudioSpecificConfig` (LC core, optional SBR/PS).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,3 +162,7 @@ fn parse_ga(reader: &mut BitReader<'_>) -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "asc_tests.rs"]
+mod asc_tests;
