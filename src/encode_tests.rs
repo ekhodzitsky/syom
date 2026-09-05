@@ -219,3 +219,38 @@ fn band_noise_quality_floor_stereo_128k() {
         assert!(snr >= 15.0, "noise ch{ch} SNR {snr:.1} dB");
     }
 }
+
+#[test]
+fn correlated_stereo_uses_ms_and_saves_bits() {
+    // Nearly identical channels: M/S collapses the side channel.
+    let l = sine(48_000, 0.25, 440.0, 0.5);
+    let r: Vec<f32> = l.iter().map(|&x| x * 0.98).collect();
+    let corr = encode(&[l.clone(), r], 48_000).expect("correlated");
+    let r2 = sine(48_000, 0.25, 1_337.0, 0.49);
+    let decorr = encode(&[l, r2], 48_000).expect("decorrelated");
+    assert!(
+        corr.len() * 5 < decorr.len() * 4,
+        "correlated {} B should save >20% vs decorrelated {} B",
+        corr.len(),
+        decorr.len()
+    );
+    let dec = decode_with(&corr, &crate::DecodeOptions::unbounded()).expect("decode");
+    let want_r: Vec<f32> = dec.channels[0].iter().map(|&x| x * 0.98).collect();
+    // 0.98x differs from 1.0x by -34 dB, so a faithful M/S decode of r
+    // tracks 0.98 * decoded-l closely (decoder outputs: no delay shift).
+    let snr = snr_db(&want_r[2048..], &dec.channels[1][2048..]);
+    assert!(snr >= 45.0, "M/S right-channel tracking {snr:.1} dB");
+}
+
+#[test]
+fn decorrelated_stereo_stays_lr() {
+    let l = sine(48_000, 0.25, 440.0, 0.5);
+    let r = sine(48_000, 0.25, 2_997.0, 0.4);
+    let pcm = vec![l, r];
+    let adts = encode(&pcm, 48_000).expect("encode");
+    let dec = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode");
+    for (ch, (want, got)) in pcm.iter().zip(dec.channels.iter()).enumerate() {
+        let snr = snr_aligned(want, got);
+        assert!(snr >= 30.0, "decorrelated ch{ch} SNR {snr:.1} dB");
+    }
+}

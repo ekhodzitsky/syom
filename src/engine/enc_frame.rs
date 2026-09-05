@@ -36,7 +36,7 @@ pub struct LcEncoder {
     channels: usize,
     bitrate_bps: u32,
     offsets: &'static [u16],
-    /// Full 2048-tap sine window pre-scaled by 32768 (decoder filterbank
+    /// Full 2048-tap KBD window pre-scaled by 32768 (decoder filterbank
     /// output is s16-scaled before the public 1/32768 mapping).
     window: Box<[f32; 2 * LONG_WINDOW_LEN]>,
     prev: [[f32; LONG_WINDOW_LEN]; 2],
@@ -49,6 +49,8 @@ pub struct LcEncoder {
     /// integer sf-offset step undershoots by up to ~11%, so frames may
     /// spend accumulated savings. ADTS carries the VBR fullness marker.
     credit: i64,
+    /// This frame's CPE is M/S-coded (`ms_mask_present = 2`).
+    ms_used: bool,
 }
 
 impl LcEncoder {
@@ -89,6 +91,7 @@ impl LcEncoder {
             psy: Psy::new(offsets, sample_rate),
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
+            ms_used: false,
         })
     }
 
@@ -120,6 +123,7 @@ impl LcEncoder {
             mdct_into_f32(&buf, spec);
             prev.copy_from_slice(plane);
         }
+        self.ms_used = self.channels == 2 && self.decide_ms(&mut specs);
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, spend);
@@ -131,6 +135,34 @@ impl LcEncoder {
         self.credit =
             (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
         Ok(out)
+    }
+
+    /// Per-frame M/S decision (whole-frame, `ms_mask_present` 0 or 2): code
+    /// (m, s) = ((l+r)/2, (l−r)/2) when the side channel is quieter than
+    /// the right channel (correlated content concentrates into mid). On a
+    /// decision to use M/S, `specs` is transformed in place. TODO: per-band
+    /// ms_used bits, binaural masking margin.
+    fn decide_ms(&self, specs: &mut [[f32; LONG_WINDOW_LEN]; 2]) -> bool {
+        let mut e_side = 0.0f64;
+        let mut e_right = 0.0f64;
+        {
+            let [l, r] = specs;
+            for (&lv, &rv) in l.iter().zip(r.iter()) {
+                let s = f64::from((lv - rv) * 0.5);
+                e_side += s * s;
+                e_right += f64::from(rv) * f64::from(rv);
+            }
+        }
+        if e_side >= e_right {
+            return false;
+        }
+        let [l, r] = specs;
+        for (lv, rv) in l.iter_mut().zip(r.iter_mut()) {
+            let (a, b) = (*lv, *rv);
+            *lv = (a + b) * 0.5;
+            *rv = (a - b) * 0.5;
+        }
+        true
     }
 
     /// Smallest global sf offset whose frame fits the bit budget (frame
@@ -243,7 +275,7 @@ impl LcEncoder {
             w.write(0, 4); // tag
             w.write_bit(true); // common_window
             enc_section::emit_ics_info(&mut w, max_sfb);
-            w.write(0, 2); // ms_mask_present: off (TODO: per-frame M/S)
+            w.write(u32::from(self.ms_used) * 2, 2); // ms_mask_present: 0 or 2
             let channels = self
                 .chans
                 .iter()
