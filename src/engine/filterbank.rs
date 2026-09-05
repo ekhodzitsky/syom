@@ -77,6 +77,8 @@ fn half(n: usize, shape: WindowShape) -> &'static [f32] {
 
 /// Window left half for the encoder's analysis side (mirrors [`half`]; the
 /// right half of an OnlyLong window is this reversed).
+// Used by the LC encoder (enc_frame); allow until it lands.
+#[allow(dead_code)]
 pub(crate) fn window_left(n: usize, shape: WindowShape) -> &'static [f32] {
     half(n, shape)
 }

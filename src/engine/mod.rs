@@ -20,6 +20,8 @@ pub mod ics;
 pub mod ics_body;
 pub mod imdct;
 pub mod latm;
+// Used by the LC encoder (enc_frame); allow until it lands.
+#[allow(dead_code)]
 pub(crate) mod mdct;
 pub mod pns;
 pub mod ps_data;
