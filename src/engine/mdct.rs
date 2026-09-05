@@ -88,9 +88,18 @@ impl Plan {
 #[must_use]
 pub fn mdct_naive(time: &[f64], n: usize) -> Vec<f64> {
     let mut out = vec![0.0f64; n / 2];
+    naive_f64_into(time, &mut out);
+    out
+}
+
+fn naive_f64_into(time: &[f64], spec: &mut [f64]) {
+    let n = time.len();
+    if n == 0 {
+        return;
+    }
     let n0 = (n / 2 + 1) as f64 / 2.0;
     let step = 2.0 * std::f64::consts::PI / n as f64;
-    for (k, slot) in out.iter_mut().enumerate() {
+    for (k, slot) in spec.iter_mut().enumerate() {
         let mut acc = 0.0f64;
         let kf = k as f64 + 0.5;
         for (n_i, &x) in time.iter().enumerate() {
@@ -98,31 +107,23 @@ pub fn mdct_naive(time: &[f64], n: usize) -> Vec<f64> {
         }
         *slot = 2.0 * acc;
     }
-    out
 }
 
 fn naive_f32(time: &[f32], spec: &mut [f32]) {
     let t64: Vec<f64> = time.iter().copied().map(f64::from).collect();
-    let out = mdct_naive(&t64, time.len());
-    for (d, s) in spec.iter_mut().zip(out) {
+    let mut tmp = vec![0.0f64; spec.len()];
+    naive_f64_into(&t64, &mut tmp);
+    for (d, s) in spec.iter_mut().zip(tmp) {
         *d = s as f32;
     }
 }
 
 /// Forward MDCT: `time` (N windowed samples) → `spec` (N/2 coefficients).
 pub fn mdct_into_f32(time: &[f32], spec: &mut [f32]) {
-    let n = time.len();
-    if spec.len() != n / 2 {
-        let n2 = n / 2;
-        let mut tmp = vec![0.0f32; n2];
-        naive_f32(time, &mut tmp);
-        let take = spec.len().min(n2);
-        spec[..take].copy_from_slice(&tmp[..take]);
-        return;
-    }
-    match n {
-        2048 => PLAN_2048.apply(time, spec),
-        _ => naive_f32(time, spec),
+    if time.len() == 2048 && spec.len() == 1024 {
+        PLAN_2048.apply(time, spec);
+    } else {
+        naive_f32(time, spec);
     }
 }
 
