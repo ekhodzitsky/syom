@@ -11,6 +11,11 @@ use crate::out::{Out, push_adts_mono, push_frame};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
+///
+/// Split channel order: mono/stereo as-is; multichannel AAC-LC
+/// (`channel_configuration` 3–6) follows the libavcodec layout order
+/// (5.1 = FL FR FC LFE BL BR); PCE streams follow PCE declaration order
+/// (front, side, back, LFE). Speech mono is the mean of the non-LFE planes.
 #[derive(Debug, Clone)]
 pub struct DecodedAac {
     pub sample_rate: u32,

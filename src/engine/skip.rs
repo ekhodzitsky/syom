@@ -1,4 +1,5 @@
-//! Skip FIL / DSE / PCE / CCE so a raw_data_block stays bit-aligned.
+//! Skip FIL / DSE / CCE so a raw_data_block stays bit-aligned.
+//! PCE is parsed (not skipped) in `channel_map::parse_pce`.
 
 use super::bits::BitReader;
 use super::error::Result;
@@ -34,50 +35,6 @@ pub fn skip_dse(br: &mut BitReader<'_>) -> Result<()> {
         br.byte_align()?;
     }
     br.skip(count.saturating_mul(8))?;
-    Ok(())
-}
-
-/// `program_config_element()` — consumed, not applied. v1 does not use PCE layout.
-pub fn skip_pce(br: &mut BitReader<'_>) -> Result<()> {
-    let _tag = br.read(4)?;
-    let _object_type = br.read(2)?;
-    let _sf_index = br.read(4)?;
-    let num_front = br.read(4)? as usize;
-    let num_side = br.read(4)? as usize;
-    let num_back = br.read(4)? as usize;
-    let num_lfe = br.read(2)? as usize;
-    let num_assoc = br.read(3)? as usize;
-    let num_cc = br.read(4)? as usize;
-    let mono_mix = br.read_bit()?;
-    if mono_mix {
-        let _ = br.read(4)?;
-    }
-    let stereo_mix = br.read_bit()?;
-    if stereo_mix {
-        let _ = br.read(4)?;
-    }
-    let matrix_mix = br.read_bit()?;
-    if matrix_mix {
-        let _ = br.read(3)?;
-        let _ = br.read_bit()?;
-    }
-    for _ in 0..(num_front + num_side + num_back) {
-        let _is_cpe = br.read_bit()?;
-        let _tag = br.read(4)?;
-    }
-    for _ in 0..num_lfe {
-        let _ = br.read(4)?;
-    }
-    for _ in 0..num_assoc {
-        let _ = br.read(4)?;
-    }
-    for _ in 0..num_cc {
-        let _is_ind = br.read_bit()?;
-        let _tag = br.read(4)?;
-    }
-    br.byte_align()?;
-    let comment_bytes = br.read(8)?;
-    br.skip(comment_bytes.saturating_mul(8))?;
     Ok(())
 }
 

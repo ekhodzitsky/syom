@@ -2,6 +2,7 @@
 
 use super::adts::AdtsHeader;
 use super::bits::BitReader;
+use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
 use super::error::{Error, Result};
 use super::extension_payload::ExtensionPayload;
 use super::filterbank::Filterbank;
@@ -13,7 +14,7 @@ use super::sbr_extension::SbrExtensionData;
 use super::sbr_header::SbrHeader;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
-use super::skip::{fill_count, skip_cce, skip_dse, skip_pce};
+use super::skip::{fill_count, skip_cce, skip_dse};
 
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
@@ -46,6 +47,14 @@ pub struct StreamDecoder {
     pub(crate) sf_l: ScaleFactors,
     pub(crate) sf_r: ScaleFactors,
     fast_mono: bool,
+    /// Decoded elements of the current frame (multichannel path only).
+    elems: Vec<Element>,
+    /// Sticky `program_config_element()` channel map; wins over
+    /// `channel_configuration` once seen (§4.4.2.4).
+    pce: Option<PceChannelMap>,
+    /// Per-channel filterbank state for the multichannel path. Mono/stereo
+    /// keep using `fb_l` / `fb_r` directly.
+    fb_pool: Vec<Filterbank>,
 }
 
 impl StreamDecoder {
@@ -69,11 +78,12 @@ impl StreamDecoder {
         aot: u8,
         fs_index: u8,
         sample_rate: u32,
-        _channel_configuration: u8,
+        channel_configuration: u8,
         _num_raw_data_blocks: u8,
         payload: &[u8],
     ) -> Result<DecodedFrame> {
-        let sample_rate = self.decode_into_bufs(aot, fs_index, sample_rate, payload)?;
+        let sample_rate =
+            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload)?;
         Ok(DecodedFrame {
             planar: self.frame_ch.clone(),
             channels: self.frame_ch.len(),
@@ -86,6 +96,7 @@ impl StreamDecoder {
         aot: u8,
         fs_index: u8,
         sample_rate: u32,
+        channel_configuration: u8,
         payload: &[u8],
     ) -> Result<u32> {
         if aot != 2 && aot != 5 && aot != 29 {
@@ -93,7 +104,15 @@ impl StreamDecoder {
         }
         let core_aot = 2;
         let mut br = BitReader::new(payload);
+        // Multichannel path: per-channel filterbanks, element→plane mapping.
+        // Mono/stereo (cfg 1/2, no PCE) keep the fast path untouched.
+        let multichannel =
+            channel_configuration == 0 || channel_configuration >= 3 || self.pce.is_some();
+        if multichannel {
+            self.fast_mono = false;
+        }
         self.n_ch = 0;
+        self.elems.clear();
         let mut last_syn = IdSynEle::Sce;
         let mut pending_sbr: Option<Box<SbrExtensionData>> = None;
         loop {
@@ -105,7 +124,10 @@ impl StreamDecoder {
                 IdSynEle::End => break,
                 IdSynEle::Sce | IdSynEle::Lfe => {
                     last_syn = id;
-                    let _tag = br.read(4)?;
+                    let tag = br.read(4)? as u8;
+                    if multichannel {
+                        self.fb_swap_in(self.n_ch);
+                    }
                     let (ics, tns) = parse_ics_into(
                         &mut br,
                         fs_index,
@@ -117,13 +139,38 @@ impl StreamDecoder {
                         &mut self.sf_l,
                     )?;
                     self.finish_sce(ics, tns.as_ref(), fs_index)?;
+                    if multichannel {
+                        self.fb_swap_in(self.n_ch);
+                        let kind = if id == IdSynEle::Sce {
+                            ElemKind::Sce
+                        } else {
+                            ElemKind::Lfe
+                        };
+                        self.elems.push(Element {
+                            kind,
+                            tag,
+                            plane: self.n_ch,
+                        });
+                    }
                     self.push_pcm(false);
                 }
                 IdSynEle::Cpe => {
                     last_syn = IdSynEle::Cpe;
                     let tag = br.read(4)? as u8;
+                    if multichannel {
+                        self.fb_swap_pair(self.n_ch);
+                    }
                     self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
-                    if self.mix_down_mono {
+                    if multichannel {
+                        self.fb_swap_pair(self.n_ch);
+                        self.elems.push(Element {
+                            kind: ElemKind::Cpe,
+                            tag,
+                            plane: self.n_ch,
+                        });
+                        self.push_pcm(false);
+                        self.push_pcm(true);
+                    } else if self.mix_down_mono {
                         let n = self.pcm_l.len().min(self.pcm_r.len());
                         for (l, r) in self.pcm_l.iter_mut().zip(self.pcm_r.iter()).take(n) {
                             *l = 0.5 * (*l + *r);
@@ -137,7 +184,9 @@ impl StreamDecoder {
                 }
                 IdSynEle::Cce => skip_cce(&mut br, fs_index, core_aot)?,
                 IdSynEle::Dse => skip_dse(&mut br)?,
-                IdSynEle::Pce => skip_pce(&mut br)?,
+                IdSynEle::Pce => {
+                    self.pce = Some(super::channel_map::parse_pce(&mut br)?);
+                }
                 IdSynEle::Fil => {
                     let cnt = fill_count(&mut br)?;
                     let fs_sbr = sample_rate.saturating_mul(2);
@@ -175,6 +224,18 @@ impl StreamDecoder {
             self.fast_mono = true;
         }
         self.frame_ch.truncate(self.n_ch);
+        if multichannel && !self.frame_ch.is_empty() {
+            let order = map_planes(&self.elems, self.pce.as_ref(), channel_configuration);
+            reorder(&mut self.frame_ch, &order);
+            if self.mix_down_mono {
+                // One rule: arithmetic mean of the non-LFE planes.
+                let mono = mono_mix(&self.frame_ch, &order);
+                self.pcm_l.clear();
+                self.pcm_l.extend_from_slice(&mono);
+                self.frame_ch.truncate(1);
+                self.frame_ch[0] = mono;
+            }
+        }
         let planar = std::mem::take(&mut self.frame_ch);
         let (planar, sample_rate) = self.apply_sbr(planar, sample_rate, pending_sbr)?;
         self.frame_ch = planar;
@@ -187,7 +248,7 @@ impl StreamDecoder {
         aot: u8,
         fs_index: u8,
         sample_rate: u32,
-        _channel_configuration: u8,
+        channel_configuration: u8,
         _num_raw_data_blocks: u8,
         payload: &[u8],
         dst: &mut Vec<f32>,
@@ -195,7 +256,8 @@ impl StreamDecoder {
         let was = self.mix_down_mono;
         self.mix_down_mono = true;
         self.fast_mono = true;
-        let rate = self.decode_into_bufs(aot, fs_index, sample_rate, payload);
+        let rate =
+            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload);
         self.fast_mono = false;
         self.mix_down_mono = was;
         let rate = rate?;
@@ -206,6 +268,24 @@ impl StreamDecoder {
         };
         dst.extend(src.iter().map(|&v| v * INV_S16));
         Ok(rate)
+    }
+
+    /// Multichannel: swap per-channel filterbank state for decode-order
+    /// channel `ch` into `fb_l` (call again after the element to swap back).
+    fn fb_swap_in(&mut self, ch: usize) {
+        while self.fb_pool.len() <= ch {
+            self.fb_pool.push(Filterbank::new());
+        }
+        std::mem::swap(&mut self.fb_l, &mut self.fb_pool[ch]);
+    }
+
+    /// Same for a CPE: channels `ch`/`ch+1` into `fb_l`/`fb_r`.
+    fn fb_swap_pair(&mut self, ch: usize) {
+        while self.fb_pool.len() <= ch + 1 {
+            self.fb_pool.push(Filterbank::new());
+        }
+        std::mem::swap(&mut self.fb_l, &mut self.fb_pool[ch]);
+        std::mem::swap(&mut self.fb_r, &mut self.fb_pool[ch + 1]);
     }
 
     fn push_pcm(&mut self, right: bool) {

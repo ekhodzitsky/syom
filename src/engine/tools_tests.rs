@@ -406,7 +406,8 @@ fn cce_then_silent_sce_skips_coupling() -> Result<(), Error> {
 #[test]
 fn skip_fil_dse_pce_consume_empty_bodies() -> Result<(), Error> {
     use super::bits::BitReader;
-    use super::skip::{skip_dse, skip_fil, skip_pce};
+    use super::channel_map::parse_pce;
+    use super::skip::{skip_dse, skip_fil};
     let mut w = BitWriter::new();
     w.write(0, 4); // FIL count 0
     w.write(0, 4); // DSE tag
@@ -421,14 +422,15 @@ fn skip_fil_dse_pce_consume_empty_bodies() -> Result<(), Error> {
     let mut br = BitReader::new(&bytes);
     skip_fil(&mut br)?;
     skip_dse(&mut br)?;
-    skip_pce(&mut br)?;
+    let _ = parse_pce(&mut br)?;
     Ok(())
 }
 
 #[test]
 fn skip_fil_escape_dse_align_pce_mix() -> Result<(), Error> {
     use super::bits::BitReader;
-    use super::skip::{fill_count, skip_dse, skip_pce};
+    use super::channel_map::parse_pce;
+    use super::skip::{fill_count, skip_dse};
     let mut w = BitWriter::new();
     w.write(15, 4);
     w.write(2, 8);
@@ -456,6 +458,6 @@ fn skip_fil_escape_dse_align_pce_mix() -> Result<(), Error> {
     w.write(0, 8);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    skip_pce(&mut br)?;
+    let _ = parse_pce(&mut br)?;
     Ok(())
 }

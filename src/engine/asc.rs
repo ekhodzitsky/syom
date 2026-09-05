@@ -55,7 +55,7 @@ impl AudioSpecificConfig {
             if inner != AOT_LC {
                 return Err(Error::UnsupportedAot(inner));
             }
-            parse_ga(reader, channel_configuration)?;
+            parse_ga(reader)?;
             let core_rate = output_rate / 2;
             let core_idx = ADTS_SAMPLE_RATES_HZ
                 .iter()
@@ -69,7 +69,7 @@ impl AudioSpecificConfig {
             if outer_aot != AOT_LC {
                 return Err(Error::UnsupportedAot(outer_aot));
             }
-            parse_ga(reader, channel_configuration)?;
+            parse_ga(reader)?;
             (
                 sampling_frequency_index,
                 sample_rate,
@@ -128,7 +128,7 @@ fn resolve_rate(index: u8, reader: &mut BitReader<'_>) -> Result<u32> {
         .ok_or(Error::UnsupportedSampleRateIndex(index))
 }
 
-fn parse_ga(reader: &mut BitReader<'_>, channel_configuration: u8) -> Result<()> {
+fn parse_ga(reader: &mut BitReader<'_>) -> Result<()> {
     let frame_length_flag = reader.read_bit()?;
     if frame_length_flag {
         return Err(Error::UnsupportedFrameLength);
@@ -138,9 +138,7 @@ fn parse_ga(reader: &mut BitReader<'_>, channel_configuration: u8) -> Result<()>
         let _core_coder_delay = reader.read(14)?;
     }
     let extension_flag = reader.read_bit()?;
-    if channel_configuration == 0 {
-        return Err(Error::Format("PCE channelConfiguration is Media in v1"));
-    }
+    // channel_configuration == 0 is allowed: the PCE is applied in-band.
     if extension_flag {
         let extension_flag3 = reader.read_bit()?;
         if extension_flag3 {
