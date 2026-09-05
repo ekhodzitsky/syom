@@ -5,18 +5,22 @@ use std::io::Cursor;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
+use oxideav_aac::decode::StreamDecoder;
 use rusty_aac::AacDecoder;
-use symphonia::core::codecs::DecoderOptions;
-use symphonia::core::formats::FormatOptions;
+use symphonia::core::codecs::CodecParameters;
+use symphonia::core::codecs::audio::AudioDecoderOptions;
+use symphonia::core::formats::probe::Hint;
+use symphonia::core::formats::{FormatOptions, TrackType};
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
-use symphonia::core::probe::Hint;
 use syom::decode;
 
 const LC_ADTS: &[u8] = include_bytes!("../src/goldens/sine48.adts");
 const LC_M4A: &[u8] = include_bytes!("../src/goldens/sine441.m4a");
 const HE_ADTS: &[u8] = include_bytes!("../src/goldens/he48.adts");
 const HE_M4A: &[u8] = include_bytes!("../src/goldens/he48.m4a");
+const PS_ADTS: &[u8] = include_bytes!("../src/goldens/ps48.adts");
+const MC_ADTS: &[u8] = include_bytes!("../src/goldens/mc51.adts");
 
 struct Counter;
 static ALLOCS: AtomicU64 = AtomicU64::new(0);
@@ -99,30 +103,40 @@ fn rusty_adts(bytes: &[u8]) -> usize {
     n
 }
 
+fn oxideav_adts(bytes: &[u8]) -> usize {
+    let mut dec = StreamDecoder::new();
+    dec.decode_all(bytes)
+        .ok()
+        .map(|fs| fs.iter().map(|f| f.pcm.len()).sum())
+        .unwrap_or(0)
+}
+
 fn symphonia_all(bytes: &[u8], ext: &str) -> usize {
     let src = Cursor::new(bytes.to_vec());
     let mss = MediaSourceStream::new(Box::new(src), Default::default());
     let mut hint = Hint::new();
     hint.with_extension(ext);
-    let Ok(probed) = symphonia::default::get_probe().format(
+    let Ok(mut format) = symphonia::default::get_probe().probe(
         &hint,
         mss,
-        &FormatOptions::default(),
-        &MetadataOptions::default(),
+        FormatOptions::default(),
+        MetadataOptions::default(),
     ) else {
         return 0;
     };
-    let mut format = probed.format;
-    let Some(track) = format.default_track() else {
+    let Some(track) = format.default_track(TrackType::Audio) else {
         return 0;
     };
-    let Ok(mut decoder) =
-        symphonia::default::get_codecs().make(&track.codec_params, &DecoderOptions::default())
+    let Some(CodecParameters::Audio(params)) = track.codec_params.clone() else {
+        return 0;
+    };
+    let Ok(mut decoder) = symphonia::default::get_codecs()
+        .make_audio_decoder(&params, &AudioDecoderOptions::default())
     else {
         return 0;
     };
     let mut n = 0usize;
-    while let Ok(pkt) = format.next_packet() {
+    while let Ok(Some(pkt)) = format.next_packet() {
         if let Ok(buf) = decoder.decode(&pkt) {
             n += buf.frames();
         }
@@ -155,11 +169,13 @@ fn row(name: &str, peer: &str, samples: usize, iters: u32, work: impl Fn()) {
 fn main() {
     let iters = 200u32;
     println!("iters={iters}  (allocs/bytes are cumulative over {iters} iters)");
-    for (name, bytes, ext, rusty) in [
-        ("lc_adts", LC_ADTS, "aac", true),
-        ("lc_m4a", LC_M4A, "m4a", false),
-        ("he_adts", HE_ADTS, "aac", true),
-        ("he_m4a", HE_M4A, "m4a", false),
+    for (name, bytes, ext, rusty, oxideav) in [
+        ("lc_adts", LC_ADTS, "aac", true, true),
+        ("lc_m4a", LC_M4A, "m4a", false, false),
+        ("he_adts", HE_ADTS, "aac", true, true),
+        ("he_m4a", HE_M4A, "m4a", false, false),
+        ("ps_adts", PS_ADTS, "aac", true, true),
+        ("mc_adts", MC_ADTS, "aac", true, true),
     ] {
         let ns = syom_n(bytes);
         row(name, "syom", ns, iters, || {
@@ -171,10 +187,15 @@ fn main() {
                 let _ = rusty_adts(bytes);
             });
         }
+        if oxideav {
+            let no = oxideav_adts(bytes);
+            row(name, "oxideav", no, iters, || {
+                let _ = oxideav_adts(bytes);
+            });
+        }
         let nsy = symphonia_all(bytes, ext);
         row(name, "symphonia", nsy, iters, || {
             let _ = symphonia_all(bytes, ext);
         });
     }
-    println!("oxideav-aac: parser-only, not linked");
 }

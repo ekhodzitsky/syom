@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - M4A `elst` encoder delay is skipped pre-emission (a skip counter over
   decoded frames) instead of a post-hoc PCM shift; decoded output is
   unchanged.
+- Bench refresh (BENCH.md, 2026-09-05): symphonia dev-dep bumped to 0.6
+  and oxideav-aac 0.1.7 added as a decode peer (the published tarball
+  does decode — ADTS LC + SBR + PS). LC ADTS wall is now a statistical
+  tie with symphonia 0.6; syom still leads LC M4A, HE (~30×/18× vs
+  oxideav), and 5.1, and loses only the lc_adts alloc-count cell
+  narrowly (32 vs 30).
 
 ### Fixed
 
