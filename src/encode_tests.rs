@@ -254,3 +254,83 @@ fn decorrelated_stereo_stays_lr() {
         assert!(snr >= 30.0, "decorrelated ch{ch} SNR {snr:.1} dB");
     }
 }
+
+/// Deterministic lavc-oracle fixture: 0.6 s stereo 48 kHz — a 200→4000 Hz
+/// sweep (0.3 s), a decorrelated noise burst (0.2 s), silence (0.1 s).
+fn lavc_fixture() -> Vec<Vec<f32>> {
+    let n = 28_800usize;
+    let mut l = vec![0.0f32; n];
+    let mut r = vec![0.0f32; n];
+    // Sweep: integrate a linearly rising frequency.
+    let mut phase = 0.0f32;
+    for i in 0..14_400 {
+        let t = i as f32 / 14_400.0;
+        let f = 200.0 + 3_800.0 * t;
+        phase += 2.0 * std::f32::consts::PI * f / 48_000.0;
+        let v = 0.4 * phase.sin();
+        l[i] = v;
+        r[i] = 0.8 * v;
+    }
+    // Noise burst: independent LCGs per channel (decorrelated).
+    let (mut sl, mut sr) = (0x0BAD_F00Du32, 0x5EED_1234u32);
+    for i in 14_400..24_000 {
+        sl = sl.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        sr = sr.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        l[i] = 0.25 * (((sl >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0);
+        r[i] = 0.25 * (((sr >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0);
+    }
+    vec![l, r]
+}
+
+fn to_s16(v: f32) -> i16 {
+    (v * 32768.0).round().clamp(-32768.0, 32767.0) as i16
+}
+
+/// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_adts_golden`,
+/// then decode the written ADTS with ffmpeg to `enc48.lavc.s16`:
+/// `ffmpeg -y -i src/goldens/enc48.adts -f s16le src/goldens/enc48.lavc.s16`
+/// Tests never spawn ffmpeg; the committed s16 is the oracle.
+#[test]
+fn mint_lavc_adts_golden() {
+    if std::env::var("MINT_GOLDENS").is_err() {
+        return;
+    }
+    let pcm = lavc_fixture();
+    let adts = encode(&pcm, 48_000).expect("encode");
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
+    std::fs::write(dir.join("enc48.adts"), adts).expect("write golden");
+}
+
+#[test]
+fn lavc_matches_our_decode_of_our_adts() {
+    let adts = include_bytes!("goldens/enc48.adts");
+    let lavc = include_bytes!("goldens/enc48.lavc.s16");
+    // The committed stream is exactly what the encoder produces today.
+    let pcm = lavc_fixture();
+    assert_eq!(
+        encode(&pcm, 48_000).expect("encode").as_slice(),
+        &adts[..],
+        "encoder output drifted from the committed golden; re-mint with \
+         MINT_GOLDENS=1 and refresh the lavc s16"
+    );
+    let dec = decode_with(adts, &crate::DecodeOptions::unbounded()).expect("decode");
+    assert_eq!(dec.channels.len(), 2);
+    let frames = lavc.len() / 4; // s16 stereo interleaved
+    assert_eq!(dec.channels[0].len(), frames, "frame count vs lavc");
+    for (ch, got) in dec.channels.iter().enumerate() {
+        let mut max_lsb = 0u32;
+        let mut ps = 0.0f64;
+        let mut pe = 0.0f64;
+        for (i, &g) in got.iter().enumerate() {
+            let lav = i16::from_le_bytes([lavc[(i * 2 + ch) * 2], lavc[(i * 2 + ch) * 2 + 1]]);
+            let ours = to_s16(g);
+            max_lsb = max_lsb.max((i32::from(lav) - i32::from(ours)).unsigned_abs());
+            let s = f64::from(lav);
+            ps += s * s;
+            pe += (s - f64::from(ours)).powi(2);
+        }
+        let snr = 10.0 * (ps / pe.max(1.0)).log10();
+        assert!(max_lsb <= 2, "ch{ch}: max {max_lsb} LSB vs lavc");
+        assert!(snr >= 55.0, "ch{ch}: SNR vs lavc {snr:.1} dB");
+    }
+}
