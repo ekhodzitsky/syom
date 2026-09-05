@@ -8,7 +8,10 @@ pub mod bits;
 pub(crate) mod channel_map;
 pub mod crc;
 pub mod decode;
-mod decode_cpe;
+pub(crate) mod decode_cpe;
+// Used by the LC encoder (enc_section); allow until it lands.
+#[allow(dead_code)]
+pub(crate) mod enc_huff;
 pub(crate) mod error;
 pub mod extension_payload;
 pub mod filterbank;
