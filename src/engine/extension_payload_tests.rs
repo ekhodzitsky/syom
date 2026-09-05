@@ -356,3 +356,86 @@ fn fill_data_bad_nibble_is_invalid() {
     let mut br = BitReader::new(&bytes);
     assert!(ExtensionPayload::parse(&mut br, 2).is_err());
 }
+
+/// Regression guard for the committed HE-AACv2 stereo fixture
+/// `goldens/ps48.adts` (real stereo, L != R): every frame's SBR
+/// extension must carry an explicit PS payload (`bs_extended_data = 1`,
+/// `bs_extension_id == EXTENSION_ID_PS`). If the fixture is ever
+/// re-encoded without PS this test fails before the PCM goldens run.
+/// Fixture generated offline (oracle):
+///   ffmpeg -f lavfi -i "sine=frequency=440:duration=1[a];\
+///     sine=frequency=880:duration=1[b];[a][b]join=inputs=2:channel_layout=stereo" \
+///     -ar 48000 -ac 2 -c:a pcm_s16le ps48_src.wav
+///   afconvert -f m4af -d aacp -b 24000 ps48_src.wav ps48.m4a
+///   ffmpeg -i ps48.m4a -c:a copy -f adts ps48.adts
+#[test]
+fn ps48_adts_frames_signal_extension_id_ps() -> Result<(), Error> {
+    use super::adts::AdtsHeader;
+    use super::ics_body::parse_ics;
+    use super::sbr_element::EXTENSION_ID_PS;
+    use super::skip::fill_count;
+
+    let adts = include_bytes!("../goldens/ps48.adts");
+    let mut pos = 0usize;
+    let mut frames = 0usize;
+    let mut ps_frames = 0usize;
+    let mut prev_header = None;
+    while pos + 7 <= adts.len() {
+        let (hdr, off) = AdtsHeader::parse(&adts[pos..])?;
+        let frame_len = usize::from(hdr.aac_frame_length);
+        let payload = &adts[pos + off..pos + frame_len];
+        pos += frame_len;
+        frames += 1;
+        let fs_sbr = hdr.sample_rate().saturating_mul(2);
+        let mut br = BitReader::new(payload);
+        let mut last_syn = IdSynEle::Sce;
+        let mut has_ps = false;
+        loop {
+            if br.bits_remaining() < 3 {
+                break;
+            }
+            match IdSynEle::from_bits(br.read(3)? as u8) {
+                IdSynEle::End => break,
+                IdSynEle::Sce | IdSynEle::Lfe => {
+                    last_syn = IdSynEle::Sce;
+                    let _tag = br.read(4)?;
+                    parse_ics(&mut br, hdr.sampling_frequency_index, 2, None)?;
+                }
+                IdSynEle::Fil => {
+                    let cnt = fill_count(&mut br)?;
+                    let start = br.bit_position();
+                    if let Ok(ExtensionPayloadOrSbr::Sbr(ext)) = ExtensionPayload::parse_with_sbr(
+                        &mut br,
+                        cnt,
+                        last_syn,
+                        fs_sbr,
+                        prev_header,
+                    ) {
+                        prev_header = Some(ext.header);
+                        if ext
+                            .element
+                            .extension
+                            .as_ref()
+                            .is_some_and(|e| e.id == EXTENSION_ID_PS)
+                        {
+                            has_ps = true;
+                        }
+                    }
+                    let used = br.bit_position().saturating_sub(start);
+                    let need = u64::from(cnt).saturating_mul(8);
+                    if used < need {
+                        br.skip((need - used) as u32)?;
+                    }
+                }
+                _ => break,
+            }
+        }
+        ps_frames += usize::from(has_ps);
+    }
+    assert!(frames > 0, "ps48.adts: no ADTS frames");
+    assert_eq!(
+        ps_frames, frames,
+        "ps48.adts lost explicit EXTENSION_ID_PS signalling"
+    );
+    Ok(())
+}

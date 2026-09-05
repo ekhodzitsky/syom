@@ -175,10 +175,12 @@ impl PsStereo {
             let mut n_from: isize = -1; // "border" behind slot 0
             for (e, &n_e) in borders.iter().enumerate() {
                 let h_to = self.envelope_h(ps, idx, e)?;
-                // §8.6.4.6.4: first region divides by n_0 with
-                // multiplier n; later regions by (n_e − n_{e−1}).
+                // §8.6.4.6.4: H(n) = H(n_{e−1}) + (n − n_{e−1}) /
+                // (n_e − n_{e−1}) · (H(n_e) − H(n_{e−1})), n ∈
+                // (n_{e−1}, n_e]; the first region starts at n_{−1} = −1
+                // (the previous frame's final coefficients).
                 let (den, base) = if e == 0 {
-                    (n_e.max(1) as f64, 0isize)
+                    ((n_e + 1).max(1) as f64, -1isize)
                 } else {
                     (((n_e as isize - n_from).max(1)) as f64, n_from)
                 };
@@ -461,7 +463,8 @@ mod tests {
     }
 
     /// The first region interpolates from zero (fresh state) to the
-    /// envelope coefficients linearly in n/n_0.
+    /// envelope coefficients linearly in (n + 1)/(n_0 + 1) — the
+    /// "previous" position is n_{−1} = −1, one slot before the frame.
     #[test]
     fn first_region_interpolates_from_zero() {
         let config = HybridConfig::Bands1020;
@@ -470,9 +473,9 @@ mod tests {
         let s = ones(config.nr_bands());
         let d = zeros(config.nr_bands());
         let (l, _r) = st.process(&ps, &idx, config, &s, &d).unwrap();
-        // num_env = 1, FIX → n_0 = 31; H(n) = n/31 · h.
+        // num_env = 1, FIX → n_0 = 31; H(n) = (n + 1)/32 · h.
         for (n, row) in l.iter().enumerate() {
-            let expect = n as f64 / 31.0;
+            let expect = (n + 1) as f64 / 32.0;
             assert!(
                 (row[20].re - expect).abs() < 1e-12,
                 "slot {n}: {} vs {expect}",
