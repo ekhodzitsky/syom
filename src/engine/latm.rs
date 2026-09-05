@@ -2,6 +2,7 @@
 
 use super::asc::AudioSpecificConfig;
 use super::bits::BitReader;
+use super::crc::stream_mux_config_crc;
 use super::decode::StreamDecoder;
 use super::error::{Error, Result};
 
@@ -83,6 +84,9 @@ struct MuxCfg {
 
 impl MuxCfg {
     fn parse(br: &mut BitReader<'_>) -> Result<Self> {
+        // The crcCheckSum covers StreamMuxConfig() from audioMuxVersion
+        // up to but excluding crcCheckPresent (§1.7.3.1 Table 1.42).
+        let cfg_start = br.bit_position();
         let audio_mux_version = br.read_bit()?;
         if audio_mux_version {
             let audio_mux_version_a = br.read_bit()?;
@@ -108,7 +112,7 @@ impl MuxCfg {
             }
             let frame_length_type = br.read(3)? as u8;
             let frame_length = read_frame_len(br, frame_length_type)?;
-            skip_mux_tail(br)?;
+            skip_mux_tail(br, cfg_start)?;
             return Ok(Self {
                 asc,
                 frame_length_type,
@@ -118,7 +122,7 @@ impl MuxCfg {
         let (asc, _) = AudioSpecificConfig::parse_from_reader(br)?;
         let frame_length_type = br.read(3)? as u8;
         let frame_length = read_frame_len(br, frame_length_type)?;
-        skip_mux_tail(br)?;
+        skip_mux_tail(br, cfg_start)?;
         Ok(Self {
             asc,
             frame_length_type,
@@ -138,7 +142,7 @@ fn read_frame_len(br: &mut BitReader<'_>, ty: u8) -> Result<u32> {
     }
 }
 
-fn skip_mux_tail(br: &mut BitReader<'_>) -> Result<()> {
+fn skip_mux_tail(br: &mut BitReader<'_>, cfg_start: u64) -> Result<()> {
     let other = br.read_bit()?;
     if other {
         let escaped = br.read_bit()?;
@@ -155,9 +159,16 @@ fn skip_mux_tail(br: &mut BitReader<'_>) -> Result<()> {
             br.skip(n)?;
         }
     }
+    // crcCheckSum covers StreamMuxConfig() up to but excluding
+    // crcCheckPresent (§1.7.3.1 Table 1.42).
+    let crc_end = br.bit_position();
     let crc = br.read_bit()?;
     if crc {
-        let _ = br.read(8)?;
+        let expected = br.read(8)? as u8;
+        let computed = stream_mux_config_crc(&br.bits_range(cfg_start, crc_end));
+        if computed != expected {
+            return Err(Error::LatmCrcMismatch);
+        }
     }
     Ok(())
 }

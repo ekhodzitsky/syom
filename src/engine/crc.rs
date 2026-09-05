@@ -73,37 +73,51 @@
 /// conventional for a shift-register CRC).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CrcPoly {
-    /// 4-bit CRC: x⁴ + x³ + x² + 1.
-    Crc4,
-    /// 5-bit CRC: x⁵ + x⁴ + x² + 1.
-    Crc5,
-    /// 6-bit CRC: x⁶ + x⁵ + x⁴ + x² + x + 1.
-    Crc6,
-    /// 7-bit CRC: x⁷ + x³ + x + 1.
-    Crc7,
     /// 8-bit CRC: x⁸ + x⁴ + x³ + x² + 1. Used by LATM
     /// `StreamMuxConfig()` `crcCheckSum`.
     Crc8,
+    /// 4-bit CRC: x⁴ + x³ + x² + 1.
+    #[cfg(test)]
+    Crc4,
+    /// 5-bit CRC: x⁵ + x⁴ + x² + 1.
+    #[cfg(test)]
+    Crc5,
+    /// 6-bit CRC: x⁶ + x⁵ + x⁴ + x² + x + 1.
+    #[cfg(test)]
+    Crc6,
+    /// 7-bit CRC: x⁷ + x³ + x + 1.
+    #[cfg(test)]
+    Crc7,
     /// 9-bit CRC: x⁹ + x⁴ + x³ + x² + x + 1.
+    #[cfg(test)]
     Crc9,
     /// 10-bit CRC: x¹⁰ + x⁹ + x⁵ + x⁴ + x + 1.
+    #[cfg(test)]
     Crc10,
     /// 11-bit CRC: x¹¹ + x¹⁰ + x⁹ + x⁵ + x + 1.
+    #[cfg(test)]
     Crc11,
     /// 12-bit CRC: x¹² + x¹¹ + x³ + x² + x + 1.
+    #[cfg(test)]
     Crc12,
     /// 13-bit CRC: x¹³ + x¹² + x¹¹ + x⁸ + x⁷ + x⁴ + x² + 1.
+    #[cfg(test)]
     Crc13,
     /// 14-bit CRC: x¹⁴ + x¹³ + x¹⁰ + x⁵ + x³ + x + 1.
+    #[cfg(test)]
     Crc14,
     /// 15-bit CRC: x¹⁵ + x¹⁴ + x¹³ + x¹⁰ + x⁸ + x⁵ + x² + x + 1.
+    #[cfg(test)]
     Crc15,
     /// 16-bit CRC: x¹⁶ + x¹⁵ + x² + 1.
+    #[cfg(test)]
     Crc16,
     /// 24-bit CRC: x²⁴ + x²³ + x⁶ + x⁵ + x + 1.
+    #[cfg(test)]
     Crc24,
     /// 32-bit CRC: x³² + x²⁶ + x²³ + x²² + x¹⁶ + x¹² + x¹¹ + x¹⁰ +
     /// x⁸ + x⁷ + x⁵ + x⁴ + x² + x + 1.
+    #[cfg(test)]
     Crc32,
 }
 
@@ -111,20 +125,34 @@ impl CrcPoly {
     /// The CRC width `k` in bits.
     pub const fn width(self) -> u32 {
         match self {
-            CrcPoly::Crc4 => 4,
-            CrcPoly::Crc5 => 5,
-            CrcPoly::Crc6 => 6,
-            CrcPoly::Crc7 => 7,
             CrcPoly::Crc8 => 8,
+            #[cfg(test)]
+            CrcPoly::Crc4 => 4,
+            #[cfg(test)]
+            CrcPoly::Crc5 => 5,
+            #[cfg(test)]
+            CrcPoly::Crc6 => 6,
+            #[cfg(test)]
+            CrcPoly::Crc7 => 7,
+            #[cfg(test)]
             CrcPoly::Crc9 => 9,
+            #[cfg(test)]
             CrcPoly::Crc10 => 10,
+            #[cfg(test)]
             CrcPoly::Crc11 => 11,
+            #[cfg(test)]
             CrcPoly::Crc12 => 12,
+            #[cfg(test)]
             CrcPoly::Crc13 => 13,
+            #[cfg(test)]
             CrcPoly::Crc14 => 14,
+            #[cfg(test)]
             CrcPoly::Crc15 => 15,
+            #[cfg(test)]
             CrcPoly::Crc16 => 16,
+            #[cfg(test)]
             CrcPoly::Crc24 => 24,
+            #[cfg(test)]
             CrcPoly::Crc32 => 32,
         }
     }
@@ -138,36 +166,50 @@ impl CrcPoly {
     /// `x⁴ + x³ + x² + x⁰`, i.e. bits 4, 3, 2, 0 ⇒ `0b0001_1101`.
     pub const fn generator(self) -> u64 {
         match self {
-            // x⁴+x³+x²+1            → bits 3,2,0
-            CrcPoly::Crc4 => bits(&[3, 2, 0]),
-            // x⁵+x⁴+x²+1            → bits 4,2,0
-            CrcPoly::Crc5 => bits(&[4, 2, 0]),
-            // x⁶+x⁵+x⁴+x²+x+1       → bits 5,4,2,1,0
-            CrcPoly::Crc6 => bits(&[5, 4, 2, 1, 0]),
-            // x⁷+x³+x+1             → bits 3,1,0
-            CrcPoly::Crc7 => bits(&[3, 1, 0]),
             // x⁸+x⁴+x³+x²+1         → bits 4,3,2,0
             CrcPoly::Crc8 => bits(&[4, 3, 2, 0]),
+            // x⁴+x³+x²+1            → bits 3,2,0
+            #[cfg(test)]
+            CrcPoly::Crc4 => bits(&[3, 2, 0]),
+            // x⁵+x⁴+x²+1            → bits 4,2,0
+            #[cfg(test)]
+            CrcPoly::Crc5 => bits(&[4, 2, 0]),
+            // x⁶+x⁵+x⁴+x²+x+1       → bits 5,4,2,1,0
+            #[cfg(test)]
+            CrcPoly::Crc6 => bits(&[5, 4, 2, 1, 0]),
+            // x⁷+x³+x+1             → bits 3,1,0
+            #[cfg(test)]
+            CrcPoly::Crc7 => bits(&[3, 1, 0]),
             // x⁹+x⁴+x³+x²+x+1       → bits 4,3,2,1,0
+            #[cfg(test)]
             CrcPoly::Crc9 => bits(&[4, 3, 2, 1, 0]),
             // x¹⁰+x⁹+x⁵+x⁴+x+1      → bits 9,5,4,1,0
+            #[cfg(test)]
             CrcPoly::Crc10 => bits(&[9, 5, 4, 1, 0]),
             // x¹¹+x¹⁰+x⁹+x⁵+x+1     → bits 10,9,5,1,0
+            #[cfg(test)]
             CrcPoly::Crc11 => bits(&[10, 9, 5, 1, 0]),
             // x¹²+x¹¹+x³+x²+x+1     → bits 11,3,2,1,0
+            #[cfg(test)]
             CrcPoly::Crc12 => bits(&[11, 3, 2, 1, 0]),
             // x¹³+x¹²+x¹¹+x⁸+x⁷+x⁴+x²+1 → bits 12,11,8,7,4,2,0
+            #[cfg(test)]
             CrcPoly::Crc13 => bits(&[12, 11, 8, 7, 4, 2, 0]),
             // x¹⁴+x¹³+x¹⁰+x⁵+x³+x+1 → bits 13,10,5,3,1,0
+            #[cfg(test)]
             CrcPoly::Crc14 => bits(&[13, 10, 5, 3, 1, 0]),
             // x¹⁵+x¹⁴+x¹³+x¹⁰+x⁸+x⁵+x²+x+1 → bits 14,13,10,8,5,2,1,0
+            #[cfg(test)]
             CrcPoly::Crc15 => bits(&[14, 13, 10, 8, 5, 2, 1, 0]),
             // x¹⁶+x¹⁵+x²+1          → bits 15,2,0
+            #[cfg(test)]
             CrcPoly::Crc16 => bits(&[15, 2, 0]),
             // x²⁴+x²³+x⁶+x⁵+x+1     → bits 23,6,5,1,0
+            #[cfg(test)]
             CrcPoly::Crc24 => bits(&[23, 6, 5, 1, 0]),
             // x³²+x²⁶+x²³+x²²+x¹⁶+x¹²+x¹¹+x¹⁰+x⁸+x⁷+x⁵+x⁴+x²+x+1
             // → bits 26,23,22,16,12,11,10,8,7,5,4,2,1,0
+            #[cfg(test)]
             CrcPoly::Crc32 => bits(&[26, 23, 22, 16, 12, 11, 10, 8, 7, 5, 4, 2, 1, 0]),
         }
     }
@@ -239,6 +281,7 @@ pub fn crc_bits(poly: CrcPoly, message_bits: &[bool]) -> u64 {
 ///
 /// Equivalent to [`crc_bits`] fed `message.len() * 8` bits in
 /// big-endian bit order.
+#[cfg(test)]
 pub fn crc_bytes(poly: CrcPoly, message: &[u8]) -> u64 {
     let k = poly.width();
     let poly_gen = poly.generator();

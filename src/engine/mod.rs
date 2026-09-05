@@ -5,7 +5,6 @@
 pub mod adts;
 pub mod asc;
 pub mod bits;
-#[cfg(test)]
 pub mod crc;
 pub mod decode;
 mod decode_cpe;

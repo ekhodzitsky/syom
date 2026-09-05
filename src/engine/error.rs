@@ -45,7 +45,6 @@ pub enum Error {
     /// LATM program/layer geometry is outside the AAC-single-stream subset.
     LatmConfigOutOfRange,
     /// LATM CRC mismatch.
-    #[allow(dead_code)]
     LatmCrcMismatch,
     /// LATM payload without a prior `StreamMuxConfig`.
     LatmNoPreviousMuxConfig,
