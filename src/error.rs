@@ -21,6 +21,8 @@ pub enum AacError {
     Format(String),
     /// Decoder engine rejected a frame.
     Decode(String),
+    /// Encoder rejected input or could not meet constraints.
+    Encode(String),
 }
 
 impl AacError {
@@ -32,6 +34,11 @@ impl AacError {
     #[inline]
     pub fn decode(msg: impl Into<String>) -> Self {
         Self::Decode(msg.into())
+    }
+
+    #[inline]
+    pub fn encode(msg: impl Into<String>) -> Self {
+        Self::Encode(msg.into())
     }
 
     #[inline]
@@ -68,7 +75,7 @@ impl fmt::Display for AacError {
                 f,
                 "Audio file too long ({observed_secs:.0}s). Maximum supported: {max_secs:.0}s."
             ),
-            Self::Format(msg) | Self::Decode(msg) => write!(f, "{msg}"),
+            Self::Format(msg) | Self::Decode(msg) | Self::Encode(msg) => write!(f, "{msg}"),
         }
     }
 }

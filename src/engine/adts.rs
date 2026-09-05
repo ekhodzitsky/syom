@@ -110,8 +110,6 @@ impl AdtsHeader {
 
     /// Serialize as the 56-bit no-CRC header (`protection_absent` on the wire
     /// is always 1; the encoder never writes a CRC). Exactly 7 bytes.
-    // Used by the LC encoder (enc_frame); allow until it lands.
-    #[allow(dead_code)]
     #[must_use]
     pub fn write(&self) -> [u8; ADTS_HEADER_BYTES_NO_CRC] {
         let mut w = BitWriter::new();
