@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Multichannel frames (≥ 3 channels or a PCE) decode each channel through its
+  own filterbank state; previously the shared L/R filterbanks bled
+  overlap-add tails across channels, and `speech()` mono on > 2 channels
+  returned only the last element (e.g. LFE on 5.1). Speech mono is now one
+  documented rule: the arithmetic mean of the decoded non-LFE planes.
 - LATM/LOAS `StreamMuxConfig()` `crcCheckSum` is verified (CRC-8,
   §1.8.4.5) instead of discarded; a mismatch rejects the stream.
 - PS first-envelope H-matrix interpolation now starts one slot before the
@@ -19,10 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `goldens/ps48.*` HE-AACv2 fixture with real stereo content (440 Hz L /
-  880 Hz R, explicit in-band `EXTENSION_ID_PS`) plus lavc s16 goldens for
-  the M4A (elst-trimmed) and ADTS containers, and tests enforcing 1 LSB /
-  SNR ≥ 70 dB, non-degenerate stereo output, and explicit PS signalling.
+- Multichannel AAC-LC: ADTS/ASC `channel_configuration` 3–6 (3.0 / 4.0 /
+  5.0 / 5.1) with correct Center/LFE placement, and in-band
+  `program_config_element()` (channelConfiguration 0) channel mapping. Split
+  mode emits planes in the libavcodec layout order (5.1 = FL FR FC LFE BL
+  BR) or, for PCE streams, in PCE declaration order (front, side, back,
+  LFE). CCE elements are consumed without disturbing other channels; full
+  CCE gain-element application remains out of scope.
+- `goldens/mc{30,40,50,51}.*` multichannel fixtures (per-channel sines) with
+  lavc s16 goldens; tests enforce per-plane peak ≥ 1000, max abs ≤ 1 LSB and
+  SNR ≥ 70 dB in split mode, plus the speech mono rule on 5.1.
 
 ### Changed
 

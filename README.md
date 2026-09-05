@@ -52,9 +52,16 @@ fn main() -> syom::Result<()> {
 From a path: `syom::read("clip.m4a")?`. Caps:
 `decode_with(bytes, &DecodeOptions::speech().with_channel_mode(syom::ChannelMode::Split))`.
 
+Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1
+(`channel_configuration` 3–6) plus in-band PCE streams. Split mode emits one
+plane per channel in the libavcodec layout order — 5.1 is FL FR FC LFE BL BR —
+or PCE declaration order (front, side, back, LFE) for PCE streams. Speech
+mono is the arithmetic mean of the non-LFE planes (stereo reduces to
+`0.5·(L+R)`).
+
 Correctness vs FFmpeg libavcodec native s16: max abs ≤ 1 LSB, SNR ≥ 70 dB
-on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, HE ADTS / M4A,
-LATM). Runtime does not spawn ffmpeg.
+on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, LC 3.0–5.1,
+HE ADTS / M4A, LATM). Runtime does not spawn ffmpeg.
 
 Encode is not v1. No resample.
 

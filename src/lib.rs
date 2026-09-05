@@ -23,5 +23,9 @@ pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
 mod decode_tests;
 
 #[cfg(test)]
+#[path = "decode_mc_tests.rs"]
+mod decode_mc_tests;
+
+#[cfg(test)]
 #[path = "error_tests.rs"]
 mod error_tests;

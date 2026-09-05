@@ -51,7 +51,7 @@ fn score_plane(ours: &[f32], gold: &[i16], label: &str) {
     assert!(snr >= 70.0, "{label} native SNR {snr} dB");
 }
 
-fn assert_native_matches_lavc_with(
+pub(crate) fn assert_native_matches_lavc_with(
     input: &[u8],
     gold: &[u8],
     rate: u32,
@@ -71,7 +71,7 @@ fn assert_native_matches_lavc_with(
     assert_eq!(gold_i16 % n, 0, "{label} golden not a multiple of {n}");
     let gold_ch = gold_i16 / n;
     assert!(
-        gold_ch == 1 || gold_ch == 2,
+        (1..=8).contains(&gold_ch),
         "{label} golden channels {gold_ch}"
     );
     match opts.channel_mode {

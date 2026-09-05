@@ -5,6 +5,7 @@
 pub mod adts;
 pub mod asc;
 pub mod bits;
+pub(crate) mod channel_map;
 pub mod crc;
 pub mod decode;
 mod decode_cpe;
@@ -67,6 +68,10 @@ mod ics_tests;
 #[cfg(test)]
 #[path = "tools_tests.rs"]
 mod tools_tests;
+
+#[cfg(test)]
+#[path = "channel_map_tests.rs"]
+mod channel_map_tests;
 
 #[cfg(test)]
 #[path = "golden_tests.rs"]
