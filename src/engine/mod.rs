@@ -20,6 +20,7 @@ pub mod ics;
 pub mod ics_body;
 pub mod imdct;
 pub mod latm;
+pub(crate) mod mdct;
 pub mod pns;
 pub mod ps_data;
 pub mod ps_decoder;
