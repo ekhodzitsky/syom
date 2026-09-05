@@ -1,89 +1,26 @@
 //! LATM / LOAS transport — ISO/IEC 14496-3 §1.7 (AAC payloads).
+//!
+//! The resumable byte-stream state machine lives in `crate::stream`; this
+//! module owns the wire structures it reuses: the LOAS syncword,
+//! `StreamMuxConfig()` (sticky across packets), and payload extraction.
 
 use super::asc::AudioSpecificConfig;
 use super::bits::BitReader;
 use super::crc::stream_mux_config_crc;
-use super::decode::StreamDecoder;
 use super::error::{Error, Result};
 
 /// LOAS `AudioSyncStream` syncword.
 pub const LOAS_SYNC: u32 = 0x2B7;
 
-/// Decode a LOAS/LATM byte stream to planar f32 (filterbank scale) + rate.
-pub fn decode_loas_planar(
-    data: &[u8],
-    mix_down_mono: bool,
-    max_samples: usize,
-) -> Result<(u32, Vec<Vec<f32>>)> {
-    let mut pos = 0usize;
-    let mut dec = StreamDecoder::new();
-    dec.mix_down_mono = mix_down_mono;
-    let mut tracks: Vec<Vec<f32>> = Vec::new();
-    let mut rate = 0u32;
-    let mut mux: Option<MuxCfg> = None;
-    while pos + 3 <= data.len() {
-        let v = (u32::from(data[pos]) << 16)
-            | (u32::from(data[pos + 1]) << 8)
-            | u32::from(data[pos + 2]);
-        let sync = v >> 13;
-        if sync != LOAS_SYNC {
-            pos += 1;
-            continue;
-        }
-        let mux_len = (v & 0x1FFF) as usize;
-        let start = pos + 3;
-        let end = start.saturating_add(mux_len);
-        if end > data.len() {
-            break;
-        }
-        let mut br = BitReader::new(&data[start..end]);
-        let use_same = br.read_bit()?;
-        if !use_same {
-            mux = Some(MuxCfg::parse(&mut br)?);
-        }
-        let cfg = mux.as_ref().ok_or(Error::LatmNoPreviousMuxConfig)?;
-        let payload = read_payload(&mut br, cfg)?;
-        let frame = dec.decode_raw_data_block(
-            cfg.asc.aot,
-            cfg.asc.sampling_frequency_index,
-            cfg.asc.sample_rate,
-            cfg.asc.channel_configuration,
-            1,
-            &payload,
-        )?;
-        if rate == 0 {
-            rate = frame.sample_rate;
-        }
-        if tracks.is_empty() {
-            tracks = vec![Vec::new(); frame.planar.len().max(1)];
-        }
-        while tracks.len() < frame.planar.len() {
-            tracks.push(Vec::new());
-        }
-        for (i, ch) in frame.planar.iter().enumerate() {
-            if let Some(dst) = tracks.get_mut(i) {
-                dst.extend_from_slice(ch);
-            }
-        }
-        if tracks.first().map(Vec::len).unwrap_or(0) > max_samples {
-            return Err(Error::Format("latm: too long"));
-        }
-        pos = end;
-    }
-    if tracks.iter().all(Vec::is_empty) {
-        return Err(Error::LoasSyncInvalid);
-    }
-    Ok((rate, tracks))
-}
-
-struct MuxCfg {
-    asc: AudioSpecificConfig,
-    frame_length_type: u8,
-    frame_length: u32,
+/// Parsed `StreamMuxConfig()` for the AAC-single-stream subset.
+pub(crate) struct MuxCfg {
+    pub(crate) asc: AudioSpecificConfig,
+    pub(crate) frame_length_type: u8,
+    pub(crate) frame_length: u32,
 }
 
 impl MuxCfg {
-    fn parse(br: &mut BitReader<'_>) -> Result<Self> {
+    pub(crate) fn parse(br: &mut BitReader<'_>) -> Result<Self> {
         // The crcCheckSum covers StreamMuxConfig() from audioMuxVersion
         // up to but excluding crcCheckPresent (§1.7.3.1 Table 1.42).
         let cfg_start = br.bit_position();
@@ -181,7 +118,7 @@ fn latm_value(br: &mut BitReader<'_>) -> Result<u32> {
     Ok(v)
 }
 
-fn read_payload(br: &mut BitReader<'_>, cfg: &MuxCfg) -> Result<Vec<u8>> {
+pub(crate) fn read_payload(br: &mut BitReader<'_>, cfg: &MuxCfg) -> Result<Vec<u8>> {
     let nbytes = if cfg.frame_length_type == 1 {
         cfg.frame_length.div_ceil(8) as usize
     } else {

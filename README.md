@@ -52,6 +52,13 @@ fn main() -> syom::Result<()> {
 From a path: `syom::read("clip.m4a")?`. Caps:
 `decode_with(bytes, &DecodeOptions::speech().with_channel_mode(syom::ChannelMode::Split))`.
 
+Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
+byte streams (frames may straddle chunks; M4A is rejected — `moov` needs
+random access), or `decode_streaming(bytes, &opts, cb)` for any in-memory
+container. Each callback gets one AAC `Frame` of borrowed planar f32 (valid
+for the callback only; return `Err` to abort) and `finish` yields
+`StreamInfo` tallies. Peak PCM RAM is one frame.
+
 Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1
 (`channel_configuration` 3–6) plus in-band PCE streams. Split mode emits one
 plane per channel in the libavcodec layout order — 5.1 is FL FR FC LFE BL BR —

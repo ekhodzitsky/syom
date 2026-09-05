@@ -1,5 +1,6 @@
 //! Stream-level LC driver: `raw_data_block()` → planar PCM.
 
+#[cfg(test)]
 use super::adts::AdtsHeader;
 use super::bits::BitReader;
 use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
@@ -19,6 +20,9 @@ use super::skip::{fill_count, skip_cce, skip_dse};
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
 
+/// Owned per-frame output; used by engine unit tests. The product paths
+/// (streaming + mono fast path) borrow planes via `frame_planes` instead.
+#[cfg(test)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DecodedFrame {
     pub planar: Vec<Vec<f32>>,
@@ -62,6 +66,7 @@ impl StreamDecoder {
         Self::default()
     }
 
+    #[cfg(test)]
     pub fn decode_frame(&mut self, header: &AdtsHeader, payload: &[u8]) -> Result<DecodedFrame> {
         self.decode_raw_data_block(
             header.audio_object_type(),
@@ -73,6 +78,7 @@ impl StreamDecoder {
         )
     }
 
+    #[cfg(test)]
     pub fn decode_raw_data_block(
         &mut self,
         aot: u8,
@@ -89,6 +95,34 @@ impl StreamDecoder {
             channels: self.frame_ch.len(),
             sample_rate,
         })
+    }
+
+    /// Streaming seam: decode one `raw_data_block()` and scale the planes
+    /// to ~[-1, 1] **in place** — borrow them with [`Self::frame_planes`]
+    /// instead of cloning a [`DecodedFrame`].
+    pub(crate) fn decode_frame_scaled(
+        &mut self,
+        aot: u8,
+        fs_index: u8,
+        sample_rate: u32,
+        channel_configuration: u8,
+        payload: &[u8],
+    ) -> Result<u32> {
+        let rate =
+            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload)?;
+        for ch in &mut self.frame_ch {
+            for v in ch.iter_mut() {
+                *v *= INV_S16;
+            }
+        }
+        Ok(rate)
+    }
+
+    /// Planes left by the last `decode_into_bufs` call, truncated to the
+    /// channel count (filterbank scale unless reached via
+    /// `decode_frame_scaled`).
+    pub(crate) fn frame_planes(&self) -> &[Vec<f32>] {
+        &self.frame_ch
     }
 
     fn decode_into_bufs(
