@@ -303,6 +303,69 @@ fn he48_latm_native_matches_lavc_golden() -> Result<(), AacError> {
     )
 }
 
+// ps48: real-stereo HE-AACv2 (L = 440 Hz, R = 880 Hz sines). he48 is
+// dual-mono and cannot catch a broken PS path; ps48 can. PS is explicit
+// in-band (bs_extension_id == EXTENSION_ID_PS), guarded by
+// engine::extension_payload_tests::ps48_adts_frames_signal_extension_id_ps.
+// Fixtures generated offline (oracle), from the repo root:
+//   ffmpeg -f lavfi -i "sine=frequency=440:duration=1[a];sine=frequency=880:duration=1[b];[a][b]join=inputs=2:channel_layout=stereo" -ar 48000 -ac 2 -c:a pcm_s16le ps48_src.wav
+//   afconvert -f m4af -d aacp -b 24000 ps48_src.wav ps48.m4a
+//   ffmpeg -i ps48.m4a -c:a copy -f adts ps48.adts
+//   ffmpeg -i ps48.m4a  -f s16le -acodec pcm_s16le ps48_m4a.s16   # elst-trimmed
+//   ffmpeg -i ps48.adts -f s16le -acodec pcm_s16le ps48.s16       # untrimmed
+
+#[test]
+fn ps48_adts_native_matches_lavc_golden() -> Result<(), AacError> {
+    assert_native_matches_lavc_with(
+        include_bytes!("goldens/ps48.adts"),
+        include_bytes!("goldens/ps48.s16"),
+        48_000,
+        "ps48-adts",
+        &DecodeOptions::unbounded(),
+    )
+}
+
+#[test]
+fn ps48_m4a_native_matches_lavc_golden() -> Result<(), AacError> {
+    assert_native_matches_lavc_with(
+        include_bytes!("goldens/ps48.m4a"),
+        include_bytes!("goldens/ps48_m4a.s16"),
+        48_000,
+        "ps48-m4a",
+        &DecodeOptions::unbounded(),
+    )
+}
+
+/// A decoder that duplicates the mono SBR core into both planes (broken
+/// or missing PS) fails this: ps48 is true stereo, so L and R differ
+/// substantially and stay uncorrelated.
+#[test]
+fn ps48_unbounded_is_nondegenerate_stereo() -> Result<(), AacError> {
+    let d = crate::decode_with(
+        include_bytes!("goldens/ps48.adts"),
+        &DecodeOptions::unbounded(),
+    )?;
+    assert_eq!(d.sample_rate, 48_000);
+    assert_eq!(d.channels.len(), 2, "HE-AACv2 Split must emit PS stereo");
+    let (l, r) = (&d.channels[0], &d.channels[1]);
+    assert_eq!(l.len(), r.len());
+    let mut max_diff = 0.0f32;
+    let (mut dot, mut el, mut er) = (0.0f64, 0.0f64, 0.0f64);
+    for (&a, &b) in l.iter().zip(r) {
+        max_diff = max_diff.max((a - b).abs());
+        dot += f64::from(a) * f64::from(b);
+        el += f64::from(a) * f64::from(a);
+        er += f64::from(b) * f64::from(b);
+    }
+    assert!(
+        max_diff > 0.1,
+        "planes identical: PS fell back to mono duplication (max|L-R|={max_diff})"
+    );
+    let corr = dot / (el * er).sqrt();
+    assert!(corr < 0.9, "planes near-identical: corr {corr}");
+    Ok(())
+}
+
 #[test]
 fn speech_caps_reject_long_duration() {
     let o = DecodeOptions::speech().with_max_duration_secs(0.01);

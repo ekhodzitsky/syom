@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - LATM/LOAS `StreamMuxConfig()` `crcCheckSum` is verified (CRC-8,
   §1.8.4.5) instead of discarded; a mismatch rejects the stream.
+- PS first-envelope H-matrix interpolation now starts one slot before the
+  frame (`(n + 1)/(n_0 + 1)`, Annex 8.A / §8.6.4.6.4) instead of at slot 0
+  (`n/n_0`). HE-AACv2 output now matches lavc within 1 LSB on real stereo
+  content (was up to 11 LSB / 67 dB SNR whenever the stereo cues moved;
+  dual-mono fixtures could not see it).
+
+### Added
+
+- `goldens/ps48.*` HE-AACv2 fixture with real stereo content (440 Hz L /
+  880 Hz R, explicit in-band `EXTENSION_ID_PS`) plus lavc s16 goldens for
+  the M4A (elst-trimmed) and ADTS containers, and tests enforcing 1 LSB /
+  SNR ≥ 70 dB, non-degenerate stereo output, and explicit PS signalling.
 
 ### Changed
 
