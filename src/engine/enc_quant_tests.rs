@@ -68,7 +68,9 @@ fn silent_band_quantizes_to_zero() {
     let mut q = QuantChannel::new(n_bands);
     let mut peaks = [0.0f32; MAX_BANDS];
     peaks[10] = 1e6; // one live band, rest silent
-    raw_scalefactors(&peaks, n_bands, 2048.0, 0, &mut q);
+    let tq = [2048.0f32; MAX_BANDS];
+    q.coded[10] = true; // the psy model's decision, mocked
+    raw_scalefactors(&peaks, &tq, 0, &mut q);
     let gg = normalize_sf(&mut q);
     let mut spec = [0.0f32; 1024];
     spec[usize::from(offsets[10])] = 1e6;

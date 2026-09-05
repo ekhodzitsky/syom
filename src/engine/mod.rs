@@ -11,6 +11,7 @@ pub mod decode;
 pub(crate) mod decode_cpe;
 pub(crate) mod enc_frame;
 pub(crate) mod enc_huff;
+pub(crate) mod enc_psy;
 pub(crate) mod enc_quant;
 pub(crate) mod enc_section;
 pub(crate) mod error;

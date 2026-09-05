@@ -116,12 +116,12 @@ fn merge_run(q: &QuantChannel, sfb_cb: &mut [u8; MAX_BANDS], lo: usize, hi: usiz
     merged
 }
 
-/// `ics_info()` for a long-window LC stream (Table 4.6, sine window, no
-/// predictor).
+/// `ics_info()` for a long-window LC stream (Table 4.6, KBD window — the
+/// encoder's analysis window — no predictor).
 pub fn emit_ics_info(w: &mut BitWriter, max_sfb: u8) {
     w.write_bit(false); // ics_res
     w.write(0, 2); // ONLY_LONG
-    w.write_bit(false); // window_shape: sine
+    w.write_bit(true); // window_shape: KBD
     w.write(u32::from(max_sfb), 6);
     w.write_bit(false); // predictor_data_present
 }

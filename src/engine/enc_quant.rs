@@ -60,28 +60,24 @@ pub fn sf_for_peak(peak: f32, target_q: f32) -> i32 {
     sf.round() as i32
 }
 
-/// Raw per-band scalefactors from peaks; `coded[b]` marks audible bands.
-/// A band is audible only within 60 dB of the loudest band — coding every
-/// sidelobe band at full precision is what the rate loop would otherwise
-/// starve.
+/// Raw per-band scalefactors from peaks and the psy model's per-band
+/// precision targets. `out.coded` is set by the psy model (a coded band
+/// always has `target_q >= 1` and a nonzero peak).
 pub fn raw_scalefactors(
     peaks: &[f32; MAX_BANDS],
-    n_bands: usize,
-    target_q: f32,
+    target_q: &[f32; MAX_BANDS],
     global_offset: i32,
     out: &mut QuantChannel,
 ) {
-    let max_peak = peaks[..n_bands].iter().copied().fold(0.0f32, f32::max);
-    let floor = (max_peak * 1e-3).max(1e-9);
     let bands = peaks
         .iter()
-        .zip(out.coded.iter_mut())
+        .zip(target_q.iter())
+        .zip(out.coded.iter())
         .zip(out.sf.iter_mut())
-        .take(n_bands);
-    for ((&peak, coded), sf) in bands {
-        *coded = peak > floor;
-        *sf = if *coded {
-            sf_for_peak(peak, target_q) + global_offset
+        .take(out.n_bands);
+    for (((&peak, &tq), &coded), sf) in bands {
+        *sf = if coded && tq >= 1.0 {
+            sf_for_peak(peak, tq) + global_offset
         } else {
             0
         };

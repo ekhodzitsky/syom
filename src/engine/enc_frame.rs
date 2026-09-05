@@ -1,6 +1,6 @@
-//! `LcEncoder` — per-frame LC pipeline: window + forward MDCT → flat
-//! scalefactors → quantize → section plan → rate loop (one global sf
-//! offset) → `raw_data_block()` bytes.
+//! `LcEncoder` — per-frame LC pipeline: window + forward MDCT → psy model
+//! (per-band precision targets) → quantize → section plan → rate loop (one
+//! global sf offset) → `raw_data_block()` bytes.
 //!
 //! v1 scope: long windows only (no block switching — pre-echo on attacks is
 //! accepted; TODO attack detector), no TNS/PNS/intensity, mono/stereo,
@@ -8,6 +8,7 @@
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::BitWriter;
+use super::enc_psy::Psy;
 use super::enc_quant::{self, MAX_BANDS, QuantChannel};
 use super::enc_section;
 use super::error::{Error, Result};
@@ -42,6 +43,12 @@ pub struct LcEncoder {
     chans: Box<[QuantChannel; 2]>,
     books: [[u8; MAX_BANDS]; 2],
     gains: [u8; 2],
+    psy: Psy,
+    target_q: [[f32; MAX_BANDS]; 2],
+    /// Unspent bits carried forward (bounded at one frame's budget): the
+    /// integer sf-offset step undershoots by up to ~11%, so frames may
+    /// spend accumulated savings. ADTS carries the VBR fullness marker.
+    credit: i64,
 }
 
 impl LcEncoder {
@@ -58,7 +65,10 @@ impl LcEncoder {
             return Err(Error::Format("LC encoder: bitrate must be > 0"));
         }
         let offsets = long_offsets(fs_index)?;
-        let half = window_left(2 * LONG_WINDOW_LEN, WindowShape::Sine);
+        // KBD both halves (alpha 4, matching the decoder table): far better
+        // sidelobe rejection than sine, so masked-band decisions aren't
+        // fighting analysis leakage. The ics_info shape bit matches.
+        let half = window_left(2 * LONG_WINDOW_LEN, WindowShape::Kbd);
         let mut window = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
         for i in 0..LONG_WINDOW_LEN {
             window[i] = half[i] * 32768.0;
@@ -76,6 +86,9 @@ impl LcEncoder {
             chans: Box::new([QuantChannel::new(n_bands), QuantChannel::new(n_bands)]),
             books: [[0; MAX_BANDS]; 2],
             gains: [100; 2],
+            psy: Psy::new(offsets, sample_rate),
+            target_q: [[0.0; MAX_BANDS]; 2],
+            credit: 0,
         })
     }
 
@@ -107,18 +120,24 @@ impl LcEncoder {
             mdct_into_f32(&buf, spec);
             prev.copy_from_slice(plane);
         }
-        let offset = self.search_offset(&specs);
+        let budget = self.budget_bits();
+        let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
+        let offset = self.search_offset(&specs, spend);
         let bits = self.build(&specs, offset);
-        self.enforce_cap();
-        let _ = bits;
-        Ok(self.emit())
+        if bits > spend {
+            self.drop_bands_until(spend);
+        }
+        let out = self.emit();
+        self.credit =
+            (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
+        Ok(out)
     }
 
     /// Smallest global sf offset whose frame fits the bit budget (frame
     /// bits decrease as the offset grows; the smallest fitting offset is
     /// the finest quantization we can afford).
-    fn search_offset(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2]) -> i32 {
-        let budget = self.budget_bits().saturating_sub(32);
+    fn search_offset(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], spend: usize) -> i32 {
+        let budget = spend.saturating_sub(32);
         if self.build(specs, OFFSET_LO) <= budget {
             return OFFSET_LO; // maximum quality fits
         }
@@ -147,14 +166,17 @@ impl LcEncoder {
         let channels = self
             .chans
             .iter_mut()
+            .zip(self.target_q.iter_mut())
             .zip(specs.iter())
             .zip(self.books.iter_mut())
             .zip(self.gains.iter_mut())
             .take(self.channels);
-        for (((q, spec), books), gain) in channels {
+        for ((((q, tq), spec), books), gain) in channels {
+            self.psy
+                .analyze(spec, self.offsets, TARGET_Q, &mut q.coded, tq);
             let mut peaks = [0.0f32; MAX_BANDS];
             enc_quant::band_peaks(spec, self.offsets, &mut peaks);
-            enc_quant::raw_scalefactors(&peaks, q.n_bands, TARGET_Q, offset, q);
+            enc_quant::raw_scalefactors(&peaks, tq, offset, q);
             *gain = enc_quant::normalize_sf(q);
             enc_quant::quantize(spec, self.offsets, q);
             *books = enc_section::plan_books(q);
@@ -163,11 +185,12 @@ impl LcEncoder {
         total + 7 // byte-align pad ceiling
     }
 
-    /// Hard cap: drop the highest coded bands until the payload fits the
-    /// ADTS limit (quality collapse is legal, an oversize frame is not).
-    fn enforce_cap(&mut self) {
+    /// Hard cap: drop the highest coded bands until the frame fits
+    /// `limit_bits` (the bit budget, and never above the ADTS payload
+    /// limit). Quality collapse is legal, an oversize frame is not.
+    fn drop_bands_until(&mut self, limit_bits: usize) {
         let standalone = self.channels == 1;
-        let cap = MAX_PAYLOAD_BYTES * 8;
+        let cap = limit_bits.min(MAX_PAYLOAD_BYTES * 8);
         loop {
             let mut total = 3 + 4 + 3 + 7;
             if self.channels == 2 {
