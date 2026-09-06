@@ -2,6 +2,7 @@
 //! the inverse of [`super::spectrum::invquant`] / [`super::spectrum::sf_gain`]
 //! (ISO/IEC 14496-3 §4.6.2–4.6.3).
 
+use super::det_math;
 use super::enc_huff::spectral_bits;
 use super::spectrum::SF_OFFSET;
 
@@ -51,12 +52,15 @@ pub fn band_peaks(spec: &[f32; 1024], offsets: &[u16], out: &mut [f32; MAX_BANDS
 }
 
 /// Desired scalefactor for a band peak so the peak quantizes to about
-/// `target_q`: `q = |x|^0.75 · 2^(−0.1875·(sf−100))` solved for `sf`.
+/// `target_q`: `q = |x|^0.75 · 2^(−0.1875·(sf−100))` solved for `sf`. The
+/// log2s are [`det_math`](super::det_math)'s: libm `log2` is not bit-identical
+/// across platforms, and a 1-ulp drift can flip the rounded scalefactor.
 pub fn sf_for_peak(peak: f32, target_q: f32) -> i32 {
     if peak <= 0.0 || target_q <= 0.0 {
         return 0;
     }
-    let sf = SF_OFFSET as f32 + 4.0 * peak.log2() - (16.0 / 3.0) * target_q.log2();
+    let sf =
+        SF_OFFSET as f32 + 4.0 * det_math::log2(peak) - (16.0 / 3.0) * det_math::log2(target_q);
     sf.round() as i32
 }
 
@@ -127,9 +131,11 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
             *bits = [UNREPRESENTABLE; BOOKS];
             continue;
         }
-        let gain = (-0.1875f32 * (sf - SF_OFFSET) as f32).exp2();
+        // Deterministic gain + |x|^0.75 (det_math): libm exp2/powf are not
+        // bit-identical across platforms and would drift the encoded bytes.
+        let gain = det_math::exp2(-0.1875f32 * (sf - SF_OFFSET) as f32);
         for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-            let mag = (x.abs().powf(0.75) * gain).round() as i32;
+            let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
             let mag = mag.min(QUANT_MAX);
             *q = if x < 0.0 { -mag } else { mag };
         }
