@@ -13,7 +13,7 @@ use symphonia::core::formats::probe::Hint;
 use symphonia::core::formats::{FormatOptions, TrackType};
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
-use syom::decode;
+use syom::{decode, encode};
 
 const LC_ADTS: &[u8] = include_bytes!("../src/goldens/sine48.adts");
 const LC_M4A: &[u8] = include_bytes!("../src/goldens/sine441.m4a");
@@ -151,6 +151,42 @@ fn syom_n(bytes: &[u8]) -> usize {
         .unwrap_or(0)
 }
 
+/// Stereo encode input: the LC sine golden plus a 0.8× shadow channel.
+fn enc_input() -> (Vec<Vec<f32>>, u32) {
+    let fallback = (vec![vec![0.0; 1024]; 2], 48_000);
+    let Ok(dec) = decode(LC_ADTS) else {
+        return fallback;
+    };
+    let l = dec.channels.into_iter().next().unwrap_or_default();
+    let r = l.iter().map(|&x| x * 0.8).collect();
+    (vec![l, r], dec.sample_rate)
+}
+
+/// rusty_aac 0.5 encode → ADTS-wrapped byte count (parity with syom).
+fn rusty_encode(pcm: &[Vec<f32>], rate: u32) -> usize {
+    let mut enc = rusty_aac::AacEncoder::new(rusty_aac::AacEncoderConfig {
+        bitrate_bps: 128_000,
+        ..Default::default()
+    });
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    if enc.push_pcm_planar(&planes, rate).is_err() {
+        return 0;
+    }
+    enc.finish();
+    let mut total = 0usize;
+    while let Ok(p) = enc.next_packet() {
+        let hdr = rusty_aac::AdtsHeader {
+            object_type: 2,
+            sample_rate: rate,
+            channels: pcm.len() as u16,
+            frame_length: 7 + p.data.len(),
+            header_len: 7,
+        };
+        total += rusty_aac::write_adts_header(&hdr).len() + p.data.len();
+    }
+    total
+}
+
 fn row(name: &str, peer: &str, samples: usize, iters: u32, work: impl Fn()) {
     reset_alloc();
     let t0 = Instant::now();
@@ -198,4 +234,14 @@ fn main() {
             let _ = symphonia_all(bytes, ext);
         });
     }
+    // Encode: same planar f32 input both sides, ADTS bytes out.
+    let (pcm, rate) = enc_input();
+    let out_bytes = encode(&pcm, rate).map(|b| b.len()).unwrap_or(0);
+    row("enc_lc_st", "syom", out_bytes, iters, || {
+        let _ = encode(&pcm, rate);
+    });
+    let rusty_bytes = rusty_encode(&pcm, rate);
+    row("enc_lc_st", "rusty_aac", rusty_bytes, iters, || {
+        let _ = rusty_encode(&pcm, rate);
+    });
 }

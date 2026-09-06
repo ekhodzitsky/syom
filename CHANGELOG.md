@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- AAC-LC encoder: `encode` / `encode_with` / `write` / `write_with` take
+  planar f32 PCM (mono or stereo, any ADTS-table sample rate) and produce
+  ADTS or M4A (`EncodeOptions`: `EncodeContainer::Adts` default / `M4a`,
+  `bitrate_bps` default 128 kbps). Long windows only (KBD analysis, no
+  block switching yet), per-frame whole-pair M/S, a Bark-spreading psy
+  model (flat 18 dB SMR), CBR-ish via a per-frame global scalefactor
+  offset search plus a bounded one-frame bit credit. Errors surface as
+  the new `AacError::Encode` variant. Committed lavc goldens
+  (`src/goldens/enc48{,m}.*`) pin ffmpeg-decoded PCM against our own
+  decode (≤ 2 LSB s16, ≥ 55 dB SNR; measured 1 LSB / ~80 dB).
 - Streaming decode API: `Decoder` (resumable push decoder for ADTS and
   LATM/LOAS byte streams — `feed` arbitrary chunks, the `on_frame`
   callback fires once per decoded AAC frame, `finish` flushes and drops a

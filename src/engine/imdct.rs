@@ -25,7 +25,9 @@ impl C {
     }
 }
 
-fn bitrev_table(n: usize) -> Vec<u16> {
+/// Bit-reversal permutation for an `n`-point radix-2 FFT (shared with the
+/// forward MDCT).
+pub(crate) fn bitrev_table(n: usize) -> Vec<u16> {
     let mut t = vec![0u16; n];
     let mut j = 0usize;
     for slot in t.iter_mut() {
@@ -40,7 +42,9 @@ fn bitrev_table(n: usize) -> Vec<u16> {
     t
 }
 
-fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
+/// Twiddles `e^{+i·2πk/len}` per stage (shared with the forward MDCT, which
+/// negates the imaginary half for the forward FFT).
+pub(crate) fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
     let mut re = Vec::with_capacity(n);
     let mut im = Vec::with_capacity(n);
     let mut len = 2usize;
@@ -57,8 +61,16 @@ fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
     (re, im)
 }
 
-/// Unnormalized inverse radix-2 FFT, SoA + precomputed twiddles.
-fn ifft_soa(re: &mut [f32], im: &mut [f32], bitrev: &[u16], tw_re: &[f32], tw_im: &[f32]) {
+/// Unnormalized inverse radix-2 FFT, SoA + precomputed twiddles. With the
+/// twiddle imaginary parts negated this is the forward FFT (the MDCT uses
+/// it that way).
+pub(crate) fn ifft_soa(
+    re: &mut [f32],
+    im: &mut [f32],
+    bitrev: &[u16],
+    tw_re: &[f32],
+    tw_im: &[f32],
+) {
     let n = re.len();
     for (i, &rev) in bitrev.iter().enumerate() {
         let j = rev as usize;

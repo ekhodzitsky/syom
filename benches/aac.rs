@@ -16,7 +16,7 @@ use symphonia::core::formats::probe::Hint;
 use symphonia::core::formats::{FormatOptions, TrackType};
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
-use syom::decode;
+use syom::{decode, encode};
 
 const LC_ADTS: &[u8] = include_bytes!("../src/goldens/sine48.adts");
 const LC_M4A: &[u8] = include_bytes!("../src/goldens/sine441.m4a");
@@ -93,6 +93,62 @@ fn group(c: &mut Criterion, name: &str, bytes: &[u8], ext: &str, rusty: bool, ox
     g.finish();
 }
 
+/// Mono encode input: decode the committed LC sine golden.
+fn enc_mono_input() -> (Vec<Vec<f32>>, u32) {
+    let fallback = (vec![vec![0.0; 1024]], 48_000);
+    let Ok(dec) = decode(LC_ADTS) else {
+        return fallback;
+    };
+    (dec.channels, dec.sample_rate)
+}
+
+/// Stereo encode input: the mono golden plus a deterministic 0.8× shadow
+/// (correlated enough to exercise M/S).
+fn enc_stereo_input() -> (Vec<Vec<f32>>, u32) {
+    let (ch, rate) = enc_mono_input();
+    let l = ch.into_iter().next().unwrap_or_default();
+    let r = l.iter().map(|&x| x * 0.8).collect();
+    (vec![l, r], rate)
+}
+
+/// rusty_aac 0.5 encode → ADTS-wrapped bytes (parity with syom::encode).
+fn rusty_encode(pcm: &[Vec<f32>], rate: u32) -> usize {
+    let mut enc = rusty_aac::AacEncoder::new(rusty_aac::AacEncoderConfig {
+        bitrate_bps: 128_000,
+        ..Default::default()
+    });
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    if enc.push_pcm_planar(&planes, rate).is_err() {
+        return 0;
+    }
+    enc.finish();
+    let mut total = 0usize;
+    while let Ok(p) = enc.next_packet() {
+        let hdr = rusty_aac::AdtsHeader {
+            object_type: 2,
+            sample_rate: rate,
+            channels: pcm.len() as u16,
+            frame_length: 7 + p.data.len(),
+            header_len: 7,
+        };
+        total += rusty_aac::write_adts_header(&hdr).len() + p.data.len();
+    }
+    total
+}
+
+fn syom_encode(pcm: &[Vec<f32>], rate: u32) {
+    let _ = black_box(encode(pcm, rate));
+}
+
+fn enc_group(c: &mut Criterion, name: &str, pcm: &[Vec<f32>], rate: u32) {
+    let mut g = c.benchmark_group(name);
+    let bytes = (pcm.len() * pcm.first().map_or(0, Vec::len) * 4) as u64;
+    g.throughput(Throughput::Bytes(bytes));
+    g.bench_function("syom", |b| b.iter(|| syom_encode(pcm, rate)));
+    g.bench_function("rusty_aac", |b| b.iter(|| rusty_encode(pcm, rate)));
+    g.finish();
+}
+
 fn benches(c: &mut Criterion) {
     group(c, "lc_adts", LC_ADTS, "aac", true, true);
     group(c, "lc_m4a", LC_M4A, "m4a", false, false);
@@ -102,6 +158,10 @@ fn benches(c: &mut Criterion) {
     // 5.1 LC: rusty_aac decodes it but at ~seconds/iter it is not a
     // meaningful wall peer; sample parity is checked in mem.rs.
     group(c, "mc_adts", MC_ADTS, "aac", false, true);
+    let (mono, mono_rate) = enc_mono_input();
+    enc_group(c, "enc_lc_mono", &mono, mono_rate);
+    let (stereo, stereo_rate) = enc_stereo_input();
+    enc_group(c, "enc_lc_stereo", &stereo, stereo_rate);
 }
 
 criterion_group!(benches_main, benches);

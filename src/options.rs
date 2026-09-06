@@ -94,6 +94,62 @@ impl DecodeOptions {
     }
 }
 
+/// Output container for the encoder.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum EncodeContainer {
+    /// ADTS elementary stream.
+    #[default]
+    Adts,
+    /// M4A / ISOBMFF (`ftyp` + `mdat` + `moov`).
+    M4a,
+}
+
+/// Options for `encode_with` / `write_with`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct EncodeOptions {
+    pub container: EncodeContainer,
+    /// Target bitrate in bits per second (whole stream).
+    pub bitrate_bps: u32,
+}
+
+impl Default for EncodeOptions {
+    fn default() -> Self {
+        Self {
+            container: EncodeContainer::Adts,
+            bitrate_bps: 128_000,
+        }
+    }
+}
+
+impl EncodeOptions {
+    /// ADTS at 128 kbps (same as [`Default`]).
+    #[inline]
+    pub fn adts() -> Self {
+        Self::default()
+    }
+
+    /// M4A at 128 kbps.
+    #[inline]
+    pub fn m4a() -> Self {
+        Self {
+            container: EncodeContainer::M4a,
+            ..Self::default()
+        }
+    }
+
+    #[inline]
+    pub fn with_container(mut self, container: EncodeContainer) -> Self {
+        self.container = container;
+        self
+    }
+
+    #[inline]
+    pub fn with_bitrate_bps(mut self, bps: u32) -> Self {
+        self.bitrate_bps = bps;
+        self
+    }
+}
+
 #[cfg(test)]
 #[path = "options_tests.rs"]
 mod options_tests;
