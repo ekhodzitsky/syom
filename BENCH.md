@@ -3,7 +3,8 @@
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).
-Encode section added 2026-09-06.
+Encode section added 2026-09-06; rev 2 same day after block
+switching landed (numbers below are the block-switching encoder).
 Peers: rusty_aac 0.5.0, symphonia 0.6.1, oxideav-aac 0.1.7 (all
 dev-deps; product `[dependencies]` stays empty). C lavc/libfdk are not
 linked (`c-peers-unavailable`).
@@ -19,20 +20,22 @@ Wall (criterion median):
 
 | group | syom | rusty_aac |
 |---|---|---|
-| enc_lc_mono (13 312 samples) | **500.42 µs** (101 MiB/s) | 2.166 ms (24.1 MiB/s) |
-| enc_lc_stereo (2 × 13 312) | **1.117 ms** (91.4 MiB/s) | 5.053 ms (20.2 MiB/s) |
+| enc_lc_mono (13 312 samples) | **446.66 µs** (113.7 MiB/s) | 1.645 ms (30.9 MiB/s) |
+| enc_lc_stereo (2 × 13 312) | **1.008 ms** (100.7 MiB/s) | 3.902 ms (26.0 MiB/s) |
 
 Memory (`cargo bench --bench mem`, 200 iters; cumulative ÷ 200; the rows
 run last in the process, so there is no fair peak-RSS cell):
 
 | group / peer | allocs/iter | alloc bytes/iter |
 |---|---|---|
-| enc_lc_st syom | **156** | **145 KiB** |
+| enc_lc_st syom | **189** | **193 KiB** |
 | enc_lc_st rusty_aac | 1067 | 1.53 MiB |
 
-- syom encodes LC ~4.3-4.5× faster than rusty_aac 0.5 at the same 128
-  kbps target (mono and stereo), with ~7× fewer allocs and ~11× fewer
-  alloc bytes. syom's per-frame cost is one forward MDCT per channel
+- syom encodes LC ~3.7-3.9× faster than rusty_aac 0.5 at the same 128
+  kbps target (mono and stereo), with ~5.6× fewer allocs and ~8× fewer
+  alloc bytes. (Rev-1, long-windows-only encoder, same day: 4.3-4.5× /
+  156 allocs / 145 KiB — block switching costs per-frame short-path
+  allocations and buys 19.3 dB of pre-echo reduction.) syom's per-frame cost is one forward MDCT per channel
   plus ~7 rate-loop trials of quantize+plan; the psy model is a
   precomputed 51×51 matrix multiply per channel.
 - Output size on this tonal fixture: syom 2 336 B (≈ 67 kbps —
