@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Streaming encode API: push `Encoder` (resumable, ADTS only) —
+  `Encoder::new(sample_rate, channels, &EncodeOptions)`, then `feed` planar
+  f32 chunks of any size and the `on_frame` callback fires once per
+  completed AAC frame with a borrowed ADTS-wrapped `EncodedFrame`;
+  `finish` encodes the zero-padded tail frame and returns `EncodeInfo`
+  tallies (rate / channels / `aac_frames` / `samples` / `bytes`). Output
+  is byte-exact with one-shot `encode_with` on the same PCM for any feed
+  chunking. M4A is rejected at construction (`stco` / sample sizes need
+  the finished totals; use `encode_with`), mirroring the push `Decoder`'s
+  ISOBMFF rejection.
+
 ### Fixed
 
 - Encoder output is now byte-identical across platforms (fixes the two

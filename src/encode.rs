@@ -103,18 +103,24 @@ fn wrap_adts(payloads: &[Vec<u8>], fs_index: u8, channels: usize) -> Vec<u8> {
         .sum();
     let mut out = Vec::with_capacity(total);
     for p in payloads {
-        let hdr = AdtsHeader {
-            mpeg_version_mpeg2: false,
-            protection_absent: true,
-            profile: 1, // LC
-            sampling_frequency_index: fs_index,
-            channel_configuration: channels as u8,
-            aac_frame_length: (crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC + p.len()) as u16,
-            adts_buffer_fullness: 0x7FF,
-            number_of_raw_data_blocks_in_frame: 1,
-        };
-        out.extend_from_slice(&hdr.write());
-        out.extend_from_slice(p);
+        adts_frame_into(p, fs_index, channels, &mut out);
     }
     out
+}
+
+/// Append one ADTS-wrapped `raw_data_block` to `out` (no CRC, VBR fullness
+/// marker). Shared by one-shot [`encode_with`] and the push [`crate::Encoder`].
+pub(crate) fn adts_frame_into(payload: &[u8], fs_index: u8, channels: usize, out: &mut Vec<u8>) {
+    let hdr = AdtsHeader {
+        mpeg_version_mpeg2: false,
+        protection_absent: true,
+        profile: 1, // LC
+        sampling_frequency_index: fs_index,
+        channel_configuration: channels as u8,
+        aac_frame_length: (crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC + payload.len()) as u16,
+        adts_buffer_fullness: 0x7FF,
+        number_of_raw_data_blocks_in_frame: 1,
+    };
+    out.extend_from_slice(&hdr.write());
+    out.extend_from_slice(payload);
 }
