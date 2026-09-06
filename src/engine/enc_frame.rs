@@ -19,6 +19,7 @@
 //! `scale_factor_grouping` (8 groups of 1 window — simplest conformant).
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
+use super::enc_ms::{self, MsBands};
 use super::enc_psy::{AttackDetector, Psy};
 use super::enc_quant::{self, MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
 use super::enc_section;
@@ -64,8 +65,8 @@ pub struct LcEncoder {
     /// integer sf-offset step undershoots by up to ~11%, so frames may
     /// spend accumulated savings. ADTS carries the VBR fullness marker.
     credit: i64,
-    /// This frame's CPE is M/S-coded (`ms_mask_present = 2`).
-    ms_used: bool,
+    /// This frame's per-band M/S decision (`ms_mask_present` 0/1/2).
+    ms: MsBands,
     /// Previously emitted sequence (legal-transition state).
     prev_seq: WindowSequence,
     /// This frame's sequence (set by `encode_frame`).
@@ -80,6 +81,9 @@ pub struct LcEncoder {
     /// Test hook: force OnlyLong every frame (pre-echo A/B measurement).
     #[cfg(test)]
     block_switching: bool,
+    /// Test hook: whole-pair M/S A/B (per-band when true).
+    #[cfg(test)]
+    ms_per_band: bool,
 }
 
 impl LcEncoder {
@@ -123,7 +127,7 @@ impl LcEncoder {
             psy: Psy::new(offsets, sample_rate),
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
-            ms_used: false,
+            ms: MsBands::off(),
             prev_seq: WindowSequence::OnlyLong,
             seq: WindowSequence::OnlyLong,
             detectors: [AttackDetector::new(), AttackDetector::new()],
@@ -136,6 +140,8 @@ impl LcEncoder {
             psy_short: Psy::new_short(short_offsets, sample_rate),
             #[cfg(test)]
             block_switching: true,
+            #[cfg(test)]
+            ms_per_band: true,
         })
     }
 
@@ -149,6 +155,12 @@ impl LcEncoder {
     #[cfg(test)]
     pub fn set_block_switching(&mut self, on: bool) {
         self.block_switching = on;
+    }
+
+    /// Test-only A/B switch: whole-pair M/S (off) vs per-band (on).
+    #[cfg(test)]
+    pub fn set_ms_per_band(&mut self, on: bool) {
+        self.ms_per_band = on;
     }
 
     /// Per-frame bit budget from the target bitrate (no reservoir).
@@ -205,7 +217,21 @@ impl LcEncoder {
         for (prev, plane) in self.prev.iter_mut().zip(pcm.iter()) {
             prev.copy_from_slice(plane);
         }
-        self.ms_used = self.channels == 2 && self.decide_ms(&mut specs);
+        // Per-band M/S decision, once per frame before the rate loop
+        // (`enc_ms` module docs); chosen bands are transformed in place.
+        self.ms = if self.channels == 2 {
+            #[cfg(test)]
+            let per_band = self.ms_per_band;
+            #[cfg(not(test))]
+            let per_band = true;
+            if self.seq.is_eight_short() {
+                enc_ms::decide_short(&mut specs, self.short_offsets, per_band)
+            } else {
+                enc_ms::decide_long(&mut specs, self.offsets, per_band)
+            }
+        } else {
+            MsBands::off()
+        };
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, spend);
@@ -218,34 +244,6 @@ impl LcEncoder {
             (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
         self.prev_seq = self.seq;
         Ok(out)
-    }
-
-    /// Per-frame M/S decision (whole-frame, `ms_mask_present` 0 or 2): code
-    /// (m, s) = ((l+r)/2, (l−r)/2) when the side channel is quieter than
-    /// the right channel (correlated content concentrates into mid). On a
-    /// decision to use M/S, `specs` is transformed in place. TODO: per-band
-    /// ms_used bits, binaural masking margin.
-    fn decide_ms(&self, specs: &mut [[f32; LONG_WINDOW_LEN]; 2]) -> bool {
-        let mut e_side = 0.0f64;
-        let mut e_right = 0.0f64;
-        {
-            let [l, r] = specs;
-            for (&lv, &rv) in l.iter().zip(r.iter()) {
-                let s = f64::from((lv - rv) * 0.5);
-                e_side += s * s;
-                e_right += f64::from(rv) * f64::from(rv);
-            }
-        }
-        if e_side >= e_right {
-            return false;
-        }
-        let [l, r] = specs;
-        for (lv, rv) in l.iter_mut().zip(r.iter_mut()) {
-            let (a, b) = (*lv, *rv);
-            *lv = (a + b) * 0.5;
-            *rv = (a - b) * 0.5;
-        }
-        true
     }
 
     /// Smallest global sf offset whose frame fits the bit budget (frame
@@ -277,7 +275,7 @@ impl LcEncoder {
         let mut total = 3 + 4 + 3; // element id + tag + END
         if self.seq.is_eight_short() {
             if self.channels == 2 {
-                total += 1 + 15 + 2; // common_window + ics_info (short) + ms_mask
+                total += 1 + 15 + self.ms.overhead_bits(); // cw + ics_info + ms_mask
             }
             for (ch, spec) in specs.iter().enumerate().take(self.channels) {
                 total += enc_short::channel_build(
@@ -295,7 +293,8 @@ impl LcEncoder {
             return total + 7; // byte-align pad ceiling
         }
         if self.channels == 2 {
-            total += 1 + 11 + 2; // common_window + ics_info + ms_mask
+            // common_window + ics_info + ms_mask
+            total += 1 + 11 + self.ms.overhead_bits();
         }
         let channels = self
             .chans
@@ -331,6 +330,7 @@ impl LcEncoder {
                 &self.gains,
                 self.channels,
                 cap,
+                self.ms.overhead_bits(),
             );
             return;
         }
@@ -338,7 +338,7 @@ impl LcEncoder {
         loop {
             let mut total = 3 + 4 + 3 + 7;
             if self.channels == 2 {
-                total += 1 + 11 + 2;
+                total += 1 + 11 + self.ms.overhead_bits();
             }
             let channels = self
                 .chans
@@ -375,7 +375,7 @@ impl LcEncoder {
                 &self.chans_s[..],
                 &self.books_s[..],
                 &self.gains,
-                self.ms_used,
+                &self.ms,
                 self.channels,
             );
         }
@@ -385,7 +385,7 @@ impl LcEncoder {
             &self.chans[..],
             &self.books[..],
             &self.gains,
-            self.ms_used,
+            &self.ms,
             self.channels,
         )
     }

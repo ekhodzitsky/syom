@@ -7,6 +7,7 @@
 
 use super::bits::BitWriter;
 use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
+use super::enc_ms::MsBands;
 use super::enc_quant::{BOOKS, MAX_BANDS, QuantChannel, UNREPRESENTABLE};
 use super::ics::WindowSequence;
 use super::section::has_spectral;
@@ -297,7 +298,7 @@ pub fn emit_frame(
     chans: &[QuantChannel],
     books: &[[u8; MAX_BANDS]],
     gains: &[u8],
-    ms_used: bool,
+    ms: &MsBands,
     channels: usize,
 ) -> Vec<u8> {
     let mut w = BitWriter::new();
@@ -310,7 +311,7 @@ pub fn emit_frame(
         w.write(0, 4); // tag
         w.write_bit(true); // common_window
         emit_ics_info(&mut w, seq, chans[0].n_bands as u8);
-        w.write(u32::from(ms_used) * 2, 2); // ms_mask_present: 0 or 2
+        ms.emit(&mut w); // ms_mask_present + optional per-band ms_used bits
         for ch in 0..channels {
             emit_channel_body(
                 &mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false,

@@ -10,6 +10,7 @@
 
 use super::bits::BitWriter;
 use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
+use super::enc_ms::MsBands;
 use super::enc_psy::Psy;
 use super::enc_quant::{self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
 use super::enc_section::{emit_ics_info, plan_books_into};
@@ -133,10 +134,11 @@ pub fn frame_bits(
     books: &[[u8; MAX_FLAT_SHORT]],
     gains: &[u8],
     channels: usize,
+    ms_overhead: usize,
 ) -> usize {
     let mut total = 3 + 4 + 3 + 7; // element id + tag + END + align ceiling
     if channels == 2 {
-        total += 1 + 15 + 2; // common_window + ics_info (short) + ms_mask
+        total += 1 + 15 + ms_overhead; // common_window + ics_info (short) + ms_mask
     }
     for ch in 0..channels {
         total += channel_body_bits_short(&books[ch], &chans[ch], gains[ch], channels == 1);
@@ -152,9 +154,10 @@ pub fn drop_bands_until(
     gains: &[u8],
     channels: usize,
     cap: usize,
+    ms_overhead: usize,
 ) {
     loop {
-        let total = frame_bits(chans, books, gains, channels);
+        let total = frame_bits(chans, books, gains, channels, ms_overhead);
         if total <= cap {
             return;
         }
@@ -178,7 +181,7 @@ pub fn emit_frame(
     chans: &[QuantShort],
     books: &[[u8; MAX_FLAT_SHORT]],
     gains: &[u8],
-    ms_used: bool,
+    ms: &MsBands,
     channels: usize,
 ) -> Vec<u8> {
     let mut w = BitWriter::new();
@@ -191,7 +194,7 @@ pub fn emit_frame(
         w.write(0, 4); // tag
         w.write_bit(true); // common_window
         emit_ics_info(&mut w, WindowSequence::EightShort, chans[0].n_sfb as u8);
-        w.write(u32::from(ms_used) * 2, 2); // ms_mask_present: 0 or 2
+        ms.emit(&mut w); // ms_mask_present + optional per-group ms_used bits
         for ch in 0..channels {
             emit_channel_body_short(&mut w, offsets, &books[ch], &chans[ch], gains[ch], false);
         }
