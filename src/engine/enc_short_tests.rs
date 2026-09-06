@@ -45,8 +45,7 @@ fn fill_costs(q: &mut QuantShort, offsets: &[u16]) {
                 let mut i = lo;
                 let mut ok = true;
                 while i < hi {
-                    match crate::engine::enc_huff::spectral_bits(cb as u8, &q.quant[i..i + step])
-                    {
+                    match crate::engine::enc_huff::spectral_bits(cb as u8, &q.quant[i..i + step]) {
                         Some(bits) => total += bits as u32,
                         None => {
                             ok = false;
@@ -82,7 +81,8 @@ fn short_channel_body_parses_back() {
     emit_channel_body_short(&mut w, offsets, &books, &q, 100, true);
     let counted = channel_body_bits_short(&books, &q, 100, true);
     assert_eq!(
-        w.bit_len() as usize, counted,
+        w.bit_len() as usize,
+        counted,
         "counted bits must match emitted bits exactly"
     );
     // Parse the body back through the shipped decode path.

@@ -14,8 +14,7 @@ use super::{LcEncoder, MAX_PAYLOAD_BYTES};
 fn sine_frame(t: usize, amp: f32) -> Vec<f32> {
     (0..LONG_WINDOW_LEN)
         .map(|i| {
-            amp * (2.0 * std::f32::consts::PI * 440.0 * (t * LONG_WINDOW_LEN + i) as f32
-                / 48_000.0)
+            amp * (2.0 * std::f32::consts::PI * 440.0 * (t * LONG_WINDOW_LEN + i) as f32 / 48_000.0)
                 .sin()
         })
         .collect()

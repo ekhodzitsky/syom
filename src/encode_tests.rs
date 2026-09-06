@@ -287,6 +287,11 @@ fn to_s16(v: f32) -> i16 {
     (v * 32768.0).round().clamp(-32768.0, 32767.0) as i16
 }
 
+/// The oracle tolerance check, shared with `encode_transient_tests`.
+pub(crate) fn assert_decode_matches_lavc_pub(stream: &[u8], lavc: &[u8]) {
+    assert_decode_matches_lavc(stream, lavc);
+}
+
 /// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_adts_golden`,
 /// then decode the written ADTS with ffmpeg to `enc48.lavc.s16`:
 /// `ffmpeg -y -i src/goldens/enc48.adts -f s16le src/goldens/enc48.lavc.s16`

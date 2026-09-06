@@ -57,10 +57,11 @@ Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
 mono/stereo, 128 kbps). `encode_with` takes `EncodeOptions`:
 `EncodeContainer::Adts` (default) or `M4a`, and `with_bitrate_bps`.
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
-The encoder is long-window LC (no block switching yet), KBD analysis, a
-Bark-spreading psy model with flat 18 dB SMR, per-frame M/S, and a
-CBR-ish rate loop. The committed lavc goldens prove ffmpeg decodes the
-output bit-exact-close (≤ 1 LSB s16 vs our own decode).
+The encoder is LC with block switching (an attack detector walks
+OnlyLong → LongStart → EightShort → LongStop on transients), KBD
+analysis, a Bark-spreading psy model with flat 18 dB SMR, per-frame M/S,
+and a CBR-ish rate loop. The committed lavc goldens prove ffmpeg decodes
+the output bit-exact-close (≤ 1 LSB s16 vs our own decode).
 
 Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
 byte streams (frames may straddle chunks; M4A is rejected — `moov` needs

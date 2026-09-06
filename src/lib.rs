@@ -32,6 +32,10 @@ mod decode_tests;
 mod encode_tests;
 
 #[cfg(test)]
+#[path = "encode_transient_tests.rs"]
+mod encode_transient_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

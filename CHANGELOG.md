@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Encoder block switching: a deterministic attack detector (high-passed
+  128-sample sub-block energy surge, >8× the running two-frame mean, OR'd
+  across channels for the shared CPE window) drives a causal
+  OnlyLong → LongStart → EightShort → LongStop state machine — no
+  lookahead, no added latency. Transients are now coded on eight 128-bin
+  short windows (no `scale_factor_grouping`: 8 groups of 1 window);
+  steady content stays OnlyLong byte-for-byte (the `enc48{,m}` goldens
+  did not change). Pre-echo in the 10 ms before a click after silence
+  drops 19.3 dB in the A/B measurement. A new transient lavc golden
+  (`src/goldens/enc48t.*` — castanet clicks over a tone bed) pins the
+  short-window bitstream byte-exactly and decode-matches ffmpeg within
+  the usual tolerance (measured 1 LSB s16 / ~71 dB SNR).
+
 ### Fixed
 
 - Encoder output is now byte-identical across platforms (fixes the two

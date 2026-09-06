@@ -11,9 +11,7 @@
 use super::bits::BitWriter;
 use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
 use super::enc_psy::Psy;
-use super::enc_quant::{
-    self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort,
-};
+use super::enc_quant::{self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
 use super::enc_section::{emit_ics_info, plan_books_into};
 use super::filterbank::window_left;
 use super::ics::WindowSequence;
@@ -82,13 +80,17 @@ pub fn spectra(
     let mut seg = [0.0f32; 2 * SHORT_WINDOW_LEN];
     for w in 0..MAX_GROUPS {
         let base = SHORT_START + w * SHORT_HOP;
-        for (s, (&x, &win)) in seg
-            .iter_mut()
-            .zip(block[base..base + 2 * SHORT_WINDOW_LEN].iter().zip(windows.short.iter()))
-        {
+        for (s, (&x, &win)) in seg.iter_mut().zip(
+            block[base..base + 2 * SHORT_WINDOW_LEN]
+                .iter()
+                .zip(windows.short.iter()),
+        ) {
             *s = x * win;
         }
-        mdct_into_f32(&seg, &mut spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN]);
+        mdct_into_f32(
+            &seg,
+            &mut spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN],
+        );
     }
 }
 

@@ -135,7 +135,13 @@ fn merge_run(
 /// Choose `sfb_cb` per band of a long-window channel.
 pub fn plan_books(q: &QuantChannel) -> [u8; MAX_BANDS] {
     let mut sfb_cb = [0u8; MAX_BANDS];
-    plan_books_into(&q.coded, &q.bits, q.n_bands, &mut sfb_cb, section_header_bits);
+    plan_books_into(
+        &q.coded,
+        &q.bits,
+        q.n_bands,
+        &mut sfb_cb,
+        section_header_bits,
+    );
     sfb_cb
 }
 
@@ -306,7 +312,9 @@ pub fn emit_frame(
         emit_ics_info(&mut w, seq, chans[0].n_bands as u8);
         w.write(u32::from(ms_used) * 2, 2); // ms_mask_present: 0 or 2
         for ch in 0..channels {
-            emit_channel_body(&mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false);
+            emit_channel_body(
+                &mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false,
+            );
         }
     }
     w.write(7, 3); // END

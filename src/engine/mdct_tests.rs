@@ -101,7 +101,10 @@ fn fast_matches_naive_short() {
         .zip(b.iter())
         .map(|(x, y)| (x - y).abs())
         .fold(0.0, f64::max);
-    assert!(err < 1e-3, "fast short MDCT drifted from the naive sum: {err}");
+    assert!(
+        err < 1e-3,
+        "fast short MDCT drifted from the naive sum: {err}"
+    );
 }
 
 #[test]

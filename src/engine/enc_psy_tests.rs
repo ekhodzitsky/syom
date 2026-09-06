@@ -103,8 +103,7 @@ fn detector_is_quiet_on_tones_and_silence() {
     let mut det = AttackDetector::new();
     for f in 0..20 {
         let tone = frame_of(|i| {
-            0.5 * (2.0 * std::f32::consts::PI * 440.0 * (f * LONG_WINDOW_LEN + i) as f32
-                / 48_000.0)
+            0.5 * (2.0 * std::f32::consts::PI * 440.0 * (f * LONG_WINDOW_LEN + i) as f32 / 48_000.0)
                 .sin()
         });
         assert!(!det.push(&tone), "sine frame {f} flagged as attack");
@@ -120,8 +119,7 @@ fn detector_flags_click_after_steady_tone() {
     let mut det = AttackDetector::new();
     for f in 0..8 {
         let tone = frame_of(|i| {
-            0.2 * (2.0 * std::f32::consts::PI * 440.0 * (f * LONG_WINDOW_LEN + i) as f32
-                / 48_000.0)
+            0.2 * (2.0 * std::f32::consts::PI * 440.0 * (f * LONG_WINDOW_LEN + i) as f32 / 48_000.0)
                 .sin()
         });
         assert!(!det.push(&tone));
@@ -143,9 +141,8 @@ fn detector_flags_click_after_steady_tone() {
 #[test]
 fn detector_flags_onset_from_silence_but_not_first_frame() {
     let mut det = AttackDetector::new();
-    let loud = frame_of(|i| {
-        0.5 * (2.0 * std::f32::consts::PI * 1000.0 * i as f32 / 48_000.0).sin()
-    });
+    let loud =
+        frame_of(|i| 0.5 * (2.0 * std::f32::consts::PI * 1000.0 * i as f32 / 48_000.0).sin());
     // The very first frame has no history to surge against: no flag.
     assert!(!det.push(&loud), "first-ever frame must not flag");
     let mut det = AttackDetector::new();
@@ -163,8 +160,7 @@ fn detector_ignores_slow_swell() {
     for f in 0..20i32 {
         let gain = 0.02 * 1.12f32.powi(f);
         let frame = frame_of(|i| {
-            gain * (2.0 * std::f32::consts::PI * 700.0
-                * (f as usize * LONG_WINDOW_LEN + i) as f32
+            gain * (2.0 * std::f32::consts::PI * 700.0 * (f as usize * LONG_WINDOW_LEN + i) as f32
                 / 48_000.0)
                 .sin()
         });

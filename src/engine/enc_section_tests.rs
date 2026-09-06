@@ -124,7 +124,15 @@ fn channel_body_bits_match_emit() {
     }
     let books = plan_books(&q);
     let mut w = BitWriter::new();
-    emit_channel_body(&mut w, offsets, WindowSequence::OnlyLong, &books, &q, 100, true);
+    emit_channel_body(
+        &mut w,
+        offsets,
+        WindowSequence::OnlyLong,
+        &books,
+        &q,
+        100,
+        true,
+    );
     let counted = channel_body_bits(&books, &q, 100, true);
     assert_eq!(
         w.bit_len() as usize,
