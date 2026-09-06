@@ -282,6 +282,37 @@ pub fn emit_channel_body(
     emit_spectral(w, offsets, sfb_cb, q);
 }
 
+/// Emit a long-family (`OnlyLong` / `LongStart` / `LongStop`)
+/// `raw_data_block` from the built state.
+#[allow(clippy::too_many_arguments)]
+pub fn emit_frame(
+    offsets: &[u16],
+    seq: WindowSequence,
+    chans: &[QuantChannel],
+    books: &[[u8; MAX_BANDS]],
+    gains: &[u8],
+    ms_used: bool,
+    channels: usize,
+) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    if channels == 1 {
+        w.write(0, 3); // SCE
+        w.write(0, 4); // tag
+        emit_channel_body(&mut w, offsets, seq, &books[0], &chans[0], gains[0], true);
+    } else {
+        w.write(1, 3); // CPE
+        w.write(0, 4); // tag
+        w.write_bit(true); // common_window
+        emit_ics_info(&mut w, seq, chans[0].n_bands as u8);
+        w.write(u32::from(ms_used) * 2, 2); // ms_mask_present: 0 or 2
+        for ch in 0..channels {
+            emit_channel_body(&mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false);
+        }
+    }
+    w.write(7, 3); // END
+    w.finish()
+}
+
 #[cfg(test)]
 #[path = "enc_section_tests.rs"]
 mod enc_section_tests;

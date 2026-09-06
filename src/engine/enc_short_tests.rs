@@ -4,7 +4,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::super::bits::{BitReader, BitWriter};
-use super::super::enc_quant::{MAX_FLAT_SHORT, MAX_GROUPS, QuantShort, UNREPRESENTABLE};
+use super::super::enc_quant::{MAX_GROUPS, QuantShort, UNREPRESENTABLE};
 use super::super::ics::IcsInfo;
 use super::super::section::SectionData;
 use super::super::sf::{self, ScaleFactors};

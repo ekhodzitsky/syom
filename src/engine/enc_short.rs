@@ -10,11 +10,193 @@
 
 use super::bits::BitWriter;
 use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
-use super::enc_quant::{MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
+use super::enc_psy::Psy;
+use super::enc_quant::{
+    self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort,
+};
 use super::enc_section::{emit_ics_info, plan_books_into};
+use super::filterbank::window_left;
 use super::ics::WindowSequence;
+use super::mdct::mdct_into_f32;
 use super::section::has_spectral;
-use super::swb::SHORT_WINDOW_LEN;
+use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
+
+/// Block offset of the first short window (`(2048 − 256) / 4`) and the hop
+/// between short windows — mirrors the decoder's `short_windowed`.
+const SHORT_START: usize = (2 * LONG_WINDOW_LEN - 2 * SHORT_WINDOW_LEN) / 4;
+const SHORT_HOP: usize = SHORT_WINDOW_LEN;
+
+/// The encoder's analysis windows, pre-scaled by 32768 like the long
+/// `LcEncoder::window` and matching the decoder's synthesis shapes exactly
+/// (`filterbank::apply_long_window` / `short_windowed`).
+pub struct ShortWindows {
+    /// Long-start: long KBD left, flat 1.0, short KBD right, zeros.
+    pub start: Box<[f32; 2 * LONG_WINDOW_LEN]>,
+    /// Long-stop: zeros, short KBD left, flat 1.0, long KBD right.
+    pub stop: Box<[f32; 2 * LONG_WINDOW_LEN]>,
+    /// One 256-tap short KBD window.
+    pub short: Box<[f32; 2 * SHORT_WINDOW_LEN]>,
+}
+
+impl ShortWindows {
+    pub fn new() -> Self {
+        let long = window_left(2 * LONG_WINDOW_LEN, super::ics::WindowShape::Kbd);
+        let short = window_left(2 * SHORT_WINDOW_LEN, super::ics::WindowShape::Kbd);
+        let mut start = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
+        let mut stop = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
+        for i in 0..LONG_WINDOW_LEN {
+            start[i] = long[i] * 32768.0;
+            stop[LONG_WINDOW_LEN + i] = long[LONG_WINDOW_LEN - 1 - i] * 32768.0;
+        }
+        let flat = SHORT_START; // 448 samples of flat 1.0 on each side
+        for i in 0..flat {
+            start[LONG_WINDOW_LEN + i] = 32768.0;
+            stop[SHORT_START + SHORT_WINDOW_LEN + i] = 32768.0;
+        }
+        for m in 0..SHORT_WINDOW_LEN {
+            // Descending short right half at 1472..1600 of the start window.
+            start[LONG_WINDOW_LEN + flat + m] = short[SHORT_WINDOW_LEN - 1 - m] * 32768.0;
+            // Ascending short left half at 448..576 of the stop window.
+            stop[SHORT_START + m] = short[m] * 32768.0;
+        }
+        let mut sw = Box::new([0.0f32; 2 * SHORT_WINDOW_LEN]);
+        for i in 0..SHORT_WINDOW_LEN {
+            sw[i] = short[i] * 32768.0;
+            sw[2 * SHORT_WINDOW_LEN - 1 - i] = short[i] * 32768.0;
+        }
+        Self {
+            start,
+            stop,
+            short: sw,
+        }
+    }
+}
+
+/// Window-major short spectrum of one 2048-sample block: eight 256→128
+/// MDCTs at offsets 448 + 128·w (mirrors the decoder's short IMDCT grid).
+pub fn spectra(
+    block: &[f32; 2 * LONG_WINDOW_LEN],
+    windows: &ShortWindows,
+    spec: &mut [f32; LONG_WINDOW_LEN],
+) {
+    let mut seg = [0.0f32; 2 * SHORT_WINDOW_LEN];
+    for w in 0..MAX_GROUPS {
+        let base = SHORT_START + w * SHORT_HOP;
+        for (s, (&x, &win)) in seg
+            .iter_mut()
+            .zip(block[base..base + 2 * SHORT_WINDOW_LEN].iter().zip(windows.short.iter()))
+        {
+            *s = x * win;
+        }
+        mdct_into_f32(&seg, &mut spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN]);
+    }
+}
+
+/// Quantize + plan one short channel at `offset`; returns its body bits.
+/// The psy model scores each window's 128-bin spectrum on its own.
+#[allow(clippy::too_many_arguments)]
+pub fn channel_build(
+    psy: &mut Psy,
+    offsets: &[u16],
+    spec: &[f32; LONG_WINDOW_LEN],
+    offset: i32,
+    q: &mut QuantShort,
+    tq: &mut [f32; MAX_FLAT_SHORT],
+    books: &mut [u8; MAX_FLAT_SHORT],
+    gain: &mut u8,
+    standalone: bool,
+) -> usize {
+    let n_sfb = q.n_sfb;
+    for w in 0..MAX_GROUPS {
+        psy.analyze(
+            &spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN],
+            offsets,
+            crate::engine::enc_frame::TARGET_Q,
+            &mut q.coded[w * n_sfb..(w + 1) * n_sfb],
+            &mut tq[w * n_sfb..(w + 1) * n_sfb],
+        );
+    }
+    let mut peaks = [0.0f32; MAX_FLAT_SHORT];
+    enc_quant::band_peaks_short(spec, offsets, n_sfb, &mut peaks);
+    enc_quant::raw_scalefactors_short(&peaks, tq, offset, q);
+    *gain = enc_quant::normalize_sf_short(q);
+    enc_quant::quantize_short(spec, offsets, q);
+    *books = plan_books_short(q);
+    channel_body_bits_short(books, q, *gain, standalone)
+}
+
+/// Total frame bits of the built short state (element overhead included).
+pub fn frame_bits(
+    chans: &[QuantShort],
+    books: &[[u8; MAX_FLAT_SHORT]],
+    gains: &[u8],
+    channels: usize,
+) -> usize {
+    let mut total = 3 + 4 + 3 + 7; // element id + tag + END + align ceiling
+    if channels == 2 {
+        total += 1 + 15 + 2; // common_window + ics_info (short) + ms_mask
+    }
+    for ch in 0..channels {
+        total += channel_body_bits_short(&books[ch], &chans[ch], gains[ch], channels == 1);
+    }
+    total
+}
+
+/// Hard cap, short frames: drop the highest coded (window, band) until the
+/// frame fits `cap` bits.
+pub fn drop_bands_until(
+    chans: &mut [QuantShort],
+    books: &mut [[u8; MAX_FLAT_SHORT]],
+    gains: &[u8],
+    channels: usize,
+    cap: usize,
+) {
+    loop {
+        let total = frame_bits(chans, books, gains, channels);
+        if total <= cap {
+            return;
+        }
+        let mut hit: Option<(usize, usize)> = None;
+        for (ch, q) in chans.iter().enumerate().take(channels) {
+            let n = MAX_GROUPS * q.n_sfb;
+            if let Some(b) = q.coded[..n].iter().rposition(|&c| c) {
+                hit = Some((ch, b));
+                break;
+            }
+        }
+        let Some((ch, b)) = hit else { return };
+        chans[ch].coded[b] = false;
+        books[ch] = plan_books_short(&chans[ch]);
+    }
+}
+
+/// Emit the short-frame `raw_data_block` from the built state.
+pub fn emit_frame(
+    offsets: &[u16],
+    chans: &[QuantShort],
+    books: &[[u8; MAX_FLAT_SHORT]],
+    gains: &[u8],
+    ms_used: bool,
+    channels: usize,
+) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    if channels == 1 {
+        w.write(0, 3); // SCE
+        w.write(0, 4); // tag
+        emit_channel_body_short(&mut w, offsets, &books[0], &chans[0], gains[0], true);
+    } else {
+        w.write(1, 3); // CPE
+        w.write(0, 4); // tag
+        w.write_bit(true); // common_window
+        emit_ics_info(&mut w, WindowSequence::EightShort, chans[0].n_sfb as u8);
+        w.write(u32::from(ms_used) * 2, 2); // ms_mask_present: 0 or 2
+        for ch in 0..channels {
+            emit_channel_body_short(&mut w, offsets, &books[ch], &chans[ch], gains[ch], false);
+        }
+    }
+    w.write(7, 3); // END
+    w.finish()
+}
 
 /// Short-window section-header cost (4-bit cb + 3-bit increments, escape 7).
 fn section_header_bits_short(len: usize) -> usize {
