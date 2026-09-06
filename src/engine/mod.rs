@@ -15,6 +15,7 @@ pub(crate) mod enc_huff;
 pub(crate) mod enc_psy;
 pub(crate) mod enc_quant;
 pub(crate) mod enc_section;
+pub(crate) mod enc_short;
 pub(crate) mod error;
 pub mod extension_payload;
 pub mod filterbank;

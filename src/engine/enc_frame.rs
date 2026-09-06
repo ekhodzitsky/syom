@@ -13,7 +13,7 @@ use super::enc_quant::{self, MAX_BANDS, QuantChannel};
 use super::enc_section;
 use super::error::{Error, Result};
 use super::filterbank::window_left;
-use super::ics::WindowShape;
+use super::ics::{WindowSequence, WindowShape};
 use super::mdct::mdct_into_f32;
 use super::swb::{LONG_WINDOW_LEN, long_offsets};
 
@@ -265,6 +265,7 @@ impl LcEncoder {
             enc_section::emit_channel_body(
                 &mut w,
                 self.offsets,
+                WindowSequence::OnlyLong,
                 &self.books[0],
                 &self.chans[0],
                 self.gains[0],
@@ -274,7 +275,7 @@ impl LcEncoder {
             w.write(1, 3); // CPE
             w.write(0, 4); // tag
             w.write_bit(true); // common_window
-            enc_section::emit_ics_info(&mut w, max_sfb);
+            enc_section::emit_ics_info(&mut w, WindowSequence::OnlyLong, max_sfb);
             w.write(u32::from(self.ms_used) * 2, 2); // ms_mask_present: 0 or 2
             let channels = self
                 .chans
@@ -282,7 +283,15 @@ impl LcEncoder {
                 .zip(self.books.iter())
                 .zip(self.gains.iter());
             for ((q, books), gain) in channels {
-                enc_section::emit_channel_body(&mut w, self.offsets, books, q, *gain, false);
+                enc_section::emit_channel_body(
+                    &mut w,
+                    self.offsets,
+                    WindowSequence::OnlyLong,
+                    books,
+                    q,
+                    *gain,
+                    false,
+                );
             }
         }
         w.write(7, 3); // END

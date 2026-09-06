@@ -4,7 +4,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::super::bits::{BitReader, BitWriter};
-use super::super::ics::IcsInfo;
+use super::super::ics::{IcsInfo, WindowSequence};
 use super::super::section::SectionData;
 use super::super::sf::{self, ScaleFactors};
 use super::super::swb::long_offsets;
@@ -50,7 +50,7 @@ fn section_data_parses_back() {
     let q = sample_channel(49);
     let books = plan_books(&q);
     let mut w = BitWriter::new();
-    emit_ics_info(&mut w, 49);
+    emit_ics_info(&mut w, WindowSequence::OnlyLong, 49);
     emit_section_data(&mut w, &books, 49);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
@@ -78,7 +78,7 @@ fn long_run_escapes_at_31() {
     emit_section_data(&mut w, &books, 49);
     let bytes = w.finish();
     let mut w2 = BitWriter::new();
-    emit_ics_info(&mut w2, 49);
+    emit_ics_info(&mut w2, WindowSequence::OnlyLong, 49);
     let ics_bytes = w2.finish();
     let mut br2 = BitReader::new(&ics_bytes);
     let ics = IcsInfo::parse(&mut br2, 3, false).expect("ics");
@@ -124,7 +124,7 @@ fn channel_body_bits_match_emit() {
     }
     let books = plan_books(&q);
     let mut w = BitWriter::new();
-    emit_channel_body(&mut w, offsets, &books, &q, 100, true);
+    emit_channel_body(&mut w, offsets, WindowSequence::OnlyLong, &books, &q, 100, true);
     let counted = channel_body_bits(&books, &q, 100, true);
     assert_eq!(
         w.bit_len() as usize,
