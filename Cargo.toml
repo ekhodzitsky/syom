@@ -1,18 +1,17 @@
 [package]
 name = "syom"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2024"
 rust-version = "1.97"
 license = "MIT"
 authors = ["Evgeny Khodzitsky"]
-description = "just aac. Pure-Rust AAC-LC / HE-AAC decoder (ADTS, M4A, LATM)."
+description = "just aac. Pure-Rust AAC-LC / HE-AAC codec: decode (ADTS, M4A, LATM) and LC encode."
 readme = "README.md"
 repository = "https://github.com/ekhodzitsky/syom"
 homepage = "https://github.com/ekhodzitsky/syom"
 documentation = "https://docs.rs/syom"
 keywords = ["aac", "adts", "m4a", "he-aac", "decoder"]
 categories = ["multimedia::audio"]
-publish = false
 
 [lints.clippy]
 unwrap_used = "deny"

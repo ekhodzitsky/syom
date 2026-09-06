@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-06
+
 ### Added
 
 - AAC-LC encoder: `encode` / `encode_with` / `write` / `write_with` take
@@ -28,6 +30,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `StreamInfo` tallies at the end. The callback returns `Result` so
   consumers can abort mid-stream. Peak PCM RAM is O(frame). Push decoding
   rejects M4A input (`moov` needs random access).
+- Multichannel AAC-LC: ADTS/ASC `channel_configuration` 3–6 (3.0 / 4.0 /
+  5.0 / 5.1) with correct Center/LFE placement, and in-band
+  `program_config_element()` (channelConfiguration 0) channel mapping. Split
+  mode emits planes in the libavcodec layout order (5.1 = FL FR FC LFE BL
+  BR) or, for PCE streams, in PCE declaration order (front, side, back,
+  LFE). CCE elements are consumed without disturbing other channels; full
+  CCE gain-element application remains out of scope.
+- `goldens/mc{30,40,50,51}.*` multichannel fixtures (per-channel sines) with
+  lavc s16 goldens; tests enforce per-plane peak ≥ 1000, max abs ≤ 1 LSB and
+  SNR ≥ 70 dB in split mode, plus the speech mono rule on 5.1.
+- `goldens/ps48.*` HE-AACv2 fixture with real stereo content (440 Hz L /
+  880 Hz R, explicit in-band `EXTENSION_ID_PS`) plus lavc s16 goldens for
+  the M4A (elst-trimmed) and ADTS containers, and tests enforcing 1 LSB /
+  SNR ≥ 70 dB, non-degenerate stereo output, and explicit PS signalling.
 
 ### Changed
 
@@ -42,6 +58,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and oxideav-aac 0.1.7 added as a decode peer (the published tarball
   does decode — ADTS LC + SBR + PS). syom leads LC ADTS/M4A wall, HE
   (~30×/18× vs oxideav), and 5.1.
+- Compatible crate versions in `Cargo.lock` (`cc` 1.4.5,
+  `wasm-bindgen` 0.2.127). Product `[dependencies]` stay empty.
 
 ### Fixed
 
@@ -65,24 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`n/n_0`). HE-AACv2 output now matches lavc within 1 LSB on real stereo
   content (was up to 11 LSB / 67 dB SNR whenever the stereo cues moved;
   dual-mono fixtures could not see it).
-
-### Added
-
-- Multichannel AAC-LC: ADTS/ASC `channel_configuration` 3–6 (3.0 / 4.0 /
-  5.0 / 5.1) with correct Center/LFE placement, and in-band
-  `program_config_element()` (channelConfiguration 0) channel mapping. Split
-  mode emits planes in the libavcodec layout order (5.1 = FL FR FC LFE BL
-  BR) or, for PCE streams, in PCE declaration order (front, side, back,
-  LFE). CCE elements are consumed without disturbing other channels; full
-  CCE gain-element application remains out of scope.
-- `goldens/mc{30,40,50,51}.*` multichannel fixtures (per-channel sines) with
-  lavc s16 goldens; tests enforce per-plane peak ≥ 1000, max abs ≤ 1 LSB and
-  SNR ≥ 70 dB in split mode, plus the speech mono rule on 5.1.
-
-### Changed
-
-- Compatible crate versions in `Cargo.lock` (`cc` 1.4.5,
-  `wasm-bindgen` 0.2.127). Product `[dependencies]` stay empty.
 
 ## [0.3.0] - 2026-09-03
 
