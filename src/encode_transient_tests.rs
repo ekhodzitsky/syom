@@ -4,7 +4,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::encode_tests::assert_decode_matches_lavc_pub;
-use crate::encode;
+use crate::{EncodeOptions, encode, encode_with};
 
 /// Deterministic transient fixture: a 440 Hz tone bed (det_math sine, as in
 /// `encode_tests::lavc_fixture`) with three castanet clicks (32-sample LCG
@@ -102,5 +102,47 @@ fn lavc_matches_our_decode_of_our_transient_adts() {
         "encoder output drifted from the committed transient golden; re-mint"
     );
     // Layer 2 — lavc decode equivalence.
+    assert_decode_matches_lavc_pub(&fresh, lavc);
+}
+
+/// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_lookahead_golden`,
+/// then `ffmpeg -y -i src/goldens/enc48l.adts -f s16le src/goldens/enc48l.lavc.s16`.
+/// Same transient fixture as `enc48t`, encoded with one-frame lookahead on
+/// (`enc_frame` module docs): each LongStart shifts one frame earlier, so
+/// the first click (sample 7200 = 32 samples into frame 7 — inside the
+/// LongStart flat region, the causal weak spot) is coded on short windows.
+#[test]
+fn mint_lavc_lookahead_golden() {
+    if std::env::var("MINT_GOLDENS").is_err() {
+        return;
+    }
+    let pcm = transient_fixture();
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let adts = encode_with(&pcm, 48_000, &opts).expect("encode");
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
+    std::fs::write(dir.join("enc48l.adts"), adts).expect("write golden");
+}
+
+#[test]
+fn lavc_matches_our_decode_of_our_lookahead_adts() {
+    let adts = include_bytes!("goldens/enc48l.adts");
+    let lavc = include_bytes!("goldens/enc48l.lavc.s16");
+    let pcm = transient_fixture();
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let fresh = encode_with(&pcm, 48_000, &opts).expect("encode");
+    // The lookahead golden must actually exercise block switching.
+    let (long, start, short, stop) = window_sequence_counts(&fresh);
+    eprintln!("lookahead golden sequences long/start/short/stop: {long}/{start}/{short}/{stop}");
+    assert!(
+        long > 0 && start >= 3 && short >= 3 && stop >= 3,
+        "sequences long/start/short/stop: {long}/{start}/{short}/{stop}"
+    );
+    // Layer 1 — byte-exactness tripwire (see the enc48 oracle).
+    assert_eq!(
+        fresh.as_slice(),
+        &adts[..],
+        "encoder output drifted from the committed lookahead golden; re-mint"
+    );
+    // Layer 2 — lavc decode equivalence (measured 1 LSB s16 / ~71-74 dB).
     assert_decode_matches_lavc_pub(&fresh, lavc);
 }

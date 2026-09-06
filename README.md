@@ -55,7 +55,9 @@ From a path: `syom::read("clip.m4a")?`. Caps:
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
 mono/stereo, 128 kbps). `encode_with` takes `EncodeOptions`:
-`EncodeContainer::Adts` (default) or `M4a`, and `with_bitrate_bps`.
+`EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`, and
+`with_lookahead` (one-frame attack lookahead: better pre-echo suppression
+on early-in-frame onsets, one extra frame of latency, default off).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD

@@ -24,11 +24,17 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
 }
 
-/// Encode planar f32 PCM under `opts` (container + bitrate).
+/// Encode planar f32 PCM under `opts` (container + bitrate + lookahead).
+///
+/// With [`EncodeOptions::lookahead`] on, the attack detector runs one
+/// frame ahead (better pre-echo suppression on early-in-frame onsets) at
+/// one extra frame of internal latency; the output frame count and the
+/// ADTS priming are unchanged.
 pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
     validate(pcm, sample_rate, opts)?;
     let channels = pcm.len();
-    let mut enc = LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?;
+    let mut enc =
+        LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?.with_lookahead(opts.lookahead);
     let n_samples = pcm[0].len();
     let n_frames = n_samples.div_ceil(FRAME);
     let mut payloads: Vec<Vec<u8>> = Vec::with_capacity(n_frames);
@@ -41,7 +47,18 @@ pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> 
             bufs[ch][..end - start].copy_from_slice(&plane[start..end]);
         }
         let planes: Vec<&[f32]> = bufs[..channels].iter().map(|b| &b[..]).collect();
-        payloads.push(enc.encode_frame(&planes)?);
+        if opts.lookahead {
+            if let Some(payload) = enc.push_frame(&planes)? {
+                payloads.push(payload);
+            }
+        } else {
+            payloads.push(enc.encode_frame(&planes)?);
+        }
+    }
+    if opts.lookahead
+        && let Some(payload) = enc.flush()?
+    {
+        payloads.push(payload);
     }
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),

@@ -10,6 +10,11 @@
 //! [`crate::encode_with`] with [`EncodeContainer::M4a`]), mirroring how the
 //! push [`crate::Decoder`] rejects ISOBMFF input.
 //!
+//! With [`EncodeOptions::lookahead`] on, the callback trails the input by
+//! one frame (the attack detector sees the next frame before a frame is
+//! encoded) and `finish` flushes the held frame; byte-parity with one-shot
+//! holds for the same options.
+//!
 //! ```
 //! use syom::{DecodeOptions, EncodeOptions, Encoder};
 //! let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
@@ -113,7 +118,8 @@ impl Encoder {
             ));
         }
         Ok(Self {
-            enc: LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?,
+            enc: LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
+                .with_lookahead(opts.lookahead),
             sample_rate,
             channels,
             pending: [Vec::new(), Vec::new()],
@@ -185,7 +191,10 @@ impl Encoder {
     }
 
     /// End of input: encode the zero-padded tail frame (if any) and report
-    /// tallies. Errors [`AacError::Encode`] when no samples were ever fed,
+    /// tallies. With lookahead on, the tail push first flushes the
+    /// previously held full frame and the lookahead flush then emits the
+    /// tail itself; an exact-multiple input still has one held frame to
+    /// flush. Errors [`AacError::Encode`] when no samples were ever fed,
     /// matching one-shot encode's empty-input rule.
     pub fn finish<F>(mut self, on_frame: F) -> Result<EncodeInfo>
     where
@@ -195,16 +204,31 @@ impl Encoder {
             return Err(AacError::encode("encode: empty input"));
         }
         let mut cb = on_frame;
+        let mut scratch = std::mem::take(&mut self.scratch);
         if self.pending_len > 0 {
             let tail = self.pending_len;
             let mut bufs = [[0.0f32; FRAME]; 2];
             for (ch, buf) in bufs.iter_mut().enumerate().take(self.channels) {
                 buf[..tail].copy_from_slice(&self.pending[ch][..tail]);
             }
-            let mut scratch = std::mem::take(&mut self.scratch);
-            self.emit(&bufs, tail, &mut scratch, &mut cb)?;
-            self.scratch = scratch;
+            if self.enc.lookahead_enabled() {
+                let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
+                if let Some(au) = self.enc.push_frame(&planes)? {
+                    // The tail push encodes the previously held FULL frame.
+                    self.deliver(&au, FRAME, &mut scratch, &mut cb)?;
+                }
+                if let Some(au) = self.enc.flush()? {
+                    self.deliver(&au, tail, &mut scratch, &mut cb)?;
+                }
+            } else {
+                self.emit(&bufs, tail, &mut scratch, &mut cb)?;
+            }
+        } else if self.enc.lookahead_enabled()
+            && let Some(au) = self.enc.flush()?
+        {
+            self.deliver(&au, FRAME, &mut scratch, &mut cb)?;
         }
+        self.scratch = scratch;
         Ok(EncodeInfo {
             sample_rate: self.sample_rate,
             channels: self.channels,
@@ -215,7 +239,9 @@ impl Encoder {
     }
 
     /// Encode one full frame out of `bufs`, ADTS-wrap it into `scratch`,
-    /// deliver it to `cb`, and tally.
+    /// deliver it to `cb`, and tally. With lookahead on, the push encodes
+    /// the previously held (full) frame instead — one frame of latency —
+    /// and the first push emits nothing.
     fn emit<F>(
         &mut self,
         bufs: &[[f32; FRAME]; 2],
@@ -227,9 +253,29 @@ impl Encoder {
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
         let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
+        if self.enc.lookahead_enabled() {
+            if let Some(au) = self.enc.push_frame(&planes)? {
+                self.deliver(&au, samples, scratch, cb)?;
+            }
+            return Ok(());
+        }
         let au = self.enc.encode_frame(&planes)?;
+        self.deliver(&au, samples, scratch, cb)
+    }
+
+    /// ADTS-wrap `au` into `scratch`, deliver it to `cb`, and tally.
+    fn deliver<F>(
+        &mut self,
+        au: &[u8],
+        samples: usize,
+        scratch: &mut Vec<u8>,
+        cb: &mut F,
+    ) -> Result<()>
+    where
+        F: FnMut(EncodedFrame<'_>) -> Result<()>,
+    {
         scratch.clear();
-        crate::encode::adts_frame_into(&au, self.enc.fs_index(), self.channels, scratch);
+        crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
         cb(EncodedFrame {
             samples,
             au: scratch,

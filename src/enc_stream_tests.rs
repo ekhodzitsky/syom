@@ -21,8 +21,17 @@ fn fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
 /// Streaming-encode `pcm` fed in `chunk`-sample pieces; returns the
 /// concatenated ADTS bytes and the final tallies.
 fn stream_encode(pcm: &[Vec<f32>], rate: u32, chunk: usize) -> Result<(Vec<u8>, EncodeInfo)> {
-    let opts = EncodeOptions::adts();
-    let mut enc = Encoder::new(rate, pcm.len(), &opts)?;
+    stream_encode_with(pcm, rate, chunk, &EncodeOptions::adts())
+}
+
+/// `stream_encode` under explicit options (lookahead parity tests).
+fn stream_encode_with(
+    pcm: &[Vec<f32>],
+    rate: u32,
+    chunk: usize,
+    opts: &EncodeOptions,
+) -> Result<(Vec<u8>, EncodeInfo)> {
+    let mut enc = Encoder::new(rate, pcm.len(), opts)?;
     let mut out = Vec::new();
     let mut cb = |f: crate::EncodedFrame<'_>| {
         out.extend_from_slice(f.au);
@@ -72,6 +81,72 @@ fn exact_multiple_has_no_tail_frame() -> Result<()> {
     let (adts, info) = stream_encode(&pcm, 48_000, 999)?;
     assert_eq!(info.aac_frames, 3);
     assert_eq!(adts, encode_with(&pcm, 48_000, &EncodeOptions::adts())?);
+    Ok(())
+}
+
+/// Fixture with a click early in a frame (the lookahead case) riding on
+/// the standard sine/noise bed.
+fn click_fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
+    let mut pcm = fixture(rate, n);
+    let mut lcg = 0x1234_5678u32;
+    for k in 0..32 {
+        lcg = lcg.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        let u = (lcg >> 9) as f32 / (1u32 << 23) as f32 * 2.0 - 1.0;
+        pcm[0][3 * 1024 + 100 + k] += 0.8 * u;
+    }
+    pcm
+}
+
+#[test]
+fn lookahead_byte_identity_with_one_shot_any_chunking() -> Result<()> {
+    let pcm = click_fixture(48_000, 10_000); // tail + early-in-frame click
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let want = encode_with(&pcm, 48_000, &opts)?;
+    // Sanity: the option actually changes the bitstream.
+    assert_ne!(
+        want,
+        encode_with(&pcm, 48_000, &EncodeOptions::adts())?,
+        "lookahead should shift the window sequence"
+    );
+    for chunk in [1, 7, 1024, 4097, 10_000] {
+        let (got, info) = stream_encode_with(&pcm, 48_000, chunk, &opts)?;
+        assert_eq!(got, want, "chunk {chunk}: lookahead streaming != one-shot");
+        assert_eq!(info.samples, 10_000, "chunk {chunk}: samples tally");
+        assert_eq!(info.aac_frames, 10, "chunk {chunk}: frame tally");
+        assert_eq!(info.bytes as usize, want.len(), "chunk {chunk}: byte tally");
+    }
+    Ok(())
+}
+
+#[test]
+fn lookahead_trails_by_one_frame_and_flushes_at_finish() -> Result<()> {
+    let pcm = fixture(48_000, 1024 + 100);
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let mut enc = Encoder::new(48_000, pcm.len(), &opts)?;
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    let mut seen = Vec::new();
+    enc.feed(&planes, |f| {
+        seen.push(f.samples);
+        Ok(())
+    })?;
+    // The first completed frame is held for the lookahead decision.
+    assert!(
+        seen.is_empty(),
+        "feed emits nothing before the second frame"
+    );
+    let info = enc.finish(|f| {
+        seen.push(f.samples);
+        Ok(())
+    })?;
+    assert_eq!(seen, [1024, 100], "held full frame, then the tail");
+    assert_eq!(info.samples, 1124);
+    assert_eq!(info.aac_frames, 2);
+    // Exact-multiple input: the held frame still flushes at finish.
+    let full = fixture(48_000, 3 * 1024);
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let (got, info) = stream_encode_with(&full, 48_000, 1024, &opts)?;
+    assert_eq!(info.aac_frames, 3);
+    assert_eq!(got, encode_with(&full, 48_000, &opts)?);
     Ok(())
 }
 
