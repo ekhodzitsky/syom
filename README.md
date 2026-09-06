@@ -67,7 +67,12 @@ byte streams (frames may straddle chunks; M4A is rejected — `moov` needs
 random access), or `decode_streaming(bytes, &opts, cb)` for any in-memory
 container. Each callback gets one AAC `Frame` of borrowed planar f32 (valid
 for the callback only; return `Err` to abort) and `finish` yields
-`StreamInfo` tallies. Peak PCM RAM is one frame.
+`StreamInfo` tallies. Peak PCM RAM is one frame. Encode has the mirror
+shape: `Encoder::new(rate, channels, &opts)` + `feed(planes, |frame| ...)`
+takes PCM chunks of any size and fires per ADTS-wrapped access unit
+(byte-exact with one-shot `encode_with`; M4A rejected — `stco` needs
+finish-time sizes), `finish` encodes the zero-padded tail and yields
+`EncodeInfo`.
 
 Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1
 (`channel_configuration` 3–6) plus in-band PCE streams. Split mode emits one
