@@ -132,8 +132,15 @@ fn channel_body_bits_match_emit() {
         &q,
         100,
         true,
+        &crate::engine::enc_tns::EncTns::off(),
     );
-    let counted = channel_body_bits(&books, &q, 100, true);
+    let counted = channel_body_bits(
+        &books,
+        &q,
+        100,
+        true,
+        &crate::engine::enc_tns::EncTns::off(),
+    );
     assert_eq!(
         w.bit_len() as usize,
         counted,

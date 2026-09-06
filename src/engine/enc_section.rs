@@ -9,6 +9,7 @@ use super::bits::BitWriter;
 use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
 use super::enc_ms::MsBands;
 use super::enc_quant::{BOOKS, MAX_BANDS, QuantChannel, UNREPRESENTABLE};
+use super::enc_tns::EncTns;
 use super::ics::WindowSequence;
 use super::section::has_spectral;
 
@@ -225,12 +226,13 @@ pub fn emit_spectral(
 
 /// Total bits of one channel body: global_gain + (`ics_info` when
 /// `standalone`, i.e. SCE / `common_window == 0`) + section_data +
-/// scale_factor_data + pulse/tns/gain flags + spectral data.
+/// scale_factor_data + pulse/tns/gain flags + TNS payload + spectral data.
 pub fn channel_body_bits(
     sfb_cb: &[u8; MAX_BANDS],
     q: &QuantChannel,
     global_gain: u8,
     standalone: bool,
+    tns: &EncTns,
 ) -> usize {
     let mut bits = 8; // global_gain
     if standalone {
@@ -261,13 +263,14 @@ pub fn channel_body_bits(
         prev = sf;
         bits += row[usize::from(cb)] as usize;
     }
-    bits += 3; // pulse + tns + gain flags
+    bits += 2 + tns.bits(); // pulse + gain flags, tns flag + payload
     bits
 }
 
 /// Emit one channel body (`individual_channel_stream`): global_gain, then
 /// `ics_info` when `standalone` (SCE / `common_window == 0`), then
-/// section_data + scale_factor_data + flags + spectral data.
+/// section_data + scale_factor_data + flags + TNS + spectral data.
+#[allow(clippy::too_many_arguments)]
 pub fn emit_channel_body(
     w: &mut BitWriter,
     offsets: &[u16],
@@ -276,6 +279,7 @@ pub fn emit_channel_body(
     q: &QuantChannel,
     global_gain: u8,
     standalone: bool,
+    tns: &EncTns,
 ) {
     w.write(u32::from(global_gain), 8);
     if standalone {
@@ -284,7 +288,7 @@ pub fn emit_channel_body(
     emit_section_data(w, sfb_cb, q.n_bands);
     emit_scale_factors(w, sfb_cb, q, global_gain);
     w.write_bit(false); // pulse_data_present
-    w.write_bit(false); // tns_data_present
+    tns.emit(w); // tns_data_present + payload
     w.write_bit(false); // gain_control_data_present
     emit_spectral(w, offsets, sfb_cb, q);
 }
@@ -299,13 +303,16 @@ pub fn emit_frame(
     books: &[[u8; MAX_BANDS]],
     gains: &[u8],
     ms: &MsBands,
+    tns: &[EncTns],
     channels: usize,
 ) -> Vec<u8> {
     let mut w = BitWriter::new();
     if channels == 1 {
         w.write(0, 3); // SCE
         w.write(0, 4); // tag
-        emit_channel_body(&mut w, offsets, seq, &books[0], &chans[0], gains[0], true);
+        emit_channel_body(
+            &mut w, offsets, seq, &books[0], &chans[0], gains[0], true, &tns[0],
+        );
     } else {
         w.write(1, 3); // CPE
         w.write(0, 4); // tag
@@ -314,7 +321,7 @@ pub fn emit_frame(
         ms.emit(&mut w); // ms_mask_present + optional per-band ms_used bits
         for ch in 0..channels {
             emit_channel_body(
-                &mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false,
+                &mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false, &tns[ch],
             );
         }
     }

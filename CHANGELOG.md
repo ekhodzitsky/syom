@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Encoder TNS (Temporal Noise Shaping) on long-window frames (`enc_tns`):
+  per channel, an all-pole LPC (autocorrelation + Levinson–Durbin, order
+  ≤ 12 trimmed at trailing |k| < 0.1) of the MDCT spectrum over the psy
+  model's coded-band span is quantized to the 4-bit TNS coefficient table
+  and the analysis (whitening) FIR runs on the raw L/R spectra before the
+  M/S transform — the mirror of the decoder's tool order (TNS inverse
+  after the M/S undo). The span is emitted as an order-0 spacer filter
+  plus the active filter; every band in the span is force-coded (the
+  whitened residual carries real energy across the whole span — a dropped
+  band would feed zeros into the decoder's recursion). The psy coded-band
+  decisions and masking thresholds come from the original (pre-TNS)
+  spectrum via a snapshot with the M/S transform replayed onto it; peaks
+  and quantization use the filtered residual. A filter is emitted only
+  when the quantized filter's measured prediction gain clears 2 dB —
+  steady tones/sweeps barely whiten and stay off (as with lavc); tremolo
+  and speech onsets fire. Short frames keep `tns_data_present = 0` (v1).
+  The decision path is libm-free (`det_math` + IEEE-exact ops), so the
+  byte-exact golden asserts still pin cross-platform output. A/B (test
+  knob `set_tns`): lecture speech at 64 kbps stereo +4.0 dB overall SNR
+  (+6 dB worst segment), tremolo neutral. Re-minted goldens: `enc48{,m,t}`
+  (the `enc48` fixture's silence tail is now an 880 Hz / 8 Hz tremolo so
+  the byte-exact golden exercises TNS-on mid-stream).
+
 ### Changed
 
 - Encoder M/S stereo is now decided per scalefactor band instead of
