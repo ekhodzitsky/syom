@@ -4,7 +4,8 @@
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).
 Encode section added 2026-09-06; rev 2 same day after block
-switching landed (numbers below are the block-switching encoder).
+switching landed; rev 3 (numbers below) after TNS + per-band M/S +
+optional lookahead (0.6.0).
 Peers: rusty_aac 0.5.0, symphonia 0.6.1, oxideav-aac 0.1.7 (all
 dev-deps; product `[dependencies]` stays empty). C lavc/libfdk are not
 linked (`c-peers-unavailable`).
@@ -20,8 +21,8 @@ Wall (criterion median):
 
 | group | syom | rusty_aac |
 |---|---|---|
-| enc_lc_mono (13 312 samples) | **446.66 µs** (113.7 MiB/s) | 1.645 ms (30.9 MiB/s) |
-| enc_lc_stereo (2 × 13 312) | **1.008 ms** (100.7 MiB/s) | 3.902 ms (26.0 MiB/s) |
+| enc_lc_mono (13 312 samples) | **655.45 µs** (77.5 MiB/s) | 2.100 ms (24.2 MiB/s) |
+| enc_lc_stereo (2 × 13 312) | **1.369 ms** (74.2 MiB/s) | 4.977 ms (20.4 MiB/s) |
 
 Memory (`cargo bench --bench mem`, 200 iters; cumulative ÷ 200; the rows
 run last in the process, so there is no fair peak-RSS cell):
@@ -31,11 +32,13 @@ run last in the process, so there is no fair peak-RSS cell):
 | enc_lc_st syom | **189** | **193 KiB** |
 | enc_lc_st rusty_aac | 1067 | 1.53 MiB |
 
-- syom encodes LC ~3.7-3.9× faster than rusty_aac 0.5 at the same 128
-  kbps target (mono and stereo), with ~5.6× fewer allocs and ~8× fewer
-  alloc bytes. (Rev-1, long-windows-only encoder, same day: 4.3-4.5× /
-  156 allocs / 145 KiB — block switching costs per-frame short-path
-  allocations and buys 19.3 dB of pre-echo reduction.) syom's per-frame cost is one forward MDCT per channel
+- syom encodes LC ~3.2-3.6× faster than rusty_aac 0.5 at the same 128
+  kbps target (mono and stereo). History, same day: rev 1
+  (long-only) 4.3-4.5×; rev 2 (+block switching) 3.7-3.9×; rev 3
+  (+TNS, per-band M/S; lookahead is opt-in and off here) 3.2-3.6×.
+  The quality buys: pre-echo −19.3 dB (block switching) / a further
+  −32.7 dB with lookahead on, speech @64k stereo +4.0 dB SNR (TNS),
+  −8.7% bytes on asymmetric stereo (per-band M/S). syom's per-frame cost is one forward MDCT per channel
   plus ~7 rate-loop trials of quantize+plan; the psy model is a
   precomputed 51×51 matrix multiply per channel.
 - Output size on this tonal fixture: syom 2 336 B (≈ 67 kbps —
