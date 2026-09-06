@@ -1,29 +1,29 @@
 //! `LcEncoder` — per-frame LC pipeline: attack detector → window sequence
-//! state machine → window + forward MDCT → psy model (per-band precision
-//! targets) → quantize → section plan → rate loop (one global sf offset) →
-//! `raw_data_block()` bytes.
+//! state machine → window + forward MDCT → TNS analysis (`enc_tns`) →
+//! per-band M/S (`enc_ms`) → psy model (per-band precision targets) →
+//! quantize → section plan → rate loop (one global sf offset, `rate`
+//! submodule) → `raw_data_block()` bytes.
 //!
-//! Block switching: the detector (`enc_psy::AttackDetector`) scores each
-//! new 1024-sample frame; the causal state machine emits OnlyLong →
-//! LongStart → EightShort → LongStop → OnlyLong. No lookahead and no added
-//! latency: an attack in the current frame makes THIS frame a LongStart
-//! (its window zeroes the tail around the attack) and the next an
-//! EightShort, so the transient itself is coded on 128-bin short windows.
-//! Transitions are shape-legal (`{OnlyLong, LongStop}` ↔ long family,
-//! `{LongStart, EightShort}` ↔ short family) so overlap-add stays
-//! TDAC-perfect. Stereo (CPE `common_window = 1`) shares the sequence: the
-//! attack decision is the OR of both channels' detectors.
-//!
-//! No TNS/PNS/intensity, mono/stereo, no bit reservoir
-//! (`adts_buffer_fullness = 0x7FF` VBR marker). Short frames use no
-//! `scale_factor_grouping` (8 groups of 1 window — simplest conformant).
+//! Block switching: the causal state machine (no lookahead, no added
+//! latency) emits OnlyLong → LongStart → EightShort → LongStop; an attack
+//! makes THIS frame a LongStart (its window zeroes the tail around the
+//! attack) and the next an EightShort, so the transient is coded on
+//! 128-bin short windows. Transitions are shape-legal (`{OnlyLong,
+//! LongStop}` ↔ long family, `{LongStart, EightShort}` ↔ short family), so
+//! overlap-add stays TDAC-perfect. Stereo (CPE `common_window = 1`) shares
+//! the sequence: the attack decision is the OR of both channels'
+//! detectors. TNS runs on the raw L/R spectra before M/S — the decoder
+//! applies the inverse filter after the M/S undo (`decode_cpe`); long
+//! frames only (short frames emit `tns_data_present = 0`, v1). No
+//! PNS/intensity, no bit reservoir (`adts_buffer_fullness = 0x7FF` VBR
+//! marker), no `scale_factor_grouping` (8 groups of 1 window).
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::enc_ms::{self, MsBands};
 use super::enc_psy::{AttackDetector, Psy};
-use super::enc_quant::{self, MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
-use super::enc_section;
+use super::enc_quant::{MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
 use super::enc_short::{self, ShortWindows};
+use super::enc_tns::{self, EncTns};
 use super::error::{Error, Result};
 use super::filterbank::window_left;
 use super::ics::{WindowSequence, WindowShape};
@@ -35,11 +35,6 @@ pub const MAX_PAYLOAD_BYTES: usize = 8184;
 /// Flat quality target: band peaks quantize to about this magnitude before
 /// the rate loop trades it against the bit budget.
 pub(crate) const TARGET_Q: f32 = 2048.0;
-/// Rate-loop search bounds for the global scalefactor offset. Lower offset
-/// = larger quantized values = finer quantization = more bits; the floor
-/// stays clear of the escape-saturation plateau.
-const OFFSET_LO: i32 = -8;
-const OFFSET_HI: i32 = 80;
 
 /// AAC-LC encoder state (push-shaped: one `raw_data_block` per 1024
 /// samples, so a streaming wrapper is additive later).
@@ -67,6 +62,8 @@ pub struct LcEncoder {
     credit: i64,
     /// This frame's per-band M/S decision (`ms_mask_present` 0/1/2).
     ms: MsBands,
+    /// This frame's per-channel TNS decision (`enc_tns`; off on short).
+    tns: [EncTns; 2],
     /// Previously emitted sequence (legal-transition state).
     prev_seq: WindowSequence,
     /// This frame's sequence (set by `encode_frame`).
@@ -84,6 +81,9 @@ pub struct LcEncoder {
     /// Test hook: whole-pair M/S A/B (per-band when true).
     #[cfg(test)]
     ms_per_band: bool,
+    /// Test hook: TNS A/B (long frames, on when true).
+    #[cfg(test)]
+    tns_enabled: bool,
 }
 
 impl LcEncoder {
@@ -128,6 +128,7 @@ impl LcEncoder {
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
             ms: MsBands::off(),
+            tns: [EncTns::off(), EncTns::off()],
             prev_seq: WindowSequence::OnlyLong,
             seq: WindowSequence::OnlyLong,
             detectors: [AttackDetector::new(), AttackDetector::new()],
@@ -142,6 +143,8 @@ impl LcEncoder {
             block_switching: true,
             #[cfg(test)]
             ms_per_band: true,
+            #[cfg(test)]
+            tns_enabled: true,
         })
     }
 
@@ -161,6 +164,18 @@ impl LcEncoder {
     #[cfg(test)]
     pub fn set_ms_per_band(&mut self, on: bool) {
         self.ms_per_band = on;
+    }
+
+    /// Test-only A/B switch: TNS on long frames.
+    #[cfg(test)]
+    pub fn set_tns(&mut self, on: bool) {
+        self.tns_enabled = on;
+    }
+
+    /// Test hook: did the last frame emit TNS on any channel?
+    #[cfg(test)]
+    pub(crate) fn tns_on(&self) -> bool {
+        self.tns[..self.channels].iter().any(EncTns::is_on)
     }
 
     /// Per-frame bit budget from the target bitrate (no reservoir).
@@ -217,6 +232,38 @@ impl LcEncoder {
         for (prev, plane) in self.prev.iter_mut().zip(pcm.iter()) {
             prev.copy_from_slice(plane);
         }
+        // TNS analysis on the raw L/R spectra, before the M/S decision:
+        // the decoder applies the inverse filter after the M/S undo
+        // (`decode_cpe`), so the analysis must mirror that order. The psy
+        // model works on the ORIGINAL (pre-TNS) spectrum: whitening drops
+        // the loudest band by the prediction gain, which would sink the
+        // −60 dB coded-band floor with it. The TNS span is the coded-band
+        // span (`enc_tns` module docs), so the masks are computed here on
+        // the L/R spectra; `enc_frame_rate` snapshots for the build psy.
+        let long = !self.seq.is_eight_short();
+        let mut psy_specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
+        let mut coded = [[false; MAX_BANDS]; 2];
+        if long {
+            psy_specs = specs;
+            for ch in 0..self.channels {
+                let mut tq = [0.0f32; MAX_BANDS];
+                self.psy
+                    .analyze(&specs[ch], self.offsets, TARGET_Q, &mut coded[ch], &mut tq);
+            }
+        }
+        #[cfg(test)]
+        let tns_enabled = self.tns_enabled;
+        #[cfg(not(test))]
+        let tns_enabled = true;
+        self.tns = enc_tns::decide_frame(
+            &mut specs,
+            self.channels,
+            self.seq,
+            self.offsets,
+            self.fs_index,
+            &coded,
+            tns_enabled,
+        );
         // Per-band M/S decision, once per frame before the rate loop
         // (`enc_ms` module docs); chosen bands are transformed in place.
         self.ms = if self.channels == 2 {
@@ -232,10 +279,13 @@ impl LcEncoder {
         } else {
             MsBands::off()
         };
+        if long && self.channels == 2 {
+            self.ms.apply_long_to(&mut psy_specs, self.offsets);
+        }
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
-        let offset = self.search_offset(&specs, spend);
-        let bits = self.build(&specs, offset);
+        let offset = self.search_offset(&specs, &psy_specs, spend);
+        let bits = self.build(&specs, &psy_specs, offset);
         if bits > spend {
             self.drop_bands_until(spend);
         }
@@ -245,151 +295,12 @@ impl LcEncoder {
         self.prev_seq = self.seq;
         Ok(out)
     }
-
-    /// Smallest global sf offset whose frame fits the bit budget (frame
-    /// bits decrease as the offset grows; the smallest fitting offset is
-    /// the finest quantization we can afford).
-    fn search_offset(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], spend: usize) -> i32 {
-        let budget = spend.saturating_sub(32);
-        if self.build(specs, OFFSET_LO) <= budget {
-            return OFFSET_LO; // maximum quality fits
-        }
-        if self.build(specs, OFFSET_HI) > budget {
-            return OFFSET_HI; // over budget even at ceiling: cap logic takes over
-        }
-        let (mut lo, mut hi) = (OFFSET_LO, OFFSET_HI);
-        while hi - lo > 1 {
-            let mid = lo + (hi - lo) / 2;
-            if self.build(specs, mid) <= budget {
-                hi = mid;
-            } else {
-                lo = mid;
-            }
-        }
-        hi
-    }
-
-    /// Quantize + plan both channels at `offset`; returns total frame bits.
-    fn build(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], offset: i32) -> usize {
-        let standalone = self.channels == 1;
-        let mut total = 3 + 4 + 3; // element id + tag + END
-        if self.seq.is_eight_short() {
-            if self.channels == 2 {
-                total += 1 + 15 + self.ms.overhead_bits(); // cw + ics_info + ms_mask
-            }
-            for (ch, spec) in specs.iter().enumerate().take(self.channels) {
-                total += enc_short::channel_build(
-                    &mut self.psy_short,
-                    self.short_offsets,
-                    spec,
-                    offset,
-                    &mut self.chans_s[ch],
-                    &mut self.target_q_s[ch],
-                    &mut self.books_s[ch],
-                    &mut self.gains[ch],
-                    standalone,
-                );
-            }
-            return total + 7; // byte-align pad ceiling
-        }
-        if self.channels == 2 {
-            // common_window + ics_info + ms_mask
-            total += 1 + 11 + self.ms.overhead_bits();
-        }
-        let channels = self
-            .chans
-            .iter_mut()
-            .zip(self.target_q.iter_mut())
-            .zip(specs.iter())
-            .zip(self.books.iter_mut())
-            .zip(self.gains.iter_mut())
-            .take(self.channels);
-        for ((((q, tq), spec), books), gain) in channels {
-            self.psy
-                .analyze(spec, self.offsets, TARGET_Q, &mut q.coded, tq);
-            let mut peaks = [0.0f32; MAX_BANDS];
-            enc_quant::band_peaks(spec, self.offsets, &mut peaks);
-            enc_quant::raw_scalefactors(&peaks, tq, offset, q);
-            *gain = enc_quant::normalize_sf(q);
-            enc_quant::quantize(spec, self.offsets, q);
-            *books = enc_section::plan_books(q);
-            total += enc_section::channel_body_bits(books, q, *gain, standalone);
-        }
-        total + 7 // byte-align pad ceiling
-    }
-
-    /// Hard cap: drop the highest coded bands until the frame fits
-    /// `limit_bits` (the bit budget, and never above the ADTS payload
-    /// limit). Quality collapse is legal, an oversize frame is not.
-    fn drop_bands_until(&mut self, limit_bits: usize) {
-        let cap = limit_bits.min(MAX_PAYLOAD_BYTES * 8);
-        if self.seq.is_eight_short() {
-            enc_short::drop_bands_until(
-                &mut self.chans_s[..],
-                &mut self.books_s[..],
-                &self.gains,
-                self.channels,
-                cap,
-                self.ms.overhead_bits(),
-            );
-            return;
-        }
-        let standalone = self.channels == 1;
-        loop {
-            let mut total = 3 + 4 + 3 + 7;
-            if self.channels == 2 {
-                total += 1 + 11 + self.ms.overhead_bits();
-            }
-            let channels = self
-                .chans
-                .iter()
-                .zip(self.books.iter())
-                .zip(self.gains.iter())
-                .take(self.channels);
-            for ((q, books), gain) in channels {
-                total += enc_section::channel_body_bits(books, q, *gain, standalone);
-            }
-            if total <= cap {
-                return;
-            }
-            // Find the highest coded band across channels and silence it.
-            let mut hit: Option<(usize, usize)> = None;
-            for (ch, q) in self.chans.iter().enumerate().take(self.channels) {
-                if let Some(b) = q.coded[..q.n_bands].iter().rposition(|&c| c) {
-                    hit = Some((ch, b));
-                    break;
-                }
-            }
-            let Some((ch, b)) = hit else { return };
-            self.chans[ch].coded[b] = false;
-            self.books[ch][b] = 0;
-            self.books[ch] = enc_section::plan_books(&self.chans[ch]);
-        }
-    }
-
-    /// Emit the `raw_data_block` from the built state.
-    fn emit(&self) -> Vec<u8> {
-        if self.seq.is_eight_short() {
-            return enc_short::emit_frame(
-                self.short_offsets,
-                &self.chans_s[..],
-                &self.books_s[..],
-                &self.gains,
-                &self.ms,
-                self.channels,
-            );
-        }
-        enc_section::emit_frame(
-            self.offsets,
-            self.seq,
-            &self.chans[..],
-            &self.books[..],
-            &self.gains,
-            &self.ms,
-            self.channels,
-        )
-    }
 }
+
+/// Rate loop + emission (`enc_frame_rate.rs`): split out for the line cap.
+/// A child module, so the impl keeps using `LcEncoder`'s private fields.
+#[path = "enc_frame_rate.rs"]
+mod rate;
 
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]

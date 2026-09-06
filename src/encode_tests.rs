@@ -264,10 +264,13 @@ fn decorrelated_stereo_stays_lr() {
 }
 
 /// Deterministic lavc-oracle fixture: 0.6 s stereo 48 kHz — a 200→4000 Hz
-/// sweep (0.3 s), a decorrelated noise burst (0.2 s), silence (0.1 s).
-/// The sweep's sine goes through `det_math::sincos` (libm `sin` is not
-/// bit-identical across platforms) with the phase kept in [0, 2π) — the
-/// golden streams are byte-exact only if this signal is, too.
+/// sweep (0.3 s), a decorrelated noise burst (0.2 s), an 880 Hz tremolo
+/// (8 Hz full-depth AM, 0.1 s). The sweep's sine goes through
+/// `det_math::sincos` (libm `sin` is not bit-identical across platforms)
+/// with the phase kept in [0, 2π) — the golden streams are byte-exact only
+/// if this signal is, too. The tremolo's intra-frame envelope movement is
+/// what exercises TNS (steady tones/sweeps barely whiten, so TNS stays off
+/// there — matching lavc's behavior on pure tones).
 fn lavc_fixture() -> Vec<Vec<f32>> {
     let n = 28_800usize;
     let mut l = vec![0.0f32; n];
@@ -292,6 +295,22 @@ fn lavc_fixture() -> Vec<Vec<f32>> {
         sr = sr.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
         l[i] = 0.25 * (((sl >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0);
         r[i] = 0.25 * (((sr >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0);
+    }
+    // Tremolo: correlated channels like the sweep.
+    let (mut cphase, mut ephase) = (0.0f32, 0.0f32);
+    for i in 24_000..28_800 {
+        cphase += 2.0 * std::f32::consts::PI * 880.0 / 48_000.0;
+        if cphase >= std::f32::consts::TAU {
+            cphase -= std::f32::consts::TAU;
+        }
+        ephase += 2.0 * std::f32::consts::PI * 8.0 / 48_000.0;
+        if ephase >= std::f32::consts::TAU {
+            ephase -= std::f32::consts::TAU;
+        }
+        let env = 0.5 + 0.5 * crate::engine::det_math::sincos(ephase).0;
+        let v = 0.4 * env * crate::engine::det_math::sincos(cphase).0;
+        l[i] = v;
+        r[i] = 0.8 * v;
     }
     vec![l, r]
 }

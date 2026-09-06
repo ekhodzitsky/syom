@@ -104,6 +104,13 @@ impl MsBands {
         }
     }
 
+    /// Re-apply this frame's long-window M/S transform to a second spectrum
+    /// pair: the encoder's psy snapshot (taken before TNS analysis) must
+    /// see the same coded bands as the transmitted spectra.
+    pub fn apply_long_to(&self, specs: &mut [[f32; LONG_WINDOW_LEN]; 2], offsets: &[u16]) {
+        apply_long(specs, offsets, &self.used[..self.n]);
+    }
+
     /// Test / debug access to one decision bit.
     #[cfg(test)]
     pub fn used(&self, i: usize) -> bool {
