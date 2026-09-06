@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Encoder M/S stereo is now decided per scalefactor band instead of
+  whole-pair per frame. A band goes M/S when its side energy is 3× under
+  the weaker original channel (`3·Σs² < min(Σl², Σr²)`, f64 sums — the
+  per-band refinement of the previous whole-frame energy comparison);
+  mixed frames emit `ms_mask_present = 1` with the per-band `ms_used`
+  bitmask (per (window, band), 8 groups of 1 window, on short frames),
+  and unanimous frames still collapse to the 2-bit whole-pair masks 0/2.
+  Bands where M/S costs more than L/R (e.g. a channel-quiet band, where
+  L/R codes one channel and M/S would code two) now stay L/R. The decision
+  runs once per frame before the rate loop on the MDCT spectra and is
+  platform-deterministic (`+` / `*` only). Re-minted goldens: `enc48t.*`
+  is byte-identical (fully correlated fixture stays all-M/S); `enc48{,m}.*`
+  drifted only in the decorrelated noise-burst frames.
+
 ## [0.5.0] - 2026-09-06
 
 ### Added
