@@ -2,9 +2,10 @@
 
 just aac.
 
-Pure-Rust **AAC-LC / HE-AAC** decoder. Zero crates on the product path.
-Read ADTS, LATM/LOAS, and M4A/ISOBMFF `mp4a`. Output is planar `f32` at the
-bitstream's native sample rate (HE = 2× core).
+Pure-Rust **AAC-LC / HE-AAC** codec. Zero crates on the product path.
+Decode ADTS, LATM/LOAS, and M4A/ISOBMFF `mp4a`; **encode** AAC-LC to ADTS
+or M4A. PCM is planar `f32` at the bitstream's native sample rate
+(HE = 2× core).
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![deps](https://img.shields.io/badge/deps-zero-success.svg)](Cargo.toml)
@@ -52,6 +53,15 @@ fn main() -> syom::Result<()> {
 From a path: `syom::read("clip.m4a")?`. Caps:
 `decode_with(bytes, &DecodeOptions::speech().with_channel_mode(syom::ChannelMode::Split))`.
 
+Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
+mono/stereo, 128 kbps). `encode_with` takes `EncodeOptions`:
+`EncodeContainer::Adts` (default) or `M4a`, and `with_bitrate_bps`.
+`syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
+The encoder is long-window LC (no block switching yet), KBD analysis, a
+Bark-spreading psy model with flat 18 dB SMR, per-frame M/S, and a
+CBR-ish rate loop. The committed lavc goldens prove ffmpeg decodes the
+output bit-exact-close (≤ 1 LSB s16 vs our own decode).
+
 Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
 byte streams (frames may straddle chunks; M4A is rejected — `moov` needs
 random access), or `decode_streaming(bytes, &opts, cb)` for any in-memory
@@ -68,9 +78,10 @@ mono is the arithmetic mean of the non-LFE planes (stereo reduces to
 
 Correctness vs FFmpeg libavcodec native s16: max abs ≤ 1 LSB, SNR ≥ 70 dB
 on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, LC 3.0–5.1,
-HE ADTS / M4A, LATM). Runtime does not spawn ffmpeg.
+HE ADTS / M4A, LATM; plus encoder output decoded by lavc). Runtime does
+not spawn ffmpeg.
 
-Encode is not v1. No resample.
+No resample.
 
 ## License
 
