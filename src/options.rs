@@ -110,6 +110,16 @@ pub struct EncodeOptions {
     pub container: EncodeContainer,
     /// Target bitrate in bits per second (whole stream).
     pub bitrate_bps: u32,
+    /// One-frame attack lookahead (default off). When on, the attack
+    /// detector runs one frame ahead of the encode: an attack anywhere in
+    /// frame N+1 makes frame N a LongStart (its start-window slope covers
+    /// the pre-attack tail) and frame N+1 an EightShort, so even a click in
+    /// the first samples of a frame is coded on short windows — the causal
+    /// default codes such early attacks with the LongStart's flat-region
+    /// long transform, which leaves reduced-but-audible pre-echo. Costs one
+    /// extra frame of latency (1024 samples) in both one-shot and push
+    /// encode; the push `Encoder` flushes the held frame at `finish`.
+    pub lookahead: bool,
 }
 
 impl Default for EncodeOptions {
@@ -117,6 +127,7 @@ impl Default for EncodeOptions {
         Self {
             container: EncodeContainer::Adts,
             bitrate_bps: 128_000,
+            lookahead: false,
         }
     }
 }
@@ -146,6 +157,27 @@ impl EncodeOptions {
     #[inline]
     pub fn with_bitrate_bps(mut self, bps: u32) -> Self {
         self.bitrate_bps = bps;
+        self
+    }
+
+    /// One-frame attack lookahead: better pre-echo suppression on
+    /// early-in-frame onsets, at one extra frame (1024 samples) of latency.
+    /// Off by default; honored identically by one-shot encode and the push
+    /// `Encoder` (which stays byte-exact with one-shot for the same
+    /// options).
+    ///
+    /// ```
+    /// use syom::{DecodeOptions, EncodeOptions, encode_with, decode_with};
+    /// let pcm = vec![vec![0.0f32; 4096]];
+    /// let opts = EncodeOptions::adts().with_lookahead(true);
+    /// let adts = encode_with(&pcm, 48_000, &opts)?;
+    /// let dec = decode_with(&adts, &DecodeOptions::unbounded())?;
+    /// assert_eq!(dec.channels[0].len(), 4096);
+    /// # Ok::<(), syom::AacError>(())
+    /// ```
+    #[inline]
+    pub fn with_lookahead(mut self, on: bool) -> Self {
+        self.lookahead = on;
         self
     }
 }

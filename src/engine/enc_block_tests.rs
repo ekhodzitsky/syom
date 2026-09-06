@@ -11,7 +11,7 @@ use super::super::ics::{IcsInfo, WindowSequence};
 use super::super::swb::LONG_WINDOW_LEN;
 use super::{LcEncoder, MAX_PAYLOAD_BYTES};
 
-fn sine_frame(t: usize, amp: f32) -> Vec<f32> {
+pub(super) fn sine_frame(t: usize, amp: f32) -> Vec<f32> {
     (0..LONG_WINDOW_LEN)
         .map(|i| {
             amp * (2.0 * std::f32::consts::PI * 440.0 * (t * LONG_WINDOW_LEN + i) as f32 / 48_000.0)
@@ -21,7 +21,7 @@ fn sine_frame(t: usize, amp: f32) -> Vec<f32> {
 }
 
 /// Add a 32-sample castanet-like burst at `pos` (deterministic LCG).
-fn add_click(frame: &mut [f32], pos: usize, amp: f32) {
+pub(super) fn add_click(frame: &mut [f32], pos: usize, amp: f32) {
     let mut lcg = 0x1234_5678u32;
     for v in &mut frame[pos..pos + 32] {
         lcg = lcg.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
@@ -41,7 +41,7 @@ fn payload_seq(payload: &[u8]) -> WindowSequence {
         .window_sequence
 }
 
-fn seqs_of(payloads: &[Vec<u8>]) -> Vec<WindowSequence> {
+pub(super) fn seqs_of(payloads: &[Vec<u8>]) -> Vec<WindowSequence> {
     payloads.iter().map(|p| payload_seq(p)).collect()
 }
 
@@ -158,7 +158,7 @@ fn stereo_attack_on_one_channel_switches_the_pair() -> Result<()> {
 }
 
 /// Decode a stream of payloads, concatenated.
-fn decode_all(enc: &LcEncoder, payloads: &[Vec<u8>]) -> Result<Vec<f32>> {
+pub(super) fn decode_all(enc: &LcEncoder, payloads: &[Vec<u8>]) -> Result<Vec<f32>> {
     let mut dec = StreamDecoder::new();
     let mut out = Vec::new();
     for p in payloads {

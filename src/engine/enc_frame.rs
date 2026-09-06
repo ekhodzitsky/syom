@@ -4,10 +4,10 @@
 //! quantize → section plan → rate loop (one global sf offset, `rate`
 //! submodule) → `raw_data_block()` bytes.
 //!
-//! Block switching: the causal state machine (no lookahead, no added
-//! latency) emits OnlyLong → LongStart → EightShort → LongStop; an attack
-//! makes THIS frame a LongStart (its window zeroes the tail around the
-//! attack) and the next an EightShort, so the transient is coded on
+//! Block switching: the causal state machine (default — no lookahead, no
+//! added latency) emits OnlyLong → LongStart → EightShort → LongStop; an
+//! attack makes THIS frame a LongStart (its window zeroes the tail around
+//! the attack) and the next an EightShort, so the transient is coded on
 //! 128-bin short windows. Transitions are shape-legal (`{OnlyLong,
 //! LongStop}` ↔ long family, `{LongStart, EightShort}` ↔ short family), so
 //! overlap-add stays TDAC-perfect. Stereo (CPE `common_window = 1`) shares
@@ -17,6 +17,22 @@
 //! frames only (short frames emit `tns_data_present = 0`, v1). No
 //! PNS/intensity, no bit reservoir (`adts_buffer_fullness = 0x7FF` VBR
 //! marker), no `scale_factor_grouping` (8 groups of 1 window).
+//!
+//! Known causal weakness, and the opt-in fix: the LongStart window stays
+//! flat for the first 1024 + 448 taps, so an attack landing in the first
+//! ~448 NEW samples of a frame is still coded by the flat-region long
+//! transform — reduced, not eliminated, pre-echo. With one-frame lookahead
+//! on (`crate::EncodeOptions::with_lookahead`; entry points `push_frame` /
+//! `flush` in the `lookahead` child module), the attack detectors run one
+//! frame ahead of the encode: frame N's sequence is decided by
+//! attack(N) || attack(N+1), so an attack anywhere in frame N+1 makes
+//! frame N a LongStart — its start-window slope covers the pre-attack
+//! tail — and frame N+1 an EightShort, coding early attacks entirely on
+//! short windows. Mid-stream the attack(N) half of the OR is unreachable
+//! (attack(N) already made frame N−1 a LongStart, which forces N short);
+//! it matters only for frame 0 and for the final frame flushed without a
+//! successor. Cost: one frame (1024 samples) of latency; `flush` emits the
+//! held frame at end of input.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::enc_ms::{self, MsBands};
@@ -70,6 +86,12 @@ pub struct LcEncoder {
     seq: WindowSequence,
     /// Per-channel attack detectors (OR'd for the shared CPE decision).
     detectors: [AttackDetector; 2],
+    /// One-frame attack lookahead: the detectors run one frame ahead of
+    /// the encode (`push_frame` / `flush` in the `lookahead` child module).
+    lookahead: bool,
+    /// The frame held for the lookahead decision (a private copy — the
+    /// caller's buffers are reused between pushes).
+    held: Option<Box<lookahead::HeldFrame>>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -132,6 +154,8 @@ impl LcEncoder {
             prev_seq: WindowSequence::OnlyLong,
             seq: WindowSequence::OnlyLong,
             detectors: [AttackDetector::new(), AttackDetector::new()],
+            lookahead: false,
+            held: None,
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
                 QuantShort::new(short_offsets.len() - 1),
@@ -152,6 +176,21 @@ impl LcEncoder {
     #[must_use]
     pub fn fs_index(&self) -> u8 {
         self.fs_index
+    }
+
+    /// Opt into one-frame attack lookahead (see the module docs). Encode
+    /// via `push_frame` / `flush` (child module `lookahead`) instead of
+    /// `encode_frame`; one-shot `encode_with` and the push `Encoder` wire
+    /// this from `EncodeOptions::lookahead`.
+    #[must_use]
+    pub fn with_lookahead(mut self, on: bool) -> Self {
+        self.lookahead = on;
+        self
+    }
+
+    /// Is one-frame attack lookahead enabled?
+    pub(crate) fn lookahead_enabled(&self) -> bool {
+        self.lookahead
     }
 
     /// Test-only A/B switch for pre-echo measurements.
@@ -200,14 +239,38 @@ impl LcEncoder {
         }
     }
 
-    /// Encode 1024 samples per channel into one `raw_data_block`.
-    pub fn encode_frame(&mut self, pcm: &[&[f32]]) -> Result<Vec<u8>> {
+    /// Frame-shape check shared by the causal and lookahead entry points.
+    fn check_shape(&self, pcm: &[&[f32]]) -> Result<()> {
         if pcm.len() != self.channels || pcm.iter().any(|c| c.len() != LONG_WINDOW_LEN) {
             return Err(Error::Format("LC encoder: bad frame shape"));
         }
+        Ok(())
+    }
+
+    /// Run the per-channel attack detectors on `pcm` (OR'd for the shared
+    /// CPE window decision).
+    fn detect(&mut self, pcm: &[&[f32]]) -> bool {
         let attack = (0..self.channels).any(|ch| self.detectors[ch].push(pcm[ch]));
         #[cfg(test)]
         let attack = attack && self.block_switching;
+        attack
+    }
+
+    /// Encode 1024 samples per channel into one `raw_data_block`. Causal
+    /// path (lookahead off): the attack decision comes from THIS frame's
+    /// samples.
+    pub fn encode_frame(&mut self, pcm: &[&[f32]]) -> Result<Vec<u8>> {
+        self.check_shape(pcm)?;
+        let attack = self.detect(pcm);
+        self.encode_with_attack(pcm, attack)
+    }
+
+    /// Core pipeline — window + forward MDCT → TNS → per-band M/S → psy →
+    /// quantize → section plan → rate loop → emit — given the attack
+    /// decision driving this frame's window sequence. The lookahead path
+    /// supplies a decision taken one frame ahead (`lookahead` child
+    /// module); everything downstream of the sequence choice is identical.
+    fn encode_with_attack(&mut self, pcm: &[&[f32]], attack: bool) -> Result<Vec<u8>> {
         self.seq = self.next_seq(attack);
         let mut specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
         for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter()).zip(pcm.iter()) {
@@ -302,6 +365,11 @@ impl LcEncoder {
 #[path = "enc_frame_rate.rs"]
 mod rate;
 
+/// One-frame attack lookahead (`enc_frame_lookahead.rs`): `push_frame` /
+/// `flush`, split out for the line cap. A child module, like `rate`.
+#[path = "enc_frame_lookahead.rs"]
+mod lookahead;
+
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]
 mod enc_frame_tests;
@@ -309,3 +377,7 @@ mod enc_frame_tests;
 #[cfg(test)]
 #[path = "enc_block_tests.rs"]
 mod enc_block_tests;
+
+#[cfg(test)]
+#[path = "enc_lookahead_tests.rs"]
+mod enc_lookahead_tests;

@@ -31,6 +31,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (+6 dB worst segment), tremolo neutral. Re-minted goldens: `enc48{,m,t}`
   (the `enc48` fixture's silence tail is now an 880 Hz / 8 Hz tremolo so
   the byte-exact golden exercises TNS-on mid-stream).
+- Opt-in one-frame attack lookahead for the encoder:
+  `EncodeOptions::with_lookahead(true)` (default off — the causal behavior
+  and all existing goldens are unchanged). The attack detector runs one
+  frame ahead of the encode, so an attack anywhere in frame N+1 makes
+  frame N a LongStart (its start-window slope covers the pre-attack tail)
+  and frame N+1 an EightShort: a click landing in the first ~448 samples
+  of a frame — the causal detector's weak spot, previously coded by the
+  LongStart's flat-region long transform — is now coded entirely on short
+  windows. Pre-echo in the 10 ms before such an early click after silence
+  drops a further 32.7 dB in the A/B measurement (lookahead vs causal,
+  both with block switching on). Costs one extra frame (1024 samples) of
+  latency in both one-shot and push encode; the push `Encoder` holds the
+  frame and flushes it at `finish`, staying byte-exact with one-shot
+  `encode_with` for the same options and any feed chunking. New lavc
+  golden `src/goldens/enc48l.*` (transient fixture, lookahead on) pins the
+  bitstream byte-exactly and decode-matches ffmpeg within the usual
+  tolerance.
 
 ### Changed
 
