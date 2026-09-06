@@ -5,6 +5,7 @@
 use super::det_math;
 use super::enc_huff::spectral_bits;
 use super::spectrum::SF_OFFSET;
+use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 
 /// Largest quantized magnitude the bitstream carries (§4.6.2).
 pub const QUANT_MAX: i32 = 8191;
@@ -37,6 +38,44 @@ impl QuantChannel {
             sf: [0; MAX_BANDS],
             coded: [false; MAX_BANDS],
             n_bands,
+        }
+    }
+}
+
+/// Short-window band ceiling (the 8 kHz table has 15 bands).
+pub const MAX_SFB_SHORT: usize = 15;
+/// Window groups in a short frame: v1 emits no `scale_factor_grouping`, so
+/// each of the 8 short windows is its own group (simplest conformant
+/// grouping — sections and scalefactors cost a few extra bits per frame,
+/// the spectral walk stays contiguous per window).
+pub const MAX_GROUPS: usize = 8;
+/// Flattened (group, band) ceiling: index `g * n_sfb + b`.
+pub const MAX_FLAT_SHORT: usize = MAX_GROUPS * MAX_SFB_SHORT;
+
+/// One quantized short-window channel: 8 windows × 128 bins, window-major,
+/// with books / scalefactors per (group, band) flattened as `g * n_sfb + b`
+/// (group `g` is window `g` — no grouping).
+#[derive(Clone)]
+pub struct QuantShort {
+    pub quant: [i32; LONG_WINDOW_LEN],
+    /// `bits[g * n_sfb + band][book]`.
+    pub bits: [[u32; BOOKS]; MAX_FLAT_SHORT],
+    /// Absolute scalefactors actually quantized with (the transmitted ones).
+    pub sf: [i32; MAX_FLAT_SHORT],
+    /// Bands with signal worth coding (the rest get ZERO_HCB).
+    pub coded: [bool; MAX_FLAT_SHORT],
+    /// Scalefactor bands per window (the rate's short-table size).
+    pub n_sfb: usize,
+}
+
+impl QuantShort {
+    pub fn new(n_sfb: usize) -> Self {
+        Self {
+            quant: [0; LONG_WINDOW_LEN],
+            bits: [[UNREPRESENTABLE; BOOKS]; MAX_FLAT_SHORT],
+            sf: [0; MAX_FLAT_SHORT],
+            coded: [false; MAX_FLAT_SHORT],
+            n_sfb,
         }
     }
 }
@@ -160,6 +199,98 @@ fn fill_bits(bits: &mut [u32; BOOKS], quant: &[i32; 1024], lo: usize, hi: usize)
             i += step;
         }
         *slot = total;
+    }
+}
+
+/// Per-(window, band) peak |coefficient| of a window-major short spectrum,
+/// flattened as `w * n_sfb + band`.
+pub fn band_peaks_short(
+    spec: &[f32; LONG_WINDOW_LEN],
+    offsets: &[u16],
+    n_sfb: usize,
+    out: &mut [f32; MAX_FLAT_SHORT],
+) {
+    for w in 0..MAX_GROUPS {
+        for b in 0..n_sfb {
+            let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
+            let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
+            out[w * n_sfb + b] = spec[lo..hi].iter().map(|x| x.abs()).fold(0.0f32, f32::max);
+        }
+    }
+}
+
+/// Raw per-(window, band) scalefactors, short-window twin of
+/// [`raw_scalefactors`] (`out.coded` is set by the psy model).
+pub fn raw_scalefactors_short(
+    peaks: &[f32; MAX_FLAT_SHORT],
+    target_q: &[f32; MAX_FLAT_SHORT],
+    global_offset: i32,
+    out: &mut QuantShort,
+) {
+    let n = MAX_GROUPS * out.n_sfb;
+    let bands = peaks
+        .iter()
+        .zip(target_q.iter())
+        .zip(out.coded.iter())
+        .zip(out.sf.iter_mut())
+        .take(n);
+    for (((&peak, &tq), &coded), sf) in bands {
+        *sf = if coded && tq >= 1.0 {
+            sf_for_peak(peak, tq) + global_offset
+        } else {
+            0
+        };
+    }
+}
+
+/// Clamp `out.sf` onto the wire format, short windows: the DPCM chain runs
+/// over the flattened (group, band) order — the decoder's `last_sf`
+/// continues across groups (ISO/IEC 14496-3 Table 4.53).
+pub fn normalize_sf_short(out: &mut QuantShort) -> u8 {
+    let mut global_gain = 100u8;
+    let mut prev: Option<i32> = None;
+    let n = MAX_GROUPS * out.n_sfb;
+    let bands = out.coded.iter().zip(out.sf.iter_mut()).take(n);
+    for (&coded, sf) in bands {
+        if !coded {
+            continue;
+        }
+        let want = (*sf).clamp(0, 255);
+        let v = match prev {
+            None => {
+                global_gain = want as u8;
+                want
+            }
+            Some(p) => (p + (want - p).clamp(-60, 60)).clamp(0, 255),
+        };
+        *sf = v;
+        prev = Some(v);
+    }
+    global_gain
+}
+
+/// Quantize a window-major short spectrum with the (normalized) `out.sf`
+/// and fill the per-(window, band) bit-cost table.
+pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut QuantShort) {
+    out.quant = [0; LONG_WINDOW_LEN];
+    for w in 0..MAX_GROUPS {
+        for b in 0..out.n_sfb {
+            let idx = w * out.n_sfb + b;
+            let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
+            let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
+            if !out.coded[idx] {
+                out.bits[idx] = [UNREPRESENTABLE; BOOKS];
+                continue;
+            }
+            // Same deterministic gain + |x|^0.75 as the long path.
+            let gain = det_math::exp2(-0.1875f32 * (out.sf[idx] - SF_OFFSET) as f32);
+            for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
+                let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
+                let mag = mag.min(QUANT_MAX);
+                *q = if x < 0.0 { -mag } else { mag };
+            }
+            fill_bits(&mut out.bits[idx], &out.quant, lo, hi);
+        }
     }
 }
 

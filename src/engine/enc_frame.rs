@@ -1,27 +1,39 @@
-//! `LcEncoder` — per-frame LC pipeline: window + forward MDCT → psy model
-//! (per-band precision targets) → quantize → section plan → rate loop (one
-//! global sf offset) → `raw_data_block()` bytes.
+//! `LcEncoder` — per-frame LC pipeline: attack detector → window sequence
+//! state machine → window + forward MDCT → psy model (per-band precision
+//! targets) → quantize → section plan → rate loop (one global sf offset) →
+//! `raw_data_block()` bytes.
 //!
-//! v1 scope: long windows only (no block switching — pre-echo on attacks is
-//! accepted; TODO attack detector), no TNS/PNS/intensity, mono/stereo,
-//! no bit reservoir (`adts_buffer_fullness = 0x7FF` VBR marker).
+//! Block switching: the detector (`enc_psy::AttackDetector`) scores each
+//! new 1024-sample frame; the causal state machine emits OnlyLong →
+//! LongStart → EightShort → LongStop → OnlyLong. No lookahead and no added
+//! latency: an attack in the current frame makes THIS frame a LongStart
+//! (its window zeroes the tail around the attack) and the next an
+//! EightShort, so the transient itself is coded on 128-bin short windows.
+//! Transitions are shape-legal (`{OnlyLong, LongStop}` ↔ long family,
+//! `{LongStart, EightShort}` ↔ short family) so overlap-add stays
+//! TDAC-perfect. Stereo (CPE `common_window = 1`) shares the sequence: the
+//! attack decision is the OR of both channels' detectors.
+//!
+//! No TNS/PNS/intensity, mono/stereo, no bit reservoir
+//! (`adts_buffer_fullness = 0x7FF` VBR marker). Short frames use no
+//! `scale_factor_grouping` (8 groups of 1 window — simplest conformant).
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
-use super::bits::BitWriter;
-use super::enc_psy::Psy;
-use super::enc_quant::{self, MAX_BANDS, QuantChannel};
+use super::enc_psy::{AttackDetector, Psy};
+use super::enc_quant::{self, MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
 use super::enc_section;
+use super::enc_short::{self, ShortWindows};
 use super::error::{Error, Result};
 use super::filterbank::window_left;
-use super::ics::WindowShape;
+use super::ics::{WindowSequence, WindowShape};
 use super::mdct::mdct_into_f32;
-use super::swb::{LONG_WINDOW_LEN, long_offsets};
+use super::swb::{LONG_WINDOW_LEN, long_offsets, short_offsets};
 
 /// ADTS `raw_data_block` payload ceiling (8191-byte frame − 7-byte header).
 pub const MAX_PAYLOAD_BYTES: usize = 8184;
 /// Flat quality target: band peaks quantize to about this magnitude before
 /// the rate loop trades it against the bit budget.
-const TARGET_Q: f32 = 2048.0;
+pub(crate) const TARGET_Q: f32 = 2048.0;
 /// Rate-loop search bounds for the global scalefactor offset. Lower offset
 /// = larger quantized values = finer quantization = more bits; the floor
 /// stays clear of the escape-saturation plateau.
@@ -36,9 +48,12 @@ pub struct LcEncoder {
     channels: usize,
     bitrate_bps: u32,
     offsets: &'static [u16],
+    short_offsets: &'static [u16],
     /// Full 2048-tap KBD window pre-scaled by 32768 (decoder filterbank
     /// output is s16-scaled before the public 1/32768 mapping).
     window: Box<[f32; 2 * LONG_WINDOW_LEN]>,
+    /// Start/stop/short analysis windows (same scaling).
+    windows: ShortWindows,
     prev: [[f32; LONG_WINDOW_LEN]; 2],
     chans: Box<[QuantChannel; 2]>,
     books: [[u8; MAX_BANDS]; 2],
@@ -51,6 +66,20 @@ pub struct LcEncoder {
     credit: i64,
     /// This frame's CPE is M/S-coded (`ms_mask_present = 2`).
     ms_used: bool,
+    /// Previously emitted sequence (legal-transition state).
+    prev_seq: WindowSequence,
+    /// This frame's sequence (set by `encode_frame`).
+    seq: WindowSequence,
+    /// Per-channel attack detectors (OR'd for the shared CPE decision).
+    detectors: [AttackDetector; 2],
+    /// Short-path state (touched only on EightShort frames).
+    chans_s: Box<[QuantShort; 2]>,
+    books_s: [[u8; MAX_FLAT_SHORT]; 2],
+    target_q_s: [[f32; MAX_FLAT_SHORT]; 2],
+    psy_short: Psy,
+    /// Test hook: force OnlyLong every frame (pre-echo A/B measurement).
+    #[cfg(test)]
+    block_switching: bool,
 }
 
 impl LcEncoder {
@@ -67,6 +96,7 @@ impl LcEncoder {
             return Err(Error::Format("LC encoder: bitrate must be > 0"));
         }
         let offsets = long_offsets(fs_index)?;
+        let short_offsets = short_offsets(fs_index)?;
         // KBD both halves (alpha 4, matching the decoder table): far better
         // sidelobe rejection than sine, so masked-band decisions aren't
         // fighting analysis leakage. The ics_info shape bit matches.
@@ -83,7 +113,9 @@ impl LcEncoder {
             channels,
             bitrate_bps,
             offsets,
+            short_offsets,
             window,
+            windows: ShortWindows::new(),
             prev: [[0.0; LONG_WINDOW_LEN]; 2],
             chans: Box::new([QuantChannel::new(n_bands), QuantChannel::new(n_bands)]),
             books: [[0; MAX_BANDS]; 2],
@@ -92,6 +124,18 @@ impl LcEncoder {
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
             ms_used: false,
+            prev_seq: WindowSequence::OnlyLong,
+            seq: WindowSequence::OnlyLong,
+            detectors: [AttackDetector::new(), AttackDetector::new()],
+            chans_s: Box::new([
+                QuantShort::new(short_offsets.len() - 1),
+                QuantShort::new(short_offsets.len() - 1),
+            ]),
+            books_s: [[0; MAX_FLAT_SHORT]; 2],
+            target_q_s: [[0.0; MAX_FLAT_SHORT]; 2],
+            psy_short: Psy::new_short(short_offsets, sample_rate),
+            #[cfg(test)]
+            block_switching: true,
         })
     }
 
@@ -101,10 +145,32 @@ impl LcEncoder {
         self.fs_index
     }
 
+    /// Test-only A/B switch for pre-echo measurements.
+    #[cfg(test)]
+    pub fn set_block_switching(&mut self, on: bool) {
+        self.block_switching = on;
+    }
+
     /// Per-frame bit budget from the target bitrate (no reservoir).
     fn budget_bits(&self) -> usize {
         let bits = u64::from(self.bitrate_bps) * 1024 / u64::from(self.sample_rate);
         (bits as usize).min(MAX_PAYLOAD_BYTES * 8)
+    }
+
+    /// Window sequence state machine (see the module docs). Causal: the
+    /// decision uses only frames already pushed.
+    fn next_seq(&self, attack: bool) -> WindowSequence {
+        match (self.prev_seq, attack) {
+            (WindowSequence::OnlyLong | WindowSequence::LongStop, true) => {
+                WindowSequence::LongStart
+            }
+            (WindowSequence::OnlyLong | WindowSequence::LongStop, false) => {
+                WindowSequence::OnlyLong
+            }
+            (WindowSequence::LongStart, _) => WindowSequence::EightShort,
+            (WindowSequence::EightShort, true) => WindowSequence::EightShort,
+            (WindowSequence::EightShort, false) => WindowSequence::LongStop,
+        }
     }
 
     /// Encode 1024 samples per channel into one `raw_data_block`.
@@ -112,15 +178,31 @@ impl LcEncoder {
         if pcm.len() != self.channels || pcm.iter().any(|c| c.len() != LONG_WINDOW_LEN) {
             return Err(Error::Format("LC encoder: bad frame shape"));
         }
+        let attack = (0..self.channels).any(|ch| self.detectors[ch].push(pcm[ch]));
+        #[cfg(test)]
+        let attack = attack && self.block_switching;
+        self.seq = self.next_seq(attack);
         let mut specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
-        for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter_mut()).zip(pcm.iter()) {
+        for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter()).zip(pcm.iter()) {
             let mut buf = [0.0f32; 2 * LONG_WINDOW_LEN];
             buf[..LONG_WINDOW_LEN].copy_from_slice(prev);
             buf[LONG_WINDOW_LEN..].copy_from_slice(plane);
-            for (b, &w) in buf.iter_mut().zip(self.window.iter()) {
-                *b *= w;
+            match self.seq {
+                WindowSequence::EightShort => enc_short::spectra(&buf, &self.windows, spec),
+                seq => {
+                    let window: &[f32] = match seq {
+                        WindowSequence::LongStart => &self.windows.start[..],
+                        WindowSequence::LongStop => &self.windows.stop[..],
+                        _ => &self.window[..],
+                    };
+                    for (b, &w) in buf.iter_mut().zip(window.iter()) {
+                        *b *= w;
+                    }
+                    mdct_into_f32(&buf, spec);
+                }
             }
-            mdct_into_f32(&buf, spec);
+        }
+        for (prev, plane) in self.prev.iter_mut().zip(pcm.iter()) {
             prev.copy_from_slice(plane);
         }
         self.ms_used = self.channels == 2 && self.decide_ms(&mut specs);
@@ -134,6 +216,7 @@ impl LcEncoder {
         let out = self.emit();
         self.credit =
             (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
+        self.prev_seq = self.seq;
         Ok(out)
     }
 
@@ -192,6 +275,25 @@ impl LcEncoder {
     fn build(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], offset: i32) -> usize {
         let standalone = self.channels == 1;
         let mut total = 3 + 4 + 3; // element id + tag + END
+        if self.seq.is_eight_short() {
+            if self.channels == 2 {
+                total += 1 + 15 + 2; // common_window + ics_info (short) + ms_mask
+            }
+            for (ch, spec) in specs.iter().enumerate().take(self.channels) {
+                total += enc_short::channel_build(
+                    &mut self.psy_short,
+                    self.short_offsets,
+                    spec,
+                    offset,
+                    &mut self.chans_s[ch],
+                    &mut self.target_q_s[ch],
+                    &mut self.books_s[ch],
+                    &mut self.gains[ch],
+                    standalone,
+                );
+            }
+            return total + 7; // byte-align pad ceiling
+        }
         if self.channels == 2 {
             total += 1 + 11 + 2; // common_window + ics_info + ms_mask
         }
@@ -221,8 +323,18 @@ impl LcEncoder {
     /// `limit_bits` (the bit budget, and never above the ADTS payload
     /// limit). Quality collapse is legal, an oversize frame is not.
     fn drop_bands_until(&mut self, limit_bits: usize) {
-        let standalone = self.channels == 1;
         let cap = limit_bits.min(MAX_PAYLOAD_BYTES * 8);
+        if self.seq.is_eight_short() {
+            enc_short::drop_bands_until(
+                &mut self.chans_s[..],
+                &mut self.books_s[..],
+                &self.gains,
+                self.channels,
+                cap,
+            );
+            return;
+        }
+        let standalone = self.channels == 1;
         loop {
             let mut total = 3 + 4 + 3 + 7;
             if self.channels == 2 {
@@ -257,39 +369,32 @@ impl LcEncoder {
 
     /// Emit the `raw_data_block` from the built state.
     fn emit(&self) -> Vec<u8> {
-        let max_sfb = self.chans[0].n_bands as u8;
-        let mut w = BitWriter::new();
-        if self.channels == 1 {
-            w.write(0, 3); // SCE
-            w.write(0, 4); // tag
-            enc_section::emit_channel_body(
-                &mut w,
-                self.offsets,
-                &self.books[0],
-                &self.chans[0],
-                self.gains[0],
-                true,
+        if self.seq.is_eight_short() {
+            return enc_short::emit_frame(
+                self.short_offsets,
+                &self.chans_s[..],
+                &self.books_s[..],
+                &self.gains,
+                self.ms_used,
+                self.channels,
             );
-        } else {
-            w.write(1, 3); // CPE
-            w.write(0, 4); // tag
-            w.write_bit(true); // common_window
-            enc_section::emit_ics_info(&mut w, max_sfb);
-            w.write(u32::from(self.ms_used) * 2, 2); // ms_mask_present: 0 or 2
-            let channels = self
-                .chans
-                .iter()
-                .zip(self.books.iter())
-                .zip(self.gains.iter());
-            for ((q, books), gain) in channels {
-                enc_section::emit_channel_body(&mut w, self.offsets, books, q, *gain, false);
-            }
         }
-        w.write(7, 3); // END
-        w.finish()
+        enc_section::emit_frame(
+            self.offsets,
+            self.seq,
+            &self.chans[..],
+            &self.books[..],
+            &self.gains,
+            self.ms_used,
+            self.channels,
+        )
     }
 }
 
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]
 mod enc_frame_tests;
+
+#[cfg(test)]
+#[path = "enc_block_tests.rs"]
+mod enc_block_tests;
