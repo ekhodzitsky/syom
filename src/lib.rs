@@ -6,6 +6,7 @@ mod encode;
 mod engine;
 mod error;
 mod isomp4;
+mod m4a_write;
 mod options;
 mod sniff;
 mod stream;

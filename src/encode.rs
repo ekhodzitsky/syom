@@ -1,14 +1,16 @@
 //! One-shot encode: planar f32 → AAC-LC in ADTS or M4A.
 //!
 //! The encoder writes AAC-LC only (no SBR/PS), long windows only, mono or
-//! stereo, CBR-ish via a per-frame global scalefactor offset search (no bit
-//! reservoir). Output is conformant enough that libavcodec decodes it; the
-//! lavc-decoded goldens under `src/goldens/` are the committed proof.
+//! stereo, CBR-ish via a per-frame global scalefactor offset search plus a
+//! bounded one-frame bit credit. Output is conformant enough that
+//! libavcodec decodes it; the lavc-decoded goldens under `src/goldens/`
+//! are the committed proof.
 
 use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
 use crate::engine::enc_frame::LcEncoder;
 use crate::engine::swb::LONG_WINDOW_LEN as FRAME;
 use crate::error::{AacError, Result};
+use crate::m4a_write;
 use crate::options::{EncodeContainer, EncodeOptions};
 
 /// Encode planar f32 PCM (~[-1, 1]) to an ADTS stream: AAC-LC at 128 kbps.
@@ -43,8 +45,7 @@ pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> 
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),
         EncodeContainer::M4a => {
-            // TODO(m4a): the muxer lands in a later increment on this branch.
-            Err(AacError::encode("encode: M4A output is not wired yet"))
+            m4a_write::mux_aac_lc(&payloads, enc.fs_index(), channels, sample_rate)
         }
     }
 }

@@ -210,11 +210,6 @@ fn band_noise_quality_floor_stereo_128k() {
     let adts = encode(&pcm, 48_000).expect("encode");
     let dec = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode");
     for (ch, (want, got)) in pcm.iter().zip(dec.channels.iter()).enumerate() {
-        for half in 0..2 {
-            let a = &want[1024 + half * 4096..1024 + (half + 1) * 4096];
-            let b = &got[2048 + half * 4096..2048 + (half + 1) * 4096];
-            eprintln!("ch{ch} half{half} snr {:.2}", snr_db(a, b));
-        }
         let snr = snr_aligned(want, got);
         assert!(snr >= 15.0, "noise ch{ch} SNR {snr:.1} dB");
     }
@@ -331,6 +326,77 @@ fn lavc_matches_our_decode_of_our_adts() {
         }
         let snr = 10.0 * (ps / pe.max(1.0)).log10();
         assert!(max_lsb <= 2, "ch{ch}: max {max_lsb} LSB vs lavc");
+        assert!(snr >= 55.0, "ch{ch}: SNR vs lavc {snr:.1} dB");
+    }
+}
+
+#[test]
+fn m4a_roundtrip_matches_adts_minus_priming() {
+    let pcm = lavc_fixture();
+    let adts = encode(&pcm, 48_000).expect("adts");
+    let m4a = encode_with(&pcm, 48_000, &EncodeOptions::m4a()).expect("m4a");
+    assert!(crate::sniff_is_isobmff(&m4a));
+    let da = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode adts");
+    let dm = decode_with(&m4a, &crate::DecodeOptions::unbounded()).expect("decode m4a");
+    assert_eq!(dm.sample_rate, 48_000);
+    assert_eq!(dm.channels.len(), 2);
+    // elst media_time = 1024: the M4A drops exactly the priming frame.
+    assert_eq!(dm.channels[0].len() + 1024, da.channels[0].len());
+    for ch in 0..2 {
+        let a = &da.channels[ch];
+        let m = &dm.channels[ch];
+        let mut max_diff = 0.0f32;
+        for (i, &mv) in m.iter().enumerate() {
+            max_diff = max_diff.max((mv - a[i + 1024]).abs());
+        }
+        assert_eq!(max_diff, 0.0, "ch{ch}: M4A != ADTS after the 1024 shift");
+    }
+}
+
+/// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_m4a_golden`,
+/// then `ffmpeg -y -i src/goldens/enc48m.m4a -f s16le src/goldens/enc48m.lavc.s16`.
+#[test]
+fn mint_lavc_m4a_golden() {
+    if std::env::var("MINT_GOLDENS").is_err() {
+        return;
+    }
+    let pcm = lavc_fixture();
+    let m4a = encode_with(&pcm, 48_000, &EncodeOptions::m4a()).expect("encode m4a");
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
+    std::fs::write(dir.join("enc48m.m4a"), m4a).expect("write golden");
+}
+
+#[test]
+fn lavc_matches_our_decode_of_our_m4a() {
+    let m4a = include_bytes!("goldens/enc48m.m4a");
+    let lavc = include_bytes!("goldens/enc48m.lavc.s16");
+    let pcm = lavc_fixture();
+    assert_eq!(
+        encode_with(&pcm, 48_000, &EncodeOptions::m4a())
+            .expect("encode")
+            .as_slice(),
+        &m4a[..],
+        "encoder output drifted from the committed golden; re-mint"
+    );
+    let dec = decode_with(m4a, &crate::DecodeOptions::unbounded()).expect("decode");
+    assert_eq!(dec.channels.len(), 2);
+    // ffmpeg honours elst too: both sides skipped the 1024-sample priming.
+    let frames = lavc.len() / 4;
+    assert_eq!(dec.channels[0].len(), frames, "frame count vs lavc");
+    for (ch, got) in dec.channels.iter().enumerate() {
+        let mut max_lsb = 0u32;
+        let mut ps = 0.0f64;
+        let mut pe = 0.0f64;
+        for (i, &g) in got.iter().enumerate() {
+            let lav = i16::from_le_bytes([lavc[(i * 2 + ch) * 2], lavc[(i * 2 + ch) * 2 + 1]]);
+            let ours = to_s16(g);
+            max_lsb = max_lsb.max((i32::from(lav) - i32::from(ours)).unsigned_abs());
+            let s = f64::from(lav);
+            ps += s * s;
+            pe += (s - f64::from(ours)).powi(2);
+        }
+        assert!(max_lsb <= 2, "ch{ch}: max {max_lsb} LSB vs lavc");
+        let snr = 10.0 * (ps / pe.max(1.0)).log10();
         assert!(snr >= 55.0, "ch{ch}: SNR vs lavc {snr:.1} dB");
     }
 }
