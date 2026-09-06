@@ -1,8 +1,9 @@
 //! One-shot encode: planar f32 → AAC-LC in ADTS or M4A.
 //!
-//! The encoder writes AAC-LC only (no SBR/PS), long windows only, mono or
-//! stereo, CBR-ish via a per-frame global scalefactor offset search plus a
-//! bounded one-frame bit credit. Output is conformant enough that
+//! The encoder writes AAC-LC only (no SBR/PS), mono or stereo, with block
+//! switching (long windows for steady content, short windows on detected
+//! attacks). CBR-ish via a per-frame global scalefactor offset search plus
+//! a bounded one-frame bit credit. Output is conformant enough that
 //! libavcodec decodes it; the lavc-decoded goldens under `src/goldens/`
 //! are the committed proof.
 
