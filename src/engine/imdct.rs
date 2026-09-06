@@ -137,8 +137,11 @@ unsafe fn ifft_butterfly4(
         let wi = vld1q_f32(tw_im.as_ptr().add(off + k));
         let rj = vld1q_f32(re.as_ptr().add(j));
         let ij = vld1q_f32(im.as_ptr().add(j));
-        let tr = vfmsq_f32(vmulq_f32(wr, rj), wi, ij);
-        let ti = vfmaq_f32(vmulq_f32(wr, ij), wi, rj);
+        // Separate multiply + add/sub, NOT vfmaq/vfmsq: fused rounding would
+        // differ from the scalar path by 1 ulp per butterfly, making the
+        // transform (and the encoder's MDCT output) platform-dependent.
+        let tr = vsubq_f32(vmulq_f32(wr, rj), vmulq_f32(wi, ij));
+        let ti = vaddq_f32(vmulq_f32(wr, ij), vmulq_f32(wi, rj));
         let ur = vld1q_f32(re.as_ptr().add(i + k));
         let ui = vld1q_f32(im.as_ptr().add(i + k));
         vst1q_f32(re.as_mut_ptr().add(j), vsubq_f32(ur, tr));

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Encoder output is now byte-identical across platforms (fixes the two
+  `lavc_matches_our_decode_of_our_*` oracle tests on x86_64 CI). Every
+  transcendental in the encode decision path routes through the new
+  `engine/det_math` — `exp2`/`log2`/`atan`/`sincos` built from
+  exactly-rounded ops over literals, `|x|^0.75` via two sqrts — the
+  oracle fixture's sweep sine uses `det_math::sincos`, and the aarch64
+  NEON MDCT/IMDCT butterflies no longer fuse multiply-add (a 1-ulp
+  mismatch with the scalar x86_64 path). The `enc48{,m}` goldens were
+  re-minted; the oracle tests keep a byte-exact tripwire plus the
+  decode-equivalence tolerance check on the fresh encode.
+
 ## [0.4.0] - 2026-09-06
 
 ### Added

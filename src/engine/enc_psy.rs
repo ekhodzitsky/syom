@@ -7,6 +7,7 @@
 //! rate loop's global offset still applies on top. Not a hearing model —
 //! just enough masking to stop coding inaudible sidelobes at full price.
 
+use super::det_math;
 use super::enc_quant::MAX_BANDS;
 
 /// Flat signal-to-mask ratio (18 dB).
@@ -26,9 +27,11 @@ pub struct Psy {
     energy: [f32; MAX_BANDS],
 }
 
-/// Approximate Bark scale of `f` Hz.
+/// Approximate Bark scale of `f` Hz. The `atan`s go through
+/// [`det_math`](super::det_math): libm `atan` is not bit-identical across
+/// platforms, and a 1-ulp band-center drift can flip a masking decision.
 fn bark(f: f32) -> f32 {
-    13.0 * (0.00076 * f).atan() + 3.5 * (f / 7500.0).powi(2).atan()
+    13.0 * det_math::atan(0.00076 * f) + 3.5 * det_math::atan((f / 7500.0).powi(2))
 }
 
 impl Psy {
@@ -53,7 +56,7 @@ impl Psy {
                 } else {
                     SPREAD_DOWN_DB * (-dz)
                 };
-                *cell = 10f32.powf(-att / 10.0);
+                *cell = det_math::exp2(-att / 10.0 * det_math::LOG2_10);
             }
         }
         Self {

@@ -252,6 +252,9 @@ fn decorrelated_stereo_stays_lr() {
 
 /// Deterministic lavc-oracle fixture: 0.6 s stereo 48 kHz — a 200→4000 Hz
 /// sweep (0.3 s), a decorrelated noise burst (0.2 s), silence (0.1 s).
+/// The sweep's sine goes through `det_math::sincos` (libm `sin` is not
+/// bit-identical across platforms) with the phase kept in [0, 2π) — the
+/// golden streams are byte-exact only if this signal is, too.
 fn lavc_fixture() -> Vec<Vec<f32>> {
     let n = 28_800usize;
     let mut l = vec![0.0f32; n];
@@ -262,7 +265,10 @@ fn lavc_fixture() -> Vec<Vec<f32>> {
         let t = i as f32 / 14_400.0;
         let f = 200.0 + 3_800.0 * t;
         phase += 2.0 * std::f32::consts::PI * f / 48_000.0;
-        let v = 0.4 * phase.sin();
+        if phase >= std::f32::consts::TAU {
+            phase -= std::f32::consts::TAU;
+        }
+        let v = 0.4 * crate::engine::det_math::sincos(phase).0;
         l[i] = v;
         r[i] = 0.8 * v;
     }
@@ -300,15 +306,30 @@ fn mint_lavc_adts_golden() {
 fn lavc_matches_our_decode_of_our_adts() {
     let adts = include_bytes!("goldens/enc48.adts");
     let lavc = include_bytes!("goldens/enc48.lavc.s16");
-    // The committed stream is exactly what the encoder produces today.
     let pcm = lavc_fixture();
+    let fresh = encode(&pcm, 48_000).expect("encode");
+    // Layer 1 — byte-exactness tripwire. The encoder's decision path is
+    // platform-deterministic (every transcendental goes through
+    // `engine::det_math`; the fixture's sine as well), so the fresh encode
+    // must equal the committed golden on macOS and Linux alike. This is a
+    // drift tripwire, not a product guarantee: if the encoder changes
+    // intentionally, re-mint (MINT_GOLDENS=1 + ffmpeg); if a new platform
+    // ever breaks it, relax to a length band and rely on layer 2.
     assert_eq!(
-        encode(&pcm, 48_000).expect("encode").as_slice(),
+        fresh.as_slice(),
         &adts[..],
         "encoder output drifted from the committed golden; re-mint with \
          MINT_GOLDENS=1 and refresh the lavc s16"
     );
-    let dec = decode_with(adts, &crate::DecodeOptions::unbounded()).expect("decode");
+    // Layer 2 — the contract that actually matters: our decode of the fresh
+    // encode matches ffmpeg's decode within the oracle tolerance.
+    assert_decode_matches_lavc(&fresh, lavc);
+}
+
+/// The oracle tolerance check: our decode of `stream` vs the committed
+/// ffmpeg-decoded s16 — ≤ 2 LSB s16 max error, ≥ 55 dB SNR per channel.
+fn assert_decode_matches_lavc(stream: &[u8], lavc: &[u8]) {
+    let dec = decode_with(stream, &crate::DecodeOptions::unbounded()).expect("decode");
     assert_eq!(dec.channels.len(), 2);
     let frames = lavc.len() / 4; // s16 stereo interleaved
     assert_eq!(dec.channels[0].len(), frames, "frame count vs lavc");
@@ -371,32 +392,15 @@ fn lavc_matches_our_decode_of_our_m4a() {
     let m4a = include_bytes!("goldens/enc48m.m4a");
     let lavc = include_bytes!("goldens/enc48m.lavc.s16");
     let pcm = lavc_fixture();
+    let fresh = encode_with(&pcm, 48_000, &EncodeOptions::m4a()).expect("encode");
+    // Same two layers as the ADTS oracle: byte-exactness tripwire (the
+    // encoder is platform-deterministic by construction), then the real
+    // contract — decode-equivalence with ffmpeg within tolerance.
     assert_eq!(
-        encode_with(&pcm, 48_000, &EncodeOptions::m4a())
-            .expect("encode")
-            .as_slice(),
+        fresh.as_slice(),
         &m4a[..],
         "encoder output drifted from the committed golden; re-mint"
     );
-    let dec = decode_with(m4a, &crate::DecodeOptions::unbounded()).expect("decode");
-    assert_eq!(dec.channels.len(), 2);
     // ffmpeg honours elst too: both sides skipped the 1024-sample priming.
-    let frames = lavc.len() / 4;
-    assert_eq!(dec.channels[0].len(), frames, "frame count vs lavc");
-    for (ch, got) in dec.channels.iter().enumerate() {
-        let mut max_lsb = 0u32;
-        let mut ps = 0.0f64;
-        let mut pe = 0.0f64;
-        for (i, &g) in got.iter().enumerate() {
-            let lav = i16::from_le_bytes([lavc[(i * 2 + ch) * 2], lavc[(i * 2 + ch) * 2 + 1]]);
-            let ours = to_s16(g);
-            max_lsb = max_lsb.max((i32::from(lav) - i32::from(ours)).unsigned_abs());
-            let s = f64::from(lav);
-            ps += s * s;
-            pe += (s - f64::from(ours)).powi(2);
-        }
-        assert!(max_lsb <= 2, "ch{ch}: max {max_lsb} LSB vs lavc");
-        let snr = 10.0 * (ps / pe.max(1.0)).log10();
-        assert!(snr >= 55.0, "ch{ch}: SNR vs lavc {snr:.1} dB");
-    }
+    assert_decode_matches_lavc(&fresh, lavc);
 }

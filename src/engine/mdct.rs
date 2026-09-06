@@ -1,12 +1,14 @@
 //! Forward MDCT — analysis side of ISO/IEC 14496-3 §4.6.11.3.1, built as the
-//! exact adjoint of the [`super::imdct`] fast path (same twiddle angles,
+//! adjoint of the [`super::imdct`] fast path (same twiddle angles, computed
+//! via [`super::det_math`] for cross-platform bit-identical output, and
 //! conjugated; the FFT stage runs with negated imaginary twiddles).
 //!
 //! `X[k] = 2 · Σ_n x[n] · cos((2π/N)(n + n0)(k + 1/2))`, `n0 = N/4 + 1/2`.
 //! The factor 2 makes window → MDCT → IMDCT → window + overlap-add
 //! reconstruct the input (TDAC); the scale is pinned by `mdct_tests`.
 
-use super::imdct::{bitrev_table, ifft_soa, twiddle_table};
+use super::det_math;
+use super::imdct::{bitrev_table, ifft_soa};
 use std::sync::LazyLock;
 
 struct Plan {
@@ -30,10 +32,13 @@ impl Plan {
         let mut tw_s = Vec::with_capacity(n4);
         for k in 0..n4 {
             let a = two_pi_n * (k as f32 + 0.125);
-            tw_c.push(a.cos());
-            tw_s.push(a.sin());
+            // det_math twiddles: libm sin/cos differ by 1 ulp across
+            // platforms, which would drift the encoded bytes.
+            let (s, c) = det_math::sincos(a);
+            tw_c.push(c);
+            tw_s.push(s);
         }
-        let (fft_re, fft_im) = twiddle_table(n4);
+        let (fft_re, fft_im) = det_math::twiddle_table(n4);
         let fft_im = fft_im.iter().map(|&x| -x).collect();
         Self {
             n,
