@@ -3,9 +3,49 @@
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).
+Encode section added 2026-09-06.
 Peers: rusty_aac 0.5.0, symphonia 0.6.1, oxideav-aac 0.1.7 (all
 dev-deps; product `[dependencies]` stays empty). C lavc/libfdk are not
 linked (`c-peers-unavailable`).
+
+## Encode (2026-09-06)
+
+Same planar f32 input both sides (the `sine48.adts` golden decoded to
+PCM; stereo adds a deterministic 0.8× shadow channel), ADTS bytes out at
+128 kbps (`syom::encode` vs rusty_aac `AacEncoder` +
+`write_adts_header`). Throughput is input PCM bytes/s.
+
+Wall (criterion median):
+
+| group | syom | rusty_aac |
+|---|---|---|
+| enc_lc_mono (13 312 samples) | **500.42 µs** (101 MiB/s) | 2.166 ms (24.1 MiB/s) |
+| enc_lc_stereo (2 × 13 312) | **1.117 ms** (91.4 MiB/s) | 5.053 ms (20.2 MiB/s) |
+
+Memory (`cargo bench --bench mem`, 200 iters; cumulative ÷ 200; the rows
+run last in the process, so there is no fair peak-RSS cell):
+
+| group / peer | allocs/iter | alloc bytes/iter |
+|---|---|---|
+| enc_lc_st syom | **156** | **145 KiB** |
+| enc_lc_st rusty_aac | 1067 | 1.53 MiB |
+
+- syom encodes LC ~4.3-4.5× faster than rusty_aac 0.5 at the same 128
+  kbps target (mono and stereo), with ~7× fewer allocs and ~11× fewer
+  alloc bytes. syom's per-frame cost is one forward MDCT per channel
+  plus ~7 rate-loop trials of quantize+plan; the psy model is a
+  precomputed 51×51 matrix multiply per channel.
+- Output size on this tonal fixture: syom 2 336 B (≈ 67 kbps —
+  content-limited; ADTS carries the VBR fullness marker) vs rusty_aac
+  4 580 B (≈ 131 kbps, on target). On budget-limited content syom tracks
+  the target to 1.02-1.08× (test `bitrate_accuracy_on_noise`).
+- Quality gates for the encoded output live in the test suite, not here:
+  sine roundtrip 61-70 dB SNR, band-limited noise 28.8 dB at 128k
+  stereo, achieved bitrate 1.02-1.08× of target on white noise, and the
+  committed lavc goldens (`src/goldens/enc48{,m}.*`) match ffmpeg's
+  decode within 1 LSB s16 / ~80 dB.
+
+## Decode
 
 oxideav-aac 0.1.7 is a real decode peer: the published tarball ships
 SBR + PS (its crates.io "parser" description is stale). ADTS only — no
