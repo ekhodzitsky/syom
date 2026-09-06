@@ -23,6 +23,7 @@ struct Plan {
 }
 
 static PLAN_2048: LazyLock<Plan> = LazyLock::new(|| Plan::new(2048));
+static PLAN_256: LazyLock<Plan> = LazyLock::new(|| Plan::new(256));
 
 impl Plan {
     fn new(n: usize) -> Self {
@@ -127,6 +128,8 @@ fn naive_f32(time: &[f32], spec: &mut [f32]) {
 pub fn mdct_into_f32(time: &[f32], spec: &mut [f32]) {
     if time.len() == 2048 && spec.len() == 1024 {
         PLAN_2048.apply(time, spec);
+    } else if time.len() == 256 && spec.len() == 128 {
+        PLAN_256.apply(time, spec);
     } else {
         naive_f32(time, spec);
     }

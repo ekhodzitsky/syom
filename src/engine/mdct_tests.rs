@@ -75,3 +75,51 @@ fn zero_input_is_silence() {
     let spec = mdct_fast_f64(&vec![0.0; N]);
     assert!(spec.iter().all(|&x| x.abs() < 1e-9));
 }
+
+const N_S: usize = 256;
+
+fn short_window() -> Vec<f64> {
+    let half = window_left(N_S, WindowShape::Sine);
+    (0..N_S)
+        .map(|i| {
+            if i < N_S / 2 {
+                f64::from(half[i])
+            } else {
+                f64::from(half[N_S - 1 - i])
+            }
+        })
+        .collect()
+}
+
+#[test]
+fn fast_matches_naive_short() {
+    let sig = test_signal(N_S);
+    let a = mdct_naive(&sig, N_S);
+    let b = mdct_fast_f64(&sig);
+    let err = a
+        .iter()
+        .zip(b.iter())
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f64::max);
+    assert!(err < 1e-3, "fast short MDCT drifted from the naive sum: {err}");
+}
+
+#[test]
+fn tdac_reconstructs_input_short() {
+    // Eight-short hop is 128: each output sample is the overlap of two
+    // 256-sample windows (like the decoder's `short_windowed`).
+    let sig = test_signal(N_S + 3 * (N_S / 2));
+    let w = short_window();
+    let frame = |off: usize| -> Vec<f64> { (0..N_S).map(|i| sig[off + i] * w[i]).collect() };
+    let mut prev = imdct(&mdct_fast_f64(&frame(0)), N_S);
+    let mut err = 0.0f64;
+    for hop in 1..=3 {
+        let cur = imdct(&mdct_fast_f64(&frame(hop * N_S / 2)), N_S);
+        for i in 0..N_S / 2 {
+            let rec = prev[N_S / 2 + i] * w[N_S / 2 + i] + cur[i] * w[i];
+            err = err.max((rec - sig[(hop - 1) * (N_S / 2) + N_S / 2 + i]).abs());
+        }
+        prev = cur;
+    }
+    assert!(err < 1e-3, "short TDAC reconstruction error {err}");
+}
