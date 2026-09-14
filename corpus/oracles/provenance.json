@@ -18,11 +18,11 @@
       "channel_order": "L R",
       "priming_samples": 1024,
       "comparison": "deterministic",
-      "provenance_gap": "ffmpeg/libavcodec version and build flags were not recorded at mint",
-      "engine_build": null,
-      "remainder_samples": null,
-      "valid_samples": null,
-      "sha256": "90266647fba265431ead1edb0f3bb52b318542eb68ef8e2ae501634d041febae"
+      "provenance_gap": null,
+      "engine_build": "ffmpeg 7.0.2-static (johnvansickle), 2026-09-14 TASK-41 overlap drain",
+      "remainder_samples": 896,
+      "valid_samples": 28800,
+      "sha256": "beeaa81daec9340765429b9e664f7adca0ad04d82cd7c2e5476d7edfc64249ae"
     },
     {
       "id": "enc48m.lavc.s16",
@@ -39,7 +39,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "9f5ce06bcc00dcce944c9ca38e2d4899960f05f96e063375f6430a6f436e3dc5"
+      "sha256": "2cc44b96dec56f28cb1a586e9d468bf0f1d0a242cdfb1253c5daa2a039d2bf8c"
     },
     {
       "id": "enc48t.lavc.s16",
@@ -56,7 +56,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "5078038a3e9b348e80dead1c5f262fcffe8170b01138f43b0bc8b5f10a5871f4"
+      "sha256": "0ba39aa71b3d92f2377e0bfcfeb33a176e265a57f178caac3193401be3df5b3a"
     },
     {
       "id": "enc48l.lavc.s16",
@@ -73,7 +73,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "1e33d38cd0bc364e4ff59808fae2b22dff1b79328ef5e7661a6f17394a59b34f"
+      "sha256": "c0578355944e108b1728298735626f1e69b9165576d687950103557611e56620"
     },
     {
       "id": "pns48.s16",
@@ -158,7 +158,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "b663d90738fe0a4725478e3d72a53ff88c74a7af93bdf4cae42e2921632e599d"
+      "sha256": "eaa98b4aa3d0e6829159239b0940109f40c0af9782d9f1d628075a96badc5f68"
     },
     {
       "id": "enc48l.adts",
@@ -175,7 +175,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "ab4efe0b2b0b81ad4c444833c201680249fc2be4107b9d767feb682702160ca2"
+      "sha256": "056ae9becd4545faa5fe0929655ef6f5d260dc322dc6fac9864403b74b914f8e"
     },
     {
       "id": "enc48m.m4a",
@@ -192,7 +192,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "72f0dc97227aff637a48751906837913ae33b3ecdb058d805e7c07d695266150"
+      "sha256": "7166ca581df189cadaedd7fdc5b4afa336bff68cef33bd0a6fb0ad0b94fde31f"
     },
     {
       "id": "enc48t.adts",
@@ -209,7 +209,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "4a750c3869cd1a7f4d4c4fb56a86978100f5755bc1c28c22d94d37a6fd6f0e09"
+      "sha256": "74974a985f0146c29b57ee92a6cb800a21350f787cb923fca2f27d9fb04f12f4"
     },
     {
       "id": "he48.adts",

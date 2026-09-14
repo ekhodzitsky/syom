@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- LC encode overlap drain (TASK-41): finish emits one extra zero MDCT so
+  the last source samples reconstruct. `EncodeInfo` reports `priming`
+  (1024), `remainder` (pad in the last content block), and
+  `coded_samples`. One-shot and push stay byte-identical. Encoder goldens
+  reminted (`enc48{,m,t,l}`) with lavc s16; ADTS decoded length is
+  `(ceil(N/1024)+1)*1024`.
 - Encoder priming / tail contract (TASK-40): decoded ADTS length is
   `ceil(N/1024)*1024` and is **not** valid duration. A last-sample impulse
   on 1024-aligned input is omitted (overlap not drained), confirmed by

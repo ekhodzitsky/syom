@@ -2,8 +2,8 @@
 //! `mdat`, so `stco` needs no patching). One sound track, one chunk,
 //! `stts` (n, 1024), per-frame `stsz`, absolute `stco`, and an
 //! `edts`/`elst` with `media_time = 1024` to skip encoder priming.
-//! `mdhd` duration is `n_frames * 1024` (includes priming). A one-frame
-//! file is entirely priming, so presentation after `elst` is empty.
+//! `mdhd` duration is `n_frames * 1024` (includes priming and the
+//! overlap-drain frame). Remainder is not yet in `elst` (TASK-42).
 //!
 //! The reader side ([`crate::isomp4`]) is the structural oracle: its
 //! `parse_esds` walk defines exactly what this writer emits.

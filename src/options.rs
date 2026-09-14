@@ -232,7 +232,7 @@ impl EncodeOptions {
     /// let opts = EncodeOptions::adts().with_lookahead(true);
     /// let adts = encode_with(&pcm, 48_000, &opts)?;
     /// let dec = decode_with(&adts, &DecodeOptions::unbounded())?;
-    /// assert_eq!(dec.channels[0].len(), 4096);
+    /// assert_eq!(dec.channels[0].len(), 5 * 1024); // +1 overlap-drain frame
     /// # Ok::<(), syom::AacError>(())
     /// ```
     #[inline]

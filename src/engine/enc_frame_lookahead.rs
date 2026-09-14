@@ -72,4 +72,24 @@ impl LcEncoder {
             held.attack,
         )?))
     }
+
+    /// One extra block of zeros so the last 1024 input samples overlap-add
+    /// (TASK-41). Lookahead: `push` zeros (encodes any held last-content
+    /// frame with a silent successor) then `flush`. Causal: one `encode_frame`.
+    pub fn drain_overlap(&mut self) -> Result<Vec<Vec<u8>>> {
+        let zeros = [[0.0f32; LONG_WINDOW_LEN]; 2];
+        let planes: Vec<&[f32]> = zeros[..self.channels].iter().map(|p| &p[..]).collect();
+        let mut out = Vec::new();
+        if self.lookahead_enabled() {
+            if let Some(p) = self.push_frame(&planes)? {
+                out.push(p);
+            }
+            if let Some(p) = self.flush()? {
+                out.push(p);
+            }
+        } else {
+            out.push(self.encode_frame(&planes)?);
+        }
+        Ok(out)
+    }
 }

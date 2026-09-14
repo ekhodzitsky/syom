@@ -85,7 +85,11 @@ fn partial_tail_frame_is_padded() {
     let pcm = vec![sine(48_000, 0.05, 440.0, 0.5)[..1000].to_vec()];
     let adts = encode(&pcm, 48_000).expect("encode");
     let dec = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode");
-    assert_eq!(dec.channels[0].len(), 1024, "one padded frame");
+    assert_eq!(
+        dec.channels[0].len(),
+        2048,
+        "padded content + overlap drain"
+    );
 }
 
 #[test]
@@ -205,11 +209,13 @@ fn bitrate_accuracy_on_noise() {
     ] {
         let opts = EncodeOptions::adts().with_bitrate_bps(target);
         let adts = encode_with(&pcm, 48_000, &opts).expect("encode");
-        let achieved = (adts.len() as u64) * 8;
-        let ratio = achieved as f64 / f64::from(target);
+        let dec = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode");
+        let dur = dec.channels[0].len() as f64 / 48_000.0;
+        let achieved = 8.0 * adts.len() as f64 / dur;
+        let ratio = achieved / f64::from(target);
         assert!(
             (0.90..=1.10).contains(&ratio),
-            "target {target}, achieved {achieved} bits/s"
+            "target {target}, achieved {achieved:.0} bits/s"
         );
     }
 }

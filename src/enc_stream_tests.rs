@@ -58,7 +58,7 @@ fn byte_identity_with_one_shot_any_chunking() -> Result<()> {
         let (got, info) = stream_encode(&pcm, 48_000, chunk)?;
         assert_eq!(got, want, "chunk {chunk}: streaming != one-shot bytes");
         assert_eq!(info.samples, 10_000, "chunk {chunk}: samples tally");
-        assert_eq!(info.aac_frames, 10, "chunk {chunk}: frame tally");
+        assert_eq!(info.aac_frames, 11, "chunk {chunk}: content+drain");
         assert_eq!(info.bytes as usize, want.len(), "chunk {chunk}: byte tally");
     }
     Ok(())
@@ -76,10 +76,13 @@ fn byte_identity_mono() -> Result<()> {
 }
 
 #[test]
-fn exact_multiple_has_no_tail_frame() -> Result<()> {
+fn exact_multiple_still_emits_overlap_drain() -> Result<()> {
     let pcm = fixture(48_000, 3 * 1024);
     let (adts, info) = stream_encode(&pcm, 48_000, 999)?;
-    assert_eq!(info.aac_frames, 3);
+    assert_eq!(info.aac_frames, 4, "3 content + 1 drain");
+    assert_eq!(info.remainder, 0);
+    assert_eq!(info.priming, 1024);
+    assert_eq!(info.coded_samples, 4 * 1024);
     assert_eq!(adts, encode_with(&pcm, 48_000, &EncodeOptions::adts())?);
     Ok(())
 }
@@ -112,7 +115,7 @@ fn lookahead_byte_identity_with_one_shot_any_chunking() -> Result<()> {
         let (got, info) = stream_encode_with(&pcm, 48_000, chunk, &opts)?;
         assert_eq!(got, want, "chunk {chunk}: lookahead streaming != one-shot");
         assert_eq!(info.samples, 10_000, "chunk {chunk}: samples tally");
-        assert_eq!(info.aac_frames, 10, "chunk {chunk}: frame tally");
+        assert_eq!(info.aac_frames, 11, "chunk {chunk}: content+drain");
         assert_eq!(info.bytes as usize, want.len(), "chunk {chunk}: byte tally");
     }
     Ok(())
@@ -138,14 +141,14 @@ fn lookahead_trails_by_one_frame_and_flushes_at_finish() -> Result<()> {
         seen.push(f.samples);
         Ok(())
     })?;
-    assert_eq!(seen, [1024, 100], "held full frame, then the tail");
+    assert_eq!(seen, [1024, 100, 0], "held full, tail, overlap drain");
     assert_eq!(info.samples, 1124);
-    assert_eq!(info.aac_frames, 2);
-    // Exact-multiple input: the held frame still flushes at finish.
+    assert_eq!(info.aac_frames, 3);
+    assert_eq!(info.remainder, 924);
     let full = fixture(48_000, 3 * 1024);
     let opts = EncodeOptions::adts().with_lookahead(true);
     let (got, info) = stream_encode_with(&full, 48_000, 1024, &opts)?;
-    assert_eq!(info.aac_frames, 3);
+    assert_eq!(info.aac_frames, 4);
     assert_eq!(got, encode_with(&full, 48_000, &opts)?);
     Ok(())
 }
@@ -165,9 +168,9 @@ fn tail_frame_reports_remainder_samples() -> Result<()> {
         seen.push(f.samples);
         Ok(())
     })?;
-    assert_eq!(seen, [1024, 100], "full frame then tail remainder");
+    assert_eq!(seen, [1024, 100, 0], "full frame, remainder, drain");
     assert_eq!(info.samples, 1124);
-    assert_eq!(info.aac_frames, 2);
+    assert_eq!(info.aac_frames, 3);
     Ok(())
 }
 
@@ -178,7 +181,7 @@ fn streamed_adts_decodes_like_one_shot() -> Result<()> {
     let dec = crate::decode_with(&adts, &crate::DecodeOptions::unbounded())?;
     assert_eq!(dec.sample_rate, 48_000);
     assert_eq!(dec.channels.len(), 2);
-    assert_eq!(dec.channels[0].len(), 8 * 1024);
+    assert_eq!(dec.channels[0].len(), 9 * 1024);
     Ok(())
 }
 
@@ -241,7 +244,7 @@ fn feed_error_paths() -> Result<()> {
         Ok(())
     })?;
     let info = enc.finish(sink)?;
-    assert_eq!(info.aac_frames, 2);
+    assert_eq!(info.aac_frames, 3);
     assert!(out > 0);
     Ok(())
 }
@@ -295,7 +298,10 @@ fn info_fields_match_construction() -> Result<()> {
     assert_eq!(info.sample_rate, 32_000);
     assert_eq!(info.channels, 2);
     assert_eq!(info.samples, 2_048);
-    assert_eq!(info.aac_frames, 2);
+    assert_eq!(info.aac_frames, 3);
+    assert_eq!(info.priming, 1024);
+    assert_eq!(info.remainder, 0);
+    assert_eq!(info.coded_samples, 3 * 1024);
     assert_eq!(info.bytes as usize, adts.len());
     Ok(())
 }

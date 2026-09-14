@@ -31,10 +31,12 @@
 //!     Ok(())
 //! })?;
 //! assert_eq!(info.samples, 3000);
-//! assert_eq!(info.aac_frames, 3); // tail frame zero-padded to 1024
+//! assert_eq!(info.aac_frames, 4); // padded tail + overlap drain
+//! assert_eq!(info.priming, 1024);
+//! assert_eq!(info.remainder, 72); // 3*1024 - 3000
 //! assert_eq!(info.bytes as usize, adts.len());
 //! let dec = syom::decode_with(&adts, &DecodeOptions::unbounded())?;
-//! assert_eq!(dec.channels[0].len(), 3 * 1024);
+//! assert_eq!(dec.channels[0].len(), 4 * 1024);
 //! # Ok::<(), syom::AacError>(())
 //! ```
 
@@ -59,27 +61,27 @@ pub struct EncodedFrame<'a> {
 
 /// Tallies from a finished streaming encode.
 ///
-/// These are **input / bitstream** counts, not a valid-duration timeline.
-/// ADTS carries no priming or remainder. One-shot M4A always writes
-/// `elst.media_time = 1024` and `mdhd` duration `aac_frames * 1024`
-/// (includes priming). Decoded ADTS length is `aac_frames * 1024` after
-/// zero-padding the last input block; that padded length is **not** the
-/// number of valid source samples (TASK-40). The last up-to-1024 input
-/// samples of a 1024-aligned encode are omitted from reconstruction
-/// (TASK-41 drain), which this struct does not yet describe.
+/// Input / bitstream tallies plus the AAC timeline (Apple QA1636-style).
+/// ADTS still cannot carry trim; M4A `elst.media_time` is [`Self::priming`]
+/// (TASK-42 writes remainder into the container).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EncodeInfo {
     /// Input sample rate.
     pub sample_rate: u32,
     /// Channels per frame (1 or 2).
     pub channels: usize,
-    /// AAC frames emitted, including the zero-padded tail **block** (not an
-    /// overlap-drain frame).
+    /// AAC frames emitted, including the overlap-drain frame of zeros.
     pub aac_frames: u64,
-    /// Input samples per channel consumed (source length, not decoded PCM).
+    /// Input samples per channel consumed (source length).
     pub samples: u64,
     /// Bytes handed to the callback (ADTS headers included).
     pub bytes: u64,
+    /// Encoder delay (1024). Skip this many decoded samples for valid audio.
+    pub priming: u64,
+    /// Zero-pad in the last *content* block: `ceil(samples/1024)*1024 - samples`.
+    pub remainder: u64,
+    /// `aac_frames * 1024` (decoded ADTS length before container trim).
+    pub coded_samples: u64,
 }
 
 /// Resumable push encoder: planar f32 chunks in, ADTS frames out.
@@ -244,13 +246,22 @@ impl Encoder {
         {
             self.deliver(&au, FRAME, &mut scratch, &mut cb)?;
         }
+        for au in self.enc.drain_overlap()? {
+            self.deliver(&au, 0, &mut scratch, &mut cb)?;
+        }
         self.scratch = scratch;
+        let n = self.samples;
+        let block = FRAME as u64;
+        let remainder = (block - (n % block)) % block;
         Ok(EncodeInfo {
             sample_rate: self.sample_rate,
             channels: self.channels,
             aac_frames: self.aac_frames,
-            samples: self.samples,
+            samples: n,
             bytes: self.bytes,
+            priming: block,
+            remainder,
+            coded_samples: self.aac_frames * block,
         })
     }
 

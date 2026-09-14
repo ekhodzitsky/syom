@@ -21,10 +21,10 @@ use crate::options::{EncodeContainer, EncodeOptions};
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
 ///
 /// One plane per channel (mono or stereo), all planes the same length; the
-/// last frame is zero-padded to 1024 samples. The stream carries the usual
-/// 1024-sample codec priming (first decoded frame is a fade-in). Decoded
-/// ADTS length is `ceil(N/1024)*1024`, which is **not** valid duration. A
-/// last-sample impulse on 1024-aligned input is omitted (no overlap drain).
+/// last content block is zero-padded to 1024 samples, then one extra zero
+/// MDCT drains the overlap so the last source samples reconstruct. The
+/// stream carries 1024-sample codec priming. Decoded ADTS length is
+/// `(ceil(N/1024)+1)*1024`; valid duration is N after skipping priming.
 #[inline]
 pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
@@ -34,8 +34,8 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at
-/// one extra frame of internal latency; the output frame count and the
-/// ADTS priming are unchanged.
+/// one extra frame of internal latency; drain still emits one silent
+/// successor so the last source samples reconstruct.
 pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
     validate(pcm, sample_rate, opts)?;
     let channels = pcm.len();
@@ -61,11 +61,7 @@ pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> 
             payloads.push(enc.encode_frame(&planes)?);
         }
     }
-    if opts.lookahead
-        && let Some(payload) = enc.flush()?
-    {
-        payloads.push(payload);
-    }
+    payloads.extend(enc.drain_overlap()?);
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),
         EncodeContainer::M4a => {

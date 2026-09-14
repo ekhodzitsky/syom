@@ -1,6 +1,7 @@
 # TASK-40 encoder priming / valid length / tail
 
-Recorded 2026-09-14. Causal LC, 48 kHz mono impulses, peak 0.9.
+Pre-fix measurement (TASK-41 added the overlap drain). Recorded 2026-09-14.
+Causal LC, 48 kHz mono impulses, peak 0.9.
 Decoders: syom `decode_with(..., unbounded())`, oxideav-aac 0.1.7
 (`decode_all` ADTS), lavc 9.0.1 `avc_driver` (lab; not `cargo test`).
 
