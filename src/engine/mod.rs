@@ -7,6 +7,7 @@ pub(crate) mod adts_crc;
 pub(crate) mod adts_rdb;
 pub mod asc;
 pub mod bits;
+pub(crate) mod cce;
 pub(crate) mod channel_map;
 pub mod crc;
 pub mod decode;
@@ -89,6 +90,10 @@ mod channel_map_tests;
 #[cfg(test)]
 #[path = "skip_tests.rs"]
 mod skip_tests;
+
+#[cfg(test)]
+#[path = "cce_tests.rs"]
+mod cce_tests;
 
 #[cfg(test)]
 #[path = "fb_pool_tests.rs"]

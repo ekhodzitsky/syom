@@ -19,7 +19,7 @@ fn silent_ics(w: &mut BitWriter) {
     w.write_bit(false); // gain
 }
 
-fn parse_ok(bytes: &[u8]) -> super::skip::CceSyntax {
+fn parse_ok(bytes: &[u8]) -> super::cce::CcePayload {
     let mut br = BitReader::new(bytes);
     parse_cce(&mut br, 3, 2).expect("parse_cce")
 }
@@ -137,11 +137,11 @@ fn truncated_gain_is_unexpected_end() {
 }
 
 #[test]
-fn public_decode_fences_cce() {
+fn public_decode_fences_independent_cce() {
     let mut w = BitWriter::new();
     w.write(2, 3); // ID_CCE
     w.write(0, 4);
-    w.write_bit(false);
+    w.write_bit(true); // independent
     w.write(0, 3);
     w.write_bit(false);
     w.write(0, 4);
@@ -149,7 +149,7 @@ fn public_decode_fences_cce() {
     w.write_bit(false);
     w.write(0, 2);
     silent_ics(&mut w);
-    w.write(7, 3); // ID_END
+    w.write(7, 3);
     let err = crate::decode(&wrap_adts(&w.finish())).expect_err("CCE");
     let msg = err.to_string();
     assert!(

@@ -22,7 +22,7 @@ fn quad_idx(w: i32, x: i32, y: i32, z: i32) -> usize {
 
 /// `single_channel_element()` body (after id+tag): one spectral line at
 /// `line_sfb` (bin `swb_offset[line_sfb] + 3`), zeros elsewhere.
-fn write_ics_line(w: &mut BitWriter, line_sfb: u8) {
+pub(super) fn write_ics_line(w: &mut BitWriter, line_sfb: u8) {
     let max_sfb = line_sfb + 1;
     w.write(u32::from(AUDIBLE_GAIN), 8);
     w.write_bit(false); // ics reserved
@@ -385,14 +385,19 @@ fn pce_declaration_order_overrides_element_order() -> Result<(), Error> {
 }
 
 #[test]
-fn cce_between_channels_is_unsupported_not_uncoupled_pcm() {
+fn cce_between_channels_does_not_corrupt_them() -> Result<(), Error> {
+    let ref_a = decode_planes(&sce_payload(0, 1), 1)?;
+    let ref_b = decode_planes(&sce_payload(1, 3), 1)?;
     let mut w = BitWriter::new();
     write_sce(&mut w, 0, 1);
     write_cce_stub(&mut w);
     write_sce(&mut w, 1, 3);
     w.write(7, 3);
-    let err = decode_planes(&w.finish(), 0).expect_err("CCE");
-    assert!(matches!(err, Error::UnsupportedCce));
+    let planar = decode_planes(&w.finish(), 0)?;
+    assert_eq!(planar.len(), 2, "silent CCE must not emit a plane");
+    assert_eq!(planar[0], ref_a[0], "channel before CCE corrupted");
+    assert_eq!(planar[1], ref_b[0], "channel after CCE corrupted");
+    Ok(())
 }
 
 #[test]

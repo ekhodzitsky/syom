@@ -3,6 +3,7 @@
 #[cfg(test)]
 use super::adts::AdtsHeader;
 use super::bits::BitReader;
+use super::cce::{PendingChan, parse_cce};
 use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
 use super::error::{Error, Result};
 use super::extension_payload::ExtensionPayload;
@@ -16,7 +17,7 @@ use super::sbr_extension::SbrExtensionData;
 use super::sbr_header::SbrHeader;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
-use super::skip::{fill_count, parse_cce, skip_dse};
+use super::skip::{fill_count, skip_dse};
 
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
@@ -42,7 +43,7 @@ pub struct StreamDecoder {
     pub(crate) pcm_l: Vec<f32>,
     pub(crate) pcm_r: Vec<f32>,
     pub(crate) frame_ch: Vec<Vec<f32>>,
-    n_ch: usize,
+    pub(crate) n_ch: usize,
     pub(crate) quant: Vec<i32>,
     pub(crate) spec_l: Vec<f32>,
     pub(crate) spec_r: Vec<f32>,
@@ -51,14 +52,11 @@ pub struct StreamDecoder {
     pub(crate) sf_l: ScaleFactors,
     pub(crate) sf_r: ScaleFactors,
     pub(crate) fast_mono: bool,
-    /// Decoded elements of the current frame (multichannel path only).
-    elems: Vec<Element>,
-    /// Sticky `program_config_element()` channel map; wins over
-    /// `channel_configuration` once seen (§4.4.2.4).
+    pub(crate) elems: Vec<Element>,
     pce: Option<PceChannelMap>,
-    /// Per-element overlap keyed by `(kind, tag)`. cfg 1/2 use `fb_l`/`fb_r`.
-    fb_pool: FbPool,
-    /// Bytes consumed by the last `raw_data_block()` (byte-aligned).
+    pub(crate) fb_pool: FbPool,
+    pub(crate) pending: Vec<PendingChan>,
+    pub(crate) cces: Vec<super::cce::CcePayload>,
     pub(crate) last_rdb_bytes: usize,
 }
 
@@ -161,6 +159,8 @@ impl StreamDecoder {
         }
         self.n_ch = 0;
         self.elems.clear();
+        self.pending.clear();
+        self.cces.clear();
         self.fb_pool.begin_frame();
         let mut last_syn = IdSynEle::Sce;
         let mut pending_sbr: Option<Box<SbrExtensionData>> = None;
@@ -181,7 +181,6 @@ impl StreamDecoder {
                     };
                     if multichannel {
                         reject_dup(&self.elems, kind, tag)?;
-                        self.fb_pool.swap_in(kind, tag, &mut self.fb_l);
                     }
                     let (ics, tns) = parse_ics_into(
                         &mut br,
@@ -193,49 +192,26 @@ impl StreamDecoder {
                         &mut self.sections_l,
                         &mut self.sf_l,
                     )?;
-                    self.finish_sce(ics, tns.as_ref(), fs_index)?;
-                    if multichannel {
-                        self.fb_pool.swap_in(kind, tag, &mut self.fb_l);
-                        self.elems.push(Element {
-                            kind,
-                            tag,
-                            plane: self.n_ch,
-                        });
-                    }
-                    self.push_pcm(false);
+                    self.finish_sce_pns(&ics, fs_index)?;
+                    self.stash_chan(kind, tag, 0, ics, tns, true, multichannel);
                 }
                 IdSynEle::Cpe => {
                     last_syn = IdSynEle::Cpe;
                     let tag = br.read(4)? as u8;
                     if multichannel {
                         reject_dup(&self.elems, ElemKind::Cpe, tag)?;
-                        self.fb_pool.swap_pair(tag, &mut self.fb_l, &mut self.fb_r);
                     }
-                    self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
-                    if multichannel {
-                        self.fb_pool.swap_pair(tag, &mut self.fb_l, &mut self.fb_r);
-                        self.elems.push(Element {
-                            kind: ElemKind::Cpe,
-                            tag,
-                            plane: self.n_ch,
-                        });
-                        self.push_pcm(false);
-                        self.push_pcm(true);
-                    } else if self.mix_down_mono {
-                        let n = self.pcm_l.len().min(self.pcm_r.len());
-                        for (l, r) in self.pcm_l.iter_mut().zip(self.pcm_r.iter()).take(n) {
-                            *l = 0.5 * (*l + *r);
-                        }
-                        self.pcm_l.truncate(n);
-                        self.push_pcm(false);
-                    } else {
-                        self.push_pcm(false);
-                        self.push_pcm(true);
-                    }
+                    let (ics_l, tns_l, ics_r, tns_r) =
+                        self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
+                    self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, multichannel);
+                    self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, multichannel);
                 }
                 IdSynEle::Cce => {
-                    parse_cce(&mut br, fs_index, core_aot)?;
-                    return Err(Error::UnsupportedCce);
+                    let cce = parse_cce(&mut br, fs_index, core_aot)?;
+                    if cce.independent {
+                        return Err(Error::UnsupportedCce);
+                    }
+                    self.cces.push(cce);
                 }
                 IdSynEle::Dse => skip_dse(&mut br)?,
                 IdSynEle::Pce => {
@@ -270,6 +246,7 @@ impl StreamDecoder {
         }
         br.byte_align()?;
         self.last_rdb_bytes = (br.bit_position() / 8) as usize;
+        self.finish_pending(fs_index, multichannel)?;
         if self.fast_mono && pending_sbr.is_none() && !self.sbr_active {
             self.fb_pool.retain_seen();
             return Ok(sample_rate);
@@ -339,7 +316,7 @@ impl StreamDecoder {
         Ok(rate)
     }
 
-    fn push_pcm(&mut self, right: bool) {
+    pub(crate) fn push_pcm(&mut self, right: bool) {
         if self.fast_mono {
             self.n_ch = 1;
             return;
