@@ -13,26 +13,30 @@ or M4A. PCM is planar `f32` at the bitstream's native sample rate
 ## Why
 
 [symphonia](https://github.com/pdeljanov/Symphonia) is a multi-format
-pipeline. [rusty_aac](https://crates.io/crates/rusty_aac) is LC (SBR
+pipeline. [rusty_aac](https://crates.io/crates/rusty_aac) 0.5 is LC (SBR
 signalled, not reconstructed). [oxideav-aac](https://crates.io/crates/oxideav-aac)
-on crates.io is a parser. **syom is the AAC crate**: one call, LC + HE v1/v2,
-hard RAM/duration caps, no extra dependencies.
+0.1.7 decodes ADTS LC with SBR/PS (no ISOBMFF demux). **syom is the AAC
+crate**: one call, LC + HE v1/v2, duration/rate caps, no extra dependencies.
 
-| | syom | rusty_aac | symphonia | oxideav-aac 0.1 |
+| | syom | rusty_aac 0.5 | symphonia 0.6 | oxideav-aac 0.1.7 |
 |---|---|---|---|---|
-| AAC-LC | yes | yes | yes | parse only |
-| HE-AAC v1/v2 (SBR/PS) | yes | signalled | no | tables |
-| ADTS / M4A / LATM | yes | ADTS + AU | via formats | ADTS parse |
+| AAC-LC | yes | yes | yes | yes (ADTS) |
+| HE-AAC v1/v2 (SBR/PS) | yes | signalled | LC core only | ADTS SBR/PS |
+| ADTS / M4A / LATM | yes | ADTS + AU | via formats | ADTS only |
 | Default deps | **none** | none | several | oxideav-core |
-| Output | planar `f32`, native rate | interleaved | packets | — |
-| Duration / RAM caps | yes (`speech` / `unbounded`) | no | no | — |
-| One-call `decode(&[u8])` | yes | no | no | no |
+| Output | planar `f32`, native rate | interleaved f32 | packets | interleaved i16 |
+| Duration / rate caps | yes (`speech` / `unbounded`) | no | no | — |
+| One-call `decode(&[u8])` | yes | no | no | `decode_all` |
+
+Wall-time tables in [BENCH.md](BENCH.md) are **historical unequal-work
+rows** (speech mix vs discarded or LC-core output). They are not a
+matched-PCM leaderboard; see that file and `syom::decode_cmp`.
 
 ## Install
 
 ```toml
 [dependencies]
-syom = "0.3"
+syom = "0.6"
 ```
 
 Requires **Rust 1.97**, edition 2024.
@@ -61,9 +65,12 @@ on early-in-frame onsets, one extra frame of latency, default off).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD
-analysis, a Bark-spreading psy model with flat 18 dB SMR, per-frame M/S,
-and a CBR-ish rate loop. The committed lavc goldens prove ffmpeg decodes
-the output bit-exact-close (≤ 1 LSB s16 vs our own decode).
+analysis, a Bark-spreading psy model with flat 18 dB SMR, **per-band**
+M/S, long-frame TNS, and a CBR-ish rate loop. Optional
+`with_lookahead(true)` is off by default. Committed lavc goldens
+(`src/goldens/enc48{,m,t,l}.*`) show ffmpeg decodes the output within
+≤ 2 LSB s16 / ≥ 55 dB (typically 1 LSB / ~80 dB). Tests never spawn
+ffmpeg.
 
 Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
 byte streams (frames may straddle chunks; M4A is rejected — `moov` needs

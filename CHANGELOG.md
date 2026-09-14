@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unlimited frame budget.
 - `read` / `read_with` check the compressed file size (and cap the subsequent
   read) against `DEFAULT_MAX_INPUT_BYTES` before allocating the whole file.
+- README install version is 0.6; oxideav-aac is documented as an ADTS
+  LC+SBR/PS decoder (not a parser); encoder M/S is per-band; BENCH.md is
+  linked as historical unequal-work evidence.
 
 ## [0.6.0] - 2026-09-06
 
