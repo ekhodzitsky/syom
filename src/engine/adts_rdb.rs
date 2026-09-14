@@ -6,8 +6,9 @@ use super::error::{Error, Result};
 
 impl StreamDecoder {
     /// Decode `n_rdb` consecutive `raw_data_block()`s. When CRC is present
-    /// and `n_rdb > 1`, a 16-bit field after each block is skipped (not
-    /// checked; TASK-29). `n_rdb == 1` is the historical single-block path.
+    /// and `n_rdb > 1`, a 16-bit field after each block is skipped here;
+    /// [`super::adts_crc::verify_adts_crc`] checks it on the full frame.
+    /// `n_rdb == 1` is the historical single-block path.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn decode_adts_blocks(
         &mut self,

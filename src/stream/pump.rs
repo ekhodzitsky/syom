@@ -80,6 +80,10 @@ impl Decoder {
             if avail.len() < frame_len {
                 return Ok(()); // partial frame: wait (finish drops it)
             }
+            if !hdr.protection_absent {
+                crate::engine::adts_crc::verify_adts_crc(&avail[..frame_len], &hdr)
+                    .map_err(AacError::from)?;
+            }
             let payload = &avail[payload_off..frame_len];
             let idx = self.aac_frames;
             let rate = match sink.as_deref_mut() {

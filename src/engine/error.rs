@@ -18,6 +18,9 @@ pub enum Error {
     AdtsReservedSampleRateIndex,
     /// `aac_frame_length` smaller than the header.
     AdtsFrameLengthTooSmall,
+    /// ADTS `crc_check` does not match ISO/IEC 11172-3 §2.4.3.1 over the
+    /// 13818-7 protected region.
+    AdtsCrcMismatch,
     /// `audioObjectType` is not LC (2) or HE-AAC (5/29).
     UnsupportedAot(u8),
     /// `frameLengthFlag == 1` (960-line) is out of v1.
@@ -77,6 +80,7 @@ impl fmt::Display for Error {
             Self::AdtsLayerNonZero => write!(f, "aac: ADTS layer must be 0"),
             Self::AdtsReservedSampleRateIndex => write!(f, "aac: reserved ADTS sample rate"),
             Self::AdtsFrameLengthTooSmall => write!(f, "aac: ADTS frame length too small"),
+            Self::AdtsCrcMismatch => write!(f, "aac: ADTS CRC mismatch"),
             Self::UnsupportedAot(a) => write!(f, "aac: unsupported audioObjectType {a}"),
             Self::UnsupportedFrameLength => write!(f, "aac: 960-line frames are Media"),
             Self::UnsupportedSampleRateIndex(i) => {

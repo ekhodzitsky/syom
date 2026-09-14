@@ -54,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- ADTS `protection_absent=0` frames verify `crc_check` with the ISO/IEC
+  11172-3 CRC-16 (poly `0x8005`, init `0xFFFF`, no inversion) over the
+  13818-7 header and raw-data-block protected bits. Mismatch is
+  `AdtsCrcMismatch`, distinct from truncation. CRC-free streams are
+  unchanged. The MPEG-4 Audio §1.8.4.5 generator is not used here.
 - ADTS frames with `number_of_raw_data_blocks_in_frame` > 1 decode every
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values

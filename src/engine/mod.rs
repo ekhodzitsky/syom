@@ -3,6 +3,7 @@
 //! Product entry is [`decode::StreamDecoder`].
 
 pub mod adts;
+pub(crate) mod adts_crc;
 pub(crate) mod adts_rdb;
 pub mod asc;
 pub mod bits;

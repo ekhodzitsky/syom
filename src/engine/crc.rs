@@ -328,6 +328,29 @@ pub fn stream_mux_config_crc(config_bits: &[bool]) -> u8 {
     crc_bits(CrcPoly::Crc8, config_bits) as u8
 }
 
+/// ISO/IEC 11172-3 §2.4.3.1 CRC-16 used by ADTS `crc_check` (ISO/IEC
+/// 13818-7 §6.2.3 / §8.1.1.2). Polynomial x¹⁶+x¹⁵+x²+1 (`0x8005`),
+/// register initialised to all-ones, MSB-first, remainder transmitted
+/// as-is — **not** the MPEG-4 Audio §1.8.4.5 generator (zero init and
+/// one's-complement output).
+pub fn mpeg1_crc16(message_bits: &[bool]) -> u16 {
+    let mut crc = 0xFFFFu16;
+    for &bit in message_bits {
+        mpeg1_crc16_update(&mut crc, bit);
+    }
+    crc
+}
+
+/// One-bit update for [`mpeg1_crc16`].
+pub fn mpeg1_crc16_update(crc: &mut u16, bit: bool) {
+    let inb = u16::from(bit);
+    let msb = *crc >> 15;
+    *crc <<= 1;
+    if (msb ^ inb) != 0 {
+        *crc ^= 0x8005;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
@@ -471,5 +494,28 @@ mod tests {
             stream_mux_config_crc(&bits) as u64,
             crc_bits(CrcPoly::Crc8, &bits)
         );
+    }
+
+    fn mpeg1_reference(message_bits: &[bool]) -> u16 {
+        // Independent 11172-3 long division: init 0xFFFF, poly 0x18005
+        // (x^16+x^15+x^2+1), no output inversion.
+        let full_gen = 0x18005u32;
+        let mut reg = 0xFFFFu32;
+        for &bit in message_bits {
+            let inb = u32::from(bit);
+            let top = (reg >> 15) & 1;
+            reg = ((reg << 1) & 0xFFFF) ^ if top ^ inb != 0 { full_gen & 0xFFFF } else { 0 };
+        }
+        reg as u16
+    }
+
+    #[test]
+    fn mpeg1_crc16_is_11172_3_not_mpeg4_ep() {
+        assert_eq!(mpeg1_crc16(&[]), 0xFFFF);
+        let bits = to_bits(&[0x12, 0x34, 0x56, 0x78]);
+        let got = mpeg1_crc16(&bits);
+        assert_eq!(got, mpeg1_reference(&bits));
+        // §1.8.4.5 CRC-16 is zero-init + inverted remainder — must differ.
+        assert_ne!(got as u64, crc_bits(CrcPoly::Crc16, &bits));
     }
 }

@@ -133,7 +133,8 @@ impl AdtsHeader {
 
 /// Byte offset of the first `raw_data_block()`. CRC-protected frames place
 /// `raw_data_block_position[1..N]` plus a 16-bit header CRC before the
-/// payload (`7 + 2N` bytes). Integrity checking is TASK-29.
+/// payload (`7 + 2N` bytes). [`super::adts_crc::verify_adts_crc`] checks
+/// the CRC values.
 #[must_use]
 pub fn payload_offset(protection_absent: bool, n_rdb: u8) -> usize {
     if protection_absent {
