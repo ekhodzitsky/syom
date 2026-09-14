@@ -9,29 +9,45 @@
 use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
-use crate::isomp4;
+use crate::isomp4::{self, AacTrack};
 use crate::options::{ChannelMode, DecodeOptions};
 use crate::stream::{Frame, StreamInfo};
 
-pub(crate) fn stream_m4a<F>(
-    data: &[u8],
+pub(crate) fn map_m4a_parse_err(e: AacError) -> AacError {
+    // Unsupported/malformed elst must stay Format (precise), not collapse
+    // to NotAac the way a random ftyp lookalike does.
+    if matches!(&e, AacError::Format(m) if m.contains("elst")) {
+        e
+    } else if e.is_format_class() {
+        AacError::NotAac
+    } else {
+        e
+    }
+}
+
+pub(crate) fn stream_m4a<F>(data: &[u8], opts: &DecodeOptions, on_frame: F) -> Result<StreamInfo>
+where
+    F: FnMut(Frame<'_>) -> Result<()>,
+{
+    let track = isomp4::parse_aac_track_with(data, &opts.memory).map_err(map_m4a_parse_err)?;
+    play_m4a_track(
+        track,
+        opts,
+        |off, len| sample_payload(data, off, len),
+        on_frame,
+    )
+}
+
+pub(crate) fn play_m4a_track<F, G>(
+    track: AacTrack,
     opts: &DecodeOptions,
+    mut get_au: G,
     mut on_frame: F,
 ) -> Result<StreamInfo>
 where
     F: FnMut(Frame<'_>) -> Result<()>,
+    G: FnMut(u64, u32) -> Result<Vec<u8>>,
 {
-    let track = isomp4::parse_aac_track_with(data, &opts.memory).map_err(|e| {
-        // Unsupported/malformed elst must stay Format (precise), not collapse
-        // to NotAac the way a random ftyp lookalike does.
-        if matches!(&e, AacError::Format(m) if m.contains("elst")) {
-            e
-        } else if e.is_format_class() {
-            AacError::NotAac
-        } else {
-            e
-        }
-    })?;
     let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
     let out_rate = asc.output_sample_rate;
     if out_rate == 0 || out_rate > opts.max_sample_rate {
@@ -64,7 +80,8 @@ where
     let mut samples_out = 0u64;
 
     for &(off, len) in &track.frames {
-        let payload = sample_payload(data, off, len)?;
+        opts.memory.check_declared_au(u64::from(len))?;
+        let payload = get_au(off, len)?;
         let rate = if mono {
             scratch.clear();
             dec.decode_raw_mono_f32(
@@ -73,7 +90,7 @@ where
                 asc.sample_rate,
                 asc.channel_configuration,
                 1,
-                payload,
+                &payload,
                 &mut scratch,
             )
             .map_err(AacError::from)?
@@ -83,7 +100,7 @@ where
                 asc.sampling_frequency_index,
                 asc.sample_rate,
                 asc.channel_configuration,
-                payload,
+                &payload,
             )
             .map_err(AacError::from)?
         };
@@ -175,10 +192,11 @@ where
     })
 }
 
-fn sample_payload(data: &[u8], off: u64, len: u32) -> Result<&[u8]> {
+fn sample_payload(data: &[u8], off: u64, len: u32) -> Result<Vec<u8>> {
     let end = off
         .checked_add(u64::from(len))
         .ok_or_else(|| AacError::format("aac: sample range overflow"))? as usize;
     data.get(off as usize..end)
+        .map(<[u8]>::to_vec)
         .ok_or_else(|| AacError::format("aac: sample range past end of file"))
 }

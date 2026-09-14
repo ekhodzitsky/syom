@@ -41,10 +41,12 @@ use crate::options::{ChannelMode, DecodeOptions};
 mod au;
 mod frame;
 mod m4a;
+mod m4a_seek;
 mod pump;
 mod read;
 
 pub use frame::{Frame, StreamInfo};
+pub use m4a_seek::decode_seek_streaming;
 pub use read::decode_read_streaming;
 
 /// Container the push decoder has locked onto.

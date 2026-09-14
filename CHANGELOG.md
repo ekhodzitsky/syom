@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Seekable M4A decode (TASK-57): `decode_seek` / `decode_seek_with` /
+  `decode_seek_streaming` load only `moov` then `seek`+read each sample.
+  `mdat` before or after `moov` works; `elst` trim matches slice decode.
+  `read` / `read_with` take this path for M4A (no whole-file load). `co64`
+  indexes parse. Presentation-time seeking is TASK-58.
 - Generic `Read` ADTS/LOAS decode (TASK-56): `Decoder::feed_read`,
   `decode_read` / `decode_read_with` (collecting) and
   `decode_read_streaming` (callback). Resident compressed buffer stays

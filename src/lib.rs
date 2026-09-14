@@ -29,7 +29,8 @@ pub use budgets::{
 #[cfg(test)]
 pub(crate) use decode::read_file_capped;
 pub use decode::{
-    DecodedAac, decode, decode_bytes, decode_read, decode_read_with, decode_with, read, read_with,
+    DecodedAac, decode, decode_bytes, decode_read, decode_read_with, decode_seek, decode_seek_with,
+    decode_with, read, read_with,
 };
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{encode, encode_with, write, write_with};
@@ -41,7 +42,9 @@ pub use options::{
     EncodeOptions,
 };
 pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
-pub use stream::{Decoder, Frame, StreamInfo, decode_read_streaming, decode_streaming};
+pub use stream::{
+    Decoder, Frame, StreamInfo, decode_read_streaming, decode_seek_streaming, decode_streaming,
+};
 
 #[cfg(test)]
 #[path = "decode_tests.rs"]
@@ -138,6 +141,10 @@ mod stream_latm_tests;
 #[cfg(test)]
 #[path = "stream_m4a_tests.rs"]
 mod stream_m4a_tests;
+
+#[cfg(test)]
+#[path = "stream_m4a_seek_tests.rs"]
+mod stream_m4a_seek_tests;
 
 #[cfg(test)]
 #[path = "stream_au_tests.rs"]

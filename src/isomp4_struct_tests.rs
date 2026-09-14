@@ -37,7 +37,7 @@ fn test_stsz_default_size_count_capped() {
     // A stsz declaring 4G samples at a constant size must not allocate
     // 16 GiB: the total sample bytes are fenced by the file length.
     let body = stbl_with_stsz(1, u32::MAX);
-    let err = match parse_stsz(&body, body.len(), &mem()) {
+    let err = match parse_stsz(&body, body.len() as u64, &mem()) {
         Ok(_) => panic!("huge stsz count must fail"),
         Err(e) => e,
     };
@@ -109,7 +109,13 @@ fn mp4a_entry(children: &[u8]) -> Vec<u8> {
 
 /// A `trak` with a `soun` handler and a complete constant-size sample
 /// table in a single chunk; `entry` is the boxed stsd sample entry.
-fn soun_trak(entry: Vec<u8>, sample_count: u32, sample_size: u32, chunk_offset: u32) -> Vec<u8> {
+fn soun_trak(
+    entry: Vec<u8>,
+    sample_count: u32,
+    sample_size: u32,
+    chunk_offset: u32,
+    wide: bool,
+) -> Vec<u8> {
     let mut stsd_body = vec![0u8; 4]; // version/flags
     stsd_body.extend_from_slice(&1u32.to_be_bytes());
     stsd_body.extend_from_slice(&entry);
@@ -131,13 +137,20 @@ fn soun_trak(entry: Vec<u8>, sample_count: u32, sample_size: u32, chunk_offset: 
 
     let mut stco = vec![0u8; 4];
     stco.extend_from_slice(&1u32.to_be_bytes());
-    stco.extend_from_slice(&chunk_offset.to_be_bytes());
+    let chunk_box = if wide {
+        stco.extend_from_slice(&0u32.to_be_bytes());
+        stco.extend_from_slice(&chunk_offset.to_be_bytes());
+        bx(b"co64", &stco)
+    } else {
+        stco.extend_from_slice(&chunk_offset.to_be_bytes());
+        bx(b"stco", &stco)
+    };
 
     let mut stbl_body = bx(b"stsd", &stsd_body);
     stbl_body.extend_from_slice(&bx(b"stts", &stts));
     stbl_body.extend_from_slice(&bx(b"stsc", &stsc));
     stbl_body.extend_from_slice(&bx(b"stsz", &stsz));
-    stbl_body.extend_from_slice(&bx(b"stco", &stco));
+    stbl_body.extend_from_slice(&chunk_box);
 
     let mut hdlr = vec![0u8; 8]; // version/flags + pre_defined
     hdlr.extend_from_slice(b"soun");
@@ -183,6 +196,7 @@ fn aac_trak(sample_count: u32, sample_size: u32, chunk_offset: u32) -> Vec<u8> {
         sample_count,
         sample_size,
         chunk_offset,
+        false,
     )
 }
 
@@ -209,6 +223,43 @@ fn m4a(sample_count: u32, sample_size: u32, extra_trak: Option<&[u8]>) -> Vec<u8
     data
 }
 
+fn m4a_co64(sample_count: u32, sample_size: u32) -> Vec<u8> {
+    let build = |off: u32| {
+        let mut data = ftyp();
+        data.extend_from_slice(&bx(
+            b"moov",
+            &soun_trak(
+                mp4a_entry(&bx(b"esds", &esds_body(&ASC))),
+                sample_count,
+                sample_size,
+                off,
+                true,
+            ),
+        ));
+        data
+    };
+    let mdat_off = (build(0).len() + 8) as u32;
+    let mut data = build(mdat_off);
+    data.extend_from_slice(&bx(
+        b"mdat",
+        &vec![0xAAu8; (sample_count * sample_size) as usize],
+    ));
+    data
+}
+
+#[test]
+fn seek_load_moov_co64_matches_slice_index() {
+    use std::io::Cursor;
+    let data = m4a_co64(8, 7);
+    let slice = parse_aac_track(&data).expect("co64 slice");
+    let mut cur = Cursor::new(&data);
+    let (moov, file_len) = load_moov(&mut cur, &mem()).expect("load moov");
+    assert!(moov.len() < data.len(), "moov must not be the whole file");
+    let seek = parse_aac_track_with_len(&moov, file_len, &mem()).expect("co64 seek");
+    assert_eq!(slice.frames, seek.frames);
+    assert_eq!(slice.asc, seek.asc);
+}
+
 #[test]
 fn test_happy_path_full_box_walk() {
     // Always-on (no ffmpeg gate): a programmatically built CBR M4A —
@@ -232,7 +283,7 @@ fn test_happy_path_full_box_walk() {
 fn test_broken_sound_track_skipped_for_valid_aac() {
     // A non-AAC soun track ahead of a valid AAC track must not sink the
     // file: track selection skips it (symphonia parity).
-    let alac = soun_trak(bx(b"alac", &[0u8; 28]), 100, 7, 0);
+    let alac = soun_trak(bx(b"alac", &[0u8; 28]), 100, 7, 0, false);
     let data = m4a(100, 7, Some(&alac));
     let track = parse_aac_track(&data).expect("valid AAC track behind a broken one");
     assert_eq!(track.frames.len(), 100);
@@ -258,7 +309,7 @@ fn test_elst_media_time_is_skip_samples() {
 #[test]
 fn test_broken_sound_track_only_is_clean_error() {
     // Only a broken sound track: the same clean error as no audio track.
-    let alac = soun_trak(bx(b"alac", &[0u8; 28]), 100, 7, 0);
+    let alac = soun_trak(bx(b"alac", &[0u8; 28]), 100, 7, 0, false);
     let mut data = ftyp();
     data.extend_from_slice(&bx(b"moov", &alac));
     let err = match parse_aac_track(&data) {
@@ -273,7 +324,7 @@ fn test_sinf_wrapped_esds_is_clean_error() {
     // CENC-style layout: the esds hides inside a sinf wrapper, which is
     // never descended into, so the track is unusable — a clean refusal.
     let sinf = bx(b"sinf", &bx(b"esds", &esds_body(&ASC)));
-    let trak = soun_trak(mp4a_entry(&sinf), 4, 7, 0);
+    let trak = soun_trak(mp4a_entry(&sinf), 4, 7, 0, false);
     let mut data = ftyp();
     data.extend_from_slice(&bx(b"moov", &trak));
     let err = match parse_aac_track(&data) {

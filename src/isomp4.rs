@@ -437,7 +437,7 @@ fn convert_exact(value: u64, dst_ts: u32, src_ts: u32, what: &str) -> Result<usi
         .map_err(|_| AacError::format(format!("isomp4: {what} exceeds usize")))
 }
 
-fn parse_stsz(data: &[u8], file_len: usize, mem: &MemoryBudgets) -> Result<Vec<u32>> {
+fn parse_stsz(data: &[u8], file_len: u64, mem: &MemoryBudgets) -> Result<Vec<u32>> {
     let default_size = read_u32(data, 4)?;
     let count = read_u32(data, 8)? as usize;
     fence_entries(mem, count as u64, 4)?;
@@ -454,7 +454,7 @@ fn parse_stsz(data: &[u8], file_len: usize, mem: &MemoryBudgets) -> Result<Vec<u
         let total = u64::from(default_size)
             .checked_mul(count as u64)
             .ok_or_else(|| AacError::format("isomp4: stsz overflow"))?;
-        if total > file_len as u64 {
+        if total > file_len {
             return Err(AacError::format(format!(
                 "isomp4: stsz declares {count} samples of {default_size} bytes, more than the input holds"
             )));
@@ -551,7 +551,12 @@ fn parse_stco(data: &[u8], wide: bool, mem: &MemoryBudgets) -> Result<Vec<u64>> 
 }
 
 /// Parse the sample-table boxes of one track's `stbl`.
-fn parse_stbl(data: &[u8], stbl: BoxHdr, mem: &MemoryBudgets) -> Result<(Vec<u8>, SampleTable)> {
+fn parse_stbl(
+    data: &[u8],
+    stbl: BoxHdr,
+    mem: &MemoryBudgets,
+    file_len: u64,
+) -> Result<(Vec<u8>, SampleTable)> {
     let mut asc = None;
     let mut stts_total = None;
     let mut sizes = None;
@@ -617,7 +622,7 @@ fn parse_stbl(data: &[u8], stbl: BoxHdr, mem: &MemoryBudgets) -> Result<(Vec<u8>
                 asc = Some(extract_asc(body, children)?);
             }
             b"stts" => stts_total = Some(parse_stts(body, mem)?),
-            b"stsz" => sizes = Some(parse_stsz(body, data.len(), mem)?),
+            b"stsz" => sizes = Some(parse_stsz(body, file_len, mem)?),
             b"stsc" => stsc = Some(parse_stsc(body, mem)?),
             b"stco" => chunk_offsets = Some(parse_stco(body, false, mem)?),
             b"co64" => chunk_offsets = Some(parse_stco(body, true, mem)?),
@@ -719,7 +724,12 @@ fn parse_mvhd_timescale(body: &[u8]) -> Result<u32> {
 
 /// Walk one `mdia` box: is it sound (`hdlr` = 'soun'), and if so parse its
 /// `minf/stbl` and `mdhd` timescale. Returns `None` for non-sound tracks.
-fn parse_mdia(data: &[u8], mdia: BoxHdr, mem: &MemoryBudgets) -> Result<Option<SoundMdia>> {
+fn parse_mdia(
+    data: &[u8],
+    mdia: BoxHdr,
+    mem: &MemoryBudgets,
+    file_len: u64,
+) -> Result<Option<SoundMdia>> {
     let mut is_sound = false;
     let mut table = None;
     let mut timescale = 0u32;
@@ -743,7 +753,7 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr, mem: &MemoryBudgets) -> Result<Option<S
                 for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
                     let (shdr, styp) = sub?;
                     if &styp == b"stbl" {
-                        table = Some(parse_stbl(data, shdr, mem)?);
+                        table = Some(parse_stbl(data, shdr, mem, file_len)?);
                     }
                 }
             }
@@ -765,7 +775,7 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr, mem: &MemoryBudgets) -> Result<Option<S
 
 /// Map the sample table to absolute byte ranges, one per AAC frame.
 fn build_frame_index(
-    data_len: usize,
+    data_len: u64,
     table: &SampleTable,
     mem: &MemoryBudgets,
 ) -> Result<Vec<(u64, u32)>> {
@@ -798,7 +808,7 @@ fn build_frame_index(
             };
             let end = off
                 .checked_add(u64::from(size))
-                .filter(|&e| e <= data_len as u64)
+                .filter(|&e| e <= data_len)
                 .ok_or_else(|| AacError::format("isomp4: sample extends past end of input"))?;
             frames.push((off, size));
             off = end;
@@ -826,6 +836,17 @@ pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
 }
 
 pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<AacTrack> {
+    parse_aac_track_with_len(data, data.len() as u64, mem)
+}
+
+/// Like [`parse_aac_track_with`], but `file_len` is the ISOBMFF file size
+/// used for `stsz`/`stco` range fences. `data` may be the whole file or a
+/// standalone `moov` box (seekable demux loads only `moov`).
+pub(crate) fn parse_aac_track_with_len(
+    data: &[u8],
+    file_len: u64,
+    mem: &MemoryBudgets,
+) -> Result<AacTrack> {
     fence_depth(mem, 0)?;
     let mut moov = None;
     for top in BoxIter::new(data, 0, data.len()) {
@@ -882,7 +903,7 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
                         // A broken or non-AAC sound track must not sink the
                         // whole file: skip it and keep looking for a usable
                         // AAC track. Structural box-walk errors stay fatal.
-                        match parse_mdia(data, shdr, mem) {
+                        match parse_mdia(data, shdr, mem, file_len) {
                             Ok(Some(t)) => mdia_track = Some(t),
                             Ok(None) => {}
                             Err(e @ AacError::Limit { .. }) => return Err(e),
@@ -907,7 +928,7 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
     }
     let (asc, table, media_timescale, edit_start, edit_duration, media_duration, has_elst) =
         track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
-    let frames = build_frame_index(data.len(), &table, mem)?;
+    let frames = build_frame_index(file_len, &table, mem)?;
     Ok(AacTrack {
         asc,
         total_samples: table.total_samples,
@@ -945,6 +966,10 @@ pub(crate) fn sniff_is_m4a(data: &[u8]) -> bool {
 pub fn sniff_is_isobmff(data: &[u8]) -> bool {
     sniff_is_m4a(data)
 }
+
+#[path = "isomp4_io.rs"]
+mod io;
+pub(crate) use io::load_moov;
 
 #[cfg(test)]
 #[path = "isomp4_struct_tests.rs"]

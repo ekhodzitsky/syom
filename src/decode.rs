@@ -1,14 +1,16 @@
 //! One-shot decode: a collecting frame callback over the streaming core
 //! (`stream` module owns the container state machines and caps).
 
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 
 use crate::budgets::{BudgetExceeded, BudgetKind, pcm_bytes};
 use crate::engine::adts::AdtsHeader;
 use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
 use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
-use crate::stream::{decode_read_streaming, decode_streaming, decode_streaming_mono_into};
+use crate::stream::{
+    decode_read_streaming, decode_seek_streaming, decode_streaming, decode_streaming_mono_into,
+};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
 ///
@@ -38,14 +40,54 @@ pub fn decode_bytes(data: &[u8]) -> Result<DecodedAac> {
     decode(data)
 }
 
-/// Read a file and [`decode`] it.
+/// Read a file and [`decode`] it. M4A uses seekable sample access (no
+/// whole-`mdat` load); ADTS/LOAS still cap the file at
+/// [`DEFAULT_MAX_INPUT_BYTES`].
 pub fn read(path: impl AsRef<std::path::Path>) -> Result<DecodedAac> {
-    decode(&read_file_capped(path, DEFAULT_MAX_INPUT_BYTES)?)
+    read_with(path, &DecodeOptions::speech())
 }
 
 /// Read a file and [`decode_with`] it.
 pub fn read_with(path: impl AsRef<std::path::Path>, opts: &DecodeOptions) -> Result<DecodedAac> {
+    let path = path.as_ref();
+    let mut f = std::fs::File::open(path)?;
+    let mut head = [0u8; 12];
+    let n = f.read(&mut head)?;
+    if sniff_is_isobmff(&head[..n]) {
+        f.seek(SeekFrom::Start(0))?;
+        return decode_seek_with(f, opts);
+    }
+    drop(f);
     decode_with(&read_file_capped(path, DEFAULT_MAX_INPUT_BYTES)?, opts)
+}
+
+/// Decode seekable M4A with speech-ingest defaults. Peak compressed RAM is
+/// `moov` plus one access unit.
+#[inline]
+pub fn decode_seek<R: Read + Seek>(reader: R) -> Result<DecodedAac> {
+    decode_seek_with(reader, &DecodeOptions::speech())
+}
+
+/// Decode seekable M4A under `opts`.
+pub fn decode_seek_with<R: Read + Seek>(reader: R, opts: &DecodeOptions) -> Result<DecodedAac> {
+    let mut tracks: Vec<Vec<f32>> = Vec::new();
+    let info = decode_seek_streaming(reader, opts, |f| {
+        let n_ch = u32::try_from(f.planar.len()).unwrap_or(u32::MAX);
+        if tracks.is_empty() {
+            opts.memory.check_channels(n_ch)?;
+            tracks.resize_with(f.planar.len(), Vec::new);
+        }
+        let next = tracks.first().map(|t| t.len() as u64).unwrap_or(0) + f.samples as u64;
+        opts.memory.check_output(n_ch, next)?;
+        for (dst, src) in tracks.iter_mut().zip(f.planar.iter()) {
+            dst.extend_from_slice(src);
+        }
+        Ok(())
+    })?;
+    Ok(DecodedAac {
+        sample_rate: info.sample_rate,
+        channels: tracks,
+    })
 }
 
 /// Decode ADTS/LOAS from a generic [`Read`] with speech-ingest defaults.
