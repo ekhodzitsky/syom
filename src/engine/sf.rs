@@ -164,8 +164,7 @@ pub fn parse_into(
     Ok(())
 }
 
-/// Table 4.A.1 decode of one DPCM delta (tests / encoder helpers).
-#[cfg(test)]
-pub fn decode_dpcm(br: &mut BitReader<'_>) -> Result<i8> {
+/// Table 4.A.1 decode of one DPCM delta.
+pub(crate) fn decode_dpcm(br: &mut BitReader<'_>) -> Result<i8> {
     SF_TREE.decode(br)
 }

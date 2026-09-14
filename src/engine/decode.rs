@@ -16,7 +16,7 @@ use super::sbr_extension::SbrExtensionData;
 use super::sbr_header::SbrHeader;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
-use super::skip::{fill_count, skip_cce, skip_dse};
+use super::skip::{fill_count, parse_cce, skip_dse};
 
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
@@ -233,7 +233,10 @@ impl StreamDecoder {
                         self.push_pcm(true);
                     }
                 }
-                IdSynEle::Cce => skip_cce(&mut br, fs_index, core_aot)?,
+                IdSynEle::Cce => {
+                    parse_cce(&mut br, fs_index, core_aot)?;
+                    return Err(Error::UnsupportedCce);
+                }
                 IdSynEle::Dse => skip_dse(&mut br)?,
                 IdSynEle::Pce => {
                     self.pce = Some(super::channel_map::parse_pce(&mut br)?);

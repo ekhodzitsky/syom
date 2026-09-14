@@ -1,9 +1,12 @@
-//! Skip FIL / DSE / CCE so a raw_data_block stays bit-aligned.
+//! Skip FIL / DSE so a raw_data_block stays bit-aligned.
+//! CCE is parsed completely here, then fenced by the decoder.
 //! PCE is parsed (not skipped) in `channel_map::parse_pce`.
 
 use super::bits::BitReader;
 use super::error::Result;
 use super::ics_body::parse_ics;
+use super::section::ZERO_HCB;
+use super::sf;
 
 /// `fill_element()` count field (bytes of `extension_payload`).
 pub fn fill_count(br: &mut BitReader<'_>) -> Result<u32> {
@@ -38,32 +41,61 @@ pub fn skip_dse(br: &mut BitReader<'_>) -> Result<()> {
     Ok(())
 }
 
-/// Consume a CCE so the rest of the block stays aligned. Coupling is not applied.
-pub fn skip_cce(br: &mut BitReader<'_>, fs_index: u8, aot: u8) -> Result<()> {
-    let _tag = br.read(4)?;
-    let ind_sw = br.read_bit()?;
-    let coupled = br.read(3)? as usize + 1;
-    if !ind_sw {
-        let _sign = br.read_bit()?;
-        let _scale = br.read(2)?;
-    }
-    for _ in 0..coupled {
+/// Parsed `coupling_channel_element()` (Table 4.4.8). Gains are consumed,
+/// not applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CceSyntax {
+    pub tag: u8,
+    pub independent: bool,
+    pub n_coupled: usize,
+    pub n_gain_lists: usize,
+}
+
+/// Parse a CCE completely (FAAD2 Table 4.4.8 / FFmpeg `decode_cce`).
+/// The decoder fences reconstruction with [`super::error::Error::UnsupportedCce`].
+pub fn parse_cce(br: &mut BitReader<'_>, fs_index: u8, aot: u8) -> Result<CceSyntax> {
+    let tag = br.read(4)? as u8;
+    let independent = br.read_bit()?;
+    let n_coupled = br.read(3)? as usize + 1;
+    let mut n_gain_lists = 0usize;
+    for _ in 0..n_coupled {
+        n_gain_lists += 1;
         let is_cpe = br.read_bit()?;
         let _select = br.read(4)?;
         if is_cpe {
             let cc_l = br.read_bit()?;
             let cc_r = br.read_bit()?;
             if cc_l && cc_r {
-                let _domain = br.read_bit()?;
+                n_gain_lists += 1;
             }
         }
     }
-    // Coupling channel ICS (common_window = 0).
-    let _ = parse_ics(br, fs_index, aot, None)?;
-    // Gain elements after the ICS: one Huffman-ish scale per target.
-    // Independent CCE puts a gain after each target; dependent after ICS.
-    // Remaining bits of this element are not a second ICS; skip is best-effort
-    // via the ICS parse having consumed the coupling channel body.
-    let _ = ind_sw;
-    Ok(())
+    let _cc_domain = br.read_bit()?;
+    let _sign = br.read_bit()?;
+    let _scale = br.read(2)?;
+    let body = parse_ics(br, fs_index, aot, None)?;
+    for _ in 1..n_gain_lists {
+        let cge = independent || br.read_bit()?;
+        if cge {
+            let _ = sf::decode_dpcm(br)?;
+        } else {
+            let groups = body.ics.num_window_groups as usize;
+            let max_sfb = body.ics.max_sfb as usize;
+            for g in 0..groups {
+                let row = body.sections.sfb_cb.get(g);
+                for sfb in 0..max_sfb {
+                    let cb = row.and_then(|r| r.get(sfb)).copied().unwrap_or(ZERO_HCB);
+                    if cb != ZERO_HCB {
+                        let _ = sf::decode_dpcm(br)?;
+                    }
+                }
+            }
+        }
+    }
+    Ok(CceSyntax {
+        tag,
+        independent,
+        n_coupled,
+        n_gain_lists,
+    })
 }

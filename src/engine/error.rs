@@ -70,6 +70,8 @@ pub enum Error {
     UnsupportedExtensionType(u8),
     /// FIL `extension_payload` structural error.
     ExtensionPayloadInvalid,
+    /// `coupling_channel_element()` parsed; gain application is TASK-35/36.
+    UnsupportedCce,
 }
 
 impl fmt::Display for Error {
@@ -109,6 +111,7 @@ impl fmt::Display for Error {
             Self::UnsupportedExtensionSbr(t) => write!(f, "aac: SBR extension_type {t}"),
             Self::UnsupportedExtensionType(t) => write!(f, "aac: extension_type {t}"),
             Self::ExtensionPayloadInvalid => write!(f, "aac: extension_payload invalid"),
+            Self::UnsupportedCce => write!(f, "aac: CCE coupling is not implemented"),
         }
     }
 }

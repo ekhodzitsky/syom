@@ -59,6 +59,7 @@ fn engine_error_display_covers_variants() {
         Error::UnsupportedExtensionSbr(0xd),
         Error::UnsupportedExtensionType(2),
         Error::ExtensionPayloadInvalid,
+        Error::UnsupportedCce,
     ];
     for e in all {
         assert!(e.to_string().starts_with("aac:"));

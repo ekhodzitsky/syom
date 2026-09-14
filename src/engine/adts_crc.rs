@@ -17,7 +17,7 @@ use super::error::{Error, Result};
 use super::ics::IcsInfo;
 use super::ics_body::parse_ics;
 use super::raw_data_block::IdSynEle;
-use super::skip::{fill_count, skip_cce, skip_dse};
+use super::skip::{fill_count, parse_cce, skip_dse};
 use super::stereo::MsInfo;
 
 /// Verify every `crc_check` in a complete ADTS frame. CRC-free frames
@@ -138,7 +138,7 @@ fn rdb_protected(payload: &[u8], fs_index: u8, aot: u8) -> Result<(Vec<bool>, us
                 feed_padded(&mut prot, payload, ics2_start, end, 128);
             }
             IdSynEle::Cce => {
-                skip_cce(&mut br, fs_index, aot)?;
+                parse_cce(&mut br, fs_index, aot)?;
                 feed_padded(&mut prot, payload, body_start, br.bit_position(), 192);
             }
             IdSynEle::Dse => {

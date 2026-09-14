@@ -364,14 +364,17 @@ fn dse_pce_lfe_with_silent_end() -> Result<(), Error> {
 }
 
 #[test]
-fn cce_then_silent_sce_skips_coupling() -> Result<(), Error> {
+fn cce_then_silent_sce_is_unsupported() {
     let mut w = BitWriter::new();
     w.write(2, 3); // CCE
     w.write(0, 4);
-    w.write_bit(true);
-    w.write(0, 3);
-    w.write_bit(false);
+    w.write_bit(true); // independent
+    w.write(0, 3); // 1 target
+    w.write_bit(false); // SCE
     w.write(0, 4);
+    w.write_bit(false); // cc_domain
+    w.write_bit(false); // sign
+    w.write(0, 2); // scale
     w.write(100, 8);
     w.write_bit(false);
     w.write(0, 2);
@@ -398,9 +401,10 @@ fn cce_then_silent_sce_skips_coupling() -> Result<(), Error> {
     w.write_bit(false);
     w.write(7, 3);
     let mut dec = StreamDecoder::new();
-    let frame = dec.decode_raw_data_block(2, 3, 48_000, 1, 1, &w.finish())?;
-    assert_eq!(frame.channels, 1);
-    Ok(())
+    let err = dec
+        .decode_raw_data_block(2, 3, 48_000, 1, 1, &w.finish())
+        .expect_err("CCE");
+    assert!(matches!(err, Error::UnsupportedCce));
 }
 
 #[test]

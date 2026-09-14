@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- `coupling_channel_element` is parsed completely (FAAD2 Table 4.4.8 field
+  order, including gain-element VLCs) and then rejected as
+  `UnsupportedCce`. Truncated gain syntax is an error. Non-CCE streams
+  are unchanged; coupling reconstruction remains TASK-35/36.
 - Multichannel filterbank overlap is keyed by channel-element `(kind, tag)`,
   not bitstream encounter order. Legal reordering keeps each identity's
   history; identities missing from a frame are dropped so a later tag reuse

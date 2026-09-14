@@ -68,17 +68,17 @@ pub(super) fn write_cpe(w: &mut BitWriter, tag: u8, line_l: u8, line_r: u8) {
     write_ics_line(w, line_r);
 }
 
-/// Minimal CCE: one SCE target, silent coupling ICS, no gain elements —
-/// exactly the bits `skip_cce` consumes.
+/// Minimal dependent CCE: one SCE target, silent ICS, FAAD2 Table 4.4.8 order.
 fn write_cce_stub(w: &mut BitWriter) {
     w.write(2, 3); // ID_CCE
     w.write(0, 4); // element_instance_tag
     w.write_bit(false); // ind_sw
     w.write(0, 3); // 1 coupling target
-    w.write_bit(false); // sign
-    w.write(0, 2); // scale
     w.write_bit(false); // target is SCE
     w.write(0, 4); // target tag
+    w.write_bit(false); // cc_domain
+    w.write_bit(false); // sign
+    w.write(0, 2); // scale
     w.write(128, 8); // coupling ICS global_gain
     w.write_bit(false); // ics reserved
     w.write(0, 2); // ONLY_LONG
@@ -385,19 +385,14 @@ fn pce_declaration_order_overrides_element_order() -> Result<(), Error> {
 }
 
 #[test]
-fn cce_between_channels_does_not_corrupt_them() -> Result<(), Error> {
-    let ref_a = decode_planes(&sce_payload(0, 1), 1)?;
-    let ref_b = decode_planes(&sce_payload(1, 3), 1)?;
+fn cce_between_channels_is_unsupported_not_uncoupled_pcm() {
     let mut w = BitWriter::new();
     write_sce(&mut w, 0, 1);
     write_cce_stub(&mut w);
     write_sce(&mut w, 1, 3);
     w.write(7, 3);
-    let planar = decode_planes(&w.finish(), 0)?;
-    assert_eq!(planar.len(), 2, "CCE must not emit a plane");
-    assert_eq!(planar[0], ref_a[0], "channel before CCE corrupted");
-    assert_eq!(planar[1], ref_b[0], "channel after CCE corrupted");
-    Ok(())
+    let err = decode_planes(&w.finish(), 0).expect_err("CCE");
+    assert!(matches!(err, Error::UnsupportedCce));
 }
 
 #[test]

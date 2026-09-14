@@ -87,6 +87,10 @@ mod tools_tests;
 mod channel_map_tests;
 
 #[cfg(test)]
+#[path = "skip_tests.rs"]
+mod skip_tests;
+
+#[cfg(test)]
 #[path = "fb_pool_tests.rs"]
 mod fb_pool_tests;
 
