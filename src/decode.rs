@@ -1,10 +1,12 @@
 //! One-shot decode: a collecting frame callback over the streaming core
 //! (`stream` module owns the container state machines and caps).
 
+use std::io::Read;
+
 use crate::engine::adts::AdtsHeader;
-use crate::error::Result;
+use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
-use crate::options::{ChannelMode, DecodeOptions};
+use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
 use crate::stream::{decode_streaming, decode_streaming_mono_into};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
@@ -33,12 +35,30 @@ pub fn decode_bytes(data: &[u8]) -> Result<DecodedAac> {
 
 /// Read a file and [`decode`] it.
 pub fn read(path: impl AsRef<std::path::Path>) -> Result<DecodedAac> {
-    decode(&std::fs::read(path)?)
+    decode(&read_file_capped(path, DEFAULT_MAX_INPUT_BYTES)?)
 }
 
 /// Read a file and [`decode_with`] it.
 pub fn read_with(path: impl AsRef<std::path::Path>, opts: &DecodeOptions) -> Result<DecodedAac> {
-    decode_with(&std::fs::read(path)?, opts)
+    decode_with(&read_file_capped(path, DEFAULT_MAX_INPUT_BYTES)?, opts)
+}
+
+/// Load at most `limit` compressed bytes. Metadata larger than `limit` is
+/// rejected before allocating that size; a file that grows after `stat` is
+/// still stopped at `limit + 1` and rejected.
+pub(crate) fn read_file_capped(path: impl AsRef<std::path::Path>, limit: u64) -> Result<Vec<u8>> {
+    let path = path.as_ref();
+    let meta = std::fs::metadata(path)?;
+    if meta.len() > limit {
+        return Err(AacError::too_long(meta.len() as f64 / 40_000.0, 0.0));
+    }
+    let file = std::fs::File::open(path)?;
+    let mut buf = Vec::new();
+    file.take(limit.saturating_add(1)).read_to_end(&mut buf)?;
+    if buf.len() as u64 > limit {
+        return Err(AacError::too_long(buf.len() as f64 / 40_000.0, 0.0));
+    }
+    Ok(buf)
 }
 
 /// Decode ADTS, M4A, or LATM/LOAS bytes under `opts`.

@@ -14,6 +14,8 @@ mod options;
 mod sniff;
 mod stream;
 
+#[cfg(test)]
+pub(crate) use decode::read_file_capped;
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{encode, encode_with, write, write_with};
@@ -30,6 +32,10 @@ pub use stream::{Decoder, Frame, StreamInfo, decode_streaming};
 #[cfg(test)]
 #[path = "decode_tests.rs"]
 mod decode_tests;
+
+#[cfg(test)]
+#[path = "decode_read_tests.rs"]
+mod decode_read_tests;
 
 #[cfg(test)]
 #[path = "decode_cmp_tests.rs"]

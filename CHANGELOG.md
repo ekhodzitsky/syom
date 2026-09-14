@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   duration) now error as `AacError::InvalidLimits` before decode work.
   `+∞` remains the explicit unbounded contract. NaN/−∞ no longer open an
   unlimited frame budget.
+- `read` / `read_with` check the compressed file size (and cap the subsequent
+  read) against `DEFAULT_MAX_INPUT_BYTES` before allocating the whole file.
 
 ## [0.6.0] - 2026-09-06
 
