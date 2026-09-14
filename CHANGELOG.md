@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- ASC `channel_configuration=0` now parses the embedded
+  `program_config_element` (LC object type, matching core rate, unique
+  tags). M4A/LATM seed the decoder map from it; in-band PCE still wins.
+  No ISO 14496-26 PCE bitstream is claimed.
 - HE `AudioSpecificConfig` parse follows Amd 2/9: explicit AOT 5/29
   consume a core rate and an extension rate (not one rate halved);
   implicit `0x2b7` reads `extensionSamplingFrequencyIndex`; `0x548`

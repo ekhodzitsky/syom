@@ -66,6 +66,11 @@ impl StreamDecoder {
         Self::default()
     }
 
+    /// Seed mapping from an ASC-embedded PCE (M4A/LATM). In-band PCE still wins.
+    pub(crate) fn set_config_pce(&mut self, pce: PceChannelMap) {
+        self.pce = Some(pce);
+    }
+
     #[cfg(test)]
     pub fn decode_frame(&mut self, header: &AdtsHeader, payload: &[u8]) -> Result<DecodedFrame> {
         self.decode_raw_data_block(

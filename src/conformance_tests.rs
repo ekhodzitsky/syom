@@ -116,6 +116,8 @@ fn asc_matches(bytes: &[u8], ind: &str) -> bool {
             .is_none_or(|v| u64::from(asc.channel_configuration) == v)
         && json_bool(ind, "sbr_present").is_none_or(|v| asc.sbr_present == v)
         && json_bool(ind, "ps_present").is_none_or(|v| asc.ps_present == v)
+        && json_u(ind, "pce_front_sce")
+            .is_none_or(|v| asc.pce.as_ref().map(|p| p.front.len() as u64) == Some(v))
 }
 
 fn adts_matches(bytes: &[u8], ind: &str) -> bool {

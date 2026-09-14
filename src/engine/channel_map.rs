@@ -17,7 +17,7 @@
 //! reduces to the historical `0.5·(L+R)`.
 
 use super::bits::BitReader;
-use super::error::Result;
+use super::error::{Error, Result};
 
 /// Decoded syntactic element kind relevant to channel mapping.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +48,10 @@ impl Element {
 /// Parsed `program_config_element()` channel lists, in declaration order.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct PceChannelMap {
+    pub tag: u8,
+    /// MPEG-2 `object_type` (1 = LC).
+    pub object_type: u8,
+    pub sf_index: u8,
     /// `(is_cpe, element_instance_tag)`.
     pub front: Vec<(bool, u8)>,
     pub side: Vec<(bool, u8)>,
@@ -57,9 +61,18 @@ pub(crate) struct PceChannelMap {
 
 /// `program_config_element()` — parsed and applied to channel ordering.
 pub(crate) fn parse_pce(br: &mut BitReader<'_>) -> Result<PceChannelMap> {
-    let _tag = br.read(4)?;
-    let _object_type = br.read(2)?;
-    let _sf_index = br.read(4)?;
+    parse_pce_checked(br, None)
+}
+
+/// ASC-embedded PCE: `object_type` must be LC and `sf_index` must match the core.
+pub(crate) fn parse_pce_in_asc(br: &mut BitReader<'_>, sf_index: u8) -> Result<PceChannelMap> {
+    parse_pce_checked(br, Some(sf_index))
+}
+
+fn parse_pce_checked(br: &mut BitReader<'_>, asc_sf: Option<u8>) -> Result<PceChannelMap> {
+    let tag = br.read(4)? as u8;
+    let object_type = br.read(2)? as u8;
+    let sf_index = br.read(4)? as u8;
     let num_front = br.read(4)? as usize;
     let num_side = br.read(4)? as usize;
     let num_back = br.read(4)? as usize;
@@ -93,12 +106,49 @@ pub(crate) fn parse_pce(br: &mut BitReader<'_>) -> Result<PceChannelMap> {
     br.byte_align()?;
     let comment_bytes = br.read(8)?;
     br.skip(comment_bytes.saturating_mul(8))?;
-    Ok(PceChannelMap {
+    let pce = PceChannelMap {
+        tag,
+        object_type,
+        sf_index,
         front,
         side,
         back,
         lfe,
-    })
+    };
+    reject_duplicate_tags(&pce)?;
+    if let Some(want_sf) = asc_sf {
+        if object_type != 1 {
+            return Err(Error::Format("PCE object_type is not LC"));
+        }
+        if sf_index != want_sf {
+            return Err(Error::Format("PCE sf_index does not match ASC"));
+        }
+        if pce.front.is_empty() && pce.side.is_empty() && pce.back.is_empty() && pce.lfe.is_empty()
+        {
+            return Err(Error::Format("PCE declares no channel elements"));
+        }
+    }
+    Ok(pce)
+}
+
+fn reject_duplicate_tags(pce: &PceChannelMap) -> Result<()> {
+    let mut sce = [false; 16];
+    let mut cpe = [false; 16];
+    let mut lfe = [false; 16];
+    for &(is_cpe, tag) in pce.front.iter().chain(&pce.side).chain(&pce.back) {
+        let seen = if is_cpe { &mut cpe } else { &mut sce };
+        if seen[tag as usize] {
+            return Err(Error::Format("PCE duplicate element tag"));
+        }
+        seen[tag as usize] = true;
+    }
+    for &tag in &pce.lfe {
+        if lfe[tag as usize] {
+            return Err(Error::Format("PCE duplicate element tag"));
+        }
+        lfe[tag as usize] = true;
+    }
+    Ok(())
 }
 
 fn read_element_list(br: &mut BitReader<'_>, n: usize) -> Result<Vec<(bool, u8)>> {

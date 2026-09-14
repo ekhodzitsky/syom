@@ -40,6 +40,9 @@ where
 
     let mono = matches!(opts.channel_mode, ChannelMode::Mono);
     let mut dec = StreamDecoder::new();
+    if let Some(pce) = asc.pce.clone() {
+        dec.set_config_pce(pce);
+    }
     dec.mix_down_mono = mono;
     let mut scratch: Vec<f32> = Vec::new();
     let mut skip_left = track.skip_samples(out_rate);

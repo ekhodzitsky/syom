@@ -121,6 +121,97 @@ fn explicit_24bit_core_rate() -> Result<()> {
 }
 
 #[test]
+fn ch0_without_pce_is_truncated() {
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(0, 4);
+    w.write(0, 3);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::UnexpectedEnd)
+    ));
+}
+
+#[test]
+fn embedded_pce_rejects_object_type_and_rate_and_dup_tag() {
+    // object_type=0 (Main), otherwise the authored LC PCE.
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(0, 4); // tag
+    w.write(0, 2); // Main
+    w.write(3, 4);
+    w.write(1, 4); // one front
+    w.write(0, 4);
+    w.write(0, 4);
+    w.write(0, 2);
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(0, 3); // mixdowns
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(0, 8); // align+comment may pad
+    let err = AudioSpecificConfig::parse(&w.finish()).unwrap_err();
+    assert!(
+        matches!(err, Error::Format("PCE object_type is not LC")),
+        "{err:?}"
+    );
+
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(1, 2); // LC
+    w.write(4, 4); // 44.1 kHz, ASC is 48 kHz
+    w.write(1, 4);
+    w.write(0, 4);
+    w.write(0, 4);
+    w.write(0, 2);
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(0, 8);
+    let err = AudioSpecificConfig::parse(&w.finish()).unwrap_err();
+    assert!(
+        matches!(err, Error::Format("PCE sf_index does not match ASC")),
+        "{err:?}"
+    );
+
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(1, 2);
+    w.write(3, 4);
+    w.write(2, 4); // two front SCE, same tag
+    w.write(0, 4);
+    w.write(0, 4);
+    w.write(0, 2);
+    w.write(0, 3);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write_bit(false);
+    w.write(0, 4);
+    w.write(0, 8);
+    let err = AudioSpecificConfig::parse(&w.finish()).unwrap_err();
+    assert!(
+        matches!(err, Error::Format("PCE duplicate element tag")),
+        "{err:?}"
+    );
+}
+
+#[test]
 fn sbr_present_flag_zero_stays_lc() -> Result<()> {
     // 0x2b7 + AOT5 + sbrPresentFlag=0 must not become HE (LC padding).
     let mut w = BitWriter::new();

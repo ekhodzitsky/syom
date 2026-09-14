@@ -174,7 +174,7 @@
       "finding": "F09",
       "hex": "118004c400000000",
       "bit_notes": "AOT=2, sf=3, channelConfiguration=0, GA zeros, then a one-SCE PCE (tag 0, object LC, sf=3) plus comment_field_bytes=0",
-      "agreement": "partial",
+      "agreement": "match",
       "follow_on": "TASK-27",
       "independent": {
         "aot": 2,

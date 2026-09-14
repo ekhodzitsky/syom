@@ -166,14 +166,47 @@ fn parse_pce_reads_front_back_lfe_lists() -> Result<(), Error> {
 
 #[test]
 fn asc_channel_configuration_zero_parses() -> Result<(), Error> {
-    let mut w = BitWriter::new();
-    w.write(2, 5); // LC
-    w.write(3, 4); // 48 kHz
-    w.write(0, 4); // channel_configuration 0 → in-band PCE
-    w.write(0, 3); // GASpecificConfig flags
-    let (asc, _) = AudioSpecificConfig::parse(&w.finish())?;
+    let (asc, _) = AudioSpecificConfig::parse(&unhex_pce_asc())?;
     assert_eq!(asc.channel_configuration, 0);
     assert_eq!(asc.sample_rate, 48_000);
+    let pce = asc.pce.expect("embedded PCE");
+    assert_eq!(pce.object_type, 1);
+    assert_eq!(pce.sf_index, 3);
+    assert_eq!(pce.front, vec![(false, 0)]);
+    Ok(())
+}
+
+fn unhex_pce_asc() -> Vec<u8> {
+    // TASK-17 `asc-lc-ch0-embedded-pce`
+    hex_bytes("118004c400000000")
+}
+
+fn hex_bytes(s: &str) -> Vec<u8> {
+    (0..s.len() / 2)
+        .map(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
+        .collect()
+}
+
+#[test]
+fn asc_embedded_pce_seeds_decoder_without_in_band_pce() -> Result<(), Error> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex_pce_asc())?;
+    let mut dec = StreamDecoder::new();
+    dec.set_config_pce(asc.pce.expect("embedded PCE"));
+    let frame = dec.decode_raw_data_block(2, 3, 48_000, 0, 1, &sce_payload(0, 8))?;
+    assert_eq!(frame.planar.len(), 1);
+    Ok(())
+}
+
+#[test]
+fn embedded_and_in_band_pce_lists_agree() -> Result<(), Error> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex_pce_asc())?;
+    let embedded = asc.pce.expect("embedded PCE");
+    let pce_bits = hex_bytes("04c400000000");
+    let mut br = BitReader::new(&pce_bits);
+    let in_band = parse_pce(&mut br)?;
+    assert_eq!(embedded.front, in_band.front);
+    assert_eq!(embedded.object_type, in_band.object_type);
+    assert_eq!(embedded.sf_index, in_band.sf_index);
     Ok(())
 }
 

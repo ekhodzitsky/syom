@@ -6,6 +6,7 @@
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::{BitReader, BitWriter};
+use super::channel_map::{PceChannelMap, parse_pce_in_asc};
 use super::error::{Error, Result};
 
 const AOT_LC: u8 = 2;
@@ -42,6 +43,8 @@ pub struct AudioSpecificConfig {
     pub sbr_present: bool,
     /// HE-AAC v2 parametric stereo.
     pub ps_present: bool,
+    /// ASC-embedded `program_config_element()` when `channel_configuration == 0`.
+    pub(crate) pce: Option<PceChannelMap>,
 }
 
 impl AudioSpecificConfig {
@@ -69,27 +72,27 @@ impl AudioSpecificConfig {
         let mut sbr_present = outer_aot == AOT_SBR || outer_aot == AOT_PS;
         let mut ps_present = outer_aot == AOT_PS;
         let mut output_sample_rate = sample_rate;
-        let aot = if sbr_present {
+        let (aot, pce) = if sbr_present {
             let ext_idx = reader.read(4)? as u8;
             output_sample_rate = resolve_rate(ext_idx, reader)?;
             let inner = read_aot(reader)?;
             if inner != AOT_LC {
                 return Err(Error::UnsupportedAot(inner));
             }
-            parse_ga(reader)?;
-            inner
+            let pce = parse_ga(reader, channel_configuration, sampling_frequency_index)?;
+            (inner, pce)
         } else {
             if outer_aot != AOT_LC {
                 return Err(Error::UnsupportedAot(outer_aot));
             }
-            parse_ga(reader)?;
+            let pce = parse_ga(reader, channel_configuration, sampling_frequency_index)?;
             parse_implicit_sbr(
                 reader,
                 &mut sbr_present,
                 &mut ps_present,
                 &mut output_sample_rate,
             )?;
-            outer_aot
+            (outer_aot, pce)
         };
         if sbr_present {
             check_sbr_rates(sample_rate, output_sample_rate)?;
@@ -102,6 +105,7 @@ impl AudioSpecificConfig {
             channel_configuration,
             sbr_present,
             ps_present,
+            pce,
         })
     }
 }
@@ -169,7 +173,11 @@ fn resolve_rate(index: u8, reader: &mut BitReader<'_>) -> Result<u32> {
         .ok_or(Error::UnsupportedSampleRateIndex(index))
 }
 
-fn parse_ga(reader: &mut BitReader<'_>) -> Result<()> {
+fn parse_ga(
+    reader: &mut BitReader<'_>,
+    channel_configuration: u8,
+    sf_index: u8,
+) -> Result<Option<PceChannelMap>> {
     let frame_length_flag = reader.read_bit()?;
     if frame_length_flag {
         return Err(Error::UnsupportedFrameLength);
@@ -179,14 +187,18 @@ fn parse_ga(reader: &mut BitReader<'_>) -> Result<()> {
         let _core_coder_delay = reader.read(14)?;
     }
     let extension_flag = reader.read_bit()?;
-    // channel_configuration == 0 is allowed: the PCE is applied in-band.
+    let pce = if channel_configuration == 0 {
+        Some(parse_pce_in_asc(reader, sf_index)?)
+    } else {
+        None
+    };
     if extension_flag {
         let extension_flag3 = reader.read_bit()?;
         if extension_flag3 {
             return Err(Error::Format("ASC extensionFlag3 is Media"));
         }
     }
-    Ok(())
+    Ok(pce)
 }
 
 #[cfg(test)]

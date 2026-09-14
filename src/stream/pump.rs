@@ -174,7 +174,11 @@ impl Decoder {
             let mut br = BitReader::new(body);
             let use_same = br.read_bit().map_err(AacError::from)?;
             if !use_same {
-                self.mux = Some(MuxCfg::parse(&mut br).map_err(AacError::from)?);
+                let cfg = MuxCfg::parse(&mut br).map_err(AacError::from)?;
+                if let Some(pce) = cfg.asc.pce.clone() {
+                    self.dec.set_config_pce(pce);
+                }
+                self.mux = Some(cfg);
             }
             let cfg = self
                 .mux
