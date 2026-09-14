@@ -162,3 +162,9 @@ fn encode_short_group_defaults_off() {
     assert!(!EncodeOptions::default().short_group);
     assert!(EncodeOptions::adts().with_short_group(true).short_group);
 }
+
+#[test]
+fn encode_band_refine_defaults_off() {
+    assert!(!EncodeOptions::default().band_refine);
+    assert!(EncodeOptions::adts().with_band_refine(true).band_refine);
+}

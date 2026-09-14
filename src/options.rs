@@ -233,6 +233,8 @@ pub struct EncodeOptions {
     pub short_tns: bool,
     /// Short-window grouping (TASK-71). Default off — 8 groups of 1.
     pub short_group: bool,
+    /// Bandwise leftover-bit sf refine (TASK-74). Default off.
+    pub band_refine: bool,
 }
 
 impl Default for EncodeOptions {
@@ -245,6 +247,7 @@ impl Default for EncodeOptions {
             tonality: false,
             short_tns: false,
             short_group: false,
+            band_refine: false,
         }
     }
 }
@@ -326,6 +329,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_short_group(mut self, on: bool) -> Self {
         self.short_group = on;
+        self
+    }
+
+    /// Spend leftover frame bits on `sf[b] -= 1` for underfunded long-window
+    /// bands (at most 16 keeps / 48 tries). Off by default.
+    #[inline]
+    pub fn with_band_refine(mut self, on: bool) -> Self {
+        self.band_refine = on;
         self
     }
 }

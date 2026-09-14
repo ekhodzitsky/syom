@@ -4,7 +4,8 @@
 
 use super::super::swb::long_offsets;
 use super::{
-    MAX_BANDS, QuantChannel, band_peaks, normalize_sf, quantize, raw_scalefactors, sf_for_peak,
+    MAX_BANDS, QuantChannel, band_peaks, dpcm_ok, normalize_sf, quantize, raw_scalefactors,
+    requant_band, sf_for_peak,
 };
 
 #[test]
@@ -93,4 +94,85 @@ fn band_peaks_tracks_spectrum() {
     let b100 = offsets.iter().position(|&o| o > 100).expect("band") - 1;
     assert_eq!(peaks[b100], 7.5);
     assert_eq!(peaks[0], 0.0);
+}
+
+#[test]
+fn dpcm_ok_enforces_range_and_delta() {
+    let mut sf = [0i32; 4];
+    let coded = [true, true, false, true];
+    sf[0] = 100;
+    sf[1] = 160;
+    sf[3] = 160;
+    assert!(dpcm_ok(&sf, &coded, 4));
+    sf[1] = 161;
+    assert!(!dpcm_ok(&sf, &coded, 4));
+    sf[1] = 160;
+    sf[0] = -1;
+    assert!(!dpcm_ok(&sf, &coded, 4));
+}
+
+#[test]
+fn requant_band_matches_full_quantize_on_that_band() {
+    let offsets = long_offsets(3).expect("48k");
+    let n = offsets.len() - 1;
+    let mut spec = [0.0f32; 1024];
+    for (i, x) in spec.iter_mut().enumerate() {
+        *x = ((i % 17) as f32 - 8.0) * 100.0;
+    }
+    let mut q = QuantChannel::new(n);
+    q.coded[..n].fill(true);
+    q.sf[..n].fill(100);
+    quantize(&spec, offsets, &mut q);
+    let b = 10usize;
+    q.sf[b] = 99;
+    requant_band(&spec, offsets, &mut q, b);
+    let mut q2 = QuantChannel::new(n);
+    q2.coded[..n].fill(true);
+    q2.sf[..n].fill(100);
+    q2.sf[b] = 99;
+    quantize(&spec, offsets, &mut q2);
+    let lo = usize::from(offsets[b]);
+    let hi = usize::from(offsets[b + 1]);
+    assert_eq!(&q.quant[lo..hi], &q2.quant[lo..hi]);
+    assert_eq!(q.bits[b], q2.bits[b]);
+}
+
+#[test]
+fn two_band_one_step_picks_higher_error() {
+    // Exhaustive 0/1 decrement on two isolated coded bands: the higher
+    // energy/(qmax+1) band is the unique best single step.
+    let offsets = long_offsets(3).expect("48k");
+    let n = offsets.len() - 1;
+    let mut spec = [0.0f32; 1024];
+    let b0 = 4usize;
+    let b1 = 20usize;
+    let lo0 = usize::from(offsets[b0]);
+    let hi0 = usize::from(offsets[b0 + 1]);
+    let lo1 = usize::from(offsets[b1]);
+    let hi1 = usize::from(offsets[b1 + 1]);
+    for x in spec[lo0..hi0].iter_mut() {
+        *x = 800.0;
+    }
+    for x in spec[lo1..hi1].iter_mut() {
+        *x = 80.0;
+    }
+    let mut q = QuantChannel::new(n);
+    q.coded[b0] = true;
+    q.coded[b1] = true;
+    q.sf[b0] = 100;
+    q.sf[b1] = 100;
+    quantize(&spec, offsets, &mut q);
+    let score = |q: &QuantChannel, lo: usize, hi: usize| {
+        let e: f32 = spec[lo..hi].iter().map(|x| x * x).sum();
+        let qmax = q.quant[lo..hi]
+            .iter()
+            .map(|v| v.unsigned_abs())
+            .max()
+            .unwrap_or(0);
+        e / (qmax as f32 + 1.0)
+    };
+    let s0 = score(&q, lo0, hi0);
+    let s1 = score(&q, lo1, hi1);
+    assert!(s0 > s1, "loud band must score higher: {s0} vs {s1}");
+    assert!(dpcm_ok(&q.sf, &q.coded, n));
 }

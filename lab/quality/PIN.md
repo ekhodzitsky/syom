@@ -6,7 +6,8 @@ A/B is `syom_tonality` (`make tonality` / `TONALITY.md`). TASK-70 pre-echo
 sweep is ordinary `encode_preecho_tests` plus `PREECHO.md`. TASK-72 short
 TNS is `encode_short_tns_tests` plus `SHORT_TNS.md`. TASK-71 grouping is
 `encode_group_tests` plus `GROUPING.md`. TASK-73 section DP is
-`enc_section_tests` plus `SECTION.md`. Same isolation.
+`enc_section_tests` plus `SECTION.md`. TASK-74 band refine is
+`encode_refine_tests` plus `REFINE.md`. Same isolation.
 
 ## Independent decoder
 

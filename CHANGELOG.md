@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in bandwise leftover-bit scalefactor refine (TASK-74):
+  `EncodeOptions::with_band_refine`. Default off — one global sf offset
+  unchanged. Long frames only; ≤16 `sf[b]-=1` on underfunded bands
+  (`qmax < TARGET_Q`) under the frame budget. Ablation
+  (`lab/quality/REFINE.md`): noise +0.07 dB priming-SNR, sine 0.00 dB
+  (**no-go** as 0.x default, < 0.3 dB gate).
 - Exact AAC section-partition DP (TASK-73): `plan_books_dp` matches an
   independent exhaustive oracle on n≤8 and never exceeds greedy cost.
   Production `plan_books` stays greedy — 64 LCG channels saved **0.36%**

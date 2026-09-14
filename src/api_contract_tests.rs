@@ -116,6 +116,7 @@ fn stream_and_encode_signatures_hold() -> Result<()> {
     assert!(!EncodeOptions::default().tonality);
     assert!(!EncodeOptions::default().short_tns);
     assert!(!EncodeOptions::default().short_group);
+    assert!(!EncodeOptions::default().band_refine);
     assert_eq!(EncodeOptions::default().bitrate_bps, 128_000);
     Ok(())
 }

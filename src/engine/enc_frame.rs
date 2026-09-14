@@ -6,8 +6,8 @@
 //!
 //! Block switching: OnlyLong → LongStart → EightShort → LongStop; CPE
 //! `common_window = 1` ORs both detectors. TNS is long-only unless
-//! `with_short_tns`. Grouping is 8×1 unless `with_short_group`. No
-//! PNS/intensity, no bit reservoir.
+//! `with_short_tns`. Grouping 8×1 unless `with_short_group`. Band sf
+//! refine off unless `with_band_refine`. No PNS/intensity, no reservoir.
 //!
 //! Known causal weakness, and the opt-in fix: the LongStart window stays
 //! flat for the first 1024 + 448 taps, so an attack landing in the first
@@ -83,6 +83,7 @@ pub struct LcEncoder {
     lookahead: bool,
     short_tns: bool,
     short_group: bool,
+    band_refine: bool,
     grouping: super::enc_group::Grouping,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
@@ -158,6 +159,7 @@ impl LcEncoder {
             lookahead: false,
             short_tns: false,
             short_group: false,
+            band_refine: false,
             grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
             chans_s: Box::new([
@@ -359,6 +361,7 @@ impl LcEncoder {
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, &psy_specs, spend);
         self.build(&specs, &psy_specs, offset);
+        self.refine_bands(&specs, spend);
         let (out, coded) = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)));
         if out.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
             return Err(Error::Format("LC encoder: frame exceeds 6144 bits/channel"));
@@ -374,6 +377,9 @@ impl LcEncoder {
 #[path = "enc_frame_rate.rs"]
 mod rate;
 pub use rate::max_bitrate_bps;
+
+#[path = "enc_refine.rs"]
+mod refine;
 
 /// One-frame attack lookahead (`enc_frame_lookahead.rs`): `push_frame` /
 /// `flush`, split out for the line cap. A child module, like `rate`.

@@ -42,6 +42,11 @@ impl LcEncoder {
         self
     }
 
+    pub(crate) fn with_band_refine(mut self, on: bool) -> Self {
+        self.band_refine = on;
+        self
+    }
+
     pub(super) fn apply_tns(
         &mut self,
         specs: &mut [[f32; LONG_WINDOW_LEN]; 2],

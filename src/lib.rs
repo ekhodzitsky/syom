@@ -152,6 +152,10 @@ mod encode_group_tests;
 mod encode_section_tests;
 
 #[cfg(test)]
+#[path = "encode_refine_tests.rs"]
+mod encode_refine_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

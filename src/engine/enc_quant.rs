@@ -197,6 +197,44 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
     }
 }
 
+/// Re-quantize one long-window band after an `sf` tweak.
+pub fn requant_band(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel, b: usize) {
+    if b >= out.n_bands || !out.coded[b] {
+        return;
+    }
+    let lo = usize::from(offsets[b]);
+    let hi = usize::from(offsets[b + 1]);
+    let gain = det_math::exp2(-0.1875f32 * (out.sf[b] - SF_OFFSET) as f32);
+    for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
+        let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
+        let mag = mag.min(QUANT_MAX);
+        *q = if x < 0.0 { -mag } else { mag };
+    }
+    fill_bits(&mut out.bits[b], &out.quant[lo..hi]);
+}
+
+/// `true` if consecutive coded scalefactors are in `[0, 255]` with DPCM ±60.
+#[must_use]
+pub fn dpcm_ok(sf: &[i32], coded: &[bool], n: usize) -> bool {
+    let mut prev: Option<i32> = None;
+    for b in 0..n {
+        if !coded[b] {
+            continue;
+        }
+        let v = sf[b];
+        if !(0..=255).contains(&v) {
+            return false;
+        }
+        if let Some(p) = prev
+            && (v - p).abs() > 60
+        {
+            return false;
+        }
+        prev = Some(v);
+    }
+    true
+}
+
 /// Cost of one band under every book: quad books 1–4 walk 4-tuples, pair
 /// books 5–11 walk pairs (long-window band widths are multiples of 4).
 fn fill_bits(bits: &mut [u32; BOOKS], vals: &[i32]) {
