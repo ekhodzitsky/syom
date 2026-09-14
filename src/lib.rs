@@ -148,6 +148,10 @@ mod encode_short_tns_tests;
 mod encode_group_tests;
 
 #[cfg(test)]
+#[path = "encode_section_tests.rs"]
+mod encode_section_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

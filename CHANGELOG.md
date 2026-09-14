@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Exact AAC section-partition DP (TASK-73): `plan_books_dp` matches an
+  independent exhaustive oracle on n≤8 and never exceeds greedy cost.
+  Production `plan_books` stays greedy — 64 LCG channels saved **0.36%**
+  section+spectral bits (< 2% gate). Goldens unchanged
+  (`lab/quality/SECTION.md`).
 - Opt-in short-window grouping (TASK-71): `EncodeOptions::with_short_group`.
   Default off — 8 groups of 1, `enc48t` goldens unchanged. Consecutive
   windows merge when energy is within 6 dB. Independent ICS parse-back.

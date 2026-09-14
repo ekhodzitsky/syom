@@ -8,8 +8,12 @@ use super::super::ics::{IcsInfo, WindowSequence};
 use super::super::section::SectionData;
 use super::super::sf::{self, ScaleFactors};
 use super::super::swb::long_offsets;
-use super::{channel_body_bits, emit_channel_body, emit_ics_info, emit_section_data, plan_books};
+use super::{
+    channel_body_bits, emit_channel_body, emit_ics_info, emit_section_data, plan_books,
+    plan_books_dp, plan_books_into, range_book_bits, section_header_bits, section_spectral_cost,
+};
 use crate::engine::enc_quant::QuantChannel;
+use crate::engine::enc_quant::{BOOKS, UNREPRESENTABLE};
 
 /// A channel with alternating loud/quiet bands so planning is non-trivial.
 fn sample_channel(n_bands: usize) -> QuantChannel {
@@ -160,4 +164,182 @@ fn channel_body_bits_match_emit() {
             assert_eq!(sf.sf[0][b], q.sf[b], "band {b} scalefactor");
         }
     }
+}
+
+/// Independent exhaustive min cost of a coded stretch (same recurrence as
+/// production DP, not calling `plan_stretch_dp`).
+fn oracle_stretch_cost(
+    coded: &[bool],
+    bits: &[[u32; BOOKS]],
+    lo: usize,
+    hi: usize,
+    header_bits: fn(usize) -> usize,
+) -> u32 {
+    let n = hi - lo;
+    let mut dp = vec![u32::MAX; n + 1];
+    dp[0] = 0;
+    for i in 1..=n {
+        for j in 0..i {
+            for cb in 1..BOOKS {
+                let spec = range_book_bits(coded, bits, lo + j, lo + i, cb);
+                if spec == UNREPRESENTABLE {
+                    continue;
+                }
+                let c = dp[j]
+                    .saturating_add(spec)
+                    .saturating_add(header_bits(i - j) as u32);
+                if c < dp[i] {
+                    dp[i] = c;
+                }
+            }
+        }
+    }
+    dp[n]
+}
+
+fn lcg_channel(n: usize, seed: u32) -> QuantChannel {
+    let mut q = QuantChannel::new(n);
+    let mut s = seed;
+    for b in 0..n {
+        s = s.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        q.coded[b] = !s.is_multiple_of(5);
+        q.sf[b] = 80 + (s % 40) as i32;
+        if q.coded[b] {
+            for cb in 1..BOOKS {
+                s = s.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                q.bits[b][cb] = 8 + (s % 80);
+            }
+            // Make one book clearly cheap, another expensive.
+            q.bits[b][1 + (b % 10)] = 4;
+        }
+    }
+    q
+}
+
+#[test]
+fn dp_matches_independent_oracle_on_small_stretches() {
+    for seed in [1u32, 7, 99, 12345] {
+        let q = lcg_channel(8, seed);
+        let mut dp = [0u8; 8];
+        plan_books_dp(&q.coded, &q.bits, 8, &mut dp, section_header_bits);
+        let got = section_spectral_cost(&dp, &q.coded, &q.bits, 8, section_header_bits);
+        // Oracle over each coded stretch, summed with ZERO headers.
+        let mut lo = 0usize;
+        let mut oracle = 0u64;
+        while lo < 8 {
+            if !q.coded[lo] {
+                // ZERO section run
+                let mut hi = lo + 1;
+                while hi < 8 && !q.coded[hi] {
+                    hi += 1;
+                }
+                oracle += section_header_bits(hi - lo) as u64;
+                lo = hi;
+                continue;
+            }
+            let mut hi = lo + 1;
+            while hi < 8 && q.coded[hi] {
+                hi += 1;
+            }
+            oracle += u64::from(oracle_stretch_cost(
+                &q.coded,
+                &q.bits,
+                lo,
+                hi,
+                section_header_bits,
+            ));
+            lo = hi;
+        }
+        assert_eq!(got, oracle, "seed {seed}");
+        let short_hdr = |len: usize| 4 + 3 * (len / 7 + 1);
+        let mut dp_s = [0u8; 8];
+        plan_books_dp(&q.coded, &q.bits, 8, &mut dp_s, short_hdr);
+        let got_s = section_spectral_cost(&dp_s, &q.coded, &q.bits, 8, short_hdr);
+        let mut lo = 0usize;
+        let mut oracle_s = 0u64;
+        while lo < 8 {
+            if !q.coded[lo] {
+                let mut hi = lo + 1;
+                while hi < 8 && !q.coded[hi] {
+                    hi += 1;
+                }
+                oracle_s += short_hdr(hi - lo) as u64;
+                lo = hi;
+                continue;
+            }
+            let mut hi = lo + 1;
+            while hi < 8 && q.coded[hi] {
+                hi += 1;
+            }
+            oracle_s += u64::from(oracle_stretch_cost(&q.coded, &q.bits, lo, hi, short_hdr));
+            lo = hi;
+        }
+        assert_eq!(got_s, oracle_s, "short-hdr seed {seed}");
+    }
+}
+
+#[test]
+fn dp_never_more_expensive_than_greedy() {
+    let mut saved = 0u64;
+    let mut base = 0u64;
+    for seed in 0u32..64 {
+        let n = 49;
+        let q = lcg_channel(n, 0xC0FF_EE00 ^ seed);
+        let mut dp = [0u8; 51];
+        let mut gr = [0u8; 51];
+        plan_books_dp(&q.coded, &q.bits, n, &mut dp, section_header_bits);
+        plan_books_into(&q.coded, &q.bits, n, &mut gr, section_header_bits);
+        let c_dp = section_spectral_cost(&dp, &q.coded, &q.bits, n, section_header_bits);
+        let c_gr = section_spectral_cost(&gr, &q.coded, &q.bits, n, section_header_bits);
+        assert!(c_dp <= c_gr, "seed {seed}: dp {c_dp} > greedy {c_gr}");
+        saved += c_gr - c_dp;
+        base += c_gr;
+    }
+    let pct = if base == 0 {
+        0.0
+    } else {
+        100.0 * saved as f64 / base as f64
+    };
+    eprintln!("TASK-73 DP vs greedy on 64 LCG long channels: saved {saved}/{base} ({pct:.2}%)");
+    let q = sample_channel(49);
+    let mut dp = [0u8; 51];
+    let mut gr = [0u8; 51];
+    plan_books_dp(&q.coded, &q.bits, 49, &mut dp, section_header_bits);
+    plan_books_into(&q.coded, &q.bits, 49, &mut gr, section_header_bits);
+    let c_dp = section_spectral_cost(&dp, &q.coded, &q.bits, 49, section_header_bits);
+    let c_gr = section_spectral_cost(&gr, &q.coded, &q.bits, 49, section_header_bits);
+    eprintln!("TASK-73 sample_channel 49: greedy {c_gr} dp {c_dp}");
+    assert!(c_dp <= c_gr);
+}
+
+#[test]
+fn escape_book_and_zero_holes_parse() {
+    let mut q = QuantChannel::new(12);
+    for b in 0..12 {
+        q.coded[b] = b % 4 != 3; // holes
+        q.sf[b] = 110;
+        q.bits[b] = [UNREPRESENTABLE; BOOKS];
+        if q.coded[b] {
+            q.bits[b][11] = 30; // only book 11
+            if b % 2 == 0 {
+                q.bits[b][5] = 40;
+            }
+        }
+    }
+    let books = plan_books(&q);
+    for (b, (&book, &coded)) in books.iter().zip(q.coded.iter()).enumerate().take(12) {
+        if coded {
+            assert!(book == 11 || book == 5, "band {b} book {book}");
+            assert_ne!(q.bits[b][usize::from(book)], UNREPRESENTABLE);
+        } else {
+            assert_eq!(book, 0);
+        }
+    }
+    let mut w = BitWriter::new();
+    emit_section_data(&mut w, &books, 12);
+    let mut w2 = BitWriter::new();
+    emit_ics_info(&mut w2, WindowSequence::OnlyLong, 12, 0);
+    let ics = IcsInfo::parse(&mut BitReader::new(&w2.finish()), 3, false).expect("ics");
+    let sections = SectionData::parse(&mut BitReader::new(&w.finish()), &ics).expect("sec");
+    assert_eq!(&sections.sfb_cb[0][..12], &books[..12]);
 }

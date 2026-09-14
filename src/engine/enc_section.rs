@@ -13,15 +13,26 @@ use super::enc_tns::EncTns;
 use super::ics::WindowSequence;
 use super::section::has_spectral;
 
+#[path = "enc_section_dp.rs"]
+mod exact;
+#[cfg(test)]
+pub(super) use exact::{plan_books_dp, section_spectral_cost};
+
 /// Section-header cost for a run of `len` bands (4-bit cb + 5-bit
 /// increments, escape 31).
-fn section_header_bits(len: usize) -> usize {
+pub(super) fn section_header_bits(len: usize) -> usize {
     4 + 5 * (len / 31 + 1)
 }
 
 /// Spectral bits of bands `lo..hi` under one book (`UNREPRESENTABLE` if any
 /// band cannot use it).
-fn range_book_bits(coded: &[bool], bits: &[[u32; BOOKS]], lo: usize, hi: usize, cb: usize) -> u32 {
+pub(super) fn range_book_bits(
+    coded: &[bool],
+    bits: &[[u32; BOOKS]],
+    lo: usize,
+    hi: usize,
+    cb: usize,
+) -> u32 {
     let mut total = 0u32;
     for b in lo..hi {
         if !coded[b] {
@@ -38,7 +49,12 @@ fn range_book_bits(coded: &[bool], bits: &[[u32; BOOKS]], lo: usize, hi: usize, 
 
 /// Cheapest book for bands `lo..hi` (`None` when nothing represents them —
 /// impossible in practice: book 11 escapes any quantized value).
-fn best_book(coded: &[bool], bits: &[[u32; BOOKS]], lo: usize, hi: usize) -> Option<(u8, u32)> {
+pub(super) fn best_book(
+    coded: &[bool],
+    bits: &[[u32; BOOKS]],
+    lo: usize,
+    hi: usize,
+) -> Option<(u8, u32)> {
     let mut best: Option<(u8, u32)> = None;
     for cb in 1..BOOKS {
         let bits = range_book_bits(coded, bits, lo, hi, cb);
@@ -53,8 +69,9 @@ fn best_book(coded: &[bool], bits: &[[u32; BOOKS]], lo: usize, hi: usize) -> Opt
 }
 
 /// Choose `sfb_cb` for `n` bands: per-band cheapest book, then greedily
-/// merge adjacent same-range runs into one section while the saved section
-/// header outweighs the extra spectral bits. ZERO_HCB (0) on uncoded bands.
+/// merge adjacent coded runs while saved headers outweigh extra spectral
+/// bits. ZERO_HCB on uncoded bands. Exact DP is [`plan_books_dp`] (TASK-73
+/// no-go as default: < 2% section+spectral savings).
 pub(super) fn plan_books_into(
     coded: &[bool],
     bits: &[[u32; BOOKS]],
@@ -63,16 +80,14 @@ pub(super) fn plan_books_into(
     header_bits: fn(usize) -> usize,
 ) {
     for b in 0..n {
-        if coded[b] {
-            sfb_cb[b] = best_book(coded, bits, b, b + 1)
+        sfb_cb[b] = if coded[b] {
+            best_book(coded, bits, b, b + 1)
                 .map(|(cb, _)| cb)
-                .unwrap_or(11);
+                .unwrap_or(11)
         } else {
-            sfb_cb[b] = 0;
-        }
+            0
+        };
     }
-    // Greedy merge of adjacent runs (ZERO bands keep ZERO_HCB, so only
-    // directly adjacent coded bands can share a section).
     let mut improved = true;
     while improved {
         improved = false;
@@ -86,52 +101,48 @@ pub(super) fn plan_books_into(
             while hi < n && coded[hi] {
                 hi += 1;
             }
-            // Runs are maximal coded stretches; merge inside them.
-            if merge_run(coded, bits, sfb_cb, lo, hi, header_bits) {
-                improved = true;
+            let mut i = lo;
+            while i < hi {
+                let mut j = i + 1;
+                while j < hi && sfb_cb[j] == sfb_cb[i] {
+                    j += 1;
+                }
+                if j < hi {
+                    let mut k = j + 1;
+                    while k < hi && sfb_cb[k] == sfb_cb[j] {
+                        k += 1;
+                    }
+                    let saved = header_bits(j - i) as i64 + header_bits(k - j) as i64
+                        - header_bits(k - i) as i64;
+                    if let Some((cb, merged)) = best_book(coded, bits, i, k) {
+                        let cur = range_book_bits(coded, bits, i, j, usize::from(sfb_cb[i]))
+                            .saturating_add(range_book_bits(
+                                coded,
+                                bits,
+                                j,
+                                k,
+                                usize::from(sfb_cb[j]),
+                            ));
+                        if i64::from(merged) - i64::from(cur) < saved {
+                            sfb_cb[i..k].fill(cb);
+                            improved = true;
+                        }
+                    }
+                }
+                i = j;
             }
             lo = hi;
         }
     }
-}
-
-/// One greedy merge pass over `lo..hi`; true if any merge happened.
-fn merge_run(
-    coded: &[bool],
-    bits: &[[u32; BOOKS]],
-    sfb_cb: &mut [u8],
-    lo: usize,
-    hi: usize,
-    header_bits: fn(usize) -> usize,
-) -> bool {
-    let mut merged = false;
-    let mut i = lo;
-    while i < hi {
-        let mut j = i + 1;
-        while j < hi && sfb_cb[j] == sfb_cb[i] {
-            j += 1;
-        }
-        if j < hi {
-            let mut k = j + 1;
-            while k < hi && sfb_cb[k] == sfb_cb[j] {
-                k += 1;
-            }
-            // Cost now: two sections. Cost merged: one section, one book.
-            let now = header_bits(j - i) + header_bits(k - j);
-            let one = header_bits(k - i);
-            let saved_headers = now as i64 - one as i64;
-            if let Some((cb, bits_merged)) = best_book(coded, bits, i, k) {
-                let cur = range_book_bits(coded, bits, i, j, usize::from(sfb_cb[i]))
-                    .saturating_add(range_book_bits(coded, bits, j, k, usize::from(sfb_cb[j])));
-                if i64::from(bits_merged) - i64::from(cur) < saved_headers {
-                    sfb_cb[i..k].fill(cb);
-                    merged = true;
-                }
-            }
-        }
-        i = j;
+    #[cfg(debug_assertions)]
+    {
+        let mut alt = [0u8; MAX_BANDS];
+        exact::plan_books_dp(coded, bits, n, &mut alt, header_bits);
+        debug_assert!(
+            exact::section_spectral_cost(sfb_cb, coded, bits, n, header_bits)
+                >= exact::section_spectral_cost(&alt, coded, bits, n, header_bits)
+        );
     }
-    merged
 }
 
 /// Choose `sfb_cb` per band of a long-window channel.
