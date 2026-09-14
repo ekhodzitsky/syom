@@ -6,8 +6,7 @@
 //!
 //! Block switching: OnlyLong → LongStart → EightShort → LongStop; CPE
 //! `common_window = 1` ORs both detectors. TNS is long-only unless
-//! `with_short_tns`. Grouping 8×1 unless `with_short_group`. Band sf
-//! refine off unless `with_band_refine`. No PNS/intensity, no reservoir.
+//! `with_short_tns`. Grouping/refine/PNS off unless opted in. No intensity.
 //!
 //! Known causal weakness, and the opt-in fix: the LongStart window stays
 //! flat for the first 1024 + 448 taps, so an attack landing in the first
@@ -84,6 +83,7 @@ pub struct LcEncoder {
     short_tns: bool,
     short_group: bool,
     band_refine: bool,
+    pns: bool,
     grouping: super::enc_group::Grouping,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
@@ -160,6 +160,7 @@ impl LcEncoder {
             short_tns: false,
             short_group: false,
             band_refine: false,
+            pns: false,
             grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
             chans_s: Box::new([
@@ -177,7 +178,6 @@ impl LcEncoder {
             tns_enabled: true,
         })
     }
-
     /// Wire `sampling_frequency_index` (for the ADTS header / ASC).
     #[must_use]
     pub fn fs_index(&self) -> u8 {

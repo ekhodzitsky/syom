@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in LC perceptual noise substitution (TASK-75):
+  `EncodeOptions::with_pns`. Default off — goldens unchanged. Long-window
+  noise-like HF bands (`NOISE_HCB` + `noise_nrg`, det_math, TNS-span
+  skipped). Ablation (`lab/quality/PNS.md`): 1 s white noise emits PNS
+  (RMS match, priming-SNR −13 dB — not a PNS metric), ADTS +0.1% (ABR
+  pad), sine/harmonic 0.00 dB (**no-go** as 0.x default: no ≥5% rate
+  saving and no ≥0.3 dB quality gain).
 - Opt-in bandwise leftover-bit scalefactor refine (TASK-74):
   `EncodeOptions::with_band_refine`. Default off — one global sf offset
   unchanged. Long frames only; ≤16 `sf[b]-=1` on underfunded bands

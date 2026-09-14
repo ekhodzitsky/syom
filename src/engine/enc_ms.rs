@@ -112,10 +112,16 @@ impl MsBands {
         apply_long(specs, offsets, &self.used[..self.n]);
     }
 
+    /// One band's `ms_used` bit (long: band index; short: flattened).
+    #[must_use]
+    pub fn used_at(&self, i: usize) -> bool {
+        i < self.n && self.used[i]
+    }
+
     /// Test / debug access to one decision bit.
     #[cfg(test)]
     pub fn used(&self, i: usize) -> bool {
-        self.used[i]
+        self.used_at(i)
     }
 }
 

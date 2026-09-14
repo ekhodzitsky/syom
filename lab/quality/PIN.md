@@ -7,7 +7,8 @@ sweep is ordinary `encode_preecho_tests` plus `PREECHO.md`. TASK-72 short
 TNS is `encode_short_tns_tests` plus `SHORT_TNS.md`. TASK-71 grouping is
 `encode_group_tests` plus `GROUPING.md`. TASK-73 section DP is
 `enc_section_tests` plus `SECTION.md`. TASK-74 band refine is
-`encode_refine_tests` plus `REFINE.md`. Same isolation.
+`encode_refine_tests` plus `REFINE.md`. TASK-75 PNS is
+`encode_pns_tests` plus `PNS.md`. Same isolation.
 
 ## Independent decoder
 

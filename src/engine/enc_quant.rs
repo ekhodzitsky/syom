@@ -27,6 +27,10 @@ pub struct QuantChannel {
     pub sf: [i32; MAX_BANDS],
     /// Bands with signal worth coding (the rest get ZERO_HCB).
     pub coded: [bool; MAX_BANDS],
+    /// PNS substitution (TASK-75). `plan_books` stamps `NOISE_HCB`.
+    pub pns: [bool; MAX_BANDS],
+    /// Absolute `noise_nrg` for PNS bands (independent of `sf` DPCM).
+    pub noise_nrg: [i32; MAX_BANDS],
     pub n_bands: usize,
 }
 
@@ -37,6 +41,8 @@ impl QuantChannel {
             bits: [[UNREPRESENTABLE; BOOKS]; MAX_BANDS],
             sf: [0; MAX_BANDS],
             coded: [false; MAX_BANDS],
+            pns: [false; MAX_BANDS],
+            noise_nrg: [0; MAX_BANDS],
             n_bands,
         }
     }

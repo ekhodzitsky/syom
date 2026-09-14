@@ -47,6 +47,11 @@ impl LcEncoder {
         self
     }
 
+    pub(crate) fn with_pns(mut self, on: bool) -> Self {
+        self.pns = on;
+        self
+    }
+
     pub(super) fn apply_tns(
         &mut self,
         specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
@@ -135,22 +140,15 @@ impl LcEncoder {
             // common_window + ics_info + ms_mask
             total += 1 + 11 + self.ms.overhead_bits();
         }
-        let channels = self
-            .chans
-            .iter_mut()
-            .zip(self.target_q.iter_mut())
-            .zip(specs.iter())
-            .zip(psy_specs.iter())
-            .zip(self.tns.iter())
-            .zip(self.books.iter_mut())
-            .zip(self.gains.iter_mut())
-            .take(self.channels);
-        for ((((((q, tq), spec), psy_spec), tns), books), gain) in channels {
+        for ch in 0..self.channels {
+            let q = &mut self.chans[ch];
+            q.pns[..q.n_bands].fill(false);
+            let tq = &mut self.target_q[ch];
             self.psy
-                .analyze(psy_spec, self.offsets, TARGET_Q, &mut q.coded, tq);
+                .analyze(&psy_specs[ch], self.offsets, TARGET_Q, &mut q.coded, tq);
             // TNS whitens its span flat: every band in it carries residual
             // energy the decoder's recursion needs — force them coded.
-            if let Some((tns_lo, tns_hi)) = tns.band_range() {
+            if let Some((tns_lo, tns_hi)) = self.tns[ch].band_range() {
                 let span = tq.iter_mut().enumerate().take(tns_hi.min(q.n_bands));
                 for (b, tq_b) in span.skip(tns_lo) {
                     if !q.coded[b] {
@@ -159,8 +157,37 @@ impl LcEncoder {
                     }
                 }
             }
-            Self::quant_one_long(self.offsets, q, tq, spec, books, gain, offset);
-            total += enc_section::channel_body_bits(books, q, *gain, standalone, tns);
+            Self::quant_one_long(
+                self.offsets,
+                q,
+                tq,
+                &specs[ch],
+                &mut self.books[ch],
+                &mut self.gains[ch],
+                offset,
+            );
+        }
+        if self.pns {
+            crate::engine::enc_pns::apply_frame(
+                specs,
+                self.offsets,
+                self.sample_rate,
+                self.channels,
+                &mut self.chans[..],
+                &mut self.books,
+                &self.gains,
+                &self.ms,
+                &self.tns,
+            );
+        }
+        for ch in 0..self.channels {
+            total += enc_section::channel_body_bits(
+                &self.books[ch],
+                &self.chans[ch],
+                self.gains[ch],
+                standalone,
+                &self.tns[ch],
+            );
         }
         total + 7 // byte-align pad ceiling
     }
@@ -216,6 +243,7 @@ impl LcEncoder {
                 }
                 let Some((ch, b)) = hit else { return };
                 self.chans[ch].coded[b] = false;
+                self.chans[ch].pns[b] = false;
                 self.books[ch][b] = 0;
                 self.books[ch] = enc_section::plan_books(&self.chans[ch]);
             }

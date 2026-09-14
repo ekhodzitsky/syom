@@ -168,3 +168,9 @@ fn encode_band_refine_defaults_off() {
     assert!(!EncodeOptions::default().band_refine);
     assert!(EncodeOptions::adts().with_band_refine(true).band_refine);
 }
+
+#[test]
+fn encode_pns_defaults_off() {
+    assert!(!EncodeOptions::default().pns);
+    assert!(EncodeOptions::adts().with_pns(true).pns);
+}

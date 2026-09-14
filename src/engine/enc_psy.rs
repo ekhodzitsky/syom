@@ -62,7 +62,7 @@ fn ath_band_energy(f_hz: f32) -> f32 {
 
 /// Johnston spectral-flatness tonality in `[0, 1]`: 1 = tone, 0 = noise.
 /// 1-bin bands have no shape — keep full precision (`1.0`).
-fn band_tonality(bins: &[f32]) -> f32 {
+pub(crate) fn band_tonality(bins: &[f32]) -> f32 {
     let n = bins.len();
     if n < 2 {
         return 1.0;

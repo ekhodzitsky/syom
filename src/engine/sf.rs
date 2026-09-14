@@ -7,8 +7,8 @@ use super::section::{ZERO_HCB, is_intensity, is_noise};
 use super::sf_tab::{SF_CODE, SF_LEN};
 use std::sync::LazyLock;
 
-const NOISE_OFFSET: i32 = 90;
-const NOISE_PCM_BITS: u32 = 9;
+pub(crate) const NOISE_OFFSET: i32 = 90;
+pub(crate) const NOISE_PCM_BITS: u32 = 9;
 
 struct SfTree {
     left: Vec<u16>,

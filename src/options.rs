@@ -235,6 +235,8 @@ pub struct EncodeOptions {
     pub short_group: bool,
     /// Bandwise leftover-bit sf refine (TASK-74). Default off.
     pub band_refine: bool,
+    /// Perceptual noise substitution (TASK-75). Default off.
+    pub pns: bool,
 }
 
 impl Default for EncodeOptions {
@@ -248,6 +250,7 @@ impl Default for EncodeOptions {
             short_tns: false,
             short_group: false,
             band_refine: false,
+            pns: false,
         }
     }
 }
@@ -337,6 +340,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_band_refine(mut self, on: bool) -> Self {
         self.band_refine = on;
+        self
+    }
+
+    /// Perceptual noise substitution on long-window noise-like HF bands.
+    /// Off by default; one-shot and push encode honor it identically.
+    #[inline]
+    pub fn with_pns(mut self, on: bool) -> Self {
+        self.pns = on;
         self
     }
 }
