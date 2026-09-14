@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- AAC syntax inventory (`corpus/conformance/`): clause acquisition status
+  (ISO 14496-3/26 and 13818-7 full text not obtained), advertised-tool
+  coverage matrix, and independently authored ASC/ADTS/LATM/PCE examples
+  with expected fields or errors. No conformance certificate. Parser
+  follow-ons that can start without purchasing ISO text are listed in
+  `go-nogo.md`. Ordinary tests never fetch standards or spawn ffmpeg.
 
 ## [0.6.0] - 2026-09-06
 

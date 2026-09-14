@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "title": "AAC clause inventory and acquisition status",
+  "recorded": "2026-09-14",
+  "no_conformance_certificate": true,
+  "iso_14496_26_obtained": false,
+  "iso_14496_3_full_text_obtained": false,
+  "iso_13818_7_full_text_obtained": false,
+  "notes": "Clause IDs below are the commonly cited MPEG-4 Audio / MPEG-2 AAC numbers. Field widths come from public amendment previews and independent parsers, not from a purchased standard copy. Do not treat this file as ISO text.",
+  "editions": [
+    {
+      "id": "iso-14496-3",
+      "title": "ISO/IEC 14496-3 Information technology — Coding of audio-visual objects — Part 3: Audio",
+      "editions_of_record": ["2009 plus later amendments", "2019 successor where applicable"],
+      "acquisition": "not-obtained",
+      "catalogue": "https://www.iso.org/standard/53943.html",
+      "public_previews": [
+        {
+          "id": "amd2-2006",
+          "title": "ISO/IEC 14496-3:2005/Amd 2:2006 AudioSpecificConfig (HE-AAC / PS)",
+          "url": "https://cdn.standards.iteh.ai/samples/43026/aeba7c20bf6840adb0879f6ded05058c/ISO-IEC-14496-3-2005-Amd-2-2006.pdf",
+          "used_for": "Table 1.13 AudioSpecificConfig field order: AOT, samplingFrequencyIndex, channelConfiguration, then for AOT 5/29: extensionSamplingFrequencyIndex and inner GetAudioObjectType"
+        },
+        {
+          "id": "amd9-2008",
+          "title": "ISO/IEC 14496-3:2005/Amd 9:2008 implicit SBR/PS sync extensions",
+          "url": "https://standards.iteh.ai/catalog/standards/iso/cd4ea4ef-5762-4bea-af2d-1068802a3001/iso-iec-14496-3-2005-amd-9-2008",
+          "used_for": "syncExtensionType 0x2b7 / 0x548, sbrPresentFlag, extensionSamplingFrequencyIndex, psPresentFlag"
+        }
+      ]
+    },
+    {
+      "id": "iso-13818-7",
+      "title": "ISO/IEC 13818-7 MPEG-2 AAC, ADTS",
+      "acquisition": "not-obtained",
+      "used_for": "ADTS fixed+variable header cited in src/engine/adts.rs as §1.A.2.2; multi-block CRC region still needs the standard"
+    },
+    {
+      "id": "iso-11172-3",
+      "title": "ISO/IEC 11172-3:1993 MPEG-1 audio CRC-16",
+      "acquisition": "polynomial-republished",
+      "clause": "§2.4.3.1",
+      "used_for": "ADTS crc_check identity: G(x)=x^16+x^15+x^2+1, not the MPEG-4 Audio §1.8.4.5 family used by LATM StreamMuxConfig"
+    },
+    {
+      "id": "iso-14496-26-2024",
+      "title": "ISO/IEC 14496-26:2024 Audio conformance",
+      "acquisition": "not-obtained",
+      "catalogue": "https://committee.iso.org/standard/86376.html?browse=ics",
+      "mpeg": "https://www.mpeg.org/standards/MPEG-4/26/",
+      "used_for": "official pass/fail bitstreams; abstract does not supply numeric limits"
+    },
+    {
+      "id": "iso-14496-12",
+      "title": "ISO/IEC 14496-12 ISO base media file format",
+      "acquisition": "not-downloaded-this-session",
+      "used_for": "M4A boxes, 32-bit sizes, elst; in-tree isomp4.rs / m4a_write.rs"
+    }
+  ],
+  "independent_parsers": [
+    {
+      "id": "ffmpeg-n7-mpeg4audio",
+      "path": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n7.0.2/libavcodec/mpeg4audio.c",
+      "used_for": "explicit AOT 5/29 consumes samplingFrequencyIndex then extensionSamplingFrequencyIndex; implicit 0x2b7 reads extension rate and 0x548 PS"
+    },
+    {
+      "id": "ffmpeg-n7-latm",
+      "path": "https://raw.githubusercontent.com/FFmpeg/FFmpeg/n7.1/libavcodec/aac/aacdec_latm.h",
+      "used_for": "latm_get_value = 2-bit bytesForValue then (n+1)*8 bits; numSubFrames 6 bits; StreamMuxConfig program/layer checks"
+    },
+    {
+      "id": "faad2-syntax",
+      "path": "https://raw.githubusercontent.com/knik0/faad2/master/libfaad/syntax.c",
+      "used_for": "GASpecificConfig parses program_config_element when channelsConfiguration==0; CCE Table 4.4.8 field order; PCE field list"
+    },
+    {
+      "id": "fdk-2.0.3",
+      "path": "lab/fdk (TASK-7 pin v2.0.3)",
+      "used_for": "LatmGetValue 2-bit length; same lineage must not be the only oracle (DOC-3)"
+    }
+  ],
+  "topics": [
+    {
+      "id": "asc-aot-rates",
+      "finding": "F09",
+      "clauses": ["14496-3:2005/Amd 2 Table 1.13 AudioSpecificConfig", "Amd 9 implicit 0x2b7/0x548"],
+      "acquisition": "preview-plus-independent-parsers",
+      "syom": "src/engine/asc.rs: explicit AOT 5/29 reads one rate and halves it; implicit 0x2b7 sets sbr_present but does not consume extensionSamplingFrequencyIndex or 0x548",
+      "follow_on": "TASK-26"
+    },
+    {
+      "id": "asc-pce-in-ga",
+      "finding": "F09",
+      "clauses": ["GASpecificConfig / 14496-3 Table 4.4.1: program_config_element when channelConfiguration==0"],
+      "acquisition": "faad2-syntax-plus-preview",
+      "syom": "parse_ga skips PCE; in-band PCE is parsed later from raw_data_block",
+      "follow_on": "TASK-27"
+    },
+    {
+      "id": "adts-multi-block",
+      "finding": "F10",
+      "clauses": ["13818-7 §1.A.2.2 number_of_raw_data_blocks_in_frame (wire is N-1)"],
+      "acquisition": "public-adts-layout; full 13818-7 not obtained",
+      "syom": "AdtsHeader parses the count; decode_raw_mono_f32 / decode_raw_data_block ignore _num_raw_data_blocks",
+      "follow_on": "TASK-28"
+    },
+    {
+      "id": "adts-crc",
+      "finding": "F10",
+      "clauses": ["13818-7 adts_error_check / adts_raw_data_block_error_check", "11172-3 §2.4.3.1 CRC-16"],
+      "acquisition": "poly-known; multi-block coverage region needs 13818-7",
+      "syom": "protection_absent==0 skips 16 bits; CRC not checked. LATM uses a different CRC (14496-3 §1.8.4.5), already in src/engine/crc.rs",
+      "follow_on": "TASK-29"
+    },
+    {
+      "id": "latm-grammar",
+      "finding": "F12",
+      "clauses": ["14496-3 §1.7 StreamMuxConfig / latmGetValue / AudioMuxElement"],
+      "acquisition": "independent-parsers; full §1.7 not obtained",
+      "syom": "latm_value is 8-bit+escape, not 2-bit bytesForValue; numSubFrames and allStreamsSameTimeFraming are read and ignored; one payload extracted",
+      "follow_on": ["TASK-30", "TASK-31"]
+    },
+    {
+      "id": "channel-map-pce",
+      "finding": "F13",
+      "clauses": ["14496-3 §4.4.2.4 program_config_element", "Table 1.19 / 4.1 channelConfiguration"],
+      "acquisition": "faad2-field-list; layout order is a product choice (lavc vs MPEG speaker labels)",
+      "syom": "parse_pce exists; object_type and sf_index discarded; missing PCE slots become silence; extras appended; config>=7 identity order",
+      "follow_on": "TASK-32"
+    },
+    {
+      "id": "frame-length-960",
+      "finding": "F09",
+      "clauses": ["GASpecificConfig frameLengthFlag: 0 → 1024, 1 → 960"],
+      "acquisition": "faad2-plus-preview",
+      "syom": "frameLengthFlag==1 → UnsupportedFrameLength (unsupported, not malformed)",
+      "follow_on": "TASK-63"
+    },
+    {
+      "id": "buffer-limits",
+      "finding": "F19",
+      "clauses": ["14496-3 AAC maximum bit reservoir / 6144 bits per channel for LC (commonly cited)"],
+      "acquisition": "public-decoder-consensus; exact profile/level tables need full 14496-3",
+      "syom": "encoder caps ADTS payload at 8184 bytes by dropping top bands, not a per-channel 6144-bit check",
+      "follow_on": "TASK-46"
+    },
+    {
+      "id": "cce",
+      "finding": "F11",
+      "clauses": ["14496-3 Table 4.4.8 coupling_channel_element"],
+      "acquisition": "faad2-syntax (independent implementation of that table)",
+      "syom": "skip_cce consumes a different field order and does not apply gains",
+      "follow_on": "TASK-34"
+    }
+  ]
+}

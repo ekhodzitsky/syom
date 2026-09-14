@@ -58,6 +58,10 @@ mod corpus_tests;
 mod oracle_tests;
 
 #[cfg(test)]
+#[path = "conformance_tests.rs"]
+mod conformance_tests;
+
+#[cfg(test)]
 #[path = "lab_isolation_tests.rs"]
 mod lab_isolation_tests;
 

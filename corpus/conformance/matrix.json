@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "title": "Advertised tool / profile / container coverage",
+  "no_conformance_certificate": true,
+  "legend": {
+    "supported": "Advertised and implemented; tests exist but may be self-roundtrip or golden-vs-lavc, not ISO 14496-26",
+    "unsupported": "Out of v1; must error or stay fenced, not silently decode",
+    "malformed": "Illegal syntax; must error",
+    "gap": "Advertised or in-tree path with missing independent vectors",
+    "authored": "TASK-17 independently authored header/config example"
+  },
+  "rows": [
+    {
+      "id": "lc-adts",
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/engine/adts_tests.rs", "src/engine/golden_tests.rs", "src/decode_tests.rs", "src/goldens/sine48.adts"],
+      "independent_vectors": ["adts-lc-48k-mono-no-crc", "asc-lc-48k-mono"],
+      "missing": "ISO 14496-26 LC ADTS suites",
+      "finding": null
+    },
+    {
+      "id": "lc-latm-loas",
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/engine/latm_tests.rs", "src/stream_latm_tests.rs", "src/goldens/latm48.latm"],
+      "independent_vectors": ["latm-mux-v0-lc-48k-mono"],
+      "missing": "audioMuxVersion=1 with spec latmGetValue; multi-subframe payloads",
+      "finding": "F12"
+    },
+    {
+      "id": "lc-m4a",
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/isomp4_tests.rs", "src/stream_m4a_tests.rs", "src/goldens/sine441.m4a"],
+      "independent_vectors": [],
+      "missing": "complex elst (end, empty, multiple); fMP4 moof/mdat",
+      "finding": "F16"
+    },
+    {
+      "id": "he-v1-sbr",
+      "advertised": true,
+      "status": "gap",
+      "tests": ["src/goldens/he48.adts", "src/goldens/he48.m4a", "src/engine/ics_tests.rs asc_heaac_aot5_unwraps_lc_core"],
+      "independent_vectors": ["asc-explicit-sbr-two-rate-24-48", "asc-implicit-sbr-24-48", "asc-implicit-sbr-ds-48-48"],
+      "missing": "ics_tests explicit AOT5 is the one-rate local form, not Amd 2 two-rate; downsampled SBR",
+      "finding": "F09"
+    },
+    {
+      "id": "he-v2-ps",
+      "advertised": true,
+      "status": "gap",
+      "tests": ["src/goldens/ps48.adts", "src/goldens/ps48.m4a"],
+      "independent_vectors": ["asc-implicit-ps-0x548", "asc-explicit-ps-two-rate-24-48"],
+      "missing": "explicit AOT 29 two-rate; 0x548 consumption in ASC parser",
+      "finding": "F09"
+    },
+    {
+      "id": "mc-3.0-5.1",
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/decode_mc_tests.rs", "src/goldens/mc30.adts", "src/goldens/mc51.adts"],
+      "independent_vectors": [],
+      "missing": "ISO default speaker labels vs lavc plane order documented in channel_map.rs, not a second layout",
+      "finding": "F13"
+    },
+    {
+      "id": "in-band-pce",
+      "advertised": true,
+      "status": "gap",
+      "tests": ["src/engine/channel_map_tests.rs"],
+      "independent_vectors": ["pce-front-sce-lc-48k", "asc-lc-ch0-embedded-pce"],
+      "missing": "ASC-embedded PCE; PCE vs element-tag mismatch errors",
+      "finding": "F13"
+    },
+    {
+      "id": "cce",
+      "advertised": "consumed-not-applied",
+      "status": "unsupported",
+      "tests": ["src/engine/channel_map_tests.rs write_cce_stub"],
+      "independent_vectors": [],
+      "missing": "complete Table 4.4.8 skip vs apply; current skip field order disagrees with FAAD2",
+      "finding": "F11"
+    },
+    {
+      "id": "adts-crc",
+      "advertised": false,
+      "status": "gap",
+      "tests": [],
+      "independent_vectors": ["adts-lc-crc-absent-bit0"],
+      "missing": "CRC verify; multi-block crc layout",
+      "finding": "F10"
+    },
+    {
+      "id": "adts-multi-rdb",
+      "advertised": false,
+      "status": "gap",
+      "tests": [],
+      "independent_vectors": ["adts-lc-two-rdb"],
+      "missing": "decode every raw_data_block in the frame",
+      "finding": "F10"
+    },
+    {
+      "id": "frame-960",
+      "advertised": false,
+      "status": "unsupported",
+      "tests": [],
+      "independent_vectors": ["asc-lc-960-flag"],
+      "missing": "none for reject path; support is TASK-63",
+      "finding": "F09"
+    },
+    {
+      "id": "aot-main-ssr-ltp-ld-eld-usac",
+      "advertised": false,
+      "status": "unsupported",
+      "tests": [],
+      "independent_vectors": ["asc-aot-main"],
+      "missing": "TASK-97 research",
+      "finding": null
+    },
+    {
+      "id": "he-encode",
+      "advertised": false,
+      "status": "unsupported",
+      "tests": ["src/encode_cmp_tests.rs"],
+      "independent_vectors": [],
+      "missing": "S5 research TASK-85+",
+      "finding": null
+    },
+    {
+      "id": "lc-encode-adts-m4a",
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/encode_tests.rs", "src/goldens/enc48.adts", "src/engine/enc_tns_tests.rs"],
+      "independent_vectors": [],
+      "missing": "6144-bit/channel gate; exact priming/remainder (F15); truthful CBR",
+      "finding": "F19"
+    },
+    {
+      "id": "fmp4",
+      "advertised": false,
+      "status": "unsupported",
+      "tests": ["src/isomp4_tests.rs"],
+      "independent_vectors": [],
+      "missing": "TASK-64",
+      "finding": "F16"
+    }
+  ]
+}

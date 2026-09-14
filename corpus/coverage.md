@@ -58,6 +58,7 @@ Cells are **covered**, **synth-only**, **identified-not-obtained**, or **gap**.
 | 960-sample frames | **gap** (TASK-63) |
 | Encoder 24–256 kbps ladder | **gap** (identified as needed; only 128 kbps encoder goldens) |
 | ISO 14496-26 vectors | **gap** (normative text not obtained) |
+| Independently authored ASC/ADTS/LATM/PCE headers | in-tree `corpus/conformance/vectors.json` (not 14496-26) |
 
 Natural audio bytes are **not** in git. Until they are obtained offline,
 those cells stay `identified-not-obtained`, not measured.

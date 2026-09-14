@@ -30,6 +30,17 @@ python3 scripts/verify_corpus.py           # offline; no network
 
 A flipped golden or overlapping train/holdout recording fails the verifier.
 
+## Syntax inventory (not ISO 14496-26)
+
+`corpus/conformance/` records clause acquisition status, a coverage matrix
+for advertised tools, and independently authored ASC/ADTS/LATM/PCE
+headers. It is **not** a conformance certificate. Full ISO 14496-3 / 26
+text was not obtained.
+
+```sh
+python3 scripts/verify_conformance_inventory.py
+```
+
 ## Oracle provenance
 
 `corpus/oracles/provenance.json` records committed lavc/naive goldens:
