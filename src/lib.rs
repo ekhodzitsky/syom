@@ -43,7 +43,8 @@ pub use options::{
 };
 pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
 pub use stream::{
-    Decoder, Frame, StreamInfo, decode_read_streaming, decode_seek_streaming, decode_streaming,
+    Decoder, Frame, M4aSeek, StreamInfo, decode_read_streaming, decode_seek_streaming,
+    decode_streaming, preroll_aus,
 };
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 //! Seekable M4A: load `moov`, then `seek`+read each sample. `mdat` is not
-//! slurped. Presentation-time seeking is TASK-58.
+//! slurped. Presentation-sample seeking is [`super::m4a_pos::M4aSeek`].
 //!
 //! ```
 //! use std::io::Cursor;

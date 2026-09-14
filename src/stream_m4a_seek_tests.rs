@@ -1,10 +1,10 @@
-//! TASK-57: seekable M4A without loading `mdat` in one read.
+//! TASK-57/58: seekable M4A and presentation-sample seek with preroll.
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use crate::{
-    AacError, DecodeOptions, Result, decode_seek, decode_seek_streaming, decode_seek_with,
-    decode_with, read, read_with,
+    AacError, DecodeOptions, M4aSeek, Result, decode_seek, decode_seek_streaming, decode_seek_with,
+    decode_with, preroll_aus, read, read_with,
 };
 use std::io::{self, Cursor, Read, Seek, SeekFrom};
 
@@ -254,5 +254,145 @@ fn decode_seek_stays_speech_mono() -> Result<()> {
         Ok(())
     })?;
     assert_eq!(n as u64, info.samples);
+    Ok(())
+}
+
+const LSB2: f32 = 2.0 / 32768.0;
+
+fn collect_from<R: Read + Seek>(src: &mut M4aSeek<R>) -> Result<Vec<Vec<f32>>> {
+    let mut planes: Vec<Vec<f32>> = Vec::new();
+    src.decode(|f| {
+        if planes.is_empty() {
+            planes = f.planar.iter().map(|p| p.to_vec()).collect();
+        } else {
+            for (d, s) in planes.iter_mut().zip(f.planar.iter()) {
+                d.extend_from_slice(s);
+            }
+        }
+        Ok(())
+    })?;
+    Ok(planes)
+}
+
+fn max_abs(a: &[f32], b: &[f32]) -> f32 {
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0_f32, f32::max)
+}
+
+fn assert_tail_match(tag: &str, linear: &[Vec<f32>], got: &[Vec<f32>], at: usize) {
+    assert_eq!(linear.len(), got.len(), "{tag} ch");
+    for (i, (l, g)) in linear.iter().zip(got.iter()).enumerate() {
+        assert!(at <= l.len(), "{tag} ch{i} at {at} > {}", l.len());
+        let tail = &l[at..];
+        assert_eq!(
+            tail.len(),
+            g.len(),
+            "{tag} ch{i} len {0} vs {1}",
+            tail.len(),
+            g.len()
+        );
+        let e = max_abs(tail, g);
+        assert!(
+            e <= LSB2,
+            "{tag} ch{i} max abs {e} > 2 LSB at presentation {at}"
+        );
+    }
+}
+
+#[test]
+fn open_decode_matches_slice() -> Result<()> {
+    for (data, label) in m4a_cases() {
+        let opts = DecodeOptions::audio();
+        let slice = decode_with(data, &opts)?;
+        let mut src = M4aSeek::open(Cursor::new(data), opts)?;
+        let got = collect_from(&mut src)?;
+        assert_eq!(slice.channels, got, "{label} open");
+    }
+    Ok(())
+}
+
+#[test]
+fn seek_points_match_linear_lc_he_ps_51() -> Result<()> {
+    let cases = [
+        (SINE441, DecodeOptions::speech(), "sine441", false),
+        (LECTURE, DecodeOptions::speech(), "lecture", false),
+        (HE48, DecodeOptions::audio(), "he48", true),
+        (PS48, DecodeOptions::audio(), "ps48", true),
+        (MC51, DecodeOptions::audio(), "mc51", false),
+    ];
+    for (data, opts, label, sbr) in cases {
+        let linear = decode_with(data, &opts)?;
+        let n = linear.channels[0].len();
+        assert!(n > 2048, "{label} too short");
+        let mut src = M4aSeek::open(Cursor::new(data), opts.clone())?;
+        assert_eq!(src.preroll_aus(), preroll_aus(sbr), "{label} preroll");
+        let play = src.presentation_len() as usize;
+        assert!(
+            play + 64 >= n && n + 64 >= play,
+            "{label} len {play} vs pcm {n}"
+        );
+        let points = [0usize, 1, 512, 1024, n / 2, n.saturating_sub(1)];
+        for at in points {
+            if at >= play {
+                continue;
+            }
+            src.seek(at as i64)?;
+            if !sbr && linear.channels.len() <= 2 && at > 2048 {
+                assert!(
+                    src.last_seek_aus() <= 2,
+                    "{label} @{at} LC preroll AUs {}",
+                    src.last_seek_aus()
+                );
+            }
+            let got = collect_from(&mut src)?;
+            assert_tail_match(label, &linear.channels, &got, at);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn seek_before_end_beyond_and_repeat() -> Result<()> {
+    let mut src = M4aSeek::open(Cursor::new(SINE441), DecodeOptions::speech())?;
+    let play = src.presentation_len();
+    assert!(matches!(
+        src.seek(-1).unwrap_err(),
+        AacError::InvalidLimits(_)
+    ));
+    let e = src.seek((play + 1) as i64).unwrap_err();
+    assert!(matches!(e, AacError::TooLong { .. }), "{e:?}");
+    let at = src.seek(play as i64)?;
+    assert_eq!(at, play);
+    let got = collect_from(&mut src)?;
+    assert!(got.is_empty() || got.iter().all(|p| p.is_empty()));
+    src.seek(0)?;
+    let a = collect_from(&mut src)?;
+    src.seek(0)?;
+    let b = collect_from(&mut src)?;
+    assert_eq!(a, b, "repeated seek(0)");
+    Ok(())
+}
+
+#[test]
+fn seek_io_is_preroll_not_prefix() -> Result<()> {
+    let data = LECTURE;
+    let mut probe = Probe {
+        inner: Cursor::new(data),
+        read_bytes: 0,
+        max_read: 0,
+        seeks: 0,
+    };
+    let mut src = M4aSeek::open(&mut probe, DecodeOptions::speech())?;
+    let play = src.presentation_len();
+    let at = play / 2;
+    src.seek(at as i64)?;
+    assert!(
+        src.last_seek_aus() <= 2,
+        "LC preroll AUs {}",
+        src.last_seek_aus()
+    );
+    let _ = collect_from(&mut src)?;
     Ok(())
 }

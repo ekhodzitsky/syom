@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sample-accurate M4A seek (TASK-58): `M4aSeek` maps presentation samples
+  through `elst`, resets LC/SBR/PS state, and prerolls before emit. LC
+  mono/stereo uses 2 AUs (measured vs linear ≤ 2 LSB s16). HE/PS and
+  3.0–5.1 replay from AU 0 (in-band SBR header; 5.1 coupling did not
+  settle in 2 AUs on `mc51`). Not a universal delay constant.
 - Seekable M4A decode (TASK-57): `decode_seek` / `decode_seek_with` /
   `decode_seek_streaming` load only `moov` then `seek`+read each sample.
   `mdat` before or after `moov` works; `elst` trim matches slice decode.

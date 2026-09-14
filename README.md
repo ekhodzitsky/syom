@@ -105,6 +105,7 @@ when a demuxer already has AudioSpecificConfig and complete access units,
 `decode_read` / `decode_read_streaming` for a generic `std::io::Read`
 (ADTS/LOAS), `decode_seek` / `decode_seek_streaming` for seekable M4A
 (`moov` plus one access unit; `mdat` is not slurped),
+`M4aSeek::seek` for presentation-sample access with codec preroll,
 or `decode_streaming(bytes, &opts, cb)` for any in-memory container.
 Each callback gets one AAC `Frame` of borrowed planar f32 (valid
 for the callback only; return `Err` to abort) and `finish` yields
