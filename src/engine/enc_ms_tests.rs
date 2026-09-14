@@ -182,7 +182,7 @@ fn short_window_bitmask_is_per_group() -> Result<()> {
         assert_eq!(ics.num_window_groups, 8, "8 groups of 1 window");
         assert_eq!(ms.mask, MsMask::PerBand, "short split must be PerBand");
         assert_eq!(mask_bits, 2 + (8 * n_sfb) as u64, "8 groups × n_sfb bits");
-        assert_eq!(ms.used.len(), 8);
+        assert_eq!(ics.num_window_groups, 8);
         for g in 0..8 {
             assert!(ms.used(g, 0), "g{g}: correlated tone band is M/S");
             for (b, &off) in offsets.iter().enumerate().take(n_sfb) {

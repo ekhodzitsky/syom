@@ -23,11 +23,7 @@ impl StreamDecoder {
         take_l: bool,
         push_elem: bool,
     ) {
-        let spec = if take_l {
-            std::mem::take(&mut self.spec_l)
-        } else {
-            std::mem::take(&mut self.spec_r)
-        };
+        let spec = self.take_spec(!take_l);
         if push_elem && part == 0 {
             self.elems.push(Element {
                 kind,
@@ -44,6 +40,22 @@ impl StreamDecoder {
             spec,
         });
         self.n_ch += 1;
+    }
+
+    fn take_spec(&mut self, right: bool) -> Vec<f32> {
+        let buf = if right {
+            &mut self.spec_r
+        } else {
+            &mut self.spec_l
+        };
+        let filled = std::mem::take(buf);
+        *buf = self.spec_pool.pop().unwrap_or_default();
+        filled
+    }
+
+    fn recycle_spec(&mut self, mut spec: Vec<f32>) {
+        spec.clear();
+        self.spec_pool.push(spec);
     }
 
     pub(crate) fn finish_sce_pns(&mut self, ics: &IcsInfo, fs_index: u8) -> Result<()> {
@@ -104,13 +116,13 @@ impl StreamDecoder {
                 fs_index,
             )?;
         }
-        let ms_used = ms.as_ref().map(|m| m.used.clone());
-        let mut shared = None;
+        let mut have_shared = false;
         {
             let mut pair = pns::PairPns {
-                ms_used: ms_used.as_deref(),
+                ms: ms.as_ref(),
                 other_cb: Some(&self.sections_r.sfb_cb),
-                shared: &mut shared,
+                shared: &mut self.pns_shared,
+                have_shared: &mut have_shared,
             };
             pns::apply(
                 &mut self.spec_l,
@@ -124,9 +136,10 @@ impl StreamDecoder {
         }
         {
             let mut pair = pns::PairPns {
-                ms_used: ms_used.as_deref(),
+                ms: ms.as_ref(),
                 other_cb: Some(&self.sections_l.sfb_cb),
-                shared: &mut shared,
+                shared: &mut self.pns_shared,
+                have_shared: &mut have_shared,
             };
             pns::apply(
                 &mut self.spec_r,
@@ -180,7 +193,7 @@ impl StreamDecoder {
             }
         }
         for cce in &mut self.cces {
-            if let Some(t) = cce.tns.clone() {
+            if let Some(t) = cce.tns {
                 tns::apply(&mut cce.spec, &t, &cce.ics, fs_index)?;
             }
         }
@@ -189,40 +202,60 @@ impl StreamDecoder {
                 apply_cce_to_pending(&mut self.pending, &self.cces[i], fs_index)?;
             }
         }
-        let pending = std::mem::take(&mut self.pending);
+        let mut pending = std::mem::take(&mut self.pending);
         self.n_ch = 0;
-        let mut ids: Vec<(ElemKind, u8, u8)> = Vec::new();
-        let mut iter = pending.into_iter();
-        while let Some(p) = iter.next() {
-            if p.kind == ElemKind::Cpe && p.part == 0 {
-                let r = iter.next().ok_or(Error::Format("CPE missing right"))?;
+        let mut ids = [(ElemKind::Sce, 0u8, 0u8); 8];
+        let mut n_ids = 0usize;
+        let mut i = 0usize;
+        while i < pending.len() {
+            if pending[i].kind == ElemKind::Cpe && pending[i].part == 0 {
+                if i + 1 >= pending.len() {
+                    self.pending = pending;
+                    return Err(Error::Format("CPE missing right"));
+                }
                 if multichannel {
                     self.fb_pool
-                        .swap_pair(p.tag, &mut self.fb_l, &mut self.fb_r);
+                        .swap_pair(pending[i].tag, &mut self.fb_l, &mut self.fb_r);
                 }
                 self.fb_l
-                    .synthesize_into(&p.spec, &p.ics, &mut self.pcm_l)?;
-                self.fb_r
-                    .synthesize_into(&r.spec, &r.ics, &mut self.pcm_r)?;
+                    .synthesize_into(&pending[i].spec, &pending[i].ics, &mut self.pcm_l)?;
+                self.fb_r.synthesize_into(
+                    &pending[i + 1].spec,
+                    &pending[i + 1].ics,
+                    &mut self.pcm_r,
+                )?;
                 if multichannel {
                     self.fb_pool
-                        .swap_pair(p.tag, &mut self.fb_l, &mut self.fb_r);
+                        .swap_pair(pending[i].tag, &mut self.fb_l, &mut self.fb_r);
                 }
                 self.push_pcm(false);
-                ids.push((p.kind, p.tag, 0));
+                if n_ids < 8 {
+                    ids[n_ids] = (pending[i].kind, pending[i].tag, 0);
+                    n_ids += 1;
+                }
                 self.push_pcm(true);
-                ids.push((r.kind, r.tag, 1));
+                if n_ids < 8 {
+                    ids[n_ids] = (pending[i + 1].kind, pending[i + 1].tag, 1);
+                    n_ids += 1;
+                }
+                i += 2;
             } else {
                 if multichannel {
-                    self.fb_pool.swap_in(p.kind, p.tag, &mut self.fb_l);
+                    self.fb_pool
+                        .swap_in(pending[i].kind, pending[i].tag, &mut self.fb_l);
                 }
                 self.fb_l
-                    .synthesize_into(&p.spec, &p.ics, &mut self.pcm_l)?;
+                    .synthesize_into(&pending[i].spec, &pending[i].ics, &mut self.pcm_l)?;
                 if multichannel {
-                    self.fb_pool.swap_in(p.kind, p.tag, &mut self.fb_l);
+                    self.fb_pool
+                        .swap_in(pending[i].kind, pending[i].tag, &mut self.fb_l);
                 }
                 self.push_pcm(false);
-                ids.push((p.kind, p.tag, p.part));
+                if n_ids < 8 {
+                    ids[n_ids] = (pending[i].kind, pending[i].tag, pending[i].part);
+                    n_ids += 1;
+                }
+                i += 1;
             }
         }
         if !self.fast_mono {
@@ -232,10 +265,11 @@ impl StreamDecoder {
                     continue;
                 }
                 self.fb_pool.swap_in(ElemKind::Cce, cce.tag, &mut self.fb_l);
-                let mut pcm = Vec::new();
-                self.fb_l.synthesize_into(&cce.spec, &cce.ics, &mut pcm)?;
+                self.cce_pcm.clear();
+                self.fb_l
+                    .synthesize_into(&cce.spec, &cce.ics, &mut self.cce_pcm)?;
                 self.fb_pool.swap_in(ElemKind::Cce, cce.tag, &mut self.fb_l);
-                apply_independent_pcm(&mut self.frame_ch, &ids, &pcm, cce)?;
+                apply_independent_pcm(&mut self.frame_ch, &ids[..n_ids], &self.cce_pcm, cce)?;
             }
             self.cces = cces;
             if !skip_downmix && !multichannel && self.mix_down_mono && self.frame_ch.len() >= 2 {
@@ -248,6 +282,22 @@ impl StreamDecoder {
                 self.n_ch = 1;
             }
         }
+        for p in &mut pending {
+            let spec = std::mem::take(&mut p.spec);
+            self.recycle_spec(spec);
+        }
+        pending.clear();
+        self.pending = pending;
+        self.refill_spec_bufs();
         Ok(())
+    }
+
+    pub(crate) fn refill_spec_bufs(&mut self) {
+        if self.spec_l.capacity() == 0 {
+            self.spec_l = self.spec_pool.pop().unwrap_or_default();
+        }
+        if self.spec_r.capacity() == 0 {
+            self.spec_r = self.spec_pool.pop().unwrap_or_default();
+        }
     }
 }

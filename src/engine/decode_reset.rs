@@ -32,6 +32,12 @@ impl StreamDecoder {
         self.fb_pool.reset();
         self.pending.clear();
         self.cces.clear();
+        for s in &mut self.spec_pool {
+            s.clear();
+        }
+        self.plane_order.clear();
+        self.cce_pcm.clear();
+        self.pns_shared.clear();
         self.last_rdb_bytes = 0;
         self.last_meta = FrameMeta::EMPTY;
     }

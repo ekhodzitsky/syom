@@ -57,12 +57,11 @@ fn emit_parses_as_short_tns_data() -> Result<()> {
     let mut br = BitReader::new(&bytes);
     assert!(br.read_bit()?, "tns_data_present");
     let parsed = TnsData::parse(&mut br, &short_ics(n_swb))?;
-    assert_eq!(parsed.windows.len(), 8);
+    assert_eq!(parsed.n_windows, 8);
     assert!(parsed.windows[0].coef_res);
-    assert!(!parsed.windows[0].filters.is_empty());
+    assert!(parsed.windows[0].n_filt > 0);
     let f = &parsed.windows[0].filters[0];
     assert!(f.order >= 1 && f.order <= 7);
-    assert_eq!(f.coef.len(), usize::from(f.order));
     assert!(!f.direction);
     assert_eq!(t.bits(), nbits);
     Ok(())

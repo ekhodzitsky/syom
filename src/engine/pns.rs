@@ -39,12 +39,13 @@ impl Default for Lcg {
 
 /// Pair-channel PNS correlation inputs (§4.6.13.3).
 pub struct PairPns<'a> {
-    /// `ms_used[g][sfb]` (true when the band is correlated).
-    pub ms_used: Option<&'a [Vec<bool>]>,
+    /// CPE M/S mask (true when the band is correlated).
+    pub ms: Option<&'a super::stereo::MsInfo>,
     /// The other channel's `sfb_cb`.
     pub other_cb: Option<&'a [Vec<u8>]>,
     /// Shared random vector for a correlated band (pre-normalise).
-    pub shared: &'a mut Option<Vec<f32>>,
+    pub shared: &'a mut Vec<f32>,
+    pub have_shared: &'a mut bool,
 }
 
 /// Fill NOISE_HCB bands. When the pair is noise on both sides and `ms_used`,
@@ -85,9 +86,7 @@ pub fn apply(
             // and PCM matches lavc (PNS-only corr was −1 with the extra minus).
             let target = (0.25 * nrg as f32).exp2();
             let correlated = pair.as_ref().is_some_and(|p| {
-                p.ms_used
-                    .and_then(|ms| ms.get(g).and_then(|v| v.get(sfb)).copied())
-                    .unwrap_or(false)
+                p.ms.map(|ms| ms.used(g, sfb)).unwrap_or(false)
                     && p.other_cb
                         .and_then(|o| o.get(g).and_then(|v| v.get(sfb)).copied())
                         .map(is_noise)
@@ -95,23 +94,32 @@ pub fn apply(
             });
             for b in 0..glen {
                 let w = wbase + b;
-                let vec = if correlated {
+                let base = w * win_len + start;
+                let dst = &mut spec[base..base + width];
+                if correlated {
                     if let Some(p) = pair.as_mut() {
-                        if let Some(s) = p.shared.as_ref() {
-                            s.clone()
+                        if *p.have_shared && p.shared.len() == width {
+                            dst.copy_from_slice(p.shared);
                         } else {
-                            let v = rand_vec(rng, width);
-                            *p.shared = Some(v.clone());
-                            v
+                            for x in dst.iter_mut() {
+                                *x = rng.next_i32() as f32;
+                            }
+                            p.shared.clear();
+                            p.shared.extend_from_slice(dst);
+                            *p.have_shared = true;
                         }
                     } else {
-                        rand_vec(rng, width)
+                        for x in dst.iter_mut() {
+                            *x = rng.next_i32() as f32;
+                        }
                     }
                 } else {
-                    rand_vec(rng, width)
-                };
+                    for x in dst.iter_mut() {
+                        *x = rng.next_i32() as f32;
+                    }
+                }
                 let mut energy = 0.0f32;
-                for &x in &vec {
+                for &x in dst.iter() {
                     energy += x * x;
                 }
                 let scale = if energy > 0.0 {
@@ -119,20 +127,15 @@ pub fn apply(
                 } else {
                     0.0
                 };
-                for (i, &x) in vec.iter().enumerate() {
-                    spec[w * win_len + start + i] = x * scale;
+                for x in dst.iter_mut() {
+                    *x *= scale;
                 }
             }
             if !correlated && let Some(p) = pair.as_mut() {
-                *p.shared = None;
+                *p.have_shared = false;
             }
         }
         wbase += glen;
     }
     Ok(())
-}
-
-fn rand_vec(rng: &mut Lcg, n: usize) -> Vec<f32> {
-    // lavc float decoder: `cfo[k] = ac->random_state` (int → float).
-    (0..n).map(|_| rng.next_i32() as f32).collect()
 }

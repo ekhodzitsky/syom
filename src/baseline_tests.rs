@@ -45,6 +45,9 @@ fn baseline_report_records_ci_memory_and_go_nogo() {
     let reset = std::fs::read_to_string(root().join("lab/baseline/RESET.md")).unwrap();
     assert!(reset.contains("Encoder::new"));
     assert!(reset.contains("go"));
+    let alloc = std::fs::read_to_string(root().join("lab/baseline/ALLOC.md")).unwrap();
+    assert!(alloc.contains("speech"));
+    assert!(alloc.contains("per frame"));
     assert!(report.contains("13312"));
     let pin = std::fs::read_to_string(root().join("lab/baseline/PIN.md")).unwrap();
     assert!(pin.contains("AMD Ryzen"));

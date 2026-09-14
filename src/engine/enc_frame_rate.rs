@@ -280,7 +280,11 @@ impl LcEncoder {
             .min(max_frame_bits(self.channels))
             .min(MAX_PAYLOAD_BYTES * 8);
         loop {
-            if self.emit().len().saturating_mul(8) <= cap {
+            let mut tmp = std::mem::take(&mut self.payload);
+            self.emit_into(&mut tmp);
+            let bits = tmp.len().saturating_mul(8);
+            self.payload = tmp;
+            if bits <= cap {
                 return;
             }
             if self.seq.is_eight_short() {
@@ -312,10 +316,10 @@ impl LcEncoder {
         }
     }
 
-    /// Emit the `raw_data_block` from the built state.
-    pub(super) fn emit(&self) -> Vec<u8> {
+    /// Emit the `raw_data_block` from the built state into `out`.
+    pub(super) fn emit_into(&self, out: &mut Vec<u8>) {
         if self.seq.is_eight_short() {
-            return enc_short::emit_frame(
+            enc_short::emit_frame(
                 self.short_offsets,
                 &self.chans_s[..],
                 &self.books_s[..],
@@ -323,18 +327,21 @@ impl LcEncoder {
                 &self.ms,
                 &self.tns,
                 self.channels,
+                out,
+            );
+        } else {
+            enc_section::emit_frame(
+                self.offsets,
+                self.seq,
+                &self.chans[..],
+                &self.books[..],
+                &self.gains,
+                &self.ms,
+                &self.tns,
+                self.channels,
+                out,
             );
         }
-        enc_section::emit_frame(
-            self.offsets,
-            self.seq,
-            &self.chans[..],
-            &self.books[..],
-            &self.gains,
-            &self.ms,
-            &self.tns,
-            self.channels,
-        )
     }
 
     /// Pad an undersized frame with unused bytes after `ID_END` so payload
@@ -343,13 +350,13 @@ impl LcEncoder {
     /// must use that, or stuffing would starve the next frame's rate loop.
     /// The decoder stops at END; trailing zeros are unused ADTS bytes.
     /// All-zero spectra are not padded (silence exception). Not CBR.
-    pub(super) fn fit_budget(&mut self, limit: usize) -> (Vec<u8>, usize) {
+    pub(super) fn fit_budget(&mut self, limit: usize, out: &mut Vec<u8>) -> usize {
         let limit = limit.min(max_frame_bits(self.channels));
         self.drop_bands_until(limit);
-        let mut out = self.emit();
+        self.emit_into(out);
         let coded = out.len().saturating_mul(8);
         if self.quant_all_zero() {
-            return (out, coded);
+            return coded;
         }
         // Pad to the ABR ceiling, minus stuffing debt from earlier frames
         // that spent credit above `budget`. Search/drop still use credit;
@@ -368,7 +375,7 @@ impl LcEncoder {
         }
         let emitted = out.len().saturating_mul(8) as i64;
         self.pad_debt = (self.pad_debt + emitted - budget as i64).max(0);
-        (out, coded)
+        coded
     }
 
     fn quant_all_zero(&self) -> bool {

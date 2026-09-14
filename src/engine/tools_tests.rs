@@ -10,8 +10,8 @@ use super::pns::{self, Lcg};
 use super::section::{INTENSITY_HCB, NOISE_HCB, SectionData};
 use super::sf::ScaleFactors;
 use super::spectrum::{self, PulseData};
-use super::stereo::{self, MsInfo, MsMask};
-use super::tns::{self, TnsData, TnsFilter, TnsWindow};
+use super::stereo::{self, MsInfo};
+use super::tns::{self, TnsData};
 
 fn long_ics(max_sfb: u8) -> IcsInfo {
     IcsInfo {
@@ -30,7 +30,8 @@ fn pulse_adds_amplitude_on_zero_bin() -> Result<(), Error> {
     let mut quant = vec![0i32; 1024];
     let pulse = PulseData {
         start_sfb: 0,
-        pulses: vec![(0, 3)],
+        n: 1,
+        pulses: [(0, 3), (0, 0), (0, 0), (0, 0)],
     };
     spectrum::apply_pulse(&mut quant, 3, &pulse)?;
     // k starts at swb 0 offset 0, plus offset 0 → bin 0; quant[0] was 0 so subtract amp.
@@ -53,10 +54,7 @@ fn ms_dematrix_is_m_plus_s() -> Result<(), Error> {
     let sec = SectionData {
         sfb_cb: vec![vec![1]],
     };
-    let ms = MsInfo {
-        mask: MsMask::All,
-        used: vec![],
-    };
+    let ms = MsInfo::all();
     stereo::apply_ms(&mut left, &mut right, &ics, &sec, &sec, &ms, 3)?;
     assert!((left[0] - 4.0).abs() < 1e-12);
     assert!((right[0] - 2.0).abs() < 1e-12);
@@ -77,10 +75,7 @@ fn intensity_scales_right_from_left() -> Result<(), Error> {
         is_pos: vec![vec![0]],
         noise_nrg: vec![vec![0]],
     };
-    let ms = MsInfo {
-        mask: MsMask::Off,
-        used: vec![],
-    };
+    let ms = MsInfo::off();
     stereo::apply_intensity(&left, &mut right, &ics, &right_sec, &sf, &ms, 3)?;
     assert!((right[0] - 8.0).abs() < 1e-9, "is_pos=0 → scale 1");
     Ok(())
@@ -140,18 +135,12 @@ fn tns_identity_order_zero_is_noop() -> Result<(), Error> {
     let ics = long_ics(2);
     let mut spec = vec![0.0f32; 1024];
     spec[10] = 1.0;
-    let tns = TnsData {
-        windows: vec![TnsWindow {
-            coef_res: false,
-            filters: vec![TnsFilter {
-                length: 2,
-                order: 0,
-                direction: false,
-                coef_compress: false,
-                coef: vec![],
-            }],
-        }],
+    let mut tns = TnsData {
+        n_windows: 1,
+        ..TnsData::default()
     };
+    tns.windows[0].n_filt = 1;
+    tns.windows[0].filters[0].length = 2;
     tns::apply(&mut spec, &tns, &ics, 3)?;
     assert_eq!(spec[10], 1.0);
     Ok(())
@@ -165,18 +154,15 @@ fn tns_order1_changes_spectrum() -> Result<(), Error> {
     let mut spec = vec![0.0f32; 1024];
     spec[0] = 1.0;
     spec[1] = 0.5;
-    let tns = TnsData {
-        windows: vec![TnsWindow {
-            coef_res: true,
-            filters: vec![TnsFilter {
-                length: ics.num_swb,
-                order: 1,
-                direction: false,
-                coef_compress: false,
-                coef: vec![4],
-            }],
-        }],
+    let mut tns = TnsData {
+        n_windows: 1,
+        ..TnsData::default()
     };
+    tns.windows[0].coef_res = true;
+    tns.windows[0].n_filt = 1;
+    tns.windows[0].filters[0].length = ics.num_swb;
+    tns.windows[0].filters[0].order = 1;
+    tns.windows[0].filters[0].coef[0] = 4;
     tns::apply(&mut spec, &tns, &ics, 3)?;
     assert!(
         (spec[1] - 0.5).abs() > 1e-9,

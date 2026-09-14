@@ -10,8 +10,15 @@ const MAX_BANDS_LONG: [u8; 12] = [31, 31, 34, 40, 42, 51, 46, 46, 42, 42, 42, 39
 /// Table 4.103 without PQF, short windows.
 const MAX_BANDS_SHORT: [u8; 12] = [9, 9, 10, 14, 14, 14, 14, 14, 14, 14, 14, 14];
 
+/// Long-window order ceiling (Table 4.54).
+pub const MAX_TNS_ORDER: usize = 12;
+/// Long-window `n_filt` is 2 bits (0..=3).
+pub const MAX_TNS_FILTERS: usize = 3;
+/// Eight short windows, or one long window.
+pub const MAX_TNS_WINDOWS: usize = 8;
+
 /// One TNS filter (Table 4.54).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TnsFilter {
     /// Scalefactor bands covered, counted down from the previous top.
     pub length: u8,
@@ -21,24 +28,26 @@ pub struct TnsFilter {
     pub direction: bool,
     /// Shrinks `coef` field by one bit.
     pub coef_compress: bool,
-    /// Unsigned wire coefficients.
-    pub coef: Vec<u8>,
+    /// Unsigned wire coefficients (`order` live entries).
+    pub coef: [u8; MAX_TNS_ORDER],
 }
 
 /// Per-window TNS payload.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TnsWindow {
     /// `coef_res`: false → 3-bit, true → 4-bit.
     pub coef_res: bool,
     /// Filters in wire order (top of spectrum first).
-    pub filters: Vec<TnsFilter>,
+    pub n_filt: u8,
+    pub filters: [TnsFilter; MAX_TNS_FILTERS],
 }
 
 /// Parsed `tns_data()`.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TnsData {
     /// One slot per transform window.
-    pub windows: Vec<TnsWindow>,
+    pub n_windows: u8,
+    pub windows: [TnsWindow; MAX_TNS_WINDOWS],
 }
 
 impl TnsData {
@@ -48,40 +57,46 @@ impl TnsData {
         let n_filt_bits = if short { 1 } else { 2 };
         let len_bits = if short { 4 } else { 6 };
         let order_bits = if short { 3 } else { 5 };
-        let mut windows = Vec::with_capacity(ics.num_windows as usize);
-        for _ in 0..ics.num_windows {
-            let n_filt = br.read(n_filt_bits)? as usize;
+        let n_windows = ics.num_windows.min(MAX_TNS_WINDOWS as u8);
+        let mut windows = [TnsWindow::default(); MAX_TNS_WINDOWS];
+        for win in windows.iter_mut().take(n_windows as usize) {
+            let n_filt = (br.read(n_filt_bits)? as usize).min(MAX_TNS_FILTERS);
             let mut coef_res = false;
-            let mut filters = Vec::with_capacity(n_filt);
             if n_filt > 0 {
                 coef_res = br.read_bit()?;
             }
-            for _ in 0..n_filt {
+            let mut filters = [TnsFilter::default(); MAX_TNS_FILTERS];
+            for filt in filters.iter_mut().take(n_filt) {
                 let length = br.read(len_bits)? as u8;
                 let order = br.read(order_bits)? as u8;
                 let mut direction = false;
                 let mut coef_compress = false;
-                let mut coef = Vec::new();
+                let mut coef = [0u8; MAX_TNS_ORDER];
                 if order > 0 {
                     direction = br.read_bit()?;
                     coef_compress = br.read_bit()?;
                     let coef_res_bits = if coef_res { 4 } else { 3 };
                     let coef_bits = coef_res_bits - u32::from(coef_compress);
-                    for _ in 0..order {
-                        coef.push(br.read(coef_bits)? as u8);
+                    let n_coef = (order as usize).min(MAX_TNS_ORDER);
+                    for c in coef.iter_mut().take(n_coef) {
+                        *c = br.read(coef_bits)? as u8;
                     }
                 }
-                filters.push(TnsFilter {
+                *filt = TnsFilter {
                     length,
                     order,
                     direction,
                     coef_compress,
                     coef,
-                });
+                };
             }
-            windows.push(TnsWindow { coef_res, filters });
+            *win = TnsWindow {
+                coef_res,
+                n_filt: n_filt as u8,
+                filters,
+            };
         }
-        Ok(TnsData { windows })
+        Ok(TnsData { n_windows, windows })
     }
 }
 
@@ -111,25 +126,30 @@ fn sign_extend(coef: u8, bits: u32) -> i32 {
     }
 }
 
-fn decode_lpc(order: usize, coef_res_bits: u32, compress: bool, coef: &[u8]) -> Result<Vec<f64>> {
+fn decode_lpc(
+    order: usize,
+    coef_res_bits: u32,
+    compress: bool,
+    coef: &[u8],
+) -> Result<[f64; MAX_TNS_ORDER + 1]> {
     let coef_res2 = coef_res_bits - u32::from(compress);
     if !(2..=4).contains(&coef_res2) {
         return Err(Error::SpectrumInvalid);
     }
     let iqfac = ((1u32 << (coef_res_bits - 1)) as f64 - 0.5) / (std::f64::consts::PI / 2.0);
     let iqfac_m = ((1u32 << (coef_res_bits - 1)) as f64 + 0.5) / (std::f64::consts::PI / 2.0);
-    let mut tmp2 = vec![0.0f64; order];
+    let mut tmp2 = [0.0f64; MAX_TNS_ORDER];
     if coef.len() < order {
         return Err(Error::SpectrumInvalid);
     }
-    for (slot, &c) in tmp2.iter_mut().zip(coef.iter().take(order)) {
+    for (slot, &c) in tmp2.iter_mut().take(order).zip(coef.iter().take(order)) {
         let t = sign_extend(c, coef_res2);
         *slot = (t as f64 / if t >= 0 { iqfac } else { iqfac_m }).sin();
     }
-    let mut a = vec![0.0f64; order + 1];
+    let mut a = [0.0f64; MAX_TNS_ORDER + 1];
     a[0] = 1.0;
     for m in 1..=order {
-        let mut b = vec![0.0f64; m];
+        let mut b = [0.0f64; MAX_TNS_ORDER];
         for i in 1..m {
             b[i] = a[i] + tmp2[m - 1] * a[m - i];
         }
@@ -179,9 +199,9 @@ pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Re
     let tns_max_order = max_order(ics.window_sequence) as usize;
     let tns_max_bands = max_bands(fs_index, ics.window_sequence)? as usize;
     let max_sfb = ics.max_sfb as usize;
-    for (w, win) in tns.windows.iter().enumerate() {
+    for (w, win) in tns.windows.iter().take(tns.n_windows as usize).enumerate() {
         let mut bottom = ics.num_swb as usize;
-        for filt in &win.filters {
+        for filt in win.filters.iter().take(win.n_filt as usize) {
             let top = bottom;
             bottom = top.saturating_sub(filt.length as usize);
             let order = (filt.order as usize).min(tns_max_order);
@@ -204,7 +224,7 @@ pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Re
             } else {
                 (1i32, base + start)
             };
-            ar_filter(spec, origin, size, inc, &lpc);
+            ar_filter(spec, origin, size, inc, &lpc[..=order]);
         }
     }
     Ok(())

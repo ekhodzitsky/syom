@@ -326,16 +326,17 @@ impl<R: Read + Seek> M4aSeek<R> {
                     meta: self.dec.last_meta(),
                 })?;
             } else {
-                let planes: Vec<&[f32]> = self
-                    .dec
-                    .frame_planes()
-                    .iter()
-                    .map(|ch| &ch[start..end])
-                    .collect();
+                let mut slots: [&[f32]; crate::layout::MAX_PLANES] =
+                    [&[]; crate::layout::MAX_PLANES];
+                let src = self.dec.frame_planes();
+                let n = src.len().min(crate::layout::MAX_PLANES);
+                for (i, ch) in src.iter().enumerate().take(n) {
+                    slots[i] = &ch[start..end];
+                }
                 on_frame(Frame {
                     sample_rate: rate,
                     samples: take,
-                    planar: &planes,
+                    planar: &slots[..n],
                     meta: self.dec.last_meta(),
                 })?;
             }

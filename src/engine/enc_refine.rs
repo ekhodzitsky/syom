@@ -125,7 +125,10 @@ fn step_band(
     if let Some(first) = q.coded.iter().position(|&c| c) {
         enc.gains[ch] = q.sf[first] as u8;
     }
-    let bits = enc.emit().len().saturating_mul(8);
+    let mut tmp = std::mem::take(&mut enc.payload);
+    enc.emit_into(&mut tmp);
+    let bits = tmp.len().saturating_mul(8);
+    enc.payload = tmp;
     if bits <= limit {
         return true;
     }

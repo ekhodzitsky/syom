@@ -4,7 +4,7 @@
 use super::adts::AdtsHeader;
 use super::bits::BitReader;
 use super::cce::{PendingChan, parse_cce};
-use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
+use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes_into, mono_mix, reorder};
 use super::error::{Error, Result};
 use super::fb_pool::{FbPool, reject_dup};
 use super::filterbank::Filterbank;
@@ -58,6 +58,14 @@ pub struct StreamDecoder {
     pub(crate) cces: Vec<super::cce::CcePayload>,
     pub(crate) last_rdb_bytes: usize,
     last_meta: crate::layout::FrameMeta,
+    /// Recycled spectral buffers (TASK-78). `stash_chan` swaps filled
+    /// `spec_l`/`spec_r` out; finish returns them here instead of dropping.
+    pub(crate) spec_pool: Vec<Vec<f32>>,
+    /// Reused layout order (TASK-78); filled by `map_planes_into`.
+    pub(crate) plane_order: Vec<super::channel_map::PlaneMap>,
+    /// Independent-CCE IMDCT scratch (TASK-78).
+    pub(crate) cce_pcm: Vec<f32>,
+    pub(crate) pns_shared: Vec<f32>,
 }
 
 impl StreamDecoder {
@@ -164,6 +172,7 @@ impl StreamDecoder {
         if aot != 2 && aot != 5 && aot != 29 {
             return Err(Error::UnsupportedAot(aot));
         }
+        self.refill_spec_bufs();
         let core_aot = 2;
         let mut br = BitReader::new(payload);
         // cfg 0 / ≥3 / PCE: per-channel FBs. cfg 1/2 keep the fast path.
@@ -258,18 +267,23 @@ impl StreamDecoder {
             return Ok(sample_rate);
         }
         self.frame_ch.truncate(self.n_ch);
-        let order = if self.pce.is_some() || (multichannel && !self.frame_ch.is_empty()) {
-            Some(map_planes(
+        let mut order_buf = [super::channel_map::PlaneMap::default(); 8];
+        let mut n_order = 0usize;
+        let has_order = self.pce.is_some() || (multichannel && !self.frame_ch.is_empty());
+        if has_order {
+            map_planes_into(
+                &mut self.plane_order,
                 &self.elems,
                 self.pce.as_ref(),
                 channel_configuration,
                 fs_index,
-            )?)
-        } else {
-            None
-        };
+            )?;
+            n_order = self.plane_order.len().min(8);
+            order_buf[..n_order].copy_from_slice(&self.plane_order[..n_order]);
+        }
+        let order = has_order.then_some(&order_buf[..n_order]);
         if !he {
-            if let Some(ref order) = order {
+            if let Some(order) = order {
                 reorder(&mut self.frame_ch, order);
                 if self.mix_down_mono {
                     let mono = mono_mix(&self.frame_ch, order);
@@ -285,7 +299,7 @@ impl StreamDecoder {
                 channel_configuration,
                 sample_rate,
                 sample_rate,
-                order.as_deref(),
+                order,
                 self.frame_ch.len(),
             );
             return Ok(sample_rate);
@@ -301,7 +315,7 @@ impl StreamDecoder {
             &mut pending_sbrs,
             &mut self.sbr_active,
             self.mix_down_mono,
-            order.as_deref(),
+            order,
         )?;
         self.frame_ch = planar;
         self.fb_pool.retain_seen();
@@ -311,7 +325,7 @@ impl StreamDecoder {
             channel_configuration,
             core,
             out_rate,
-            order.as_deref(),
+            order,
             self.frame_ch.len(),
         );
         Ok(out_rate)

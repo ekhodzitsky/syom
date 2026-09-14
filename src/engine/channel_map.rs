@@ -153,118 +153,46 @@ fn read_element_list(br: &mut BitReader<'_>, n: usize) -> Result<Vec<(bool, u8)>
 
 /// One output plane: which decode-order plane feeds it (`None` → silence)
 /// and whether it is LFE (excluded from the speech mono mix).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct PlaneMap {
     pub src: Option<usize>,
     pub lfe: bool,
     pub label: Channel,
 }
 
-fn plane(src: Option<usize>, lfe: bool, label: Channel) -> PlaneMap {
+pub(super) fn plane(src: Option<usize>, lfe: bool, label: Channel) -> PlaneMap {
     PlaneMap { src, lfe, label }
 }
 
-/// Map decode-order element planes to output planes (see module docs).
-/// Config 1–6: missing slots are silence; extra elements are appended.
-/// A PCE requires LC, matching `fs_index`, exact `(kind, tag)`, ≤6 planes.
-pub(crate) fn map_planes(
+/// PCE declaration order: front, side, back (CPE as L then R), then LFEs.
+pub(super) fn pce_map(
+    pce: &PceChannelMap,
     elems: &[Element],
-    pce: Option<&PceChannelMap>,
-    channel_configuration: u8,
     fs_index: u8,
 ) -> Result<Vec<PlaneMap>> {
-    if let Some(p) = pce {
-        return pce_map(p, elems, fs_index);
-    }
-    let mut used = vec![false; elems.len()];
-    let mut out = default_slots(channel_configuration, elems, &mut used);
-    for (i, e) in elems.iter().enumerate() {
-        if !used[i] {
-            for p in 0..e.planes() {
-                out.push(plane(
-                    Some(e.plane + p),
-                    e.kind == ElemKind::Lfe,
-                    Channel::Other,
-                ));
-            }
-        }
-    }
-    Ok(out)
-}
-
-/// `(kind, occurrence among elements of that kind, channel of pair)` per
-/// output plane, in lavc layout order.
-fn default_slots(config: u8, elems: &[Element], used: &mut [bool]) -> Vec<PlaneMap> {
-    use ElemKind::{Cpe, Lfe, Sce};
-    const L: usize = 0;
-    const R: usize = 1;
-    let labels = crate::layout::mpeg_channels(config);
-    let slots: &[(ElemKind, usize, usize)] = match config {
-        1 => &[(Sce, 0, L)],
-        2 => &[(Cpe, 0, L), (Cpe, 0, R)],
-        3 => &[(Cpe, 0, L), (Cpe, 0, R), (Sce, 0, L)],
-        4 => &[(Cpe, 0, L), (Cpe, 0, R), (Sce, 0, L), (Sce, 1, L)],
-        5 => &[
-            (Cpe, 0, L),
-            (Cpe, 0, R),
-            (Sce, 0, L),
-            (Cpe, 1, L),
-            (Cpe, 1, R),
-        ],
-        6 => &[
-            (Cpe, 0, L),
-            (Cpe, 0, R),
-            (Sce, 0, L),
-            (Lfe, 0, L),
-            (Cpe, 1, L),
-            (Cpe, 1, R),
-        ],
-        // 0 (PCE expected) and 7+ (not v1): keep element order.
-        _ => return identity(elems, used),
-    };
-    let mut out = Vec::with_capacity(slots.len());
-    for (i, &(kind, occ, part)) in slots.iter().enumerate() {
-        let label = labels.get(i).copied().unwrap_or(Channel::Other);
-        let hit = elems
-            .iter()
-            .enumerate()
-            .filter(|(_, e)| e.kind == kind)
-            .nth(occ);
-        match hit {
-            Some((ei, e)) => {
-                used[ei] = true;
-                out.push(plane(Some(e.plane + part), kind == Lfe, label));
-            }
-            None => out.push(plane(None, kind == Lfe, label)),
-        }
-    }
-    out
-}
-
-/// PCE declaration order: front, side, back (CPE as L then R), then LFEs.
-fn pce_map(pce: &PceChannelMap, elems: &[Element], fs_index: u8) -> Result<Vec<PlaneMap>> {
     if pce.object_type != 1 {
         return Err(Error::Format("PCE object_type is not LC"));
     }
     if pce.sf_index != fs_index {
         return Err(Error::Format("PCE sf_index does not match stream"));
     }
-    let mut used = vec![false; elems.len()];
+    let mut used = [false; 16];
+    let n = elems.len().clamp(1, 16);
     let mut out = Vec::new();
-    pce_list(&mut out, elems, &mut used, &pce.front, List::Front)?;
-    pce_list(&mut out, elems, &mut used, &pce.side, List::Side)?;
-    pce_list(&mut out, elems, &mut used, &pce.back, List::Back)?;
+    pce_list(&mut out, elems, &mut used[..n], &pce.front, List::Front)?;
+    pce_list(&mut out, elems, &mut used[..n], &pce.side, List::Side)?;
+    pce_list(&mut out, elems, &mut used[..n], &pce.back, List::Back)?;
     for &tag in &pce.lfe {
         push_tagged(
             &mut out,
             elems,
-            &mut used,
+            &mut used[..n],
             ElemKind::Lfe,
             tag,
             &[Channel::Lfe],
         )?;
     }
-    if used.iter().any(|&u| !u) {
+    if used[..n].iter().any(|&u| !u) {
         return Err(Error::Format("PCE extra channel element"));
     }
     if out.len() > 6 {
@@ -336,25 +264,13 @@ fn push_tagged(
     Ok(())
 }
 
-fn identity(elems: &[Element], used: &mut [bool]) -> Vec<PlaneMap> {
-    let mut out = Vec::new();
-    for (i, e) in elems.iter().enumerate() {
-        used[i] = true;
-        for p in 0..e.planes() {
-            out.push(plane(
-                Some(e.plane + p),
-                e.kind == ElemKind::Lfe,
-                Channel::Other,
-            ));
-        }
-    }
-    out
-}
-
 /// Reorder `planes` per `order`, filling `None` slots with silence.
 pub(crate) fn reorder(planes: &mut Vec<Vec<f32>>, order: &[PlaneMap]) {
     let len = planes.first().map_or(0, Vec::len);
-    let mut old: Vec<Option<Vec<f32>>> = std::mem::take(planes).into_iter().map(Some).collect();
+    let mut old: [Option<Vec<f32>>; 8] = Default::default();
+    for (i, p) in planes.drain(..).enumerate().take(8) {
+        old[i] = Some(p);
+    }
     for slot in order {
         let plane = slot
             .src
@@ -388,3 +304,9 @@ pub(crate) fn mono_mix(planes: &[Vec<f32>], order: &[PlaneMap]) -> Vec<f32> {
     }
     mono
 }
+
+#[path = "channel_map_slots.rs"]
+mod slots;
+#[cfg(test)]
+pub(crate) use slots::map_planes;
+pub(crate) use slots::map_planes_into;

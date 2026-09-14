@@ -125,8 +125,9 @@ for the callback only; return `Err` to abort) and `finish` yields
 instance; a successful `finish` **finishes** it; further `feed`/`finish`
 error until `reset()`, which keeps prepared workspace capacity
 (filterbank slots, spectral/PCM planes, encoder KBD/psy) and does not
-use a global cache. `finish` takes `&mut self`. Peak PCM RAM is one
-frame. Encode has the mirror shape: `Encoder::new` plus `feed` takes PCM
+use a global cache. After warmup, speech and stereo borrowed-frame
+callbacks do not allocate. `finish` takes `&mut self`. Peak PCM RAM is
+one frame. Encode has the mirror shape: `Encoder::new` plus `feed` takes PCM
 chunks of any size and fires per ADTS-wrapped access unit (byte-exact
 with one-shot `encode_with`; M4A rejected — `stco` needs finish-time
 sizes), `finish` encodes the zero-padded tail and yields `EncodeInfo`.

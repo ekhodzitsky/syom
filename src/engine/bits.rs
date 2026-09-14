@@ -271,6 +271,17 @@ impl BitWriter {
         Self::default()
     }
 
+    /// Reuse `buf` capacity (cleared). TASK-78 encoder payload recycle.
+    #[must_use]
+    pub fn from_vec(mut buf: Vec<u8>) -> Self {
+        buf.clear();
+        Self {
+            buf,
+            acc: 0,
+            bits: 0,
+        }
+    }
+
     /// Append the low `n` bits of `value`, MSB first.
     pub fn write(&mut self, value: u32, n: u32) {
         if n == 0 {

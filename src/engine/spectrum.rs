@@ -57,8 +57,9 @@ pub fn sf_gain(sf: i32) -> f32 {
 pub struct PulseData {
     /// `pulse_start_sfb`.
     pub start_sfb: u8,
+    pub n: u8,
     /// `(offset, amp)` pairs, 1..=4.
-    pub pulses: Vec<(u8, u8)>,
+    pub pulses: [(u8, u8); 4],
 }
 
 impl PulseData {
@@ -66,13 +67,17 @@ impl PulseData {
     pub fn parse(br: &mut BitReader<'_>) -> Result<Self> {
         let n = br.read(2)? as usize + 1;
         let start_sfb = br.read(6)? as u8;
-        let mut pulses = Vec::with_capacity(n);
-        for _ in 0..n {
+        let mut pulses = [(0u8, 0u8); 4];
+        for p in pulses.iter_mut().take(n) {
             let offset = br.read(5)? as u8;
             let amp = br.read(4)? as u8;
-            pulses.push((offset, amp));
+            *p = (offset, amp);
         }
-        Ok(PulseData { start_sfb, pulses })
+        Ok(PulseData {
+            start_sfb,
+            n: n as u8,
+            pulses,
+        })
     }
 }
 
@@ -162,7 +167,7 @@ pub fn apply_pulse(quant: &mut [i32], fs_index: u8, pulse: &PulseData) -> Result
         return Err(Error::SpectrumInvalid);
     }
     let mut k = offsets[start] as usize;
-    for &(off, amp) in &pulse.pulses {
+    for &(off, amp) in pulse.pulses.iter().take(pulse.n as usize) {
         k += off as usize;
         if k >= quant.len().min(LONG_WINDOW_LEN) {
             return Err(Error::SpectrumInvalid);

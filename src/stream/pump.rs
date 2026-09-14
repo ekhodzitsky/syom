@@ -350,15 +350,18 @@ impl Decoder {
         }
         self.tally(rate, n_ch, n_samples)?;
         self.aac_frames += 1;
-        // Borrow the planes for the duration of the callback only.
-        let mono_plane: [&[f32]; 1];
-        let split_planes: Vec<&[f32]>;
+        // Stack plane views — no per-frame heap (TASK-78).
+        let mut slots: [&[f32]; crate::layout::MAX_PLANES] = [&[]; crate::layout::MAX_PLANES];
         let planar: &[&[f32]] = if mono {
-            mono_plane = [self.mono_scratch.as_slice()];
-            &mono_plane
+            slots[0] = self.mono_scratch.as_slice();
+            &slots[..1]
         } else {
-            split_planes = self.dec.frame_planes().iter().map(Vec::as_slice).collect();
-            &split_planes
+            let planes = self.dec.frame_planes();
+            let n = planes.len().min(crate::layout::MAX_PLANES);
+            for (i, p) in planes.iter().enumerate().take(n) {
+                slots[i] = p.as_slice();
+            }
+            &slots[..n]
         };
         on_frame(Frame {
             sample_rate: rate,

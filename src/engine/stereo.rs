@@ -18,16 +18,41 @@ pub enum MsMask {
     All,
 }
 
+const MAX_MS_GROUPS: usize = 8;
+const MAX_MS_SFB: usize = 51;
+
 /// CPE joint-stereo side info.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct MsInfo {
     /// Mask mode.
     pub mask: MsMask,
-    /// `ms_used[g][sfb]` when `mask == PerBand`; empty otherwise.
-    pub used: Vec<Vec<bool>>,
+    n_groups: u8,
+    n_sfb: u8,
+    /// `ms_used[g][sfb]` when `mask == PerBand`.
+    used: [[bool; MAX_MS_SFB]; MAX_MS_GROUPS],
 }
 
 impl MsInfo {
+    #[cfg(test)]
+    pub fn off() -> Self {
+        Self {
+            mask: MsMask::Off,
+            n_groups: 0,
+            n_sfb: 0,
+            used: [[false; MAX_MS_SFB]; MAX_MS_GROUPS],
+        }
+    }
+
+    #[cfg(test)]
+    pub fn all() -> Self {
+        Self {
+            mask: MsMask::All,
+            n_groups: 0,
+            n_sfb: 0,
+            used: [[false; MAX_MS_SFB]; MAX_MS_GROUPS],
+        }
+    }
+
     /// Parse `ms_mask_present` and optional `ms_used` bits (Table 4.4 CPE).
     pub fn parse(br: &mut BitReader<'_>, ics: &IcsInfo) -> Result<Self> {
         let present = br.read(2)?;
@@ -37,17 +62,22 @@ impl MsInfo {
             2 => MsMask::All,
             _ => return Err(Error::Format("reserved ms_mask_present")),
         };
-        let mut used = Vec::new();
+        let n_groups = ics.num_window_groups.min(MAX_MS_GROUPS as u8);
+        let n_sfb = ics.max_sfb.min(MAX_MS_SFB as u8);
+        let mut used = [[false; MAX_MS_SFB]; MAX_MS_GROUPS];
         if mask == MsMask::PerBand {
-            for _ in 0..ics.num_window_groups {
-                let mut row = Vec::with_capacity(ics.max_sfb as usize);
-                for _ in 0..ics.max_sfb {
-                    row.push(br.read_bit()?);
+            for row in used.iter_mut().take(n_groups as usize) {
+                for slot in row.iter_mut().take(n_sfb as usize) {
+                    *slot = br.read_bit()?;
                 }
-                used.push(row);
             }
         }
-        Ok(MsInfo { mask, used })
+        Ok(MsInfo {
+            mask,
+            n_groups,
+            n_sfb,
+            used,
+        })
     }
 
     /// Whether this (group, sfb) is M/S coded.
@@ -56,12 +86,13 @@ impl MsInfo {
         match self.mask {
             MsMask::Off => false,
             MsMask::All => true,
-            MsMask::PerBand => self
-                .used
-                .get(g)
-                .and_then(|v| v.get(sfb))
-                .copied()
-                .unwrap_or(false),
+            MsMask::PerBand => {
+                if g < self.n_groups as usize && sfb < self.n_sfb as usize {
+                    self.used[g][sfb]
+                } else {
+                    false
+                }
+            }
         }
     }
 }

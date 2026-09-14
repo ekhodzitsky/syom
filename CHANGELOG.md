@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Zero-alloc LC speech/stereo borrowed callbacks after warmup (TASK-78):
+  stack plane views, recycled spectral buffers, stack TNS/MS/Pulse,
+  in-place PNS, reused encoder payload. Default `speech()` path **0**
+  heap/frame; stereo split **~0**; 5.1 **1.5**/frame (was 57); encode
+  **7**/frame (was 13). Owned one-shot output still allocates.
+  Goldens unchanged (`lab/baseline/ALLOC.md`).
 - Prepared codec workspace reuse (TASK-77): `Decoder::reset` /
   `Encoder::reset` drop signal/config (overlap, HE/PS/PCE, LCG, rate
   credit, lookahead) and keep allocated KBD windows, psy spreading,

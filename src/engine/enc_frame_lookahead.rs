@@ -45,7 +45,8 @@ impl LcEncoder {
         let attack = self.detect(pcm);
         let out = match self.held.take() {
             Some(held) => {
-                Some(self.encode_with_attack(&held.planes(self.channels), held.attack || attack)?)
+                self.encode_with_attack(&held.planes(self.channels), held.attack || attack)?;
+                Some(self.payload.clone())
             }
             None => None,
         };
@@ -67,10 +68,8 @@ impl LcEncoder {
         let Some(held) = self.held.take() else {
             return Ok(None);
         };
-        Ok(Some(self.encode_with_attack(
-            &held.planes(self.channels),
-            held.attack,
-        )?))
+        self.encode_with_attack(&held.planes(self.channels), held.attack)?;
+        Ok(Some(self.payload.clone()))
     }
 
     /// One extra block of zeros so the last 1024 input samples overlap-add

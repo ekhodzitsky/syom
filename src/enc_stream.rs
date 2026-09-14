@@ -347,48 +347,10 @@ impl Encoder {
         }
         Ok(())
     }
-
-    fn emit<F>(
-        &mut self,
-        bufs: &[[f32; FRAME]; 2],
-        samples: usize,
-        scratch: &mut Vec<u8>,
-        cb: &mut F,
-    ) -> Result<()>
-    where
-        F: FnMut(EncodedFrame<'_>) -> Result<()>,
-    {
-        let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
-        if self.enc.lookahead_enabled() {
-            if let Some(au) = self.enc.push_frame(&planes)? {
-                self.deliver(&au, samples, scratch, cb)?;
-            }
-            return Ok(());
-        }
-        let au = self.enc.encode_frame(&planes)?;
-        self.deliver(&au, samples, scratch, cb)
-    }
-
-    fn deliver<F>(
-        &mut self,
-        au: &[u8],
-        samples: usize,
-        scratch: &mut Vec<u8>,
-        cb: &mut F,
-    ) -> Result<()>
-    where
-        F: FnMut(EncodedFrame<'_>) -> Result<()>,
-    {
-        scratch.clear();
-        crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
-        self.aac_frames += 1;
-        self.bytes += scratch.len() as u64;
-        cb(EncodedFrame {
-            samples,
-            au: scratch,
-        })
-    }
 }
+
+#[path = "enc_stream_emit.rs"]
+mod emit;
 
 #[cfg(test)]
 #[path = "enc_stream_tests.rs"]

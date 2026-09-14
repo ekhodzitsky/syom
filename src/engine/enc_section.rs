@@ -367,8 +367,9 @@ pub fn emit_frame(
     ms: &MsBands,
     tns: &[EncTns],
     channels: usize,
-) -> Vec<u8> {
-    let mut w = BitWriter::new();
+    out: &mut Vec<u8>,
+) {
+    let mut w = BitWriter::from_vec(std::mem::take(out));
     if channels == 1 {
         w.write(0, 3); // SCE
         w.write(0, 4); // tag
@@ -388,7 +389,7 @@ pub fn emit_frame(
         }
     }
     w.write(7, 3); // END
-    w.finish()
+    *out = w.finish();
 }
 
 #[cfg(test)]

@@ -169,15 +169,16 @@ where
                 meta: dec.last_meta(),
             })?;
         } else {
-            let planes: Vec<&[f32]> = dec
-                .frame_planes()
-                .iter()
-                .map(|ch| &ch[start..end])
-                .collect();
+            let mut slots: [&[f32]; crate::layout::MAX_PLANES] = [&[]; crate::layout::MAX_PLANES];
+            let src = dec.frame_planes();
+            let n = src.len().min(crate::layout::MAX_PLANES);
+            for (i, ch) in src.iter().enumerate().take(n) {
+                slots[i] = &ch[start..end];
+            }
             on_frame(Frame {
                 sample_rate: rate,
                 samples: take,
-                planar: &planes,
+                planar: &slots[..n],
                 meta: dec.last_meta(),
             })?;
         }

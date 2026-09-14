@@ -114,8 +114,7 @@ fn fit_i32(rows: &mut Vec<Vec<i32>>, groups: usize, n: usize) {
     if rows.len() < groups {
         rows.resize(groups, Vec::new());
     }
-    rows.truncate(groups);
-    for row in rows.iter_mut() {
+    for row in rows.iter_mut().take(groups) {
         row.clear();
         row.resize(n, 0);
     }

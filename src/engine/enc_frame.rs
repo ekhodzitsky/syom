@@ -91,6 +91,8 @@ pub struct LcEncoder {
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
     held: Option<Box<lookahead::HeldFrame>>,
+    /// Reused `raw_data_block` bytes (TASK-78).
+    payload: Vec<u8>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -168,6 +170,7 @@ impl LcEncoder {
             is_band: [false; MAX_BANDS],
             grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
+            payload: Vec::with_capacity(MAX_PAYLOAD_BYTES),
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
                 QuantShort::new(short_offsets.len() - 1),
@@ -280,18 +283,12 @@ impl LcEncoder {
     /// Encode 1024 samples per channel into one `raw_data_block`. Causal
     /// path (lookahead off): the attack decision comes from THIS frame's
     /// samples.
-    pub fn encode_frame(&mut self, pcm: &[&[f32]]) -> Result<Vec<u8>> {
-        self.check_shape(pcm)?;
-        let attack = self.detect(pcm);
-        self.encode_with_attack(pcm, attack)
-    }
-
     /// Core pipeline — window + forward MDCT → TNS → per-band M/S → psy →
     /// quantize → section plan → rate loop → emit — given the attack
     /// decision driving this frame's window sequence. The lookahead path
     /// supplies a decision taken one frame ahead (`lookahead` child
     /// module); everything downstream of the sequence choice is identical.
-    fn encode_with_attack(&mut self, pcm: &[&[f32]], attack: bool) -> Result<Vec<u8>> {
+    fn encode_with_attack(&mut self, pcm: &[&[f32]], attack: bool) -> Result<()> {
         self.seq = self.next_seq(attack);
         let mut specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
         for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter()).zip(pcm.iter()) {
@@ -351,13 +348,15 @@ impl LcEncoder {
         let offset = self.search_offset(&specs, &psy_specs, spend);
         self.build(&specs, &psy_specs, offset);
         self.refine_bands(&specs, spend);
-        let (out, coded) = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)));
-        if out.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
+        let mut payload = std::mem::take(&mut self.payload);
+        let coded = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)), &mut payload);
+        self.payload = payload;
+        if self.payload.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
             return Err(Error::Format("LC encoder: frame exceeds 6144 bits/channel"));
         }
         self.credit = (self.credit + budget as i64 - coded as i64).clamp(0, budget as i64);
         self.prev_seq = self.seq;
-        Ok(out)
+        Ok(())
     }
 }
 

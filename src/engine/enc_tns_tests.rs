@@ -67,16 +67,15 @@ fn emit_mirrors_decoder_parse() -> Result<()> {
     let mut br = BitReader::new(&bytes);
     assert!(br.read_bit()?, "tns_data_present");
     let parsed = TnsData::parse(&mut br, &long_ics())?;
-    assert_eq!(parsed.windows.len(), 1);
+    assert_eq!(parsed.n_windows, 1);
     let win = &parsed.windows[0];
     assert!(win.coef_res, "4-bit coefficients");
-    assert_eq!(win.filters.len(), 1);
+    assert_eq!(win.n_filt, 1);
     let f = &win.filters[0];
     assert_eq!(usize::from(f.length), offsets.len() - 1, "length = num_swb");
     assert!(!f.direction);
     assert!(!f.coef_compress);
     assert!(f.order >= 1 && usize::from(f.order) <= MAX_ORDER);
-    assert_eq!(f.coef.len(), usize::from(f.order));
     // Bit accounting must match the emitted payload exactly.
     assert_eq!(br.bit_position() as usize, t.bits());
     Ok(())
@@ -101,7 +100,7 @@ fn spacer_filter_mirrors_decoder_parse() -> Result<()> {
     assert!(br.read_bit()?);
     let parsed = TnsData::parse(&mut br, &long_ics())?;
     let filters = &parsed.windows[0].filters;
-    assert_eq!(filters.len(), 2, "spacer + active filter");
+    assert_eq!(parsed.windows[0].n_filt, 2, "spacer + active filter");
     assert_eq!(filters[0].order, 0, "spacer is a no-op");
     assert_eq!(usize::from(filters[0].length), 49 - 11);
     assert_eq!(usize::from(filters[1].length), 11 - 8);
