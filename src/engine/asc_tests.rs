@@ -1,7 +1,16 @@
-//! ASC `write_lc` ↔ parse roundtrip.
+//! Independent ASC vectors (TASK-17) plus LC `write_lc` stability.
 
-use super::super::error::Result;
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
+use super::super::bits::BitWriter;
+use super::super::error::{Error, Result};
 use super::{AudioSpecificConfig, write_lc};
+
+fn unhex(s: &str) -> Vec<u8> {
+    (0..s.len() / 2)
+        .map(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
+        .collect()
+}
 
 #[test]
 fn write_lc_roundtrip() -> Result<()> {
@@ -17,5 +26,114 @@ fn write_lc_roundtrip() -> Result<()> {
         assert_eq!(asc.sample_rate, asc.output_sample_rate);
         assert_eq!(bits, 16);
     }
+    assert_eq!(write_lc(3, 1), unhex("1188"));
+    Ok(())
+}
+
+#[test]
+fn explicit_sbr_two_rate_24_48() -> Result<()> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex("2b098800"))?;
+    assert_eq!(asc.aot, 2);
+    assert_eq!(asc.sampling_frequency_index, 6);
+    assert_eq!(asc.sample_rate, 24_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
+    assert_eq!(asc.channel_configuration, 1);
+    assert!(asc.sbr_present);
+    assert!(!asc.ps_present);
+    Ok(())
+}
+
+#[test]
+fn explicit_ps_two_rate_24_48() -> Result<()> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex("eb098800"))?;
+    assert_eq!(asc.aot, 2);
+    assert_eq!(asc.sample_rate, 24_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
+    assert!(asc.sbr_present);
+    assert!(asc.ps_present);
+    Ok(())
+}
+
+#[test]
+fn implicit_sbr_24_48_and_downsampled_48_48() -> Result<()> {
+    let (he, _) = AudioSpecificConfig::parse(&unhex("130856e598"))?;
+    assert_eq!(he.sample_rate, 24_000);
+    assert_eq!(he.output_sample_rate, 48_000);
+    assert!(he.sbr_present);
+    assert!(!he.ps_present);
+
+    let (ds, _) = AudioSpecificConfig::parse(&unhex("118856e598"))?;
+    assert_eq!(ds.sample_rate, 48_000);
+    assert_eq!(ds.output_sample_rate, 48_000);
+    assert!(ds.sbr_present);
+    Ok(())
+}
+
+#[test]
+fn implicit_ps_0x548() -> Result<()> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex("130856e59d4880"))?;
+    assert_eq!(asc.sample_rate, 24_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
+    assert!(asc.sbr_present);
+    assert!(asc.ps_present);
+    Ok(())
+}
+
+#[test]
+fn one_rate_explicit_sbr_is_not_amd2() {
+    // Local ics_tests layout: AOT5 + one rate index. Not Table 1.13.
+    let err = AudioSpecificConfig::parse(&unhex("298880")).unwrap_err();
+    assert!(matches!(err, Error::Format(_) | Error::UnsupportedAot(_)));
+}
+
+#[test]
+fn truncated_implicit_sbr_is_unexpected_end_not_panic() {
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(0, 3);
+    w.write(0x2b7, 11);
+    w.write(5, 5);
+    // 32 bits exactly: flag bit is missing, no padding into a rate field.
+    let err = AudioSpecificConfig::parse(&w.finish()).unwrap_err();
+    assert!(matches!(err, Error::UnexpectedEnd));
+}
+
+#[test]
+fn unsupported_960_and_main_are_explicit() {
+    assert!(matches!(
+        AudioSpecificConfig::parse(&unhex("118c")),
+        Err(Error::UnsupportedFrameLength)
+    ));
+    assert!(matches!(
+        AudioSpecificConfig::parse(&unhex("0988")),
+        Err(Error::UnsupportedAot(1))
+    ));
+}
+
+#[test]
+fn explicit_24bit_core_rate() -> Result<()> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex("17805dc008"))?;
+    assert_eq!(asc.sample_rate, 48_000);
+    assert!(!asc.sbr_present);
+    Ok(())
+}
+
+#[test]
+fn sbr_present_flag_zero_stays_lc() -> Result<()> {
+    // 0x2b7 + AOT5 + sbrPresentFlag=0 must not become HE (LC padding).
+    let mut w = BitWriter::new();
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(0, 3);
+    w.write(0x2b7, 11);
+    w.write(5, 5);
+    w.write_bit(false);
+    let (asc, _) = AudioSpecificConfig::parse(&w.finish())?;
+    assert!(!asc.sbr_present);
+    assert_eq!(asc.sample_rate, 48_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
     Ok(())
 }

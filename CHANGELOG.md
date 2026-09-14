@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- HE `AudioSpecificConfig` parse follows Amd 2/9: explicit AOT 5/29
+  consume a core rate and an extension rate (not one rate halved);
+  implicit `0x2b7` reads `extensionSamplingFrequencyIndex`; `0x548`
+  sets PS. Downsampled SBR (1×) is distinct from dual-rate (2×).
 - AAC syntax inventory (`corpus/conformance/`): clause acquisition status
   (ISO 14496-3/26 and 13818-7 full text not obtained), advertised-tool
   coverage matrix, and independently authored ASC/ADTS/LATM/PCE examples

@@ -253,17 +253,20 @@ fn two_rate_explicit_sbr_is_iso_amd2_not_local_one_rate() {
         .find(|v| v.id == "asc-explicit-sbr-two-rate-24-48")
         .unwrap();
     assert_eq!(two.hex, "2b098800");
-    assert_eq!(two.agreement, "diverge");
+    assert_eq!(two.agreement, "match");
     let bytes = unhex(&two.hex);
-    // Amd 2 two-rate form is not the ics_tests one-rate layout.
-    assert!(!asc_matches(&bytes, &two.independent));
+    assert!(
+        asc_matches(&bytes, &two.independent),
+        "Amd 2 two-rate explicit SBR must parse"
+    );
     let local = vecs
         .iter()
         .find(|v| v.id == "asc-explicit-sbr-one-rate-syom-local")
         .unwrap();
-    let (asc, _) = AudioSpecificConfig::parse(&unhex(&local.hex)).unwrap();
-    assert!(asc.sbr_present);
-    assert_eq!(asc.output_sample_rate, 48_000);
+    assert!(
+        AudioSpecificConfig::parse(&unhex(&local.hex)).is_err(),
+        "one-rate AOT5 is not Table 1.13"
+    );
 }
 
 #[test]

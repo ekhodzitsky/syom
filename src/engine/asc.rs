@@ -1,6 +1,8 @@
-//! `AudioSpecificConfig` — ISO/IEC 14496-3 §1.6.2.1 Table 1.15.
+//! `AudioSpecificConfig` — ISO/IEC 14496-3:2005/Amd 2 Table 1.13.
 //!
-//! LC core (AOT 2). Outer AOT 5/29 unwraps to LC + SBR/PS.
+//! LC core (AOT 2). Explicit AOT 5/29: core rate, then extension rate, then
+//! inner LC. Implicit HE: `0x2b7` + `sbrPresentFlag` + extension rate, then
+//! optional `0x548` PS.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::{BitReader, BitWriter};
@@ -57,55 +59,41 @@ impl AudioSpecificConfig {
     }
 
     fn parse_bits(reader: &mut BitReader<'_>) -> Result<Self> {
+        // ISO/IEC 14496-3:2005/Amd 2 Table 1.13 + Amd 9 implicit 0x2b7/0x548.
+        // Explicit AOT 5/29: first rate is the LC core, then channelConfiguration,
+        // then extensionSamplingFrequencyIndex (SBR output), then inner AOT.
         let outer_aot = read_aot(reader)?;
+        let sampling_frequency_index = reader.read(4)? as u8;
+        let sample_rate = resolve_rate(sampling_frequency_index, reader)?;
+        let channel_configuration = reader.read(4)? as u8;
         let mut sbr_present = outer_aot == AOT_SBR || outer_aot == AOT_PS;
         let mut ps_present = outer_aot == AOT_PS;
-        let (sampling_frequency_index, sample_rate, channel_configuration, aot) = if sbr_present {
+        let mut output_sample_rate = sample_rate;
+        let aot = if sbr_present {
             let ext_idx = reader.read(4)? as u8;
-            let output_rate = resolve_rate(ext_idx, reader)?;
-            let channel_configuration = reader.read(4)? as u8;
+            output_sample_rate = resolve_rate(ext_idx, reader)?;
             let inner = read_aot(reader)?;
             if inner != AOT_LC {
                 return Err(Error::UnsupportedAot(inner));
             }
             parse_ga(reader)?;
-            let core_rate = output_rate / 2;
-            let core_idx = ADTS_SAMPLE_RATES_HZ
-                .iter()
-                .position(|&r| r == core_rate)
-                .unwrap_or(ext_idx as usize) as u8;
-            (core_idx, core_rate, channel_configuration, inner)
+            inner
         } else {
-            let sampling_frequency_index = reader.read(4)? as u8;
-            let sample_rate = resolve_rate(sampling_frequency_index, reader)?;
-            let channel_configuration = reader.read(4)? as u8;
             if outer_aot != AOT_LC {
                 return Err(Error::UnsupportedAot(outer_aot));
             }
             parse_ga(reader)?;
-            (
-                sampling_frequency_index,
-                sample_rate,
-                channel_configuration,
-                outer_aot,
-            )
+            parse_implicit_sbr(
+                reader,
+                &mut sbr_present,
+                &mut ps_present,
+                &mut output_sample_rate,
+            )?;
+            outer_aot
         };
-        // Implicit SBR: syncExtensionType 0x2b7, AOT 5/29, sbrPresentFlag=1.
-        // LC padding `56 e5 00` peeks as 0x2b7 + AOT 5 with flag 0 — ignore it.
-        if !sbr_present && reader.bits_remaining() >= 17 && reader.peek_u32(11).ok() == Some(0x2b7)
-        {
-            let _ = reader.read(11)?;
-            let ext = read_aot(reader)?;
-            if (ext == AOT_SBR || ext == AOT_PS) && reader.read_bit()? {
-                sbr_present = true;
-                ps_present = ps_present || ext == AOT_PS;
-            }
+        if sbr_present {
+            check_sbr_rates(sample_rate, output_sample_rate)?;
         }
-        let output_sample_rate = if sbr_present {
-            sample_rate.saturating_mul(2)
-        } else {
-            sample_rate
-        };
         Ok(AudioSpecificConfig {
             aot,
             sampling_frequency_index,
@@ -115,6 +103,46 @@ impl AudioSpecificConfig {
             sbr_present,
             ps_present,
         })
+    }
+}
+
+/// Implicit HE: `syncExtensionType` 0x2b7, AOT 5/29, `sbrPresentFlag`,
+/// `extensionSamplingFrequencyIndex`, optional 0x548 `psPresentFlag`.
+/// LC padding `56 e5 00` peeks as 0x2b7 + AOT 5 with flag 0 — leave LC.
+fn parse_implicit_sbr(
+    reader: &mut BitReader<'_>,
+    sbr_present: &mut bool,
+    ps_present: &mut bool,
+    output_sample_rate: &mut u32,
+) -> Result<()> {
+    if reader.bits_remaining() < 16 || reader.peek_u32(11).ok() != Some(0x2b7) {
+        return Ok(());
+    }
+    let _ = reader.read(11)?;
+    let ext = read_aot(reader)?;
+    if ext != AOT_SBR && ext != AOT_PS {
+        return Ok(());
+    }
+    if !reader.read_bit()? {
+        return Ok(());
+    }
+    *sbr_present = true;
+    *ps_present = *ps_present || ext == AOT_PS;
+    let ext_idx = reader.read(4)? as u8;
+    *output_sample_rate = resolve_rate(ext_idx, reader)?;
+    if reader.bits_remaining() >= 12 && reader.peek_u32(11).ok() == Some(0x548) {
+        let _ = reader.read(11)?;
+        *ps_present = reader.read_bit()?;
+    }
+    Ok(())
+}
+
+/// Dual-rate SBR is 2× core; downsampled SBR is 1×. Other ratios are not v1.
+fn check_sbr_rates(core: u32, output: u32) -> Result<()> {
+    if output == core || output == core.saturating_mul(2) {
+        Ok(())
+    } else {
+        Err(Error::Format("SBR extension rate must be 1x or 2x core"))
     }
 }
 

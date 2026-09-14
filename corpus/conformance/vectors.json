@@ -47,7 +47,7 @@
       "finding": "F09",
       "hex": "2b098800",
       "bit_notes": "Amd 2 Table 1.13: AOT=5, samplingFrequencyIndex=6 (24 kHz core), ch=1, extensionSamplingFrequencyIndex=3 (48 kHz), inner AOT=2, GA zeros. 25 bits.",
-      "agreement": "diverge",
+      "agreement": "match",
       "follow_on": "TASK-26",
       "independent": {
         "aot": 2,
@@ -76,7 +76,7 @@
       "finding": "F09",
       "hex": "130856e598",
       "bit_notes": "AOT=2, sf=6 (24 kHz), ch=1, GA zeros, syncExtensionType=0x2b7, AOT=5, sbrPresentFlag=1, extensionSamplingFrequencyIndex=3 (48 kHz). Same 40-bit prefix as src/goldens/he48.m4a esds.",
-      "agreement": "partial",
+      "agreement": "match",
       "follow_on": "TASK-26",
       "independent": {
         "aot": 2,
@@ -94,7 +94,7 @@
       "finding": "F09",
       "hex": "118856e598",
       "bit_notes": "Downsampled SBR: core 48 kHz (sf=3) and extension 48 kHz. Independent output is 48 kHz, not 96 kHz.",
-      "agreement": "diverge",
+      "agreement": "match",
       "follow_on": "TASK-26",
       "independent": {
         "aot": 2,
@@ -112,7 +112,7 @@
       "finding": "F09",
       "hex": "130856e59d4880",
       "bit_notes": "Implicit SBR 24/48 plus syncExtensionType=0x548 and psPresentFlag=1. Matches src/goldens/ps48.m4a DecoderSpecificInfo length-7 prefix.",
-      "agreement": "partial",
+      "agreement": "match",
       "follow_on": "TASK-26",
       "independent": {
         "aot": 2,
@@ -130,7 +130,7 @@
       "finding": "F09",
       "hex": "eb098800",
       "bit_notes": "AOT=29, core sf=6, ch=1, extension sf=3, inner AOT=2, GA zeros",
-      "agreement": "diverge",
+      "agreement": "match",
       "follow_on": "TASK-26",
       "independent": {
         "aot": 2,

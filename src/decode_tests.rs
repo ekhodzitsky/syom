@@ -189,8 +189,9 @@ fn he_sbr_upsample_is_not_media() -> Result<(), AacError> {
     use crate::engine::bits::BitWriter;
     let mut w = BitWriter::new();
     w.write(5, 5);
-    w.write(3, 4);
+    w.write(6, 4);
     w.write(1, 4);
+    w.write(3, 4);
     w.write(2, 5);
     w.write(0, 3);
     let (asc, _) =

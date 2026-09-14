@@ -55,10 +55,12 @@ fn asc_lc_is_aot_2() -> Result<(), Error> {
 
 #[test]
 fn asc_heaac_aot5_unwraps_lc_core() -> Result<(), Error> {
+    // Amd 2 two-rate: core 24 kHz, extension 48 kHz, inner LC.
     let mut w = BitWriter::new();
     w.write(5, 5); // SBR
-    w.write(3, 4); // 48 kHz output
+    w.write(6, 4); // 24 kHz core
     w.write(1, 4); // mono
+    w.write(3, 4); // 48 kHz SBR
     w.write(2, 5); // inner LC
     w.write(0, 3); // GA
     let bytes = w.finish();
@@ -86,6 +88,8 @@ fn asc_lc_with_trailing_sbr_probe_still_lc() -> Result<(), Error> {
     let (asc, _) = AudioSpecificConfig::parse(&bytes)?;
     assert_eq!(asc.aot, 2);
     assert!(asc.sbr_present);
+    assert_eq!(asc.sample_rate, 48_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
     Ok(())
 }
 
