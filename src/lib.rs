@@ -140,3 +140,11 @@ mod stream_m4a_tests;
 #[cfg(test)]
 #[path = "error_tests.rs"]
 mod error_tests;
+
+#[cfg(test)]
+#[path = "fuzz_smoke_tests.rs"]
+mod fuzz_smoke_tests;
+
+#[cfg(test)]
+#[path = "fuzz_parse_tests.rs"]
+mod fuzz_parse_tests;

@@ -241,6 +241,28 @@ fn lab_faad2_pin_is_isolated_2_11_3() {
     assert!(!cargo.contains("libfaad"));
 }
 
+#[test]
+fn lab_fuzz_is_isolated_std_mutator() {
+    let pin = std::fs::read_to_string(root().join("lab/fuzz/PIN.md")).unwrap();
+    assert!(pin.contains("TASK-48"));
+    assert!(pin.contains("Not invoked by cargo test") || pin.contains("must not"));
+    assert!(pin.contains("libFuzzer") || pin.contains("libfuzzer"));
+    let cargo = std::fs::read_to_string(root().join("lab/fuzz/Cargo.toml")).unwrap();
+    assert!(cargo.contains("syom-lab-fuzz"));
+    assert!(!cargo.contains("[workspace]"));
+    assert!(!cargo.contains("libfuzzer"));
+    let mk = std::fs::read_to_string(root().join("lab/fuzz/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/fuzz/REPORT.md")).unwrap();
+    assert!(report.contains("TASK-48"));
+    assert!(report.contains("crashes"));
+    assert!(report.contains("not exhaustive") || report.contains("not proof"));
+    let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!product.contains("lab/fuzz"));
+    assert!(!product.contains("libfuzzer-sys"));
+    assert!(!product.contains("cargo-fuzz"));
+}
+
 fn walk(dir: std::path::PathBuf) -> Vec<std::path::PathBuf> {
     let mut out = Vec::new();
     for e in std::fs::read_dir(dir).unwrap() {

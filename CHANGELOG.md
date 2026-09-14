@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bounded parser-fuzz smoke corpus (TASK-48): ordinary tests replay
+  `corpus/fuzz/` plus goldens through `decode_with` / sniff and the
+  BitReader, ASC, ADTS, LATM and PCE parsers. Mutational campaign is
+  isolated `lab/fuzz` (std only, not a workspace member, never spawned
+  by `cargo test`). Not a safety proof.
 - LC ABR (TASK-66): leftover per-frame budget is unused bytes after
   `ID_END` (decoder stops at END; PCM-neutral). 10 s sine/noise/tremolo/
   lecture hit payload/valid ±3% (measured 1.002–1.003). Silence is not
