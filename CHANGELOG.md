@@ -54,6 +54,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- ADTS frames with `number_of_raw_data_blocks_in_frame` > 1 decode every
+  `raw_data_block()` (1..=4). CRC-present payloads skip the header
+  position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
+  are not checked (TASK-29). Single-block goldens are unchanged.
 - ASC `channel_configuration=0` now parses the embedded
   `program_config_element` (LC object type, matching core rate, unique
   tags). M4A/LATM seed the decoder map from it; in-band PCE still wins.

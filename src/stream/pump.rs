@@ -88,15 +88,7 @@ impl Decoder {
                     let before = dst.len();
                     let rate = self
                         .dec
-                        .decode_raw_mono_f32(
-                            hdr.audio_object_type(),
-                            hdr.sampling_frequency_index,
-                            hdr.sample_rate(),
-                            hdr.channel_configuration,
-                            hdr.number_of_raw_data_blocks_in_frame,
-                            payload,
-                            dst,
-                        )
+                        .decode_adts_header_payload(&hdr, payload, Some(dst))
                         .map_err(|e| {
                             AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}"))
                         })?;
@@ -120,28 +112,14 @@ impl Decoder {
     /// Decode one ADTS payload: mono fast path into `mono_scratch`, or
     /// scaled planes borrowed via `frame_planes`.
     fn decode_adts(&mut self, hdr: &AdtsHeader, payload: &[u8], idx: u64) -> Result<u32> {
-        let (aot, fs, sr, ch) = (
-            hdr.audio_object_type(),
-            hdr.sampling_frequency_index,
-            hdr.sample_rate(),
-            hdr.channel_configuration,
-        );
         if matches!(self.opts.channel_mode, ChannelMode::Mono) {
             self.mono_scratch.clear();
             self.dec
-                .decode_raw_mono_f32(
-                    aot,
-                    fs,
-                    sr,
-                    ch,
-                    hdr.number_of_raw_data_blocks_in_frame,
-                    payload,
-                    &mut self.mono_scratch,
-                )
+                .decode_adts_header_payload(hdr, payload, Some(&mut self.mono_scratch))
                 .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}")))
         } else {
             self.dec
-                .decode_frame_scaled(aot, fs, sr, ch, payload)
+                .decode_adts_header_payload(hdr, payload, None)
                 .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e}")))
         }
     }

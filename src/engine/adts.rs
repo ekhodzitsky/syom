@@ -68,15 +68,11 @@ impl AdtsHeader {
         let aac_frame_length = br.read(13)? as u16;
         let adts_buffer_fullness = br.read(11)? as u16;
         let number_of_raw_data_blocks_in_frame = br.read(2)? as u8 + 1;
-        let payload_offset = if protection_absent {
-            ADTS_HEADER_BYTES_NO_CRC
-        } else {
-            ADTS_HEADER_BYTES_WITH_CRC
-        };
+        let payload_offset = payload_offset(protection_absent, number_of_raw_data_blocks_in_frame);
         if (aac_frame_length as usize) < payload_offset {
             return Err(Error::AdtsFrameLengthTooSmall);
         }
-        if !protection_absent && data.len() < ADTS_HEADER_BYTES_WITH_CRC {
+        if data.len() < payload_offset {
             return Err(Error::UnexpectedEnd);
         }
         Ok((
@@ -132,6 +128,20 @@ impl AdtsHeader {
         let mut out = [0u8; ADTS_HEADER_BYTES_NO_CRC];
         out.copy_from_slice(&bytes);
         out
+    }
+}
+
+/// Byte offset of the first `raw_data_block()`. CRC-protected frames place
+/// `raw_data_block_position[1..N]` plus a 16-bit header CRC before the
+/// payload (`7 + 2N` bytes). Integrity checking is TASK-29.
+#[must_use]
+pub fn payload_offset(protection_absent: bool, n_rdb: u8) -> usize {
+    if protection_absent {
+        ADTS_HEADER_BYTES_NO_CRC
+    } else if n_rdb <= 1 {
+        ADTS_HEADER_BYTES_WITH_CRC
+    } else {
+        ADTS_HEADER_BYTES_NO_CRC + 2 * usize::from(n_rdb)
     }
 }
 

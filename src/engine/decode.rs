@@ -38,10 +38,10 @@ pub struct StreamDecoder {
     pub mix_down_mono: bool,
     sbr: Option<SbrDecoder>,
     sbr_hdr: Option<SbrHeader>,
-    sbr_active: bool,
+    pub(crate) sbr_active: bool,
     pub(crate) pcm_l: Vec<f32>,
     pub(crate) pcm_r: Vec<f32>,
-    frame_ch: Vec<Vec<f32>>,
+    pub(crate) frame_ch: Vec<Vec<f32>>,
     n_ch: usize,
     pub(crate) quant: Vec<i32>,
     pub(crate) spec_l: Vec<f32>,
@@ -50,7 +50,7 @@ pub struct StreamDecoder {
     pub(crate) sections_r: SectionData,
     pub(crate) sf_l: ScaleFactors,
     pub(crate) sf_r: ScaleFactors,
-    fast_mono: bool,
+    pub(crate) fast_mono: bool,
     /// Decoded elements of the current frame (multichannel path only).
     elems: Vec<Element>,
     /// Sticky `program_config_element()` channel map; wins over
@@ -59,6 +59,8 @@ pub struct StreamDecoder {
     /// Per-channel filterbank state for the multichannel path. Mono/stereo
     /// keep using `fb_l` / `fb_r` directly.
     fb_pool: Vec<Filterbank>,
+    /// Bytes consumed by the last `raw_data_block()` (byte-aligned).
+    pub(crate) last_rdb_bytes: usize,
 }
 
 impl StreamDecoder {
@@ -90,11 +92,22 @@ impl StreamDecoder {
         fs_index: u8,
         sample_rate: u32,
         channel_configuration: u8,
-        _num_raw_data_blocks: u8,
+        num_raw_data_blocks: u8,
         payload: &[u8],
     ) -> Result<DecodedFrame> {
-        let sample_rate =
-            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload)?;
+        let sample_rate = if num_raw_data_blocks <= 1 {
+            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload)?
+        } else {
+            self.decode_adts_blocks(
+                aot,
+                fs_index,
+                sample_rate,
+                channel_configuration,
+                num_raw_data_blocks,
+                true,
+                payload,
+            )?
+        };
         Ok(DecodedFrame {
             planar: self.frame_ch.clone(),
             channels: self.frame_ch.len(),
@@ -130,7 +143,7 @@ impl StreamDecoder {
         &self.frame_ch
     }
 
-    fn decode_into_bufs(
+    pub(crate) fn decode_into_bufs(
         &mut self,
         aot: u8,
         fs_index: u8,
@@ -253,6 +266,8 @@ impl StreamDecoder {
                 }
             }
         }
+        br.byte_align()?;
+        self.last_rdb_bytes = (br.bit_position() / 8) as usize;
         if self.fast_mono && pending_sbr.is_none() && !self.sbr_active {
             return Ok(sample_rate);
         }
@@ -295,8 +310,15 @@ impl StreamDecoder {
         let was = self.mix_down_mono;
         self.mix_down_mono = true;
         self.fast_mono = true;
-        let rate =
-            self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload);
+        let rate = self.decode_adts_blocks(
+            aot,
+            fs_index,
+            sample_rate,
+            channel_configuration,
+            _num_raw_data_blocks,
+            true,
+            payload,
+        );
         self.fast_mono = false;
         self.mix_down_mono = was;
         let rate = rate?;
