@@ -11,7 +11,7 @@ use super::enc_ms::MsBands;
 use super::enc_quant::{BOOKS, MAX_BANDS, QuantChannel, UNREPRESENTABLE};
 use super::enc_tns::EncTns;
 use super::ics::WindowSequence;
-use super::section::{NOISE_HCB, has_spectral, is_noise};
+use super::section::{NOISE_HCB, has_spectral, is_intensity, is_noise};
 use super::sf::{NOISE_OFFSET, NOISE_PCM_BITS};
 
 #[path = "enc_section_dp.rs"]
@@ -149,16 +149,28 @@ pub(super) fn plan_books_into(
 /// Choose `sfb_cb` per band of a long-window channel.
 pub fn plan_books(q: &QuantChannel) -> [u8; MAX_BANDS] {
     let mut coded = q.coded;
-    for (c, &p) in coded.iter_mut().zip(q.pns.iter()).take(q.n_bands) {
-        if p {
+    for ((c, &p), &is) in coded
+        .iter_mut()
+        .zip(q.pns.iter())
+        .zip(q.intensity.iter())
+        .take(q.n_bands)
+    {
+        if p || is {
             *c = false;
         }
     }
     let mut sfb_cb = [0u8; MAX_BANDS];
     plan_books_into(&coded, &q.bits, q.n_bands, &mut sfb_cb, section_header_bits);
-    for (slot, &p) in sfb_cb.iter_mut().zip(q.pns.iter()).take(q.n_bands) {
+    for ((slot, &p), (&is, &hcb)) in sfb_cb
+        .iter_mut()
+        .zip(q.pns.iter())
+        .zip(q.intensity.iter().zip(q.is_hcb.iter()))
+        .take(q.n_bands)
+    {
         if p {
             *slot = NOISE_HCB;
+        } else if is {
+            *slot = hcb;
         }
     }
     sfb_cb
@@ -200,7 +212,7 @@ pub fn emit_section_data(w: &mut BitWriter, sfb_cb: &[u8; MAX_BANDS], max_sfb: u
     }
 }
 
-/// `scale_factor_data()` (Table 4.53): DPCM over spectral and PNS bands.
+/// `scale_factor_data()` (Table 4.53): DPCM over spectral, PNS, and IS.
 pub fn emit_scale_factors(
     w: &mut BitWriter,
     sfb_cb: &[u8; MAX_BANDS],
@@ -209,13 +221,15 @@ pub fn emit_scale_factors(
 ) {
     let mut prev_sf = i32::from(global_gain);
     let mut prev_nrg = i32::from(global_gain) - NOISE_OFFSET - 256;
+    let mut prev_is = 0i32;
     let mut noise_first = true;
     let bands = sfb_cb
         .iter()
         .zip(q.sf.iter())
         .zip(q.noise_nrg.iter())
+        .zip(q.is_pos.iter())
         .take(q.n_bands);
-    for ((&cb, &sf), &nrg) in bands {
+    for (((&cb, &sf), &nrg), &pos) in bands {
         if is_noise(cb) {
             if noise_first {
                 w.write((nrg - prev_nrg).clamp(0, 511) as u32, NOISE_PCM_BITS);
@@ -224,6 +238,9 @@ pub fn emit_scale_factors(
                 sf_emit_delta(w, nrg - prev_nrg);
             }
             prev_nrg = nrg;
+        } else if is_intensity(cb) {
+            sf_emit_delta(w, pos - prev_is);
+            prev_is = pos;
         } else if has_spectral(cb) {
             sf_emit_delta(w, sf - prev_sf);
             prev_sf = sf;
@@ -281,14 +298,16 @@ pub fn channel_body_bits(
     // scale_factor_data + spectral data (PNS has energy bits, no Huffman)
     let mut prev_sf = i32::from(global_gain);
     let mut prev_nrg = i32::from(global_gain) - NOISE_OFFSET - 256;
+    let mut prev_is = 0i32;
     let mut noise_first = true;
     let bands = sfb_cb
         .iter()
         .zip(q.sf.iter())
         .zip(q.noise_nrg.iter())
+        .zip(q.is_pos.iter())
         .zip(q.bits.iter())
         .take(q.n_bands);
-    for (((&cb, &sf), &nrg), row) in bands {
+    for ((((&cb, &sf), &nrg), &pos), row) in bands {
         if is_noise(cb) {
             if noise_first {
                 bits += NOISE_PCM_BITS as usize;
@@ -297,6 +316,9 @@ pub fn channel_body_bits(
                 bits += sf_delta_bits(nrg - prev_nrg);
             }
             prev_nrg = nrg;
+        } else if is_intensity(cb) {
+            bits += sf_delta_bits(pos - prev_is);
+            prev_is = pos;
         } else if has_spectral(cb) {
             bits += sf_delta_bits(sf - prev_sf);
             prev_sf = sf;

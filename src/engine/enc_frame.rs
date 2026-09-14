@@ -6,7 +6,7 @@
 //!
 //! Block switching: OnlyLong → LongStart → EightShort → LongStop; CPE
 //! `common_window = 1` ORs both detectors. TNS is long-only unless
-//! `with_short_tns`. Grouping/refine/PNS off unless opted in. No intensity.
+//! `with_short_tns`. Grouping/refine/PNS/IS off unless opted in.
 //!
 //! Known causal weakness, and the opt-in fix: the LongStart window stays
 //! flat for the first 1024 + 448 taps, so an attack landing in the first
@@ -25,7 +25,7 @@
 //! held frame at end of input.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
-use super::enc_ms::{self, MsBands};
+use super::enc_ms::MsBands;
 use super::enc_psy::{AttackDetector, Psy};
 use super::enc_quant::{MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
 use super::enc_short::{self, ShortWindows};
@@ -84,6 +84,9 @@ pub struct LcEncoder {
     short_group: bool,
     band_refine: bool,
     pns: bool,
+    intensity: bool,
+    /// Pre-M/S IS candidate mask (long stereo).
+    is_band: [bool; MAX_BANDS],
     grouping: super::enc_group::Grouping,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
@@ -161,6 +164,8 @@ impl LcEncoder {
             short_group: false,
             band_refine: false,
             pns: false,
+            intensity: false,
+            is_band: [false; MAX_BANDS],
             grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
             chans_s: Box::new([
@@ -340,23 +345,7 @@ impl LcEncoder {
         } else {
             super::enc_group::Grouping::ungrouped()
         };
-        // Per-band M/S decision, once per frame before the rate loop.
-        self.ms = if self.channels == 2 {
-            #[cfg(test)]
-            let per_band = self.ms_per_band;
-            #[cfg(not(test))]
-            let per_band = true;
-            if self.seq.is_eight_short() {
-                enc_ms::decide_short(&mut specs, self.short_offsets, per_band, self.grouping)
-            } else {
-                enc_ms::decide_long(&mut specs, self.offsets, per_band)
-            }
-        } else {
-            MsBands::off()
-        };
-        if long && self.channels == 2 {
-            self.ms.apply_long_to(&mut psy_specs, self.offsets);
-        }
+        self.decide_stereo(&mut specs, &mut psy_specs, long);
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, &psy_specs, spend);

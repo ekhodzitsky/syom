@@ -237,6 +237,8 @@ pub struct EncodeOptions {
     pub band_refine: bool,
     /// Perceptual noise substitution (TASK-75). Default off.
     pub pns: bool,
+    /// Intensity stereo (TASK-76). Default off.
+    pub intensity: bool,
 }
 
 impl Default for EncodeOptions {
@@ -251,6 +253,7 @@ impl Default for EncodeOptions {
             short_group: false,
             band_refine: false,
             pns: false,
+            intensity: false,
         }
     }
 }
@@ -348,6 +351,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_pns(mut self, on: bool) -> Self {
         self.pns = on;
+        self
+    }
+
+    /// Intensity stereo on long-window HF bands. Off by default; one-shot
+    /// and push encode honor it identically.
+    #[inline]
+    pub fn with_intensity(mut self, on: bool) -> Self {
+        self.intensity = on;
         self
     }
 }

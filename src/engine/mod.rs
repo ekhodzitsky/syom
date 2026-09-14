@@ -16,6 +16,7 @@ pub(crate) mod det_math;
 pub(crate) mod enc_frame;
 pub(crate) mod enc_group;
 pub(crate) mod enc_huff;
+pub(crate) mod enc_is;
 pub(crate) mod enc_ms;
 pub(crate) mod enc_pns;
 pub(crate) mod enc_psy;

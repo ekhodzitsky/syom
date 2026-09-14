@@ -160,6 +160,10 @@ mod encode_refine_tests;
 mod encode_pns_tests;
 
 #[cfg(test)]
+#[path = "encode_is_tests.rs"]
+mod encode_is_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in intensity stereo (TASK-76): `EncodeOptions::with_intensity`.
+  Default off — goldens unchanged. Long-window HF (`≥ 6 kHz`, `|ρ| ≥ 0.85`)
+  right-channel `INTENSITY_HCB`/`HCB2` + `is_pos`. Ablation
+  (`lab/quality/IS.md`): 64k panned 8 kHz ILD 0.300→0.297, L SNR **+0.50 dB**,
+  ADTS −0.6%; anti-phase corr −1.0; ambience not collapsed. **No-go as
+  0.x default** (stereo goldens; only HF panned at low rate).
 - Opt-in LC perceptual noise substitution (TASK-75):
   `EncodeOptions::with_pns`. Default off — goldens unchanged. Long-window
   noise-like HF bands (`NOISE_HCB` + `noise_nrg`, det_math, TNS-span

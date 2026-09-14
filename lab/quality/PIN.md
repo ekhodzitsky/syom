@@ -8,7 +8,8 @@ TNS is `encode_short_tns_tests` plus `SHORT_TNS.md`. TASK-71 grouping is
 `encode_group_tests` plus `GROUPING.md`. TASK-73 section DP is
 `enc_section_tests` plus `SECTION.md`. TASK-74 band refine is
 `encode_refine_tests` plus `REFINE.md`. TASK-75 PNS is
-`encode_pns_tests` plus `PNS.md`. Same isolation.
+`encode_pns_tests` plus `PNS.md`. TASK-76 intensity stereo is
+`encode_is_tests` plus `IS.md`. Same isolation.
 
 ## Independent decoder
 

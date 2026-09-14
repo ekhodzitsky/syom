@@ -26,7 +26,8 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
         .with_short_tns(opts.short_tns)
         .with_short_group(opts.short_group)
         .with_band_refine(opts.band_refine)
-        .with_pns(opts.pns))
+        .with_pns(opts.pns)
+        .with_intensity(opts.intensity))
 }
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.

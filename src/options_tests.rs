@@ -174,3 +174,9 @@ fn encode_pns_defaults_off() {
     assert!(!EncodeOptions::default().pns);
     assert!(EncodeOptions::adts().with_pns(true).pns);
 }
+
+#[test]
+fn encode_intensity_defaults_off() {
+    assert!(!EncodeOptions::default().intensity);
+    assert!(EncodeOptions::adts().with_intensity(true).intensity);
+}

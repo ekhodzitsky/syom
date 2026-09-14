@@ -61,7 +61,7 @@ fn pick_band(
             .enumerate()
             .take(q.n_bands)
         {
-            if sk || !coded || sf <= 0 || q.pns[b] {
+            if sk || !coded || sf <= 0 || q.pns[b] || q.intensity[b] {
                 continue;
             }
             let lo = usize::from(enc.offsets[b]);

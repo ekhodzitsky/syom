@@ -52,6 +52,57 @@ impl LcEncoder {
         self
     }
 
+    pub(crate) fn with_intensity(mut self, on: bool) -> Self {
+        self.intensity = on;
+        self
+    }
+
+    /// Per-band M/S (and optional IS skip) once per frame before the rate loop.
+    pub(super) fn decide_stereo(
+        &mut self,
+        specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
+        psy_specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
+        long: bool,
+    ) {
+        self.ms = if self.channels == 2 {
+            #[cfg(test)]
+            let per_band = self.ms_per_band;
+            #[cfg(not(test))]
+            let per_band = true;
+            if self.seq.is_eight_short() {
+                self.is_band.fill(false);
+                crate::engine::enc_ms::decide_short(
+                    specs,
+                    self.short_offsets,
+                    per_band,
+                    self.grouping,
+                )
+            } else {
+                if self.intensity {
+                    crate::engine::enc_is::plan(
+                        specs,
+                        self.offsets,
+                        self.sample_rate,
+                        &mut self.is_band,
+                    );
+                } else {
+                    self.is_band.fill(false);
+                }
+                crate::engine::enc_ms::decide_long_skip(
+                    specs,
+                    self.offsets,
+                    per_band,
+                    &self.is_band,
+                )
+            }
+        } else {
+            crate::engine::enc_ms::MsBands::off()
+        };
+        if long && self.channels == 2 {
+            self.ms.apply_long_to(psy_specs, self.offsets);
+        }
+    }
+
     pub(super) fn apply_tns(
         &mut self,
         specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
@@ -143,6 +194,7 @@ impl LcEncoder {
         for ch in 0..self.channels {
             let q = &mut self.chans[ch];
             q.pns[..q.n_bands].fill(false);
+            q.intensity[..q.n_bands].fill(false);
             let tq = &mut self.target_q[ch];
             self.psy
                 .analyze(&psy_specs[ch], self.offsets, TARGET_Q, &mut q.coded, tq);
@@ -178,6 +230,15 @@ impl LcEncoder {
                 &self.gains,
                 &self.ms,
                 &self.tns,
+            );
+        }
+        if self.intensity && self.channels == 2 {
+            crate::engine::enc_is::stamp(
+                specs,
+                self.offsets,
+                &self.is_band,
+                &mut self.chans[..],
+                &mut self.books,
             );
         }
         for ch in 0..self.channels {
@@ -244,6 +305,7 @@ impl LcEncoder {
                 let Some((ch, b)) = hit else { return };
                 self.chans[ch].coded[b] = false;
                 self.chans[ch].pns[b] = false;
+                self.chans[ch].intensity[b] = false;
                 self.books[ch][b] = 0;
                 self.books[ch] = enc_section::plan_books(&self.chans[ch]);
             }

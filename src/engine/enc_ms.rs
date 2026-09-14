@@ -158,10 +158,21 @@ fn fold_quiet(used: &mut [bool], quiet: &[bool]) {
 /// Long-window decision over `specs` (`[l, r]`, 1024 bins each), applying
 /// the M/S transform in place on the chosen bands. `per_band = false` is
 /// the test-only whole-pair A/B mode: one decision from the grand totals.
+#[cfg(test)]
 pub fn decide_long(
     specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
     offsets: &[u16],
     per_band: bool,
+) -> MsBands {
+    decide_long_skip(specs, offsets, per_band, &[])
+}
+
+/// Like [`decide_long`], but `skip[b] == true` stays L/R (`ms_used` false).
+pub fn decide_long_skip(
+    specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
+    offsets: &[u16],
+    per_band: bool,
+    skip: &[bool],
 ) -> MsBands {
     let n_bands = offsets.len() - 1;
     let [l, r] = specs;
@@ -182,11 +193,13 @@ pub fn decide_long(
             e_s[b] += s * s;
         }
         loudest = loudest.max(e_l[b].max(e_r[b]));
-        out.used[b] = band_prefers_ms(e_l[b], e_r[b], e_s[b]);
+        let skipped = skip.get(b).copied().unwrap_or(false);
+        out.used[b] = !skipped && band_prefers_ms(e_l[b], e_r[b], e_s[b]);
     }
     let mut quiet = [false; MAX_FLAT_SHORT];
     for b in 0..n_bands {
-        quiet[b] = e_l[b].max(e_r[b]) < loudest * QUIET_FLOOR;
+        let skipped = skip.get(b).copied().unwrap_or(false);
+        quiet[b] = skipped || e_l[b].max(e_r[b]) < loudest * QUIET_FLOOR;
     }
     if per_band {
         fold_quiet(&mut out.used[..n_bands], &quiet[..n_bands]);
@@ -198,6 +211,11 @@ pub fn decide_long(
             ts += e_s[b];
         }
         out.used[..n_bands].fill(band_prefers_ms(tl, tr, ts));
+    }
+    for (b, u) in out.used.iter_mut().enumerate().take(n_bands) {
+        if skip.get(b).copied().unwrap_or(false) {
+            *u = false;
+        }
     }
     apply_long(specs, offsets, &out.used[..n_bands]);
     out

@@ -31,6 +31,12 @@ pub struct QuantChannel {
     pub pns: [bool; MAX_BANDS],
     /// Absolute `noise_nrg` for PNS bands (independent of `sf` DPCM).
     pub noise_nrg: [i32; MAX_BANDS],
+    /// Intensity stereo on the right channel (TASK-76).
+    pub intensity: [bool; MAX_BANDS],
+    /// Absolute `is_pos` (Table 4.53).
+    pub is_pos: [i32; MAX_BANDS],
+    /// `INTENSITY_HCB` or `INTENSITY_HCB2`.
+    pub is_hcb: [u8; MAX_BANDS],
     pub n_bands: usize,
 }
 
@@ -43,6 +49,9 @@ impl QuantChannel {
             coded: [false; MAX_BANDS],
             pns: [false; MAX_BANDS],
             noise_nrg: [0; MAX_BANDS],
+            intensity: [false; MAX_BANDS],
+            is_pos: [0; MAX_BANDS],
+            is_hcb: [0; MAX_BANDS],
             n_bands,
         }
     }
