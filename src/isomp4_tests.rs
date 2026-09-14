@@ -6,7 +6,12 @@ use super::{
     BoxHdr, extract_asc, parse_elst_start, parse_esds, parse_mdhd_timescale, parse_stco,
     parse_stsc, read_box, read_desc_len, sniff_is_m4a,
 };
+use crate::budgets::MemoryBudgets;
 use crate::error::AacError;
+
+fn mem() -> MemoryBudgets {
+    MemoryBudgets::default()
+}
 
 fn ok<T>(r: Result<T, AacError>) -> T {
     match r {
@@ -132,13 +137,13 @@ fn extract_asc_from_wave_wrapper() {
 fn stsc_empty_and_co64() {
     let mut stsc = vec![0u8; 4];
     stsc.extend_from_slice(&0u32.to_be_bytes());
-    assert!(parse_stsc(&stsc).is_err());
+    assert!(parse_stsc(&stsc, &mem()).is_err());
 
     let mut co64 = vec![0u8; 4];
     co64.extend_from_slice(&1u32.to_be_bytes());
     co64.extend_from_slice(&0u32.to_be_bytes());
     co64.extend_from_slice(&0x1000u32.to_be_bytes());
-    let offs = ok(parse_stco(&co64, true));
+    let offs = ok(parse_stco(&co64, true, &mem()));
     assert_eq!(offs, vec![0x1000]);
 }
 
@@ -149,12 +154,12 @@ fn elst_v1_and_unsupported_and_negative_then_zero() {
     v1.extend_from_slice(&0u64.to_be_bytes());
     v1.extend_from_slice(&1024u64.to_be_bytes());
     v1.extend_from_slice(&0x0001_0000u32.to_be_bytes());
-    assert_eq!(ok(parse_elst_start(&v1)), 1024);
+    assert_eq!(ok(parse_elst_start(&v1, &mem())), 1024);
 
     let mut bad = vec![2u8, 0, 0, 0];
     bad.extend_from_slice(&1u32.to_be_bytes());
     bad.extend_from_slice(&[0u8; 12]);
-    assert!(parse_elst_start(&bad).is_err());
+    assert!(parse_elst_start(&bad, &mem()).is_err());
 
     let mut skip = vec![0u8; 4];
     skip.extend_from_slice(&2u32.to_be_bytes());
@@ -164,7 +169,7 @@ fn elst_v1_and_unsupported_and_negative_then_zero() {
     skip.extend_from_slice(&10u32.to_be_bytes());
     skip.extend_from_slice(&0u32.to_be_bytes());
     skip.extend_from_slice(&0x0001_0000u32.to_be_bytes());
-    assert_eq!(ok(parse_elst_start(&skip)), 0);
+    assert_eq!(ok(parse_elst_start(&skip, &mem())), 0);
 }
 
 #[test]

@@ -76,6 +76,8 @@ pub struct Decoder {
     /// Per-channel samples handed to the callback.
     samples_out: u64,
     emitted: u64,
+    /// Last sink-frame sample count (0 until the first mono-fast-path frame).
+    sink_frame_samples: usize,
 }
 
 impl Decoder {
@@ -97,6 +99,7 @@ impl Decoder {
             samples_decoded: 0,
             samples_out: 0,
             emitted: 0,
+            sink_frame_samples: 0,
         }
     }
 

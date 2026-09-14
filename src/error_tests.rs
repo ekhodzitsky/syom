@@ -20,6 +20,11 @@ fn display_and_source_cover_variants() -> Result<()> {
             .to_string()
             .contains("invalid decode limits")
     );
+    assert!(
+        AacError::limit(crate::BudgetKind::Output, 9, 4)
+            .to_string()
+            .contains("output")
+    );
     assert!(AacError::NotAac.is_format_class());
     assert!(AacError::format("f").is_format_class());
     assert!(!AacError::decode("d").is_format_class());

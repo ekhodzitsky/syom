@@ -19,7 +19,7 @@ pub(crate) fn stream_m4a<F>(
 where
     F: FnMut(Frame<'_>) -> Result<()>,
 {
-    let track = isomp4::parse_aac_track(data).map_err(|e| {
+    let track = isomp4::parse_aac_track_with(data, &opts.memory).map_err(|e| {
         if e.is_format_class() {
             AacError::NotAac
         } else {
@@ -37,8 +37,13 @@ where
         let observed_s = track.total_samples as f64 / out_rate.max(1) as f64;
         return Err(AacError::too_long(observed_s, opts.max_duration_secs));
     }
-
     let mono = matches!(opts.channel_mode, ChannelMode::Mono);
+    let n_ch = if mono {
+        1
+    } else {
+        u32::from(asc.channel_configuration).max(1)
+    };
+    opts.memory.check_output(n_ch, track.total_samples)?;
     let mut dec = StreamDecoder::new();
     if let Some(pce) = asc.pce.clone() {
         dec.set_config_pce(pce);

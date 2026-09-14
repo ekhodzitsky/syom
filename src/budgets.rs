@@ -76,6 +76,19 @@ pub enum BudgetKind {
     AccessUnit,
 }
 
+impl core::fmt::Display for BudgetKind {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(match self {
+            Self::Input => "input",
+            Self::Output => "output",
+            Self::Channel => "channel",
+            Self::Metadata => "metadata",
+            Self::Workspace => "workspace",
+            Self::AccessUnit => "access-unit",
+        })
+    }
+}
+
 /// Exact-boundary / overflow failure. TASK-24 maps this to a public error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BudgetExceeded {

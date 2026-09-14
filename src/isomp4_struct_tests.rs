@@ -3,6 +3,11 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::*;
+use crate::budgets::MemoryBudgets;
+
+fn mem() -> MemoryBudgets {
+    MemoryBudgets::default()
+}
 
 fn bx(typ: &[u8; 4], body: &[u8]) -> Vec<u8> {
     let mut v = ((body.len() + 8) as u32).to_be_bytes().to_vec();
@@ -32,15 +37,24 @@ fn test_stsz_default_size_count_capped() {
     // A stsz declaring 4G samples at a constant size must not allocate
     // 16 GiB: the total sample bytes are fenced by the file length.
     let body = stbl_with_stsz(1, u32::MAX);
-    let err = match parse_stsz(&body, body.len()) {
+    let err = match parse_stsz(&body, body.len(), &mem()) {
         Ok(_) => panic!("huge stsz count must fail"),
         Err(e) => e,
     };
-    assert!(format!("{err:?}").contains("stsz"));
+    assert!(
+        matches!(
+            err,
+            crate::AacError::Limit {
+                kind: crate::BudgetKind::Metadata,
+                ..
+            }
+        ),
+        "{err:?}"
+    );
     // A plausible count passes.
     let body = stbl_with_stsz(1, 4);
     assert_eq!(
-        parse_stsz(&body, 64).expect("small count"),
+        parse_stsz(&body, 64, &mem()).expect("small count"),
         vec![1, 1, 1, 1]
     );
 }
@@ -51,10 +65,13 @@ fn test_stsz_constant_size_fenced_by_file_len() {
     // body (always 12 bytes for constant size), rejecting every
     // legitimate CBR file with more than 12 frames.
     let body = stbl_with_stsz(4, 100);
-    assert_eq!(parse_stsz(&body, 4096).expect("legit CBR").len(), 100);
+    assert_eq!(
+        parse_stsz(&body, 4096, &mem()).expect("legit CBR").len(),
+        100
+    );
     // A crafted count whose samples cannot fit in the file is rejected.
     let body = stbl_with_stsz(4, 2000);
-    assert!(parse_stsz(&body, 4096).is_err());
+    assert!(parse_stsz(&body, 4096, &mem()).is_err());
 }
 
 /// AudioSpecificConfig for AAC-LC, 44100 Hz, stereo.

@@ -1,5 +1,6 @@
 //! Typed errors for the AAC reader (stable `Display`, no `anyhow`).
 
+use crate::budgets::{BudgetExceeded, BudgetKind};
 use std::fmt;
 use std::io;
 
@@ -19,6 +20,12 @@ pub enum AacError {
     TooLong { observed_secs: f64, max_secs: f64 },
     /// `DecodeOptions` are not a usable limit set (NaN, negative, etc.).
     InvalidLimits(String),
+    /// An independent memory budget was exceeded (`planned == max` is ok).
+    Limit {
+        kind: BudgetKind,
+        observed: u64,
+        max: u64,
+    },
     /// Structural / demux failure.
     Format(String),
     /// Decoder engine rejected a frame.
@@ -61,6 +68,15 @@ impl AacError {
         Self::InvalidLimits(msg.into())
     }
 
+    #[inline]
+    pub fn limit(kind: BudgetKind, observed: u64, max: u64) -> Self {
+        Self::Limit {
+            kind,
+            observed,
+            max,
+        }
+    }
+
     /// Whether this should surface as generic unsupported-format upstream.
     pub fn is_format_class(&self) -> bool {
         matches!(self, Self::NotAac | Self::Format(_))
@@ -83,6 +99,11 @@ impl fmt::Display for AacError {
                 "Audio file too long ({observed_secs:.0}s). Maximum supported: {max_secs:.0}s."
             ),
             Self::InvalidLimits(msg) => write!(f, "invalid decode limits: {msg}"),
+            Self::Limit {
+                kind,
+                observed,
+                max,
+            } => write!(f, "decode budget exceeded ({kind}: {observed} > {max})"),
             Self::Format(msg) | Self::Decode(msg) | Self::Encode(msg) => write!(f, "{msg}"),
         }
     }
@@ -100,6 +121,16 @@ impl std::error::Error for AacError {
 impl From<io::Error> for AacError {
     fn from(value: io::Error) -> Self {
         Self::Io(value)
+    }
+}
+
+impl From<BudgetExceeded> for AacError {
+    fn from(e: BudgetExceeded) -> Self {
+        Self::Limit {
+            kind: e.kind,
+            observed: e.observed,
+            max: e.max,
+        }
     }
 }
 

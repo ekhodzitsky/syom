@@ -28,10 +28,22 @@
 //! input before indexing: untrusted input must produce errors, never panics
 //! and never out-of-bounds reads.
 
+use crate::budgets::MemoryBudgets;
 use crate::error::{AacError, Result};
+
+fn fence_entries(mem: &MemoryBudgets, count: u64, bytes_per: u64) -> Result<()> {
+    mem.check_index(count, bytes_per)
+        .map(|_| ())
+        .map_err(AacError::from)
+}
+
+fn fence_depth(mem: &MemoryBudgets, depth: u32) -> Result<()> {
+    mem.check_box_depth(depth).map_err(AacError::from)
+}
 
 /// One extracted AAC audio track: the codec configuration and the location of
 /// every compressed sample (each sample is one AAC `raw_data_block()`).
+#[derive(Debug)]
 pub(crate) struct AacTrack {
     /// AudioSpecificConfig bytes (esds DecoderSpecificInfo).
     pub asc: Vec<u8>,
@@ -307,8 +319,9 @@ struct SampleTable {
 }
 
 /// Parse one `stts` box body: total sample count is Σ entry.sample_count.
-fn parse_stts(data: &[u8]) -> Result<u64> {
+fn parse_stts(data: &[u8], mem: &MemoryBudgets) -> Result<u64> {
     let count = read_u32(data, 4)? as usize;
+    fence_entries(mem, count as u64, 8)?;
     let mut total = 0u64;
     for i in 0..count {
         let sample_count = read_u32(
@@ -334,9 +347,10 @@ fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
     Ok(u32::from_be_bytes(arr))
 }
 
-fn parse_stsz(data: &[u8], file_len: usize) -> Result<Vec<u32>> {
+fn parse_stsz(data: &[u8], file_len: usize, mem: &MemoryBudgets) -> Result<Vec<u32>> {
     let default_size = read_u32(data, 4)?;
     let count = read_u32(data, 8)? as usize;
+    fence_entries(mem, count as u64, 4)?;
     if default_size != 0 {
         // No per-entry table follows, so `count` is bounded only by the
         // declaration itself: a crafted header could force a multi-GiB
@@ -355,9 +369,25 @@ fn parse_stsz(data: &[u8], file_len: usize) -> Result<Vec<u32>> {
                 "isomp4: stsz declares {count} samples of {default_size} bytes, more than the input holds"
             )));
         }
-        return Ok(vec![default_size; count]);
+        let mut sizes = Vec::new();
+        sizes.try_reserve(count).map_err(|_| {
+            AacError::from(crate::budgets::BudgetExceeded {
+                kind: crate::budgets::BudgetKind::Metadata,
+                observed: (count as u64).saturating_mul(4),
+                max: mem.max_metadata_bytes,
+            })
+        })?;
+        sizes.resize(count, default_size);
+        return Ok(sizes);
     }
-    let mut sizes = Vec::with_capacity(count.min(1 << 20));
+    let mut sizes = Vec::new();
+    sizes.try_reserve(count).map_err(|_| {
+        AacError::from(crate::budgets::BudgetExceeded {
+            kind: crate::budgets::BudgetKind::Metadata,
+            observed: (count as u64).saturating_mul(4),
+            max: mem.max_metadata_bytes,
+        })
+    })?;
     for i in 0..count {
         sizes.push(read_u32(
             data,
@@ -369,9 +399,17 @@ fn parse_stsz(data: &[u8], file_len: usize) -> Result<Vec<u32>> {
     Ok(sizes)
 }
 
-fn parse_stsc(data: &[u8]) -> Result<Vec<(u32, u32)>> {
+fn parse_stsc(data: &[u8], mem: &MemoryBudgets) -> Result<Vec<(u32, u32)>> {
     let count = read_u32(data, 4)? as usize;
-    let mut out = Vec::with_capacity(count.min(1 << 20));
+    fence_entries(mem, count as u64, 12)?;
+    let mut out = Vec::new();
+    out.try_reserve(count).map_err(|_| {
+        AacError::from(crate::budgets::BudgetExceeded {
+            kind: crate::budgets::BudgetKind::Metadata,
+            observed: (count as u64).saturating_mul(12),
+            max: mem.max_metadata_bytes,
+        })
+    })?;
     for i in 0..count {
         let base = 8 + i
             .checked_mul(12)
@@ -389,9 +427,18 @@ fn parse_stsc(data: &[u8]) -> Result<Vec<(u32, u32)>> {
     Ok(out)
 }
 
-fn parse_stco(data: &[u8], wide: bool) -> Result<Vec<u64>> {
+fn parse_stco(data: &[u8], wide: bool, mem: &MemoryBudgets) -> Result<Vec<u64>> {
     let count = read_u32(data, 4)? as usize;
-    let mut out = Vec::with_capacity(count.min(1 << 20));
+    let bpe = if wide { 8 } else { 4 };
+    fence_entries(mem, count as u64, bpe)?;
+    let mut out = Vec::new();
+    out.try_reserve(count).map_err(|_| {
+        AacError::from(crate::budgets::BudgetExceeded {
+            kind: crate::budgets::BudgetKind::Metadata,
+            observed: (count as u64).saturating_mul(bpe),
+            max: mem.max_metadata_bytes,
+        })
+    })?;
     for i in 0..count {
         let off = if wide {
             let base = 8 + i
@@ -414,7 +461,7 @@ fn parse_stco(data: &[u8], wide: bool) -> Result<Vec<u64>> {
 }
 
 /// Parse the sample-table boxes of one track's `stbl`.
-fn parse_stbl(data: &[u8], stbl: BoxHdr) -> Result<(Vec<u8>, SampleTable)> {
+fn parse_stbl(data: &[u8], stbl: BoxHdr, mem: &MemoryBudgets) -> Result<(Vec<u8>, SampleTable)> {
     let mut asc = None;
     let mut stts_total = None;
     let mut sizes = None;
@@ -479,11 +526,11 @@ fn parse_stbl(data: &[u8], stbl: BoxHdr) -> Result<(Vec<u8>, SampleTable)> {
                 };
                 asc = Some(extract_asc(body, children)?);
             }
-            b"stts" => stts_total = Some(parse_stts(body)?),
-            b"stsz" => sizes = Some(parse_stsz(body, data.len())?),
-            b"stsc" => stsc = Some(parse_stsc(body)?),
-            b"stco" => chunk_offsets = Some(parse_stco(body, false)?),
-            b"co64" => chunk_offsets = Some(parse_stco(body, true)?),
+            b"stts" => stts_total = Some(parse_stts(body, mem)?),
+            b"stsz" => sizes = Some(parse_stsz(body, data.len(), mem)?),
+            b"stsc" => stsc = Some(parse_stsc(body, mem)?),
+            b"stco" => chunk_offsets = Some(parse_stco(body, false, mem)?),
+            b"co64" => chunk_offsets = Some(parse_stco(body, true, mem)?),
             _ => {}
         }
     }
@@ -500,11 +547,12 @@ fn parse_stbl(data: &[u8], stbl: BoxHdr) -> Result<(Vec<u8>, SampleTable)> {
 }
 
 /// First `elst` entry with `media_time >= 0` (media timescale), else 0.
-fn parse_elst_start(body: &[u8]) -> Result<u64> {
+fn parse_elst_start(body: &[u8], mem: &MemoryBudgets) -> Result<u64> {
     let version = *body
         .first()
         .ok_or_else(|| AacError::format("isomp4: truncated elst"))?;
     let count = read_u32(body, 4)? as usize;
+    fence_entries(mem, count as u64, if version == 1 { 20 } else { 12 })?;
     let mut pos = 8usize;
     for _ in 0..count {
         let (media_time, next) = if version == 1 {
@@ -541,7 +589,11 @@ fn parse_mdhd_timescale(body: &[u8]) -> Result<u32> {
 
 /// Walk one `mdia` box: is it sound (`hdlr` = 'soun'), and if so parse its
 /// `minf/stbl` and `mdhd` timescale. Returns `None` for non-sound tracks.
-fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable, u32)>> {
+fn parse_mdia(
+    data: &[u8],
+    mdia: BoxHdr,
+    mem: &MemoryBudgets,
+) -> Result<Option<(Vec<u8>, SampleTable, u32)>> {
     let mut is_sound = false;
     let mut table = None;
     let mut timescale = 0u32;
@@ -562,7 +614,7 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable,
                 for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
                     let (shdr, styp) = sub?;
                     if &styp == b"stbl" {
-                        table = Some(parse_stbl(data, shdr)?);
+                        table = Some(parse_stbl(data, shdr, mem)?);
                     }
                 }
             }
@@ -578,9 +630,21 @@ fn parse_mdia(data: &[u8], mdia: BoxHdr) -> Result<Option<(Vec<u8>, SampleTable,
 }
 
 /// Map the sample table to absolute byte ranges, one per AAC frame.
-fn build_frame_index(data_len: usize, table: &SampleTable) -> Result<Vec<(u64, u32)>> {
+fn build_frame_index(
+    data_len: usize,
+    table: &SampleTable,
+    mem: &MemoryBudgets,
+) -> Result<Vec<(u64, u32)>> {
     let n_samples = table.sizes.len();
-    let mut frames = Vec::with_capacity(n_samples.min(1 << 22));
+    fence_entries(mem, n_samples as u64, 16)?;
+    let mut frames = Vec::new();
+    frames.try_reserve(n_samples).map_err(|_| {
+        AacError::from(crate::budgets::BudgetExceeded {
+            kind: crate::budgets::BudgetKind::Metadata,
+            observed: (n_samples as u64).saturating_mul(16),
+            max: mem.max_metadata_bytes,
+        })
+    })?;
     let mut sample_idx = 0usize;
     let mut stsc_idx = 0usize;
     for (chunk_i, &chunk_off) in table.chunk_offsets.iter().enumerate() {
@@ -622,7 +686,13 @@ fn build_frame_index(data_len: usize, table: &SampleTable) -> Result<Vec<(u64, u
 ///
 /// Errors are all clean `AacError` returns; no input can panic or index out
 /// of bounds.
+#[cfg(test)]
 pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
+    parse_aac_track_with(data, &MemoryBudgets::default())
+}
+
+pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<AacTrack> {
+    fence_depth(mem, 0)?;
     let mut moov = None;
     for top in BoxIter::new(data, 0, data.len()) {
         let (hdr, typ) = top?;
@@ -636,6 +706,7 @@ pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
 
     // Nested containers contain no moof/mvex at their level; fragmentation
     // also shows up as an `mvex` child of moov.
+    fence_depth(mem, 1)?;
     let mut track = None;
     for child in BoxIter::new(data, moov.content_start, moov.content_end) {
         let (hdr, typ) = child?;
@@ -645,26 +716,35 @@ pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
             if track.is_some() {
                 continue;
             }
+            fence_depth(mem, 2)?;
             let mut edit_start = 0u64;
             let mut mdia_track = None;
             for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
                 let (shdr, styp) = sub?;
                 match &styp {
                     b"edts" => {
+                        fence_depth(mem, 3)?;
                         for ed in BoxIter::new(data, shdr.content_start, shdr.content_end) {
                             let (ehdr, etyp) = ed?;
                             if &etyp == b"elst" {
-                                edit_start =
-                                    parse_elst_start(&data[ehdr.content_start..ehdr.content_end])?;
+                                fence_depth(mem, 4)?;
+                                edit_start = parse_elst_start(
+                                    &data[ehdr.content_start..ehdr.content_end],
+                                    mem,
+                                )?;
                             }
                         }
                     }
                     b"mdia" => {
+                        fence_depth(mem, 3)?;
                         // A broken or non-AAC sound track must not sink the
                         // whole file: skip it and keep looking for a usable
                         // AAC track. Structural box-walk errors stay fatal.
-                        if let Ok(Some(t)) = parse_mdia(data, shdr) {
-                            mdia_track = Some(t);
+                        match parse_mdia(data, shdr, mem) {
+                            Ok(Some(t)) => mdia_track = Some(t),
+                            Ok(None) => {}
+                            Err(e @ AacError::Limit { .. }) => return Err(e),
+                            Err(_) => {}
                         }
                     }
                     _ => {}
@@ -677,7 +757,7 @@ pub(crate) fn parse_aac_track(data: &[u8]) -> Result<AacTrack> {
     }
     let (asc, table, media_timescale, edit_start) =
         track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
-    let frames = build_frame_index(data.len(), &table)?;
+    let frames = build_frame_index(data.len(), &table, mem)?;
     Ok(AacTrack {
         asc,
         total_samples: table.total_samples,

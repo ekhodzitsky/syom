@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not a memory cap. Streaming `feed` must not inherit a lifetime
   compressed-byte cap (enforcement: TASK-24 collection, TASK-25
   streaming). `speech()` Mono / 7200 s / 48 kHz is unchanged.
+- One-shot decode and M4A demux enforce those collection budgets before
+  `reserve`/`resize` (TASK-24). Over-budget output, channel count, table
+  entries, and box depth are `AacError::Limit` (`planned == max` allowed,
+  `max + 1` not). `DecodeOptions::memory` holds the numbers; `speech()`
+  duration and `ChannelMode` are unchanged. Streaming workspace remains
+  TASK-25.
 - Offline AAC evaluation corpus (`corpus/manifest.json`) with in-tree golden
   hashes, deterministic boundary PCM, named licensed natural excerpts (not
   vendored), a coverage table, and `scripts/verify_corpus.py` that fails on

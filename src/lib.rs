@@ -46,6 +46,10 @@ pub use stream::{Decoder, Frame, StreamInfo, decode_streaming};
 mod decode_tests;
 
 #[cfg(test)]
+#[path = "decode_budget_tests.rs"]
+mod decode_budget_tests;
+
+#[cfg(test)]
 #[path = "docs_tests.rs"]
 mod docs_tests;
 

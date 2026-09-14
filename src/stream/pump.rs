@@ -3,6 +3,7 @@
 //! the borrowed-plane callback ([`Decoder::emit`]) or, for one-shot mono,
 //! a sink `Vec` the engine appends to directly (no scratch, no copy).
 
+use crate::budgets::{BudgetExceeded, BudgetKind};
 use crate::engine::adts::AdtsHeader;
 use crate::engine::bits::BitReader;
 use crate::engine::error::Error as EngineError;
@@ -89,6 +90,7 @@ impl Decoder {
             let rate = match sink.as_deref_mut() {
                 // One-shot mono: decode straight into the caller's plane.
                 Some(dst) => {
+                    self.check_sink_growth(dst.len())?;
                     let before = dst.len();
                     let rate = self
                         .dec
@@ -98,8 +100,10 @@ impl Decoder {
                         })?;
                     let n = dst.len() - before;
                     self.tally(rate, 1, n)?;
+                    self.sink_frame_samples = n;
+                    self.opts.memory.check_output(1, dst.len() as u64)?;
                     if idx == 0 {
-                        self.reserve_hint(dst, est_frames, n);
+                        self.reserve_hint(dst, est_frames, n)?;
                     }
                     rate
                 }
@@ -191,6 +195,7 @@ impl Decoder {
                 let idx = self.aac_frames;
                 let rate = match sink.as_deref_mut() {
                     Some(dst) => {
+                        self.check_sink_growth(dst.len())?;
                         let before = dst.len();
                         let rate = self
                             .dec
@@ -198,8 +203,10 @@ impl Decoder {
                             .map_err(AacError::from)?;
                         let n = dst.len() - before;
                         self.tally(rate, 1, n)?;
+                        self.sink_frame_samples = n;
+                        self.opts.memory.check_output(1, dst.len() as u64)?;
                         if idx == 0 {
-                            self.reserve_hint(dst, est_frames, n);
+                            self.reserve_hint(dst, est_frames, n)?;
                         }
                         rate
                     }
@@ -238,6 +245,8 @@ impl Decoder {
         if n_ch == 0 {
             return Ok(()); // channel-less frame: consumed, not emitted
         }
+        let n_ch_u32 = u32::try_from(n_ch).unwrap_or(u32::MAX);
+        self.opts.memory.check_channels(n_ch_u32)?;
         match self.locked {
             None => {
                 if rate == 0 || rate > self.opts.max_sample_rate {
@@ -271,11 +280,39 @@ impl Decoder {
 
     /// Pre-size the mono sink after frame 1: exact frame count × first
     /// frame's samples beats geometric growth (hint only, capped).
-    fn reserve_hint(&self, dst: &mut Vec<f32>, est_frames: Option<usize>, first: usize) {
+    fn reserve_hint(
+        &self,
+        dst: &mut Vec<f32>,
+        est_frames: Option<usize>,
+        first: usize,
+    ) -> Result<()> {
         if let Some(frames) = est_frames {
             let want = frames.saturating_mul(first).min(self.max_samples);
-            dst.reserve(want.saturating_sub(dst.len()));
+            if self.opts.memory.check_output(1, want as u64).is_ok() {
+                dst.try_reserve(want.saturating_sub(dst.len()))
+                    .map_err(|_| {
+                        AacError::from(BudgetExceeded {
+                            kind: BudgetKind::Output,
+                            observed: (want as u64).saturating_mul(4),
+                            max: self.opts.memory.effective_output_bytes(),
+                        })
+                    })?;
+            }
         }
+        Ok(())
+    }
+
+    fn check_sink_growth(&self, dst_len: usize) -> Result<()> {
+        let guess = if self.sink_frame_samples == 0 {
+            2048
+        } else {
+            self.sink_frame_samples as u64
+        };
+        self.opts
+            .memory
+            .check_output(1, dst_len as u64 + guess)
+            .map(|_| ())
+            .map_err(AacError::from)
     }
 
     /// Caps + consistency for one decoded frame, then the callback.

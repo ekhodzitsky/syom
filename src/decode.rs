@@ -3,6 +3,7 @@
 
 use std::io::Read;
 
+use crate::budgets::{BudgetExceeded, BudgetKind, pcm_bytes};
 use crate::engine::adts::AdtsHeader;
 use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
@@ -76,17 +77,29 @@ pub fn decode_with(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     }
     let mut tracks: Vec<Vec<f32>> = Vec::new();
     let info = decode_streaming(data, opts, |f| {
+        let n_ch = u32::try_from(f.planar.len()).unwrap_or(u32::MAX);
         if tracks.is_empty() {
+            opts.memory.check_channels(n_ch)?;
             tracks.resize_with(f.planar.len(), Vec::new);
             // Pre-size once from the frame-count estimate instead of growing
             // geometrically per frame (each growth reallocs + recopies).
             if let Some(frames) = est_frames {
                 let per = (frames * f.samples).min(opts.max_frames(f.sample_rate));
-                for t in &mut tracks {
-                    t.reserve(per);
+                if opts.memory.check_output(n_ch, per as u64).is_ok() {
+                    for t in &mut tracks {
+                        t.try_reserve(per).map_err(|_| {
+                            AacError::from(BudgetExceeded {
+                                kind: BudgetKind::Output,
+                                observed: pcm_bytes(n_ch, per as u64).unwrap_or(u64::MAX),
+                                max: opts.memory.effective_output_bytes(),
+                            })
+                        })?;
+                    }
                 }
             }
         }
+        let next = tracks.first().map(|t| t.len() as u64).unwrap_or(0) + f.samples as u64;
+        opts.memory.check_output(n_ch, next)?;
         for (dst, src) in tracks.iter_mut().zip(f.planar.iter()) {
             dst.extend_from_slice(src);
         }

@@ -1,8 +1,10 @@
 //! Decode options: channel mode and duration / rate caps.
 //!
 //! Memory budgets (compressed bytes, collected PCM, channels, M4A index,
-//! resident workspace) live in [`crate::budgets`] and are independent of
+//! resident workspace) live in [`crate::MemoryBudgets`] and are independent of
 //! `max_duration_secs`. `speech()` duration and `ChannelMode` are unchanged.
+
+use crate::budgets::MemoryBudgets;
 
 /// Hard upper bound on a finite compressed buffer or file (1 GiB).
 ///
@@ -35,6 +37,8 @@ pub struct DecodeOptions {
     pub max_sample_rate: u32,
     /// Cap used when deriving the frame budget from `max_duration_secs`.
     pub max_decode_sample_rate: u32,
+    /// Independent input/output/workspace budgets (TASK-23/24).
+    pub memory: MemoryBudgets,
 }
 
 impl Default for DecodeOptions {
@@ -44,6 +48,7 @@ impl Default for DecodeOptions {
             max_duration_secs: DEFAULT_MAX_DURATION_SECS,
             max_sample_rate: DEFAULT_MAX_SAMPLE_RATE,
             max_decode_sample_rate: DEFAULT_MAX_DECODE_SAMPLE_RATE,
+            memory: MemoryBudgets::default(),
         }
     }
 }
@@ -63,6 +68,7 @@ impl DecodeOptions {
             max_duration_secs: f64::INFINITY,
             max_sample_rate: u32::MAX,
             max_decode_sample_rate: u32::MAX,
+            memory: MemoryBudgets::unbounded_collection(),
         }
     }
 
@@ -81,6 +87,12 @@ impl DecodeOptions {
     #[inline]
     pub fn with_max_sample_rate(mut self, rate: u32) -> Self {
         self.max_sample_rate = rate;
+        self
+    }
+
+    #[inline]
+    pub fn with_memory(mut self, memory: MemoryBudgets) -> Self {
+        self.memory = memory;
         self
     }
 
@@ -111,6 +123,9 @@ impl DecodeOptions {
                 "max_decode_sample_rate is 0",
             ));
         }
+        self.memory
+            .validate()
+            .map_err(|e| crate::AacError::invalid_limits(format!("{} budget is 0", e.kind)))?;
         Ok(())
     }
 
