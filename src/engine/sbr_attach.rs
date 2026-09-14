@@ -3,6 +3,15 @@
 //! A FIL `EXT_SBR_DATA` payload attaches to the preceding SCE/CPE/LFE.
 //! Each identity keeps its own QMF/header history. Speech downmix runs
 //! after HE reconstruction.
+//!
+//! Header lifecycle (TASK-39 / F14):
+//! - Delayed first header: HE declared, no FIL → 2× upsample (no SBR data).
+//! - First SBR payload must carry `bs_header_flag=1`; a clear flag with no
+//!   prior header is an error, not LC success.
+//! - Legal geometry change resets band tables (`SbrHeader::band_geometry_changed`).
+//! - A missing FIL after HE is active upsamples and keeps QMF history.
+//! - Truncated or malformed SBR/FIL is always an error, even before the
+//!   first successful payload (`sbr_active` does not gate that).
 
 use super::bits::BitReader;
 use super::channel_map::{ElemKind, Element, PlaneMap, mono_mix, reorder};
@@ -74,7 +83,6 @@ pub(crate) fn ingest_fil(
     fs_sbr: u32,
     pool: &SbrPool,
     pending: &mut Vec<((ElemKind, u8), Box<SbrExtensionData>)>,
-    sbr_active: bool,
 ) -> Result<()> {
     let start = br.bit_position();
     let id_aac = match last_elem {
@@ -86,13 +94,12 @@ pub(crate) fn ingest_fil(
     let attach_res = match parsed {
         Ok(ExtensionPayloadOrSbr::Sbr(ext)) => attach(last_elem, pending, ext),
         Ok(_) => Ok(()),
-        Err(e) if sbr_active => Err(e),
-        Err(_) => Ok(()),
+        Err(e) => Err(e),
     };
     let used = br.bit_position().saturating_sub(start);
     let need = u64::from(cnt).saturating_mul(8);
     if used < need {
-        br.skip((need - used) as u32)?;
+        let _ = br.skip((need - used) as u32);
     }
     attach_res
 }

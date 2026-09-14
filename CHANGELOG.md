@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   length, and codec workspace are fenced independently of duration;
   one-shot `decode` still uses the finite 1 GiB input budget. Chunked
   vs whole-slice feeds stay sample-identical.
+- Truncated or malformed SBR `fill_element` payloads are decode errors
+  even before the first successful HE frame (F14 / TASK-39). A first
+  SBR payload without `bs_header_flag` is `SbrFreqBandInvalid`, not LC
+  success. HE declared without FIL still 2×-upsamples; a missing FIL
+  after HE stays 2×. Truncated `ps_data()` is `PsDataInvalid`, not a
+  silent hold. he48/ps48 goldens and chunked feeds are unchanged.
 - Offline AAC evaluation corpus (`corpus/manifest.json`) with in-tree golden
   hashes, deterministic boundary PCM, named licensed natural excerpts (not
   vendored), a coverage table, and `scripts/verify_corpus.py` that fails on

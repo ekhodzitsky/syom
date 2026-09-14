@@ -189,6 +189,7 @@ mod tests {
     #![allow(clippy::unwrap_used, clippy::expect_used)]
 
     use super::*;
+    use crate::engine::Error;
     use crate::engine::bits::BitWriter;
     use crate::engine::ps_hybrid::{LOOKAHEAD, NUM_QMF_SLOTS};
 
@@ -223,6 +224,27 @@ mod tests {
         (0..NUM_QMF_SLOTS + LOOKAHEAD)
             .map(|_| [Complex::new(1.0, 0.0); 64])
             .collect()
+    }
+
+    /// A truncated `ps_data()` is an error, not silent mono/hold.
+    #[test]
+    fn truncated_payload_is_error() {
+        let mut dec = PsDecoder::new();
+        let x = x_input_ones();
+        for bad in [&[][..], &[0xff][..]] {
+            let err = dec.process(Some(bad), &x, 32).unwrap_err();
+            assert!(
+                matches!(err, Error::PsDataInvalid | Error::UnexpectedEnd),
+                "{bad:?} -> {err:?}"
+            );
+        }
+        let p = payload(0);
+        dec.process(Some(&p), &x, 32).unwrap();
+        let err = dec.process(Some(&[0xff]), &x, 32).unwrap_err();
+        assert!(
+            matches!(err, Error::PsDataInvalid | Error::UnexpectedEnd),
+            "{err:?}"
+        );
     }
 
     /// Inactive until a header'd element arrives; then the stereo

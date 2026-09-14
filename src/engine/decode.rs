@@ -238,7 +238,6 @@ impl StreamDecoder {
                         fs_sbr,
                         &self.sbr_pool,
                         &mut pending_sbrs,
-                        self.sbr_active,
                     )?;
                 }
             }

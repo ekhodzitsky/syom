@@ -105,6 +105,10 @@ mod he_config_tests;
 mod sbr_attach_tests;
 
 #[cfg(test)]
+#[path = "sbr_lifecycle_tests.rs"]
+mod sbr_lifecycle_tests;
+
+#[cfg(test)]
 #[path = "fb_pool_tests.rs"]
 mod fb_pool_tests;
 
