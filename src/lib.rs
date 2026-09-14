@@ -36,6 +36,10 @@ mod decode_tests;
 mod decode_cmp_tests;
 
 #[cfg(test)]
+#[path = "corpus_tests.rs"]
+mod corpus_tests;
+
+#[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
 

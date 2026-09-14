@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Offline AAC evaluation corpus (`corpus/manifest.json`) with in-tree golden
+  hashes, deterministic boundary PCM, named licensed natural excerpts (not
+  vendored), a coverage table, and `scripts/verify_corpus.py` that fails on
+  bit-flips, missing required assets, train/holdout recording overlap, and
+  inconsistent metadata.
 
 ### Changed
 
