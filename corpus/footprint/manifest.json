@@ -1,0 +1,54 @@
+{
+  "task": "TASK-18",
+  "measured": "2026-09-14",
+  "host": {
+    "os": "Linux",
+    "kernel": "7.0.0-31-generic",
+    "arch": "x86_64",
+    "nproc": 24
+  },
+  "toolchain": {
+    "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "1.97.1 (c980f4866 2026-06-30)",
+    "declared_rust_version": "1.97",
+    "edition": "2024",
+    "pin_file": "rust-toolchain.toml"
+  },
+  "product": {
+    "crate": "syom",
+    "version": "0.6.0",
+    "dependencies": {},
+    "dev_dependencies": ["criterion", "oxideav-aac", "rusty_aac", "symphonia"]
+  },
+  "release_lib": {
+    "profile": "release lto=thin codegen-units=1 (package.metadata + [profile.bench] not applied to lib; default release)",
+    "rlib_bytes": 3796632,
+    "object_text_bytes": 671403,
+    "object_data_bytes": 208112,
+    "object_bss_bytes": 0,
+    "note": "rlib includes rustc metadata (~2.0 MiB lib.rmeta). Linked size is the consumer binary."
+  },
+  "minimal_consumer": {
+    "scenario": "decode(sine48.adts) + encode(2048 silent samples @ 48 kHz)",
+    "release_build_s": 1.97,
+    "release_build_max_rss_kib": 366648,
+    "incremental_build_s": 0.02,
+    "binary_bytes_unstripped": 1393584,
+    "binary_text_bytes": 981136,
+    "binary_data_bytes": 222328,
+    "binary_bss_bytes": 2248
+  },
+  "peers": {
+    "rusty_aac": { "version": "0.5.0", "product_deps": {}, "rust_version": "1.85" },
+    "oxideav-aac": { "version": "0.1.7", "product_deps": { "oxideav-core": "0.1" }, "rust_version": "1.80" },
+    "symphonia": { "version": "0.6.0", "product_deps": "symphonia-core + optional codec/format crates + lazy_static", "rust_version": "1.85" }
+  },
+  "go_no_go": {
+    "keep_zero_product_deps": "go",
+    "change_speech_default_to_split": "no-go",
+    "require_rust_1_97": "go-as-declared-constraint",
+    "raw_au_public_api": "go-later TASK-52",
+    "borrowed_encode_pcm": "go-later TASK-55",
+    "streaming_m4a": "go-later TASK-57"
+  }
+}

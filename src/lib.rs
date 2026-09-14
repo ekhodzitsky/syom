@@ -66,6 +66,10 @@ mod conformance_tests;
 mod lab_isolation_tests;
 
 #[cfg(test)]
+#[path = "footprint_tests.rs"]
+mod footprint_tests;
+
+#[cfg(test)]
 #[path = "mem_iso_tests.rs"]
 mod mem_iso_tests;
 

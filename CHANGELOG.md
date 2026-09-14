@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- Footprint/API cost (TASK-18): empty product deps, Rust 1.97, a
+  measured release rlib/consumer binary, and a go/no-go that keeps
+  `speech()` mono until a versioned API decision. Artifact:
+  `corpus/footprint/`.
 - Isolated FAAD2 2.11.3 decode lab (`lab/faad2`, GPL-2.0-or-later kept
   off the product crate): ADTS in-process `FAAD_FMT_FLOAT`, metadata and
   a classified disagreement report vs FFmpeg 9.0.1. Ordinary tests never
