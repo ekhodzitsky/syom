@@ -1,0 +1,5 @@
+libavcodec/avc_driver
+libavcodec/*.o
+build/
+prefix/
+ffmpeg-*.tar.*

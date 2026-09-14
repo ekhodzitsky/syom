@@ -56,6 +56,10 @@ mod corpus_tests;
 mod oracle_tests;
 
 #[cfg(test)]
+#[path = "lab_isolation_tests.rs"]
+mod lab_isolation_tests;
+
+#[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
 

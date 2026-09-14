@@ -44,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   records ADTS/payload bytes, decoded duration and achieved bitrate, aborts
   on failed encode/decode, and labels rate mismatch >1% as non-matched
   (not an equal-rate cell). HE encode remains an unavailable separate cell.
+- Isolated native libavcodec lab (`lab/libavcodec`, FFmpeg 9.0.1 pin):
+  in-process ADTS access-unit decode, container decode, and LC ADTS encode.
+  Not a workspace member; ordinary tests never link or spawn ffmpeg.
 
 ## [0.6.0] - 2026-09-06
 
