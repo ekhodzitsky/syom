@@ -77,6 +77,30 @@ fn lab_fdk_pin_is_isolated_v2_0_3() {
 }
 
 #[test]
+fn lab_fdk_aac_rust_pin_is_isolated_0_2_3() {
+    let pin = std::fs::read_to_string(root().join("lab/fdk-aac-rust/PIN.md")).unwrap();
+    assert!(pin.contains("0.2.3"));
+    assert!(pin.contains("607e6ba558b60e1219ccc8200bbf03fb96fad20c5d948ab25982ea964af13ae5"));
+    assert!(pin.contains("d8e6b1a3aa606c450241632b64b703f21ea31ce3"));
+    assert!(pin.contains("default = [\"ffi\"]"));
+    assert!(pin.contains("--no-default-features"));
+    assert!(pin.contains("Fraunhofer"));
+    assert!(pin.contains("Not invoked by cargo test") || pin.contains("must not"));
+    let cargo = std::fs::read_to_string(root().join("lab/fdk-aac-rust/Cargo.toml")).unwrap();
+    assert!(cargo.contains("fdk-aac-rust"));
+    assert!(cargo.contains("default-features = false"));
+    let mk = std::fs::read_to_string(root().join("lab/fdk-aac-rust/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/fdk-aac-rust/REPORT.md")).unwrap();
+    assert!(report.contains("no-go"));
+    assert!(report.contains("shared") || report.contains("lineage"));
+    assert!(report.contains("13312"));
+    let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!product.contains("fdk-aac-rust"));
+    assert!(!product.contains("lab/fdk-aac-rust"));
+}
+
+#[test]
 fn lab_faad2_pin_is_isolated_2_11_3() {
     let pin = std::fs::read_to_string(root().join("lab/faad2/PIN.md")).unwrap();
     assert!(pin.contains("2.11.3"));

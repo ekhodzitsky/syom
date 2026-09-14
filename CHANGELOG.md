@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated fdk-aac-rust 0.2.3 lab (`lab/fdk-aac-rust`): crates.io pin
+  `607e6ba5…`, Fraunhofer license kept off the product crate. Default
+  `ffi` feature is native FDK C++ (blocked here). Measured path is
+  `--no-default-features` (Rust port). LC sine48 decode matches 13312
+  samples at 48 kHz; HE/PS ADTS via `AacLcDecoder` is core-rate only.
+  Not a second independent FDK oracle (same 2.0.3 lineage as TASK-7).
+  Ordinary tests never link it.
 - Independent memory budgets (TASK-23 / F07): named constants and checked
   accounting (`MemoryBudgets`) for finite compressed input (1 GiB),
   collected planar f32 (4 GiB), channels (8), M4A index/metadata
