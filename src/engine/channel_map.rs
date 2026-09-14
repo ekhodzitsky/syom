@@ -40,7 +40,7 @@ pub(crate) struct Element {
 }
 
 impl Element {
-    fn planes(&self) -> usize {
+    pub(crate) fn planes(&self) -> usize {
         match self.kind {
             ElemKind::Cpe => 2,
             ElemKind::Sce | ElemKind::Lfe | ElemKind::Cce => 1,

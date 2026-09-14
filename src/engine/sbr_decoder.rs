@@ -393,6 +393,7 @@ impl SbrDecoder {
 /// columns followed by `LOOKAHEAD` slots taken from `XLow` beyond the
 /// frame (`XLow(k, l + tHFAdj)`, `k < 5` — the split bands the hybrid
 /// filterbank consumes ahead of time).
+#[allow(dead_code)]
 pub(crate) fn planes_f32(out: Vec<Vec<f64>>, mix_down_mono: bool) -> Vec<Vec<f32>> {
     let mut planar: Vec<Vec<f32>> = out
         .into_iter()

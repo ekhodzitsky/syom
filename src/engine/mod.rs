@@ -43,6 +43,7 @@ pub mod ps_hybrid;
 pub mod ps_map;
 pub mod ps_stereo;
 pub mod raw_data_block;
+pub(crate) mod sbr_attach;
 pub mod sbr_decoder;
 pub mod sbr_dequant;
 pub mod sbr_element;
@@ -98,6 +99,10 @@ mod cce_tests;
 #[cfg(test)]
 #[path = "he_config_tests.rs"]
 mod he_config_tests;
+
+#[cfg(test)]
+#[path = "sbr_attach_tests.rs"]
+mod sbr_attach_tests;
 
 #[cfg(test)]
 #[path = "fb_pool_tests.rs"]

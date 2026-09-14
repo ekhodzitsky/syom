@@ -6,15 +6,12 @@ use super::bits::BitReader;
 use super::cce::{PendingChan, parse_cce};
 use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
 use super::error::{Error, Result};
-use super::extension_payload::ExtensionPayload;
 use super::fb_pool::{FbPool, reject_dup};
 use super::filterbank::Filterbank;
 use super::ics_body::parse_ics_into;
 use super::pns::Lcg;
 use super::raw_data_block::IdSynEle;
-use super::sbr_decoder::SbrDecoder;
-use super::sbr_extension::SbrExtensionData;
-use super::sbr_header::SbrHeader;
+use super::sbr_attach::SbrPool;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
 use super::skip::{fill_count, skip_dse};
@@ -37,8 +34,7 @@ pub struct StreamDecoder {
     pub(crate) fb_r: Filterbank,
     pub(crate) rng: Lcg,
     pub mix_down_mono: bool,
-    sbr: Option<SbrDecoder>,
-    sbr_hdr: Option<SbrHeader>,
+    sbr_pool: SbrPool,
     pub(crate) sbr_active: bool,
     sbr_declared: bool,
     ps_declared: bool,
@@ -180,8 +176,9 @@ impl StreamDecoder {
         self.pending.clear();
         self.cces.clear();
         self.fb_pool.begin_frame();
-        let mut last_syn = IdSynEle::Sce;
-        let mut pending_sbr: Option<Box<SbrExtensionData>> = None;
+        self.sbr_pool.begin_frame();
+        let mut last_elem = None;
+        let mut pending_sbrs = Vec::new();
         loop {
             if br.bits_remaining() < 3 {
                 break;
@@ -190,13 +187,13 @@ impl StreamDecoder {
             match id {
                 IdSynEle::End => break,
                 IdSynEle::Sce | IdSynEle::Lfe => {
-                    last_syn = id;
                     let tag = br.read(4)? as u8;
                     let kind = if id == IdSynEle::Sce {
                         ElemKind::Sce
                     } else {
                         ElemKind::Lfe
                     };
+                    last_elem = Some((kind, tag));
                     if multichannel {
                         reject_dup(&self.elems, kind, tag)?;
                     }
@@ -211,18 +208,18 @@ impl StreamDecoder {
                         &mut self.sf_l,
                     )?;
                     self.finish_sce_pns(&ics, fs_index)?;
-                    self.stash_chan(kind, tag, 0, ics, tns, true, multichannel);
+                    self.stash_chan(kind, tag, 0, ics, tns, true, true);
                 }
                 IdSynEle::Cpe => {
-                    last_syn = IdSynEle::Cpe;
                     let tag = br.read(4)? as u8;
+                    last_elem = Some((ElemKind::Cpe, tag));
                     if multichannel {
                         reject_dup(&self.elems, ElemKind::Cpe, tag)?;
                     }
                     let (ics_l, tns_l, ics_r, tns_r) =
                         self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
-                    self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, multichannel);
-                    self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, multichannel);
+                    self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, true);
+                    self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, true);
                 }
                 IdSynEle::Cce => {
                     self.cces.push(parse_cce(&mut br, fs_index, core_aot)?);
@@ -234,64 +231,73 @@ impl StreamDecoder {
                 IdSynEle::Fil => {
                     let cnt = fill_count(&mut br)?;
                     let fs_sbr = self.sbr_out_rate.unwrap_or(sample_rate.saturating_mul(2));
-                    let start = br.bit_position();
-                    match ExtensionPayload::parse_with_sbr(
+                    super::sbr_attach::ingest_fil(
                         &mut br,
                         cnt,
-                        last_syn,
+                        last_elem,
                         fs_sbr,
-                        self.sbr_hdr,
-                    ) {
-                        Ok(super::extension_payload::ExtensionPayloadOrSbr::Sbr(ext)) => {
-                            self.sbr_hdr = Some(ext.header);
-                            pending_sbr = Some(ext);
-                        }
-                        Ok(_) => {}
-                        Err(e) if self.sbr_active => return Err(e),
-                        Err(_) => {}
-                    }
-                    let used = br.bit_position().saturating_sub(start);
-                    let need = u64::from(cnt).saturating_mul(8);
-                    if used < need {
-                        br.skip((need - used) as u32)?;
-                    }
+                        &self.sbr_pool,
+                        &mut pending_sbrs,
+                        self.sbr_active,
+                    )?;
                 }
             }
         }
         br.byte_align()?;
         self.last_rdb_bytes = (br.bit_position() / 8) as usize;
-        self.finish_pending(fs_index, multichannel)?;
-        if self.fast_mono && pending_sbr.is_none() && !self.sbr_active {
+        let he = self.sbr_active || !pending_sbrs.is_empty();
+        let was_fast = self.fast_mono;
+        if he {
+            self.fast_mono = false;
+        }
+        self.finish_pending(fs_index, multichannel, he)?;
+        if was_fast && !he {
             self.fb_pool.retain_seen();
+            self.fast_mono = was_fast;
             return Ok(sample_rate);
         }
-        if self.fast_mono {
-            self.fast_mono = false;
-            self.n_ch = 0;
-            self.push_pcm(false);
-            self.fast_mono = true;
-        }
         self.frame_ch.truncate(self.n_ch);
-        if self.pce.is_some() || (multichannel && !self.frame_ch.is_empty()) {
-            let order = map_planes(
+        let order = if self.pce.is_some() || (multichannel && !self.frame_ch.is_empty()) {
+            Some(map_planes(
                 &self.elems,
                 self.pce.as_ref(),
                 channel_configuration,
                 fs_index,
-            )?;
-            reorder(&mut self.frame_ch, &order);
-            if self.mix_down_mono {
-                let mono = mono_mix(&self.frame_ch, &order);
-                self.pcm_l.clear();
-                self.pcm_l.extend_from_slice(&mono);
-                self.frame_ch.truncate(1);
-                self.frame_ch[0] = mono;
+            )?)
+        } else {
+            None
+        };
+        if !he {
+            if let Some(ref order) = order {
+                reorder(&mut self.frame_ch, order);
+                if self.mix_down_mono {
+                    let mono = mono_mix(&self.frame_ch, order);
+                    self.pcm_l.clear();
+                    self.pcm_l.extend_from_slice(&mono);
+                    self.frame_ch.truncate(1);
+                    self.frame_ch[0] = mono;
+                }
             }
+            self.fb_pool.retain_seen();
+            self.fast_mono = was_fast;
+            return Ok(sample_rate);
         }
         let planar = std::mem::take(&mut self.frame_ch);
-        let (planar, sample_rate) = self.apply_sbr(planar, sample_rate, pending_sbr)?;
+        let (planar, sample_rate) = super::sbr_attach::apply_and_layout(
+            &mut self.sbr_pool,
+            &self.elems,
+            planar,
+            sample_rate,
+            self.sbr_out_rate,
+            &mut pending_sbrs,
+            &mut self.sbr_active,
+            self.mix_down_mono,
+            order.as_deref(),
+        )?;
         self.frame_ch = planar;
         self.fb_pool.retain_seen();
+        self.sbr_pool.retain_seen();
+        self.fast_mono = was_fast;
         Ok(sample_rate)
     }
 
@@ -344,43 +350,5 @@ impl StreamDecoder {
             self.frame_ch.push(src.to_vec());
         }
         self.n_ch += 1;
-    }
-
-    fn apply_sbr(
-        &mut self,
-        planar: Vec<Vec<f32>>,
-        sample_rate: u32,
-        pending: Option<Box<SbrExtensionData>>,
-    ) -> Result<(Vec<Vec<f32>>, u32)> {
-        if pending.is_some() {
-            self.sbr_active = true;
-        }
-        if !self.sbr_active || planar.is_empty() {
-            return Ok((planar, sample_rate));
-        }
-        let fs_sbr = match self.sbr_out_rate {
-            Some(out) if out == sample_rate => return Ok((planar, sample_rate)),
-            Some(out) if out == sample_rate.saturating_mul(2) => out,
-            Some(_) => return Err(Error::Format("SBR output rate must be 1x or 2x core")),
-            None => sample_rate.saturating_mul(2),
-        };
-        let n_ch = planar.len();
-        if self.sbr.is_none() {
-            self.sbr = Some(SbrDecoder::new(fs_sbr, n_ch)?);
-        }
-        let dec = self.sbr.as_mut().ok_or(Error::SbrQmfInvalid)?;
-        let core_f64: Vec<Vec<f64>> = planar
-            .iter()
-            .map(|ch| ch.iter().copied().map(f64::from).collect())
-            .collect();
-        let core: Vec<&[f64]> = core_f64.iter().map(Vec::as_slice).collect();
-        let out = match pending.as_deref() {
-            Some(ext) => dec.process_frame(ext, &core)?,
-            None => dec.upsample_frame(&core)?,
-        };
-        Ok((
-            super::sbr_decoder::planes_f32(out, self.mix_down_mono),
-            fs_sbr,
-        ))
     }
 }

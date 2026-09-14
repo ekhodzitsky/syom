@@ -152,7 +152,12 @@ impl StreamDecoder {
         Ok((ics_l, tns_l, ics_r, tns_r))
     }
 
-    pub(crate) fn finish_pending(&mut self, fs_index: u8, multichannel: bool) -> Result<()> {
+    pub(crate) fn finish_pending(
+        &mut self,
+        fs_index: u8,
+        multichannel: bool,
+        skip_downmix: bool,
+    ) -> Result<()> {
         for cce in &mut self.cces {
             pns::apply(
                 &mut cce.spec,
@@ -233,7 +238,7 @@ impl StreamDecoder {
                 apply_independent_pcm(&mut self.frame_ch, &ids, &pcm, cce)?;
             }
             self.cces = cces;
-            if !multichannel && self.mix_down_mono && self.frame_ch.len() >= 2 {
+            if !skip_downmix && !multichannel && self.mix_down_mono && self.frame_ch.len() >= 2 {
                 let n = self.frame_ch[0].len().min(self.frame_ch[1].len());
                 for i in 0..n {
                     self.frame_ch[0][i] = 0.5 * (self.frame_ch[0][i] + self.frame_ch[1][i]);

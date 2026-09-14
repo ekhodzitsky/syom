@@ -75,6 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   payload is pure upsample. Other ratios are `Format`. ADTS still discovers
   SBR from the bitstream. Downsampled high-band reconstruction stays 32-band
   QMF (not on the product path).
+- SBR QMF and header history are keyed by channel-element `(kind, tag)`.
+  FIL SBR attaches to the preceding SCE/CPE/LFE. Duplicate or
+  missing-element SBR extensions are `Format`. HE reconstruction runs
+  before speech downmix; mixed output is the non-LFE mean of the
+  reconstructed planes. Stereo and multielement HE keep independent
+  state. 1× passthrough and he48 goldens are unchanged.
 - Independent CCE is applied after IMDCT (`dest += gain * cce_pcm`) with
   CCE overlap keyed by element tag. Unity independent coupling of a
   silent SCE matches the coupling ICS decoded as SCE across frames.
