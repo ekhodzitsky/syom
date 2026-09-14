@@ -50,7 +50,7 @@ fn section_data_parses_back() {
     let q = sample_channel(49);
     let books = plan_books(&q);
     let mut w = BitWriter::new();
-    emit_ics_info(&mut w, WindowSequence::OnlyLong, 49);
+    emit_ics_info(&mut w, WindowSequence::OnlyLong, 49, 0);
     emit_section_data(&mut w, &books, 49);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
@@ -78,7 +78,7 @@ fn long_run_escapes_at_31() {
     emit_section_data(&mut w, &books, 49);
     let bytes = w.finish();
     let mut w2 = BitWriter::new();
-    emit_ics_info(&mut w2, WindowSequence::OnlyLong, 49);
+    emit_ics_info(&mut w2, WindowSequence::OnlyLong, 49, 0);
     let ics_bytes = w2.finish();
     let mut br2 = BitReader::new(&ics_bytes);
     let ics = IcsInfo::parse(&mut br2, 3, false).expect("ics");

@@ -3,13 +3,13 @@
 //! (Table 4.5), [`super::ics`] (Table 4.6), [`super::sf`] (Table 4.53), and
 //! the grouped spectral walk of [`super::spectrum::parse_quant_into`].
 //!
-//! v1 grouping: no `scale_factor_grouping` — each of the 8 short windows is
-//! its own group (group length 1), so the grouped/interleaved spectral walk
-//! degenerates to contiguous per-window runs. Scalefactor DPCM still runs
-//! continuously across groups, exactly as the decoder accumulates `last_sf`.
+//! Default grouping is 8×1 (`scale_factor_grouping = 0`). Opt-in grouping
+//! shares scale factors / sections across similar consecutive windows.
+//! Scalefactor DPCM still runs continuously across groups.
 
 use super::bits::BitWriter;
-use super::enc_huff::{sf_delta_bits, sf_emit_delta, spectral_emit};
+use super::enc_group::{self, Grouping};
+use super::enc_huff::{sf_delta_bits, sf_emit_delta};
 use super::enc_ms::MsBands;
 use super::enc_psy::Psy;
 use super::enc_quant::{self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
@@ -97,7 +97,7 @@ pub fn spectra(
 }
 
 /// Quantize + plan one short channel at `offset`; returns its body bits.
-/// The psy model scores each window's 128-bin spectrum on its own.
+/// Psy scores each window; [`Grouping`] then folds windows into groups.
 #[allow(clippy::too_many_arguments)]
 pub fn channel_build(
     psy: &mut Psy,
@@ -110,29 +110,44 @@ pub fn channel_build(
     gain: &mut u8,
     standalone: bool,
     tns: &EncTns,
+    grouping: Grouping,
 ) -> usize {
     let n_sfb = q.n_sfb;
+    let mut win_coded = [false; MAX_FLAT_SHORT];
+    let mut win_tq = [0.0f32; MAX_FLAT_SHORT];
     for w in 0..MAX_GROUPS {
         psy.analyze(
             &spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN],
             offsets,
             crate::engine::enc_frame::TARGET_Q,
-            &mut q.coded[w * n_sfb..(w + 1) * n_sfb],
-            &mut tq[w * n_sfb..(w + 1) * n_sfb],
+            &mut win_coded[w * n_sfb..(w + 1) * n_sfb],
+            &mut win_tq[w * n_sfb..(w + 1) * n_sfb],
         );
         if tns.short().window_on(w) {
             let hi = n_sfb.min(14);
             for b in 0..hi {
-                if !q.coded[w * n_sfb + b] {
-                    q.coded[w * n_sfb + b] = true;
-                    tq[w * n_sfb + b] = crate::engine::enc_frame::TARGET_Q;
+                if !win_coded[w * n_sfb + b] {
+                    win_coded[w * n_sfb + b] = true;
+                    win_tq[w * n_sfb + b] = crate::engine::enc_frame::TARGET_Q;
                 }
             }
         }
     }
     let mut peaks = [0.0f32; MAX_FLAT_SHORT];
     enc_quant::band_peaks_short(spec, offsets, n_sfb, &mut peaks);
-    enc_quant::raw_scalefactors_short(&peaks, tq, offset, q);
+    q.set_grouping(grouping);
+    let mut gpeaks = [0.0f32; MAX_FLAT_SHORT];
+    enc_group::fold_windows(
+        grouping,
+        n_sfb,
+        &win_coded,
+        &win_tq,
+        &peaks,
+        &mut q.coded,
+        tq,
+        &mut gpeaks,
+    );
+    enc_quant::raw_scalefactors_short(&gpeaks, tq, offset, q);
     *gain = enc_quant::normalize_sf_short(q);
     enc_quant::quantize_short(spec, offsets, q);
     *books = plan_books_short(q);
@@ -181,7 +196,7 @@ pub fn drop_bands_until(
         }
         let mut hit: Option<(usize, usize)> = None;
         for (ch, q) in chans.iter().enumerate().take(channels) {
-            let n = MAX_GROUPS * q.n_sfb;
+            let n = q.n_groups * q.n_sfb;
             if let Some(b) = q.coded[..n].iter().rposition(|&c| c) {
                 hit = Some((ch, b));
                 break;
@@ -214,7 +229,12 @@ pub fn emit_frame(
         w.write(1, 3); // CPE
         w.write(0, 4); // tag
         w.write_bit(true); // common_window
-        emit_ics_info(&mut w, WindowSequence::EightShort, chans[0].n_sfb as u8);
+        emit_ics_info(
+            &mut w,
+            WindowSequence::EightShort,
+            chans[0].n_sfb as u8,
+            chans[0].grouping_bits(),
+        );
         ms.emit(&mut w); // ms_mask_present + optional per-group ms_used bits
         for ch in 0..channels {
             emit_channel_body_short(
@@ -235,7 +255,7 @@ fn section_header_bits_short(len: usize) -> usize {
 /// result is flattened `g * n_sfb + b`.
 pub fn plan_books_short(q: &QuantShort) -> [u8; MAX_FLAT_SHORT] {
     let mut sfb_cb = [0u8; MAX_FLAT_SHORT];
-    for g in 0..MAX_GROUPS {
+    for g in 0..q.n_groups {
         let lo = g * q.n_sfb;
         plan_books_into(
             &q.coded[lo..lo + q.n_sfb],
@@ -248,10 +268,14 @@ pub fn plan_books_short(q: &QuantShort) -> [u8; MAX_FLAT_SHORT] {
     sfb_cb
 }
 
-/// `section_data()` for a short frame (Table 4.5 short-window branch):
-/// `MAX_GROUPS` groups of `n_sfb` bands each, 3-bit increments, escape 7.
-pub fn emit_section_data_short(w: &mut BitWriter, sfb_cb: &[u8; MAX_FLAT_SHORT], n_sfb: usize) {
-    for g in 0..MAX_GROUPS {
+/// `section_data()` for a short frame (Table 4.5 short-window branch).
+pub fn emit_section_data_short(
+    w: &mut BitWriter,
+    sfb_cb: &[u8; MAX_FLAT_SHORT],
+    n_sfb: usize,
+    n_groups: usize,
+) {
+    for g in 0..n_groups {
         let row = &sfb_cb[g * n_sfb..(g + 1) * n_sfb];
         let mut k = 0usize;
         while k < n_sfb {
@@ -281,7 +305,7 @@ pub fn emit_scale_factors_short(
     global_gain: u8,
 ) {
     let mut prev = i32::from(global_gain);
-    let n = MAX_GROUPS * q.n_sfb;
+    let n = q.n_groups * q.n_sfb;
     let bands = sfb_cb.iter().zip(q.sf.iter()).take(n);
     for (&cb, &sf) in bands {
         if !has_spectral(cb) {
@@ -292,34 +316,7 @@ pub fn emit_scale_factors_short(
     }
 }
 
-/// Huffman spectral data for a short frame, mirroring the
-/// `parse_quant_into` grouped walk with group length 1: per group (window)
-/// and band the bins are contiguous in the window-major layout.
-pub fn emit_spectral_short(
-    w: &mut BitWriter,
-    offsets: &[u16],
-    sfb_cb: &[u8; MAX_FLAT_SHORT],
-    q: &QuantShort,
-) {
-    for g in 0..MAX_GROUPS {
-        for b in 0..q.n_sfb {
-            let cb = sfb_cb[g * q.n_sfb + b];
-            if !has_spectral(cb) {
-                continue;
-            }
-            let lo = g * SHORT_WINDOW_LEN + usize::from(offsets[b]);
-            let hi = g * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
-            let step = if cb <= 4 { 4 } else { 2 };
-            let mut i = lo;
-            while i < hi {
-                spectral_emit(cb, &q.quant[i..i + step], w);
-                i += step;
-            }
-        }
-    }
-}
-
-/// Total bits of one short-window channel body (8 groups of one window).
+/// Total bits of one short-window channel body.
 pub fn channel_body_bits_short(
     sfb_cb: &[u8; MAX_FLAT_SHORT],
     q: &QuantShort,
@@ -332,7 +329,7 @@ pub fn channel_body_bits_short(
         bits += 15; // ics_info (short)
     }
     // section_data, per group
-    for g in 0..MAX_GROUPS {
+    for g in 0..q.n_groups {
         let row = &sfb_cb[g * q.n_sfb..(g + 1) * q.n_sfb];
         let mut k = 0usize;
         while k < q.n_sfb {
@@ -345,7 +342,7 @@ pub fn channel_body_bits_short(
         }
     }
     // scale_factor_data + spectral data, flattened (group, band) order
-    let n = MAX_GROUPS * q.n_sfb;
+    let n = q.n_groups * q.n_sfb;
     let mut prev = i32::from(global_gain);
     let bands = sfb_cb.iter().zip(q.sf.iter()).zip(q.bits.iter()).take(n);
     for ((&cb, &sf), row) in bands {
@@ -374,14 +371,19 @@ pub fn emit_channel_body_short(
 ) {
     w.write(u32::from(global_gain), 8);
     if standalone {
-        emit_ics_info(w, WindowSequence::EightShort, q.n_sfb as u8);
+        emit_ics_info(
+            w,
+            WindowSequence::EightShort,
+            q.n_sfb as u8,
+            q.grouping_bits(),
+        );
     }
-    emit_section_data_short(w, sfb_cb, q.n_sfb);
+    emit_section_data_short(w, sfb_cb, q.n_sfb, q.n_groups);
     emit_scale_factors_short(w, sfb_cb, q, global_gain);
     w.write_bit(false); // pulse_data_present
     tns.emit(w);
     w.write_bit(false); // gain_control_data_present
-    emit_spectral_short(w, offsets, sfb_cb, q);
+    enc_group::emit_spectral_short(w, offsets, sfb_cb, q);
 }
 
 #[cfg(test)]

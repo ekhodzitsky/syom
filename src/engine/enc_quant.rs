@@ -44,17 +44,14 @@ impl QuantChannel {
 
 /// Short-window band ceiling (the 8 kHz table has 15 bands).
 pub const MAX_SFB_SHORT: usize = 15;
-/// Window groups in a short frame: v1 emits no `scale_factor_grouping`, so
-/// each of the 8 short windows is its own group (simplest conformant
-/// grouping — sections and scalefactors cost a few extra bits per frame,
-/// the spectral walk stays contiguous per window).
+/// Window groups in a short frame (8 windows; grouping may merge them).
 pub const MAX_GROUPS: usize = 8;
 /// Flattened (group, band) ceiling: index `g * n_sfb + b`.
 pub const MAX_FLAT_SHORT: usize = MAX_GROUPS * MAX_SFB_SHORT;
 
 /// One quantized short-window channel: 8 windows × 128 bins, window-major,
-/// with books / scalefactors per (group, band) flattened as `g * n_sfb + b`
-/// (group `g` is window `g` — no grouping).
+/// with books / scalefactors per (group, band) flattened as `g * n_sfb + b`.
+/// Default grouping is 8×1 (`scale_factor_grouping = 0`).
 #[derive(Clone)]
 pub struct QuantShort {
     pub quant: [i32; LONG_WINDOW_LEN],
@@ -64,8 +61,10 @@ pub struct QuantShort {
     pub sf: [i32; MAX_FLAT_SHORT],
     /// Bands with signal worth coding (the rest get ZERO_HCB).
     pub coded: [bool; MAX_FLAT_SHORT],
-    /// Scalefactor bands per window (the rate's short-table size).
+    /// Scalefactor bands per group (the rate's short-table size).
     pub n_sfb: usize,
+    pub n_groups: usize,
+    pub group_len: [u8; 8],
 }
 
 impl QuantShort {
@@ -76,7 +75,23 @@ impl QuantShort {
             sf: [0; MAX_FLAT_SHORT],
             coded: [false; MAX_FLAT_SHORT],
             n_sfb,
+            n_groups: MAX_GROUPS,
+            group_len: [1; 8],
         }
+    }
+
+    pub fn set_grouping(&mut self, g: super::enc_group::Grouping) {
+        self.n_groups = g.n_groups as usize;
+        self.group_len = g.group_len;
+    }
+
+    #[must_use]
+    pub fn grouping_bits(&self) -> u8 {
+        super::enc_group::Grouping {
+            n_groups: self.n_groups as u8,
+            group_len: self.group_len,
+        }
+        .bits()
     }
 }
 
@@ -178,20 +193,19 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
             let mag = mag.min(QUANT_MAX);
             *q = if x < 0.0 { -mag } else { mag };
         }
-        fill_bits(bits, &out.quant, lo, hi);
+        fill_bits(bits, &out.quant[lo..hi]);
     }
 }
 
 /// Cost of one band under every book: quad books 1–4 walk 4-tuples, pair
 /// books 5–11 walk pairs (long-window band widths are multiples of 4).
-fn fill_bits(bits: &mut [u32; BOOKS], quant: &[i32; 1024], lo: usize, hi: usize) {
+fn fill_bits(bits: &mut [u32; BOOKS], vals: &[i32]) {
     for (cb, slot) in bits.iter_mut().enumerate().skip(1) {
         let step = if cb <= 4 { 4 } else { 2 };
         let mut total = 0u32;
-        let mut i = lo;
-        while i < hi {
-            let tuple = &quant[i..i + step];
-            let Some(n) = spectral_bits(cb as u8, tuple) else {
+        let mut i = 0usize;
+        while i < vals.len() {
+            let Some(n) = spectral_bits(cb as u8, &vals[i..i + step]) else {
                 total = UNREPRESENTABLE;
                 break;
             };
@@ -227,7 +241,7 @@ pub fn raw_scalefactors_short(
     global_offset: i32,
     out: &mut QuantShort,
 ) {
-    let n = MAX_GROUPS * out.n_sfb;
+    let n = out.n_groups * out.n_sfb;
     let bands = peaks
         .iter()
         .zip(target_q.iter())
@@ -249,7 +263,7 @@ pub fn raw_scalefactors_short(
 pub fn normalize_sf_short(out: &mut QuantShort) -> u8 {
     let mut global_gain = 100u8;
     let mut prev: Option<i32> = None;
-    let n = MAX_GROUPS * out.n_sfb;
+    let n = out.n_groups * out.n_sfb;
     let bands = out.coded.iter().zip(out.sf.iter_mut()).take(n);
     for (&coded, sf) in bands {
         if !coded {
@@ -270,27 +284,39 @@ pub fn normalize_sf_short(out: &mut QuantShort) -> u8 {
 }
 
 /// Quantize a window-major short spectrum with the (normalized) `out.sf`
-/// and fill the per-(window, band) bit-cost table.
+/// and fill the per-(group, band) bit-cost table. Grouped bands concatenate
+/// windows in decoder order before Huffman costing.
 pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut QuantShort) {
     out.quant = [0; LONG_WINDOW_LEN];
-    for w in 0..MAX_GROUPS {
+    let mut wbase = 0usize;
+    for g in 0..out.n_groups {
+        let glen = out.group_len[g] as usize;
         for b in 0..out.n_sfb {
-            let idx = w * out.n_sfb + b;
-            let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
-            let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
+            let idx = g * out.n_sfb + b;
+            let start = usize::from(offsets[b]);
+            let end = usize::from(offsets[b + 1]);
             if !out.coded[idx] {
                 out.bits[idx] = [UNREPRESENTABLE; BOOKS];
                 continue;
             }
-            // Same deterministic gain + |x|^0.75 as the long path.
             let gain = det_math::exp2(-0.1875f32 * (out.sf[idx] - SF_OFFSET) as f32);
-            for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-                let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
-                let mag = mag.min(QUANT_MAX);
-                *q = if x < 0.0 { -mag } else { mag };
+            let mut tmp = [0i32; LONG_WINDOW_LEN];
+            let mut n = 0usize;
+            for k in 0..glen {
+                let w = wbase + k;
+                let lo = w * SHORT_WINDOW_LEN + start;
+                let hi = w * SHORT_WINDOW_LEN + end;
+                for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
+                    let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
+                    let mag = mag.min(QUANT_MAX);
+                    *q = if x < 0.0 { -mag } else { mag };
+                }
+                tmp[n..n + (hi - lo)].copy_from_slice(&out.quant[lo..hi]);
+                n += hi - lo;
             }
-            fill_bits(&mut out.bits[idx], &out.quant, lo, hi);
+            fill_bits(&mut out.bits[idx], &tmp[..n]);
         }
+        wbase += glen;
     }
 }
 

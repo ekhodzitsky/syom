@@ -1,8 +1,8 @@
 //! Per-band M/S stereo decision for the LC encoder — the forward twin of
 //! [`super::stereo`] (ISO/IEC 14496-3 §4.6.8, Table 4.4).
 //!
-//! Per scalefactor band (long windows) or per (window, band) — 8 groups of
-//! 1 window, flattened window-major as `g * n_sfb + b` (short windows) — the
+//! Per scalefactor band (long windows) or per (group, band) — default 8
+//! groups of 1 window, flattened as `g * n_sfb + b` (short windows) — the
 //! band is coded M/S when the side signal is clearly cheaper than the
 //! weaker original channel:
 //!
@@ -32,7 +32,8 @@
 //! cap later drops keep their `ms_used` bit (the decoder skips them).
 
 use super::bits::BitWriter;
-use super::enc_quant::{MAX_FLAT_SHORT, MAX_GROUPS};
+use super::enc_group::Grouping;
+use super::enc_quant::MAX_FLAT_SHORT;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 
 /// −60 dB relative-to-loudest floor for the no-signal fold (same ratio the
@@ -213,15 +214,15 @@ fn apply_long(specs: &mut [[f32; LONG_WINDOW_LEN]; 2], offsets: &[u16], used: &[
 }
 
 /// Short-window decision over the window-major `specs`: one bit per
-/// (window, band), flattened `g * n_sfb + b` — group `g` is window `g`
-/// (no `scale_factor_grouping`), the decoder's exact bitmask read order.
+/// (group, band), flattened `g * n_sfb + b` — the decoder's bitmask order.
 pub fn decide_short(
     specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
     offsets: &[u16],
     per_band: bool,
+    grouping: Grouping,
 ) -> MsBands {
     let n_sfb = offsets.len() - 1;
-    let n = MAX_GROUPS * n_sfb;
+    let n = grouping.n_groups as usize * n_sfb;
     let [l, r] = specs;
     let mut e_l = [0.0f64; MAX_FLAT_SHORT];
     let mut e_r = [0.0f64; MAX_FLAT_SHORT];
@@ -231,20 +232,26 @@ pub fn decide_short(
         used: [false; MAX_FLAT_SHORT],
         n,
     };
-    for w in 0..MAX_GROUPS {
+    let mut wbase = 0usize;
+    for g in 0..grouping.n_groups as usize {
+        let glen = grouping.group_len[g] as usize;
         for b in 0..n_sfb {
-            let idx = w * n_sfb + b;
-            let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
-            let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
-            for (&lv, &rv) in l[lo..hi].iter().zip(r[lo..hi].iter()) {
-                let s = f64::from((lv - rv) * 0.5);
-                e_l[idx] += f64::from(lv) * f64::from(lv);
-                e_r[idx] += f64::from(rv) * f64::from(rv);
-                e_s[idx] += s * s;
+            let idx = g * n_sfb + b;
+            for k in 0..glen {
+                let w = wbase + k;
+                let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
+                let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
+                for (&lv, &rv) in l[lo..hi].iter().zip(r[lo..hi].iter()) {
+                    let s = f64::from((lv - rv) * 0.5);
+                    e_l[idx] += f64::from(lv) * f64::from(lv);
+                    e_r[idx] += f64::from(rv) * f64::from(rv);
+                    e_s[idx] += s * s;
+                }
             }
             loudest = loudest.max(e_l[idx].max(e_r[idx]));
             out.used[idx] = band_prefers_ms(e_l[idx], e_r[idx], e_s[idx]);
         }
+        wbase += glen;
     }
     let mut quiet = [false; MAX_FLAT_SHORT];
     for i in 0..n {
@@ -261,21 +268,26 @@ pub fn decide_short(
         }
         out.used[..n].fill(band_prefers_ms(tl, tr, ts));
     }
-    // Transform the chosen (window, band) regions in place.
     let [l, r] = specs;
-    for w in 0..MAX_GROUPS {
+    let mut wbase = 0usize;
+    for g in 0..grouping.n_groups as usize {
+        let glen = grouping.group_len[g] as usize;
         for b in 0..n_sfb {
-            if !out.used[w * n_sfb + b] {
+            if !out.used[g * n_sfb + b] {
                 continue;
             }
-            let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
-            let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
-            for (lv, rv) in l[lo..hi].iter_mut().zip(r[lo..hi].iter_mut()) {
-                let (a, b2) = (*lv, *rv);
-                *lv = (a + b2) * 0.5;
-                *rv = (a - b2) * 0.5;
+            for k in 0..glen {
+                let w = wbase + k;
+                let lo = w * SHORT_WINDOW_LEN + usize::from(offsets[b]);
+                let hi = w * SHORT_WINDOW_LEN + usize::from(offsets[b + 1]);
+                for (lv, rv) in l[lo..hi].iter_mut().zip(r[lo..hi].iter_mut()) {
+                    let (a, b2) = (*lv, *rv);
+                    *lv = (a + b2) * 0.5;
+                    *rv = (a - b2) * 0.5;
+                }
             }
         }
+        wbase += glen;
     }
     out
 }

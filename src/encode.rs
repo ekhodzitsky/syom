@@ -23,7 +23,8 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
     Ok(LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
         .with_lookahead(opts.lookahead)
         .with_psy(opts.ath, opts.tonality)
-        .with_short_tns(opts.short_tns))
+        .with_short_tns(opts.short_tns)
+        .with_short_group(opts.short_group))
 }
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
@@ -39,7 +40,7 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
 }
 
 /// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
-/// optional ATH / tonality).
+/// optional ATH / tonality / short TNS / short grouping).
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at

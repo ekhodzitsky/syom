@@ -156,3 +156,9 @@ fn encode_short_tns_defaults_off() {
     assert!(!EncodeOptions::default().short_tns);
     assert!(EncodeOptions::adts().with_short_tns(true).short_tns);
 }
+
+#[test]
+fn encode_short_group_defaults_off() {
+    assert!(!EncodeOptions::default().short_group);
+    assert!(EncodeOptions::adts().with_short_group(true).short_group);
+}

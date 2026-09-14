@@ -149,14 +149,14 @@ pub fn plan_books(q: &QuantChannel) -> [u8; MAX_BANDS] {
 
 /// `ics_info()` for an LC stream (Table 4.6, KBD window — the encoder's
 /// analysis window — no predictor). Short frames carry `max_sfb` on 4 bits
-/// plus a zero `scale_factor_grouping` (8 groups of one window).
-pub fn emit_ics_info(w: &mut BitWriter, seq: WindowSequence, max_sfb: u8) {
+/// plus 7-bit `scale_factor_grouping` (`grouping = 0` → 8 groups of 1).
+pub fn emit_ics_info(w: &mut BitWriter, seq: WindowSequence, max_sfb: u8, grouping: u8) {
     w.write_bit(false); // ics_res
     w.write(u32::from(seq as u8), 2);
     w.write_bit(true); // window_shape: KBD
     if seq.is_eight_short() {
         w.write(u32::from(max_sfb), 4);
-        w.write(0, 7); // scale_factor_grouping: every window its own group
+        w.write(u32::from(grouping), 7);
     } else {
         w.write(u32::from(max_sfb), 6);
         w.write_bit(false); // predictor_data_present
@@ -283,7 +283,7 @@ pub fn emit_channel_body(
 ) {
     w.write(u32::from(global_gain), 8);
     if standalone {
-        emit_ics_info(w, seq, q.n_bands as u8);
+        emit_ics_info(w, seq, q.n_bands as u8, 0);
     }
     emit_section_data(w, sfb_cb, q.n_bands);
     emit_scale_factors(w, sfb_cb, q, global_gain);
@@ -317,7 +317,7 @@ pub fn emit_frame(
         w.write(1, 3); // CPE
         w.write(0, 4); // tag
         w.write_bit(true); // common_window
-        emit_ics_info(&mut w, seq, chans[0].n_bands as u8);
+        emit_ics_info(&mut w, seq, chans[0].n_bands as u8, 0);
         ms.emit(&mut w); // ms_mask_present + optional per-band ms_used bits
         for ch in 0..channels {
             emit_channel_body(

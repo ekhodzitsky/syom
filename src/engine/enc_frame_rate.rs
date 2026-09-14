@@ -37,6 +37,11 @@ impl LcEncoder {
         self
     }
 
+    pub(crate) fn with_short_group(mut self, on: bool) -> Self {
+        self.short_group = on;
+        self
+    }
+
     pub(super) fn apply_tns(
         &mut self,
         specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
@@ -116,6 +121,7 @@ impl LcEncoder {
                     &mut self.gains[ch],
                     standalone,
                     &self.tns[ch],
+                    self.grouping,
                 );
             }
             return total + 7; // byte-align pad ceiling

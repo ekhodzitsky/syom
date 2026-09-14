@@ -231,6 +231,8 @@ pub struct EncodeOptions {
     pub tonality: bool,
     /// Short-window TNS (TASK-72). Default off — long TNS unchanged.
     pub short_tns: bool,
+    /// Short-window grouping (TASK-71). Default off — 8 groups of 1.
+    pub short_group: bool,
 }
 
 impl Default for EncodeOptions {
@@ -242,6 +244,7 @@ impl Default for EncodeOptions {
             ath: false,
             tonality: false,
             short_tns: false,
+            short_group: false,
         }
     }
 }
@@ -315,6 +318,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_short_tns(mut self, on: bool) -> Self {
         self.short_tns = on;
+        self
+    }
+
+    /// Short-window grouping. Off by default (8×1). One-shot and push
+    /// encode honor it identically (byte-exact for the same options).
+    #[inline]
+    pub fn with_short_group(mut self, on: bool) -> Self {
+        self.short_group = on;
         self
     }
 }

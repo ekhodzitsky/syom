@@ -122,7 +122,7 @@ impl IcsInfo {
     }
 }
 
-fn grouping_of(seq: WindowSequence, grouping: Option<u8>) -> (u8, u8, [u8; 8]) {
+pub(crate) fn grouping_of(seq: WindowSequence, grouping: Option<u8>) -> (u8, u8, [u8; 8]) {
     if !seq.is_eight_short() {
         let mut lens = [0u8; 8];
         lens[0] = 1;

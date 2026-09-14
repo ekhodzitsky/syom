@@ -174,3 +174,53 @@ fn short_sf_dpcm_continues_across_groups() {
         }
     }
 }
+
+#[test]
+fn paired_grouping_parses_back_through_shipped_ics() {
+    use crate::engine::enc_group::Grouping;
+    use crate::engine::enc_quant::quantize_short;
+    let offsets = short_offsets(3).expect("48k short offsets");
+    let n_sfb = offsets.len() - 1;
+    let mut spec = [0.0f32; 1024];
+    for (i, x) in spec.iter_mut().enumerate() {
+        *x = ((i % 7) as f32 - 3.0) * 8.0;
+    }
+    let mut q = QuantShort::new(n_sfb);
+    q.set_grouping(Grouping::from_bits(0b101_0101)); // 4×2
+    for i in 0..q.n_groups * n_sfb {
+        q.coded[i] = true;
+        q.sf[i] = 92;
+    }
+    quantize_short(&spec, offsets, &mut q);
+    let books = plan_books_short(&q);
+    let mut w = BitWriter::new();
+    emit_channel_body_short(&mut w, offsets, &books, &q, 92, true, &EncTns::off());
+    let counted = channel_body_bits_short(&books, &q, 92, true, &EncTns::off());
+    assert_eq!(w.bit_len() as usize, counted);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    let gg = br.read(8).expect("gg") as u8;
+    let ics = IcsInfo::parse(&mut br, 3, false).expect("ics");
+    assert_eq!(ics.num_window_groups, 4);
+    assert_eq!(&ics.window_group_length[..4], &[2, 2, 2, 2]);
+    let sections = SectionData::parse(&mut br, &ics).expect("sec");
+    assert_eq!(sections.sfb_cb.len(), 4);
+    let mut sfs = ScaleFactors::default();
+    sf::parse_into(&mut br, &ics, &sections.sfb_cb, gg, &mut sfs).expect("sf");
+    assert!(!br.read_bit().expect("pulse"));
+    assert!(!br.read_bit().expect("tns"));
+    assert!(!br.read_bit().expect("gain"));
+    let mut quant = Vec::new();
+    spectrum::parse_quant_into(&mut br, &ics, &sections, 3, &mut quant).expect("quant");
+    assert_eq!(quant.len(), 1024);
+    for w in 0..8 {
+        for b in 0..n_sfb {
+            let g = w / 2;
+            let lo = w * 128 + usize::from(offsets[b]);
+            let hi = w * 128 + usize::from(offsets[b + 1]);
+            if q.coded[g * n_sfb + b] {
+                assert_eq!(&quant[lo..hi], &q.quant[lo..hi], "w{w} b{b}");
+            }
+        }
+    }
+}

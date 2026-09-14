@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in short-window grouping (TASK-71): `EncodeOptions::with_short_group`.
+  Default off — 8 groups of 1, `enc48t` goldens unchanged. Consecutive
+  windows merge when energy is within 6 dB. Independent ICS parse-back.
+  Ablation (`lab/quality/GROUPING.md`): 18.5% lower grouping/section/sf
+  bits on the TASK-72 click, 0.0 dB click-region error, **no-go** as 0.x
+  default (total payload −0.9%; quality unchanged).
 - Preregistered AAC listening protocol (TASK-14): isolated
   `lab/listen` plus `scripts/listen_protocol.py`. MUSHRA vs BS.1116
   selection, hidden labels, 3-point noninferiority, n=69 from

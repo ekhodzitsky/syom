@@ -144,6 +144,10 @@ mod encode_preecho_tests;
 mod encode_short_tns_tests;
 
 #[cfg(test)]
+#[path = "encode_group_tests.rs"]
+mod encode_group_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

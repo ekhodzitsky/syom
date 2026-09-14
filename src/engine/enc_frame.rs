@@ -4,19 +4,10 @@
 //! quantize → section plan → rate loop (one global sf offset, `rate`
 //! submodule) → `raw_data_block()` bytes.
 //!
-//! Block switching: the causal state machine (default — no lookahead, no
-//! added latency) emits OnlyLong → LongStart → EightShort → LongStop; an
-//! attack makes THIS frame a LongStart (its window zeroes the tail around
-//! the attack) and the next an EightShort, so the transient is coded on
-//! 128-bin short windows. Transitions are shape-legal (`{OnlyLong,
-//! LongStop}` ↔ long family, `{LongStart, EightShort}` ↔ short family), so
-//! overlap-add stays TDAC-perfect. Stereo (CPE `common_window = 1`) shares
-//! the sequence: the attack decision is the OR of both channels'
-//! detectors. TNS runs on the raw L/R spectra before M/S — the decoder
-//! applies the inverse filter after the M/S undo (`decode_cpe`); long
-//! frames only (short frames emit `tns_data_present = 0`, v1). No
-//! PNS/intensity, no bit reservoir (`adts_buffer_fullness = 0x7FF` VBR
-//! marker), no `scale_factor_grouping` (8 groups of 1 window).
+//! Block switching: OnlyLong → LongStart → EightShort → LongStop; CPE
+//! `common_window = 1` ORs both detectors. TNS is long-only unless
+//! `with_short_tns`. Grouping is 8×1 unless `with_short_group`. No
+//! PNS/intensity, no bit reservoir.
 //!
 //! Known causal weakness, and the opt-in fix: the LongStart window stays
 //! flat for the first 1024 + 448 taps, so an attack landing in the first
@@ -91,6 +82,8 @@ pub struct LcEncoder {
     /// One-frame attack lookahead (`push_frame` / `flush`).
     lookahead: bool,
     short_tns: bool,
+    short_group: bool,
+    grouping: super::enc_group::Grouping,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
     held: Option<Box<lookahead::HeldFrame>>,
@@ -164,6 +157,8 @@ impl LcEncoder {
             detectors: [AttackDetector::new(), AttackDetector::new()],
             lookahead: false,
             short_tns: false,
+            short_group: false,
+            grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
@@ -338,15 +333,19 @@ impl LcEncoder {
         #[cfg(not(test))]
         let tns_enabled = true;
         self.apply_tns(&mut specs, &coded, tns_enabled);
-        // Per-band M/S decision, once per frame before the rate loop
-        // (`enc_ms` module docs); chosen bands are transformed in place.
+        self.grouping = if self.seq.is_eight_short() && self.short_group {
+            super::enc_group::Grouping::decide(&specs, self.channels, self.short_offsets)
+        } else {
+            super::enc_group::Grouping::ungrouped()
+        };
+        // Per-band M/S decision, once per frame before the rate loop.
         self.ms = if self.channels == 2 {
             #[cfg(test)]
             let per_band = self.ms_per_band;
             #[cfg(not(test))]
             let per_band = true;
             if self.seq.is_eight_short() {
-                enc_ms::decide_short(&mut specs, self.short_offsets, per_band)
+                enc_ms::decide_short(&mut specs, self.short_offsets, per_band, self.grouping)
             } else {
                 enc_ms::decide_long(&mut specs, self.offsets, per_band)
             }
