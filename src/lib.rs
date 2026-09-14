@@ -138,6 +138,10 @@ mod stream_latm_tests;
 mod stream_m4a_tests;
 
 #[cfg(test)]
+#[path = "stream_au_tests.rs"]
+mod stream_au_tests;
+
+#[cfg(test)]
 #[path = "error_tests.rs"]
 mod error_tests;
 

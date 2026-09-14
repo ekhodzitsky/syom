@@ -49,6 +49,15 @@ impl Decoder {
         match self.container {
             Container::Adts => self.pump_adts(buf, sink, est_frames, on_frame, final_flush),
             Container::Latm => self.pump_latm(buf, sink, est_frames, on_frame),
+            Container::Au => {
+                if final_flush {
+                    Ok(())
+                } else {
+                    Err(AacError::Unsupported(
+                        crate::UnsupportedFeature::RawAccessUnit,
+                    ))
+                }
+            }
             Container::Unknown => Ok(()),
         }
     }
@@ -325,7 +334,7 @@ impl Decoder {
     }
 
     /// Caps + consistency for one decoded frame, then the callback.
-    fn emit<F>(&mut self, rate: u32, on_frame: &mut F) -> Result<()>
+    pub(super) fn emit<F>(&mut self, rate: u32, on_frame: &mut F) -> Result<()>
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {

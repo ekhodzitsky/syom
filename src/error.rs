@@ -28,6 +28,10 @@ pub enum UnsupportedFeature {
     M4aPush,
     /// Push [`crate::Encoder`] cannot write M4A (`stco` needs finish).
     EncodeM4aStreaming,
+    /// `decode_au` needs [`crate::Decoder::from_asc`]; `feed` is ADTS/LATM.
+    RawAccessUnit,
+    /// Mid-stream AudioSpecificConfig change (call [`crate::Decoder::reset`]).
+    AscChange,
 }
 
 /// Malformed syntax (CRC, Huffman, lengths). Truncation is [`AacError::Truncated`].
@@ -210,6 +214,15 @@ impl fmt::Display for UnsupportedFeature {
                 write!(
                     f,
                     "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with"
+                )
+            }
+            Self::RawAccessUnit => {
+                write!(f, "aac: decode_au is ASC+AU; feed is ADTS/LATM")
+            }
+            Self::AscChange => {
+                write!(
+                    f,
+                    "aac: AudioSpecificConfig changed mid-stream; call reset()"
                 )
             }
         }

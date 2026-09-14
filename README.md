@@ -100,8 +100,9 @@ ffmpeg.
 
 Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
 byte streams (frames may straddle chunks; M4A is rejected — `moov` needs
-random access), or `decode_streaming(bytes, &opts, cb)` for any in-memory
-container. Each callback gets one AAC `Frame` of borrowed planar f32 (valid
+random access), `Decoder::from_asc(asc, opts)` + `decode_au(payload, cb)`
+when a demuxer already has AudioSpecificConfig and complete access units,
+or `decode_streaming(bytes, &opts, cb)` for any in-memory container. Each callback gets one AAC `Frame` of borrowed planar f32 (valid
 for the callback only; return `Err` to abort) and `finish` yields
 `StreamInfo` tallies. A parser, limit, or callback error **fails** the
 instance; a successful `finish` **finishes** it; further `feed`/`finish`

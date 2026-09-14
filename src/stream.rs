@@ -1,5 +1,6 @@
 //! Streaming decode: a resumable push [`Decoder`] for ADTS and LATM/LOAS
-//! byte streams, plus [`decode_streaming`] for complete in-memory buffers
+//! byte streams, [`Decoder::from_asc`] / [`Decoder::decode_au`] for raw
+//! access units, plus [`decode_streaming`] for complete in-memory buffers
 //! of any supported container (ADTS, LATM/LOAS, M4A/ISOBMFF).
 //!
 //! Peak PCM memory is one AAC frame: decoded planes are borrowed by the
@@ -29,6 +30,7 @@
 //! ```
 
 use crate::budgets::{BudgetExceeded, BudgetKind};
+use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
 use crate::engine::error::Error as EngineError;
 use crate::engine::latm::MuxCfg;
@@ -36,6 +38,7 @@ use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
 use crate::options::{ChannelMode, DecodeOptions};
 
+mod au;
 mod frame;
 mod m4a;
 mod pump;
@@ -47,10 +50,13 @@ enum Container {
     Unknown,
     Adts,
     Latm,
+    /// ASC + complete `raw_data_block()` via [`Decoder::decode_au`].
+    Au,
 }
 
-/// Resumable push decoder for ADTS and LATM/LOAS byte streams. Peak PCM RAM
-/// is O(frame). M4A/ISOBMFF input is rejected (`moov` needs random access;
+/// Resumable push decoder for ADTS and LATM/LOAS byte streams, or raw
+/// access units after [`Decoder::from_asc`]. Peak PCM RAM is O(frame).
+/// M4A/ISOBMFF input is rejected on `feed` (`moov` needs random access;
 /// use [`decode_streaming`] on the full slice).
 ///
 /// Bytes are buffered until the container is sniffable (~8 bytes) and until
@@ -72,6 +78,8 @@ pub struct Decoder {
     dec: StreamDecoder,
     /// Sticky LATM `StreamMuxConfig()`; persists across feeds.
     mux: Option<MuxCfg>,
+    /// Parsed ASC when this instance is in raw-AU mode.
+    au: Option<AudioSpecificConfig>,
     /// Mono fast-path target, cleared per frame.
     mono_scratch: Vec<f32>,
     /// `(sample_rate, channels)` locked by the first emitted frame.
@@ -106,6 +114,7 @@ impl Decoder {
             container: Container::Unknown,
             dec,
             mux: None,
+            au: None,
             mono_scratch: Vec::new(),
             locked: None,
             max_samples: 0,

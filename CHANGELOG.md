@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Raw AAC access-unit decode (TASK-52): `Decoder::from_asc(asc, opts)`
+  plus `decode_au` of complete `raw_data_block()` payloads (no ADTS/LATM
+  wrap). LC/HE/PS PCM matches the equivalent framed goldens. Mid-stream
+  ASC change is `Unsupported(AscChange)`; mixing `feed` and `decode_au`
+  is `Unsupported(RawAccessUnit)`. Empty AU is `Truncated`. `AudioSpecificConfig`
+  stays crate-private.
 - Matchable `AacError` classes (TASK-51): `Unsupported`, `Truncated`
   (`at` byte offset when known), `Malformed`, `Lifecycle`, `InvalidPcm`.
   Engine failures map by variant, not by string. `Format` / `Decode` /
