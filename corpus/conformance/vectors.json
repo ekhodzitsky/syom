@@ -314,8 +314,8 @@
       "kind": "valid",
       "finding": "F12",
       "hex": "410023103fc0",
-      "bit_notes": "Same as v0 LC mono but numSubFrames=1. Config should still parse; payload delivery of two subframes is TASK-31.",
-      "agreement": "partial",
+      "bit_notes": "Same as v0 LC mono but numSubFrames=1 (two AUs per AudioMuxElement).",
+      "agreement": "match",
       "follow_on": "TASK-31",
       "independent": {
         "aot": 2,

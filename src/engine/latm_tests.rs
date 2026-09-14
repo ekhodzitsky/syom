@@ -5,7 +5,7 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use super::{MuxCfg, latm_value, read_frame_len, skip_mux_tail};
+use super::{MuxCfg, latm_value, read_frame_len, read_payload, skip_mux_tail};
 use crate::engine::bits::{BitReader, BitWriter};
 use crate::engine::crc::stream_mux_config_crc;
 use crate::engine::error::Error;
@@ -161,6 +161,46 @@ fn mux_v1_asc_longer_than_asclen_is_error() {
     assert!(matches!(
         MuxCfg::parse(&mut br),
         Err(Error::Format("LATM ASC longer than ascLen"))
+    ));
+}
+
+#[test]
+fn mux_cfg_stores_num_sub_frames() -> Result<(), Error> {
+    let bytes = [0x41, 0x00, 0x23, 0x10, 0x3f, 0xc0];
+    let mut br = BitReader::new(&bytes);
+    let cfg = MuxCfg::parse(&mut br)?;
+    assert_eq!(cfg.num_sub_frames, 1);
+    assert_eq!(cfg.asc.sample_rate, 48_000);
+    Ok(())
+}
+
+#[test]
+fn second_subframe_truncated_is_unexpected_end() {
+    // Rebuild with numSubFrames=1 and only one payload prefix.
+    let mut w = BitWriter::new();
+    w.write_bit(false); // version 0
+    w.write_bit(true);
+    w.write(1, 6); // two AUs
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(0, 3);
+    w.write(0, 3); // frameLengthType 0
+    w.write(0xFF, 8);
+    w.write_bit(false); // other
+    w.write_bit(false); // crc
+    w.write(1, 8); // one payload byte length
+    w.write(0, 8); // one payload byte — missing second subframe
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    let cfg = MuxCfg::parse(&mut br).unwrap();
+    assert_eq!(cfg.num_sub_frames, 1);
+    let _ = read_payload(&mut br, &cfg).unwrap();
+    assert!(matches!(
+        read_payload(&mut br, &cfg),
+        Err(Error::UnexpectedEnd)
     ));
 }
 

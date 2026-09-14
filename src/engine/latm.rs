@@ -17,6 +17,8 @@ pub(crate) struct MuxCfg {
     pub(crate) asc: AudioSpecificConfig,
     pub(crate) frame_length_type: u8,
     pub(crate) frame_length: u32,
+    /// Wire `numSubFrames`; access units in one AudioMuxElement = this + 1.
+    pub(crate) num_sub_frames: u8,
 }
 
 impl MuxCfg {
@@ -33,7 +35,7 @@ impl MuxCfg {
             let _tara = latm_value(br)?;
         }
         let _same_time = br.read_bit()?;
-        let _num_sub_frames = br.read(6)?;
+        let num_sub_frames = br.read(6)? as u8;
         let num_program = br.read(4)?;
         let num_layer = br.read(3)?;
         if num_program != 0 || num_layer != 0 {
@@ -57,6 +59,7 @@ impl MuxCfg {
                 asc,
                 frame_length_type,
                 frame_length,
+                num_sub_frames,
             });
         }
         let (asc, _) = AudioSpecificConfig::parse_from_reader(br)?;
@@ -67,6 +70,7 @@ impl MuxCfg {
             asc,
             frame_length_type,
             frame_length,
+            num_sub_frames,
         })
     }
 }

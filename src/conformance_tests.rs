@@ -146,6 +146,7 @@ fn latm_matches(bytes: &[u8], ind: &str) -> bool {
         && json_u(ind, "channel_configuration")
             .is_none_or(|v| u64::from(cfg.asc.channel_configuration) == v)
         && json_u(ind, "frame_length_type").is_none_or(|v| u64::from(cfg.frame_length_type) == v)
+        && json_u(ind, "num_sub_frames_field").is_none_or(|v| u64::from(cfg.num_sub_frames) == v)
 }
 
 fn pce_matches(bytes: &[u8], ind: &str) -> bool {

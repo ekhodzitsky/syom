@@ -167,55 +167,64 @@ impl Decoder {
                 .as_ref()
                 .ok_or(EngineError::LatmNoPreviousMuxConfig)
                 .map_err(AacError::from)?;
-            let (aot, fs, sr, ch) = (
+            let (aot, fs, sr, ch, n_au) = (
                 cfg.asc.aot,
                 cfg.asc.sampling_frequency_index,
                 cfg.asc.sample_rate,
                 cfg.asc.channel_configuration,
+                cfg.num_sub_frames.saturating_add(1),
             );
-            let payload = read_payload(&mut br, cfg).map_err(AacError::from)?;
-            let idx = self.aac_frames;
-            let rate = match sink.as_deref_mut() {
-                // One-shot mono: decode straight into the caller's plane.
-                Some(dst) => {
-                    let before = dst.len();
-                    let rate = self
-                        .dec
-                        .decode_raw_mono_f32(aot, fs, sr, ch, 1, &payload, dst)
+            for _ in 0..n_au {
+                let payload = {
+                    let cfg = self
+                        .mux
+                        .as_ref()
+                        .ok_or(EngineError::LatmNoPreviousMuxConfig)
                         .map_err(AacError::from)?;
-                    let n = dst.len() - before;
-                    self.tally(rate, 1, n)?;
-                    if idx == 0 {
-                        self.reserve_hint(dst, est_frames, n);
+                    read_payload(&mut br, cfg).map_err(AacError::from)?
+                };
+                let idx = self.aac_frames;
+                let rate = match sink.as_deref_mut() {
+                    Some(dst) => {
+                        let before = dst.len();
+                        let rate = self
+                            .dec
+                            .decode_raw_mono_f32(aot, fs, sr, ch, 1, &payload, dst)
+                            .map_err(AacError::from)?;
+                        let n = dst.len() - before;
+                        self.tally(rate, 1, n)?;
+                        if idx == 0 {
+                            self.reserve_hint(dst, est_frames, n);
+                        }
+                        rate
                     }
-                    rate
-                }
-                None => {
-                    if matches!(self.opts.channel_mode, ChannelMode::Mono) {
-                        self.mono_scratch.clear();
-                        self.dec
-                            .decode_raw_mono_f32(
-                                aot,
-                                fs,
-                                sr,
-                                ch,
-                                1,
-                                &payload,
-                                &mut self.mono_scratch,
-                            )
-                            .map_err(AacError::from)?
-                    } else {
-                        self.dec
-                            .decode_frame_scaled(aot, fs, sr, ch, &payload)
-                            .map_err(AacError::from)?
+                    None => {
+                        if matches!(self.opts.channel_mode, ChannelMode::Mono) {
+                            self.mono_scratch.clear();
+                            self.dec
+                                .decode_raw_mono_f32(
+                                    aot,
+                                    fs,
+                                    sr,
+                                    ch,
+                                    1,
+                                    &payload,
+                                    &mut self.mono_scratch,
+                                )
+                                .map_err(AacError::from)?
+                        } else {
+                            self.dec
+                                .decode_frame_scaled(aot, fs, sr, ch, &payload)
+                                .map_err(AacError::from)?
+                        }
                     }
+                };
+                self.aac_frames += 1;
+                if sink.is_none() {
+                    self.emit(rate, on_frame)?;
                 }
-            };
-            self.pos += 3 + mux_len;
-            self.aac_frames += 1;
-            if sink.is_none() {
-                self.emit(rate, on_frame)?;
             }
+            self.pos += 3 + mux_len;
         }
     }
 

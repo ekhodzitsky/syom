@@ -6,7 +6,7 @@ use super::stream_tests::{assert_eq_collected, collect_push, collect_slice};
 use super::{AacError, DecodeOptions, Decoder, Result};
 use crate::engine::bits::{BitReader, BitWriter};
 use crate::engine::crc::stream_mux_config_crc;
-use crate::engine::latm::{LOAS_SYNC, MuxCfg};
+use crate::engine::latm::{LOAS_SYNC, MuxCfg, read_payload};
 
 fn latm_cases() -> [(&'static [u8], &'static str); 2] {
     [
@@ -229,4 +229,108 @@ fn latm_caps_too_long_fires_mid_stream() {
         matches!(dec.feed(data, |_| Ok(())), Err(AacError::TooLong { .. })),
         "latm duration cap must fire from feed"
     );
+}
+
+fn first_loas(data: &[u8]) -> &[u8] {
+    let v = (u32::from(data[0]) << 16) | (u32::from(data[1]) << 8) | u32::from(data[2]);
+    let len = 3 + (v & 0x1FFF) as usize;
+    &data[..len]
+}
+
+fn loas_wrap(body: &[u8]) -> Vec<u8> {
+    let hdr = (LOAS_SYNC << 13) | body.len() as u32;
+    let mut out = vec![(hdr >> 16) as u8, (hdr >> 8) as u8, hdr as u8];
+    out.extend_from_slice(body);
+    out
+}
+
+fn write_payload(w: &mut BitWriter, p: &[u8]) {
+    let mut n = p.len();
+    while n >= 255 {
+        w.write(255, 8);
+        n -= 255;
+    }
+    w.write(n as u32, 8);
+    for &b in p {
+        w.write(u32::from(b), 8);
+    }
+}
+
+/// Two AUs in one AudioMuxElement: copy latm48's first packet mux and
+/// duplicate its payload bits (v0: numSubFrames sits at body bits 3..9).
+fn latm48_two_subframe_packet() -> Vec<u8> {
+    let data = include_bytes!("goldens/latm48.latm");
+    let pkt = first_loas(data);
+    let body = &pkt[3..];
+    let mut br = BitReader::new(body);
+    let _use_same = br.read_bit().unwrap();
+    let cfg = MuxCfg::parse(&mut br).unwrap();
+    assert_eq!(cfg.num_sub_frames, 0);
+    let pay_start = br.bit_position();
+    let _p = read_payload(&mut br, &cfg).unwrap();
+    let pay_end = br.bit_position();
+    let mut bits = to_bits(body);
+    bits[3] = false;
+    bits[4] = false;
+    bits[5] = false;
+    bits[6] = false;
+    bits[7] = false;
+    bits[8] = true; // numSubFrames = 1
+    let payload_bits = bits[pay_start as usize..pay_end as usize].to_vec();
+    bits.truncate(pay_end as usize);
+    bits.extend_from_slice(&payload_bits);
+    loas_wrap(&bits_to_bytes(&bits))
+}
+
+#[test]
+fn two_subframes_double_samples_and_chunked_agrees() -> Result<()> {
+    let data = include_bytes!("goldens/latm48.latm");
+    let one_pkt = first_loas(data).to_vec();
+    let two = latm48_two_subframe_packet();
+    let opts = DecodeOptions::unbounded();
+    let a = crate::decode_with(&one_pkt, &opts)?;
+    let b = crate::decode_with(&two, &opts)?;
+    assert_eq!(b.sample_rate, a.sample_rate);
+    assert_eq!(b.channels.len(), a.channels.len());
+    assert_eq!(b.channels[0].len(), a.channels[0].len() * 2);
+    // First AU matches a cold decoder; the second uses overlap state.
+    for (ch_a, ch_b) in a.channels.iter().zip(&b.channels) {
+        assert_eq!(&ch_b[..ch_a.len()], ch_a.as_slice());
+    }
+    let slice = collect_slice(&two, &opts)?;
+    assert_eq_collected(&b, &slice, "two-subframe slice");
+    for chunk in [1usize, 7, 13, 64] {
+        let p = collect_push(&two, &opts, chunk)?;
+        assert_eq_collected(&b, &p, &format!("two-subframe chunk={chunk}"));
+    }
+    Ok(())
+}
+
+#[test]
+fn two_subframes_missing_second_payload_is_error() {
+    let data = include_bytes!("goldens/latm48.latm");
+    let pkt = first_loas(data);
+    let mut br = BitReader::new(&pkt[3..]);
+    let _ = br.read_bit().unwrap();
+    let cfg = MuxCfg::parse(&mut br).unwrap();
+    let p = read_payload(&mut br, &cfg).unwrap();
+    let mut w = BitWriter::new();
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write_bit(true);
+    w.write(1, 6);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(u32::from(cfg.asc.aot), 5);
+    w.write(u32::from(cfg.asc.sampling_frequency_index), 4);
+    w.write(u32::from(cfg.asc.channel_configuration), 4);
+    w.write(0, 3);
+    w.write(0, 3);
+    w.write(0xFF, 8);
+    w.write_bit(false);
+    w.write_bit(false);
+    write_payload(&mut w, &p);
+    // no second payload
+    let stream = loas_wrap(&w.finish());
+    assert!(crate::decode_with(&stream, &DecodeOptions::unbounded()).is_err());
 }

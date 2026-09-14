@@ -54,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- LATM/LOAS `AudioMuxElement` delivers every subframe (`numSubFrames+1`
+  access units) in payload order. A missing extra subframe is an error,
+  not a silent one-AU success. Single-subframe goldens are unchanged.
 - LATM `latmGetValue` is the 2-bit length prefix used by FFmpeg/FDK/FAAD2
   (`bytesForValue` then `(n+1)*8` bits). `audioMuxVersion=1` other-data
   length uses that form; an ASC that overruns `ascLen` is an error.
