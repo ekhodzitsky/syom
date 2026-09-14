@@ -69,6 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- LC encode enforces 6144 bits per channel per 1024-sample frame,
+  independent of the ADTS 8184-byte length ceiling. A requested bitrate
+  that cannot fit that cap is `Encode` (not an over-limit frame). The
+  rate loop still drops top bands to stay inside the cap; encode_cmp
+  reports achieved vs requested bitrate. Default 128 kbps at 48 kHz and
+  encoder goldens are unchanged.
 - M4A/LATM ASC SBR/PS flags seed the decoder: `sbr_present` activates HE
   without waiting for a FIL payload. Output rate is the declared 1× or 2×
   core rate (not a hardcoded 2×). 1× keeps core sample count; 2× without

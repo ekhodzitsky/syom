@@ -140,6 +140,25 @@ fn he_encode_cell_is_separate_unavailable() {
 }
 
 #[test]
+fn over_limit_bitrate_fails_before_timing() {
+    let (pcm, rate) = pcm();
+    let pf = run_encode_preflight(
+        "over-limit",
+        &pcm,
+        rate,
+        1_000_000,
+        &[syom_encode_candidate()],
+    );
+    assert!(pf.aborted(), "{}", pf.report());
+    assert!(pf.timed_ids().is_none(), "{}", pf.report());
+    assert!(
+        pf.report().contains("6144") || pf.report().contains("failed"),
+        "{}",
+        pf.report()
+    );
+}
+
+#[test]
 fn product_encode_still_matches_one_shot() {
     let (pcm, rate) = pcm();
     let a = encode(&pcm, rate).unwrap();

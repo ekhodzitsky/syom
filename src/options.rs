@@ -146,7 +146,9 @@ pub enum EncodeContainer {
 #[derive(Debug, Clone, PartialEq)]
 pub struct EncodeOptions {
     pub container: EncodeContainer,
-    /// Target bitrate in bits per second (whole stream).
+    /// Target bitrate in bits per second (whole stream). Must not exceed
+    /// AAC-LC 6144 bits/channel per 1024-sample frame
+    /// (`6144 · channels · sample_rate / 1024`).
     pub bitrate_bps: u32,
     /// One-frame attack lookahead (default off). When on, the attack
     /// detector runs one frame ahead of the encode: an attack anywhere in

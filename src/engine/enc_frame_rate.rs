@@ -3,11 +3,27 @@
 //! `impl` below keeps using the encoder's private fields; no new
 //! abstraction boundary.
 
-use super::{LcEncoder, MAX_PAYLOAD_BYTES, TARGET_Q};
+use super::{LcEncoder, MAX_BITS_PER_CHANNEL, MAX_PAYLOAD_BYTES, TARGET_Q};
 use crate::engine::enc_quant::{self, MAX_BANDS};
 use crate::engine::enc_section;
 use crate::engine::enc_short;
 use crate::engine::swb::LONG_WINDOW_LEN;
+
+/// Hard LC frame bit ceiling for `channels` (1 or 2).
+#[must_use]
+pub fn max_frame_bits(channels: usize) -> usize {
+    MAX_BITS_PER_CHANNEL.saturating_mul(channels)
+}
+
+/// Highest target bitrate that still fits [`MAX_BITS_PER_CHANNEL`].
+#[must_use]
+pub fn max_bitrate_bps(sample_rate: u32, channels: usize) -> u32 {
+    let bits = (MAX_BITS_PER_CHANNEL as u64)
+        .saturating_mul(channels as u64)
+        .saturating_mul(u64::from(sample_rate))
+        / 1024;
+    bits.min(u64::from(u32::MAX)) as u32
+}
 
 /// Rate-loop search bounds for the global scalefactor offset. Lower offset
 /// = larger quantized values = finer quantization = more bits; the floor
@@ -115,52 +131,41 @@ impl LcEncoder {
     }
 
     /// Hard cap: drop the highest coded bands until the frame fits
-    /// `limit_bits` (the bit budget, and never above the ADTS payload
-    /// limit). Quality collapse is legal, an oversize frame is not.
+    /// `limit_bits` (the bit budget, never above 6144 bits/channel or
+    /// the ADTS payload limit). Quality collapse is legal, an oversize
+    /// frame is not.
     pub(super) fn drop_bands_until(&mut self, limit_bits: usize) {
-        let cap = limit_bits.min(MAX_PAYLOAD_BYTES * 8);
-        if self.seq.is_eight_short() {
-            enc_short::drop_bands_until(
-                &mut self.chans_s[..],
-                &mut self.books_s[..],
-                &self.gains,
-                self.channels,
-                cap,
-                self.ms.overhead_bits(),
-            );
-            return;
-        }
-        let standalone = self.channels == 1;
+        let cap = limit_bits
+            .min(max_frame_bits(self.channels))
+            .min(MAX_PAYLOAD_BYTES * 8);
         loop {
-            let mut total = 3 + 4 + 3 + 7;
-            if self.channels == 2 {
-                total += 1 + 11 + self.ms.overhead_bits();
-            }
-            let channels = self
-                .chans
-                .iter()
-                .zip(self.books.iter())
-                .zip(self.gains.iter())
-                .zip(self.tns.iter())
-                .take(self.channels);
-            for (((q, books), gain), tns) in channels {
-                total += enc_section::channel_body_bits(books, q, *gain, standalone, tns);
-            }
-            if total <= cap {
+            if self.emit().len().saturating_mul(8) <= cap {
                 return;
             }
-            // Find the highest coded band across channels and silence it.
-            let mut hit: Option<(usize, usize)> = None;
-            for (ch, q) in self.chans.iter().enumerate().take(self.channels) {
-                if let Some(b) = q.coded[..q.n_bands].iter().rposition(|&c| c) {
-                    hit = Some((ch, b));
-                    break;
+            if self.seq.is_eight_short() {
+                let mut hit = None;
+                for (ch, q) in self.chans_s.iter().enumerate().take(self.channels) {
+                    if let Some(b) = q.coded.iter().rposition(|&c| c) {
+                        hit = Some((ch, b));
+                        break;
+                    }
                 }
+                let Some((ch, b)) = hit else { return };
+                self.chans_s[ch].coded[b] = false;
+                self.books_s[ch] = enc_short::plan_books_short(&self.chans_s[ch]);
+            } else {
+                let mut hit = None;
+                for (ch, q) in self.chans.iter().enumerate().take(self.channels) {
+                    if let Some(b) = q.coded[..q.n_bands].iter().rposition(|&c| c) {
+                        hit = Some((ch, b));
+                        break;
+                    }
+                }
+                let Some((ch, b)) = hit else { return };
+                self.chans[ch].coded[b] = false;
+                self.books[ch][b] = 0;
+                self.books[ch] = enc_section::plan_books(&self.chans[ch]);
             }
-            let Some((ch, b)) = hit else { return };
-            self.chans[ch].coded[b] = false;
-            self.books[ch][b] = 0;
-            self.books[ch] = enc_section::plan_books(&self.chans[ch]);
         }
     }
 

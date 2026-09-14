@@ -190,6 +190,7 @@ fn constructor_error_paths() -> Result<()> {
         Encoder::new(48_000, 0, &good).err(),
         Encoder::new(48_000, 3, &good).err(),
         Encoder::new(48_000, 2, &good.clone().with_bitrate_bps(0)).err(),
+        Encoder::new(48_000, 1, &good.clone().with_bitrate_bps(1_000_000)).err(),
         Encoder::new(48_000, 2, &good.with_container(EncodeContainer::M4a)).err(),
     ];
     for e in cases {

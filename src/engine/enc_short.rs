@@ -148,6 +148,7 @@ pub fn frame_bits(
 
 /// Hard cap, short frames: drop the highest coded (window, band) until the
 /// frame fits `cap` bits.
+#[allow(dead_code)]
 pub fn drop_bands_until(
     chans: &mut [QuantShort],
     books: &mut [[u8; MAX_FLAT_SHORT]],

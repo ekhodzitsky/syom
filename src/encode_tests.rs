@@ -121,6 +121,18 @@ fn error_paths_are_encode_errors() {
         encode(&[pcm[0].clone(), pcm[0].clone(), pcm[0].clone()], 48_000).unwrap_err(),
         encode(&[vec![f32::NAN; 2048]], 48_000).unwrap_err(),
         encode_with(&pcm, 48_000, &EncodeOptions::adts().with_bitrate_bps(0)).unwrap_err(),
+        encode_with(
+            &pcm,
+            48_000,
+            &EncodeOptions::adts().with_bitrate_bps(1_000_000),
+        )
+        .unwrap_err(),
+        encode_with(
+            &pcm,
+            8_000,
+            &EncodeOptions::adts().with_bitrate_bps(128_000),
+        )
+        .unwrap_err(),
     ];
     for e in cases {
         assert!(
@@ -200,6 +212,26 @@ fn bitrate_accuracy_on_noise() {
             "target {target}, achieved {achieved} bits/s"
         );
     }
+}
+
+#[test]
+fn noise_at_6144_cap_decodes_with_visible_rate() {
+    let pcm = vec![noise(48_000, 0.25, 0.4)];
+    let target = 288_000u32;
+    let adts = encode_with(
+        &pcm,
+        48_000,
+        &EncodeOptions::adts().with_bitrate_bps(target),
+    )
+    .expect("encode");
+    let dec = decode_with(&adts, &crate::DecodeOptions::unbounded()).expect("decode");
+    assert_eq!(dec.sample_rate, 48_000);
+    assert!(!dec.channels[0].is_empty());
+    let achieved = 8.0 * adts.len() as f64 / 0.25;
+    assert!(
+        (achieved / f64::from(target) - 1.0).abs() < 0.15,
+        "requested {target}, achieved {achieved:.0} (must be visible, not hidden)"
+    );
 }
 
 #[test]

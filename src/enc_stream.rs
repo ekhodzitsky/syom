@@ -112,6 +112,13 @@ impl Encoder {
         if opts.bitrate_bps == 0 {
             return Err(AacError::encode("encode: bitrate must be > 0"));
         }
+        let max_bps = crate::engine::enc_frame::max_bitrate_bps(sample_rate, channels);
+        if opts.bitrate_bps > max_bps {
+            return Err(AacError::encode(format!(
+                "encode: bitrate {} bps exceeds AAC-LC 6144 bits/channel (max {max_bps} bps)",
+                opts.bitrate_bps
+            )));
+        }
         if opts.container != EncodeContainer::Adts {
             return Err(AacError::encode(
                 "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with",

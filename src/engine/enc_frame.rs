@@ -48,6 +48,9 @@ use super::swb::{LONG_WINDOW_LEN, long_offsets, short_offsets};
 
 /// ADTS `raw_data_block` payload ceiling (8191-byte frame − 7-byte header).
 pub const MAX_PAYLOAD_BYTES: usize = 8184;
+/// AAC-LC max bits per channel per 1024-sample frame (FAAD2 ER / common
+/// literature). Independent of the ADTS 13-bit length field.
+pub const MAX_BITS_PER_CHANNEL: usize = 6144;
 /// Flat quality target: band peaks quantize to about this magnitude before
 /// the rate loop trades it against the bit budget.
 pub(crate) const TARGET_Q: f32 = 2048.0;
@@ -120,6 +123,11 @@ impl LcEncoder {
         }
         if bitrate_bps == 0 {
             return Err(Error::Format("LC encoder: bitrate must be > 0"));
+        }
+        if bitrate_bps > rate::max_bitrate_bps(sample_rate, channels) {
+            return Err(Error::Format(
+                "LC encoder: bitrate exceeds 6144 bits/channel",
+            ));
         }
         let offsets = long_offsets(fs_index)?;
         let short_offsets = short_offsets(fs_index)?;
@@ -217,10 +225,13 @@ impl LcEncoder {
         self.tns[..self.channels].iter().any(EncTns::is_on)
     }
 
-    /// Per-frame bit budget from the target bitrate (no reservoir).
+    /// Per-frame bit budget from the target bitrate (no reservoir),
+    /// never above the LC 6144 bits/channel cap or the ADTS byte ceiling.
     fn budget_bits(&self) -> usize {
         let bits = u64::from(self.bitrate_bps) * 1024 / u64::from(self.sample_rate);
-        (bits as usize).min(MAX_PAYLOAD_BYTES * 8)
+        (bits as usize)
+            .min(rate::max_frame_bits(self.channels))
+            .min(MAX_PAYLOAD_BYTES * 8)
     }
 
     /// Window sequence state machine (see the module docs). Causal: the
@@ -348,11 +359,12 @@ impl LcEncoder {
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, &psy_specs, spend);
-        let bits = self.build(&specs, &psy_specs, offset);
-        if bits > spend {
-            self.drop_bands_until(spend);
-        }
+        self.build(&specs, &psy_specs, offset);
+        self.drop_bands_until(spend.min(rate::max_frame_bits(self.channels)));
         let out = self.emit();
+        if out.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
+            return Err(Error::Format("LC encoder: frame exceeds 6144 bits/channel"));
+        }
         self.credit =
             (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
         self.prev_seq = self.seq;
@@ -364,6 +376,7 @@ impl LcEncoder {
 /// A child module, so the impl keeps using `LcEncoder`'s private fields.
 #[path = "enc_frame_rate.rs"]
 mod rate;
+pub use rate::max_bitrate_bps;
 
 /// One-frame attack lookahead (`enc_frame_lookahead.rs`): `push_frame` /
 /// `flush`, split out for the line cap. A child module, like `rate`.

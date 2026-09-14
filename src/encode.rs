@@ -100,6 +100,13 @@ fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<
     if opts.bitrate_bps == 0 {
         return Err(AacError::encode("encode: bitrate must be > 0"));
     }
+    let max_bps = crate::engine::enc_frame::max_bitrate_bps(sample_rate, pcm.len());
+    if opts.bitrate_bps > max_bps {
+        return Err(AacError::encode(format!(
+            "encode: bitrate {} bps exceeds AAC-LC 6144 bits/channel (max {max_bps} bps)",
+            opts.bitrate_bps
+        )));
+    }
     let n = pcm[0].len();
     if n == 0 {
         return Err(AacError::encode("encode: empty input"));
