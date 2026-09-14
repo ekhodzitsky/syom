@@ -35,6 +35,10 @@ harness = false
 name = "mem"
 harness = false
 
+[[bench]]
+name = "mem_iso"
+harness = false
+
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]

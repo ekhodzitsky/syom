@@ -50,6 +50,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Isolated native FDK lab (`lab/fdk`, fdk-aac v2.0.3 pin, Fraunhofer license
   kept off the product crate): LC ADTS decode/encode adapter, afterburner
   off, delay reported. Ordinary tests never link FDK.
+- Isolated-process memory runner (`benches/mem_iso.rs`): one OS process per
+  peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
+  count/bytes and retained live separately for one-shot vs streaming. The
+  in-process `mem` bench is unchanged historical.
 
 ## [0.6.0] - 2026-09-06
 

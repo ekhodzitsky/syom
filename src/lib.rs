@@ -12,6 +12,8 @@ mod engine;
 mod error;
 mod isomp4;
 mod m4a_write;
+#[doc(hidden)]
+pub mod mem_iso;
 mod options;
 mod sniff;
 mod stream;
@@ -58,6 +60,10 @@ mod oracle_tests;
 #[cfg(test)]
 #[path = "lab_isolation_tests.rs"]
 mod lab_isolation_tests;
+
+#[cfg(test)]
+#[path = "mem_iso_tests.rs"]
+mod mem_iso_tests;
 
 #[cfg(test)]
 #[path = "encode_tests.rs"]

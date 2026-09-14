@@ -95,6 +95,12 @@ Wall (criterion median):
 | ps_adts | **15.85 ms** (SBR+PS) | 275.63 ms (core) | 291.95 ms (SBR+PS) | 284.65 µs (core) |
 | mc_adts | **1.770 ms** | (decodes; ~1.3 s/iter, not wall-benched) | 1.280 s | 3.41 µs (no decode) |
 
+Memory isolation (TASK-12): `cargo bench --bench mem_iso` runs **one
+process per peer/case** and prints JSON with baseline RSS, peak delta,
+peak live heap, allocs and retained live. The table below is the older
+in-process `cargo bench --bench mem` runner (process-lifetime RSS;
+later rows reuse the process). Treat it as **historical**.
+
 Memory (`cargo bench --bench mem`, 200 iters; allocs/bytes are
 cumulative ÷ 200. Peak RSS is process-lifetime; LC ADTS syom is the
 first row and the only fair RSS cell):
