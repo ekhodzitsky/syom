@@ -1,0 +1,12 @@
+[package]
+name = "syom-lab-faac-verify"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+syom = { path = "../../.." }
+
+[[bin]]
+name = "faac_verify"
+path = "src/main.rs"

@@ -2,7 +2,7 @@
 
 Isolated from the `syom` package. Not a Cargo workspace member. Product
 `[dependencies]` stay empty; ordinary tests never download, link, or spawn
-ffmpeg / FDK / FAAD2 / fdk-aac-rust.
+ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC.
 
 | Adapter | Pin | Status |
 |---|---|---|
@@ -10,6 +10,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust.
 | [fdk](fdk/) | fdk-aac v2.0.3 | TASK-7 |
 | [faad2](faad2/) | FAAD2 2.11.3 (`FAAD_FMT_FLOAT`) | TASK-8 |
 | [fdk-aac-rust](fdk-aac-rust/) | fdk-aac-rust 0.2.3 (Rust FDK port) | TASK-5 |
+| [faac](faac/) | FAAC 1.31.1 (`libfaac` ADTS LC) | TASK-9 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated FAAC 1.31.1 encode lab (`lab/faac`): knik0/faac tag `faac-1.31.1`,
+  SHA-256 `3191bf1b…`, LGPL kept off the product crate. In-process ADTS
+  AAC-LC (`LOW`, MPEG-4, float PCM, TNS off). Requested `bitRate` is per
+  channel and maps to `quantqual`; a 2 s 440 Hz sine at 64/128/192 kbps
+  per channel all land ~43–44 kbps actual. Independent syom decode is
+  finite 97280 samples/ch vs 96000 input. HE encode is unavailable on
+  this release. Ordinary tests never link FAAC.
 - Isolated fdk-aac-rust 0.2.3 lab (`lab/fdk-aac-rust`): crates.io pin
   `607e6ba5…`, Fraunhofer license kept off the product crate. Default
   `ffi` feature is native FDK C++ (blocked here). Measured path is

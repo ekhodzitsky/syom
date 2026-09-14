@@ -30,6 +30,7 @@ fn src_does_not_spawn_ffmpeg_or_fdk() {
             || text.contains("Command::new(\"ffprobe\")")
             || text.contains("Command::new(\"fdk")
             || text.contains("Command::new(\"faad")
+            || text.contains("Command::new(\"faac")
         {
             hits.push(ent);
         }
@@ -74,6 +75,31 @@ fn lab_fdk_pin_is_isolated_v2_0_3() {
     let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
     assert!(!cargo.contains("fdk"));
     assert!(!cargo.contains("fdk-aac"));
+}
+
+#[test]
+fn lab_faac_pin_is_isolated_1_31_1() {
+    let pin = std::fs::read_to_string(root().join("lab/faac/PIN.md")).unwrap();
+    assert!(pin.contains("1.31.1"));
+    assert!(pin.contains("3191bf1b131f1213221ed86f65c2dfabf22d41f6b3771e7e65b6d29478433527"));
+    assert!(pin.contains("LOW"));
+    assert!(pin.contains("ADTS"));
+    assert!(pin.contains("LGPL"));
+    assert!(pin.contains("bitRate"));
+    let adapt = std::fs::read_to_string(root().join("lab/faac/faac_adapt.c")).unwrap();
+    assert!(adapt.contains("faacEncEncode"));
+    assert!(adapt.contains("FAAC_INPUT_FLOAT"));
+    assert!(adapt.contains("ADTS_STREAM"));
+    assert!(adapt.contains("aacObjectType = LOW"));
+    let mk = std::fs::read_to_string(root().join("lab/faac/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/faac/REPORT.md")).unwrap();
+    assert!(report.contains("97280"));
+    assert!(report.contains("no-go"));
+    assert!(report.contains("syom"));
+    let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!product.contains("faac"));
+    assert!(!product.contains("libfaac"));
 }
 
 #[test]
