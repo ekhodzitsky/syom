@@ -80,6 +80,10 @@ mod baseline_tests;
 mod corpus_tests;
 
 #[cfg(test)]
+#[path = "listen_protocol_tests.rs"]
+mod listen_protocol_tests;
+
+#[cfg(test)]
 #[path = "oracle_tests.rs"]
 mod oracle_tests;
 

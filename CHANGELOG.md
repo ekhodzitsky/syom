@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Preregistered AAC listening protocol (TASK-14): isolated
+  `lab/listen` plus `scripts/listen_protocol.py`. MUSHRA vs BS.1116
+  selection, hidden labels, 3-point noninferiority, n=69 from
+  planning SD 10. Dry-run uses SYNTHETIC scores and is **not**
+  listening evidence. TASK-109 stays blocked (no participants,
+  holdout bytes not obtained, no Apple host).
 - Opt-in short-window TNS (TASK-72): `EncodeOptions::with_short_tns`.
   Default off — long TNS and `enc48t` goldens unchanged. Per-window
   LPC order ≤ 7, 2 dB gate, syntax parsed by `tns::TnsData`. Ablation

@@ -16,6 +16,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
 | [prime](prime/) | encoder priming / omitted tail (TASK-40) | TASK-40 |
 | [quality](quality/) | same-bitrate LC encode SNR/rate (TASK-16) | TASK-16 |
+| [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | TASK-14 |
 | [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | TASK-48/49 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
