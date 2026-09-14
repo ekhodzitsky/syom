@@ -118,7 +118,7 @@ Do not use click SNR or aliased sine SNR as a gate.
 | TASK-65 truthful ABR/CBR/reservoir semantics | **go** (undershoot is measured) |
 | TASK-66 meet documented LC average bitrate | **go** |
 | TASK-68/69 psy thresholds / tonality | TASK-68 ATH **no-go as default** (`ATH.md`). TASK-69 SFM tonality **no-go as default** (`TONALITY.md`) |
-| TASK-70 transient pre-echo | **go** after a fixture whose alignment is priming |
+| TASK-70 transient pre-echo | **no-go** new default (`PREECHO.md`); lookahead stays the ≥3 dB fix |
 | TASK-75/76 PNS / intensity | **no-go** until rate is honest; do not copy lavc tools |
 | Treat this SNR as PEAQ/transparency | **no-go** |
 | HE encode baseline | **no-go** (no encoder) |

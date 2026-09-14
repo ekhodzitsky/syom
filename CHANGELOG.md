@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Causal pre-echo position sweep (TASK-70): `encode_preecho_tests` names
+  in-frame pos < 448 as the failing subset. Lookahead vs causal is
+  19.5–37 dB on shipped `encode_with`. LongStart `target_q` boost was
+  **+0.6 dB** (no-go); `ATTACK_RATIO` 4 flags silence. No new default,
+  no extra causal latency (`lab/quality/PREECHO.md`).
 - Opt-in Johnston SFM tonality (TASK-69): `EncodeOptions::with_tonality`.
   Default off — production goldens unchanged. Noise-like bands get
   0.25× `target_q`; the coded mask is unchanged. Ablation

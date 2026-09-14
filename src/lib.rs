@@ -132,6 +132,10 @@ mod encode_ath_tests;
 mod encode_tonality_tests;
 
 #[cfg(test)]
+#[path = "encode_preecho_tests.rs"]
+mod encode_preecho_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 
