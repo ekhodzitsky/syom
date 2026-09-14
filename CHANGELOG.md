@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README install version is 0.6; oxideav-aac is documented as an ADTS
   LC+SBR/PS decoder (not a parser); encoder M/S is per-band; BENCH.md is
   linked as historical unequal-work evidence.
+- Oracle provenance ledger (`corpus/oracles/provenance.json`) for committed
+  goldens: SHA-256, comparison policy (deterministic vs PNS), mint command
+  when known, and explicit gaps where ffmpeg versions were never recorded.
+  No silent remint; ordinary tests still do not spawn ffmpeg.
 
 ## [0.6.0] - 2026-09-06
 

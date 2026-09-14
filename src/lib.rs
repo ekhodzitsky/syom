@@ -50,6 +50,10 @@ mod decode_cmp_tests;
 mod corpus_tests;
 
 #[cfg(test)]
+#[path = "oracle_tests.rs"]
+mod oracle_tests;
+
+#[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
 

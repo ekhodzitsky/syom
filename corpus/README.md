@@ -29,3 +29,15 @@ python3 scripts/verify_corpus.py           # offline; no network
 ```
 
 A flipped golden or overlapping train/holdout recording fails the verifier.
+
+## Oracle provenance
+
+`corpus/oracles/provenance.json` records committed lavc/naive goldens:
+hashes, comparison policy (deterministic vs PNS/stochastic), commands when
+known, and **explicit gaps** where ffmpeg versions were never written down.
+Ordinary tests validate that file without spawning ffmpeg.
+
+```sh
+python3 scripts/build_oracle_provenance.py
+python3 scripts/verify_oracle_provenance.py
+```
