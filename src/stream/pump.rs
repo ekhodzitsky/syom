@@ -113,9 +113,10 @@ impl Decoder {
                 None => self.decode_adts(&hdr, payload, idx)?,
             };
             self.pos += frame_len;
-            self.aac_frames += 1;
             if sink.is_none() {
                 self.emit(rate, on_frame)?;
+            } else {
+                self.aac_frames += 1;
             }
         }
     }
@@ -235,9 +236,10 @@ impl Decoder {
                         }
                     }
                 };
-                self.aac_frames += 1;
                 if sink.is_none() {
                     self.emit(rate, on_frame)?;
+                } else {
+                    self.aac_frames += 1;
                 }
             }
             self.pos += 3 + mux_len;
@@ -336,6 +338,7 @@ impl Decoder {
             return Ok(()); // channel-less frame: consumed, not emitted
         }
         self.tally(rate, n_ch, n_samples)?;
+        self.aac_frames += 1;
         // Borrow the planes for the duration of the callback only.
         let mono_plane: [&[f32]; 1];
         let split_planes: Vec<&[f32]>;

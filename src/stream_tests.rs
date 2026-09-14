@@ -54,6 +54,18 @@ pub(crate) fn collect_push(data: &[u8], opts: &DecodeOptions, chunk: usize) -> R
     })
 }
 
+fn collect_into(dec: &mut Decoder, data: &[u8]) -> Result<Collected> {
+    let mut tracks: Vec<Vec<f32>> = Vec::new();
+    let mut cb = |f: Frame<'_>| push_frame_into(&mut tracks, f);
+    dec.feed(data, &mut cb)?;
+    let info = dec.finish(&mut cb)?;
+    Ok(Collected {
+        rate: info.sample_rate,
+        tracks,
+        info,
+    })
+}
+
 pub(crate) fn assert_eq_collected(one: &crate::DecodedAac, s: &Collected, label: &str) {
     assert_eq!(one.sample_rate, s.rate, "{label} sample rate");
     assert_eq!(one.channels.len(), s.tracks.len(), "{label} channels");
@@ -301,6 +313,9 @@ fn callback_abort_propagates() {
     let mut dec = Decoder::new(DecodeOptions::speech());
     let r = dec.feed(data, |_| Err(AacError::decode("boom")));
     assert!(matches!(r, Err(AacError::Decode(_))));
+    assert!(dec.is_failed());
+    assert_eq!(dec.frames(), 1, "callback-seen frame is counted");
+    assert!(dec.samples() > 0);
 }
 
 #[test]
@@ -354,5 +369,88 @@ fn streaming_does_not_accumulate_pcm() -> Result<()> {
         peak_frame <= 8192,
         "one frame stays one frame: {peak_frame}"
     );
+    Ok(())
+}
+
+#[test]
+fn failed_and_finished_are_sticky_until_reset() -> Result<()> {
+    let data = &include_bytes!("goldens/sine48.adts")[..];
+    let mut dec = Decoder::new(DecodeOptions::speech());
+    assert!(dec.feed(data, |_| Err(AacError::decode("boom"))).is_err());
+    assert!(dec.is_failed());
+    assert_eq!(dec.frames(), 1);
+    let sticky = dec.feed(data, |_| Ok(())).err().ok_or(AacError::NotAac)?;
+    assert!(sticky.to_string().contains("reset"), "{sticky}");
+    assert!(dec.finish(|_| Ok(())).is_err());
+    dec.reset();
+    assert!(!dec.is_failed());
+    assert_eq!(dec.frames(), 0);
+
+    let m4a = &include_bytes!("goldens/sine441.m4a")[..];
+    let mut dec = Decoder::new(DecodeOptions::speech());
+    assert_eq!(dec.feed(&m4a[..4], |_| Ok(())).ok(), Some(4));
+    assert!(dec.feed(&m4a[4..], |_| Ok(())).is_err());
+    assert!(dec.is_failed());
+    assert!(dec.feed(data, |_| Ok(())).is_err());
+    dec.reset();
+
+    let mut dec = Decoder::new(DecodeOptions::speech().with_max_duration_secs(0.01));
+    assert!(matches!(
+        dec.feed(data, |_| Ok(())),
+        Err(AacError::TooLong { .. })
+    ));
+    assert!(dec.is_failed());
+    assert_eq!(dec.frames(), 0, "limit rejects before the callback");
+    let e = dec.feed(data, |_| Ok(())).err().ok_or(AacError::NotAac)?;
+    assert!(e.to_string().contains("reset"), "{e}");
+    dec.reset();
+    assert!(matches!(
+        dec.feed(data, |_| Ok(())),
+        Err(AacError::TooLong { .. })
+    ));
+
+    let mut dec = Decoder::new(DecodeOptions::speech());
+    dec.feed(data, |_| Ok(()))?;
+    let info = dec.finish(|_| Ok(()))?;
+    assert!(dec.is_finished());
+    assert!(!dec.is_failed());
+    assert_eq!(dec.frames(), info.aac_frames);
+    assert!(dec.finish(|_| Ok(())).is_err());
+    assert!(dec.feed(data, |_| Ok(())).is_err());
+    dec.reset();
+    let s = collect_into(&mut dec, data)?;
+    let one = crate::decode_with(data, &DecodeOptions::speech())?;
+    assert_eq_collected(&one, &s, "reset-lc");
+    Ok(())
+}
+
+#[test]
+fn empty_finish_is_failed_until_reset() -> Result<()> {
+    let mut dec = Decoder::new(DecodeOptions::speech());
+    assert!(matches!(dec.finish(|_| Ok(())), Err(AacError::NotAac)));
+    assert!(dec.is_failed());
+    assert!(dec.feed(&[0xff], |_| Ok(())).is_err());
+    dec.reset();
+    let data = &include_bytes!("goldens/sine48.adts")[..];
+    let s = collect_into(&mut dec, data)?;
+    let one = crate::decode_with(data, &DecodeOptions::speech())?;
+    assert_eq_collected(&one, &s, "empty-reset");
+    Ok(())
+}
+
+#[test]
+fn reset_clears_he_and_ps_overlap() -> Result<()> {
+    let opts = DecodeOptions::unbounded();
+    for (data, label) in [
+        (&include_bytes!("goldens/he48.adts")[..], "he"),
+        (&include_bytes!("goldens/ps48.adts")[..], "ps"),
+    ] {
+        let mut dirty = Decoder::new(opts.clone());
+        dirty.feed(&data[..64], |_| Ok(()))?;
+        dirty.reset();
+        let a = collect_into(&mut dirty, data)?;
+        let one = crate::decode_with(data, &opts)?;
+        assert_eq_collected(&one, &a, label);
+    }
     Ok(())
 }

@@ -15,6 +15,10 @@
 //! encoded) and `finish` flushes the held frame; byte-parity with one-shot
 //! holds for the same options.
 //!
+//! Lifecycle: **open** → `feed` / `finish`; a PCM, rate, callback, or
+//! encode error moves to **failed**; a successful `finish` moves to
+//! **finished**. Further `feed` / `finish` error until [`Encoder::reset`].
+//!
 //! ```
 //! use syom::{DecodeOptions, EncodeOptions, Encoder};
 //! let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
@@ -104,6 +108,15 @@ pub struct Encoder {
     samples: u64,
     aac_frames: u64,
     bytes: u64,
+    opts: EncodeOptions,
+    life: Life,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Life {
+    Open,
+    Finished,
+    Failed,
 }
 
 impl Encoder {
@@ -149,18 +162,77 @@ impl Encoder {
             samples: 0,
             aac_frames: 0,
             bytes: 0,
+            opts: opts.clone(),
+            life: Life::Open,
         })
     }
 
-    /// Feed PCM planes (any length, equal lengths per channel, plane count
-    /// as passed to [`Encoder::new`]). `on_frame` fires per completed AAC
-    /// frame; return an error from it to abort. Returns the number of
-    /// samples consumed per channel (all of them; partial frames are
-    /// buffered internally).
+    fn ensure_open(&self) -> Result<()> {
+        match self.life {
+            Life::Open => Ok(()),
+            Life::Finished => Err(AacError::encode("stream already finished; call reset()")),
+            Life::Failed => Err(AacError::encode("stream failed; call reset()")),
+        }
+    }
+
+    fn fail<T>(&mut self, e: AacError) -> Result<T> {
+        self.life = Life::Failed;
+        Err(e)
+    }
+
+    #[must_use]
+    pub fn frames(&self) -> u64 {
+        self.aac_frames
+    }
+
+    #[must_use]
+    pub fn samples(&self) -> u64 {
+        self.samples
+    }
+
+    #[must_use]
+    pub fn bytes(&self) -> u64 {
+        self.bytes
+    }
+
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        self.life == Life::Failed
+    }
+
+    #[must_use]
+    pub fn is_finished(&self) -> bool {
+        self.life == Life::Finished
+    }
+
+    /// Drop filterbank/psy state, pending PCM, and counters. Vector
+    /// capacity is kept. Rate, channels, and [`EncodeOptions`] are unchanged.
+    pub fn reset(&mut self) -> Result<()> {
+        let pending_cap = [self.pending[0].capacity(), self.pending[1].capacity()];
+        let scratch_cap = self.scratch.capacity();
+        self.enc = LcEncoder::new(self.sample_rate, self.channels, self.opts.bitrate_bps)?
+            .with_lookahead(self.opts.lookahead);
+        for (i, p) in self.pending.iter_mut().enumerate() {
+            p.clear();
+            p.reserve(pending_cap[i]);
+        }
+        self.pending_len = 0;
+        self.scratch.clear();
+        self.scratch.reserve(scratch_cap);
+        self.samples = 0;
+        self.aac_frames = 0;
+        self.bytes = 0;
+        self.life = Life::Open;
+        Ok(())
+    }
+
+    /// Feed PCM planes (any length, equal lengths per channel). `on_frame`
+    /// fires per completed AAC frame. Returns samples consumed per channel.
     pub fn feed<F>(&mut self, planes: &[&[f32]], on_frame: F) -> Result<usize>
     where
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
+        self.ensure_open()?;
         if planes.len() != self.channels {
             return Err(AacError::encode(format!(
                 "encode: expected {} channel plane(s), got {}",
@@ -172,9 +244,10 @@ impl Encoder {
         if planes.iter().any(|p| p.len() != n) {
             return Err(AacError::encode("encode: channel planes differ in length"));
         }
-        crate::encode::check_pcm_samples(planes.iter().copied())?;
+        if let Err(e) = crate::encode::check_pcm_samples(planes.iter().copied()) {
+            return self.fail(e);
+        }
         let mut cb = on_frame;
-        // Take the scratch so `cb` can borrow it while `self` mutates.
         let mut scratch = std::mem::take(&mut self.scratch);
         let mut off = 0usize;
         while self.pending_len + (n - off) >= FRAME {
@@ -184,21 +257,24 @@ impl Encoder {
                 buf[..self.pending_len].copy_from_slice(&self.pending[ch][..self.pending_len]);
                 buf[self.pending_len..].copy_from_slice(&planes[ch][off..off + take]);
             }
-            self.emit(&bufs, FRAME, &mut scratch, &mut cb)?;
+            if let Err(e) = self.emit(&bufs, FRAME, &mut scratch, &mut cb) {
+                self.pending_len = 0;
+                self.samples += (off + take) as u64;
+                self.scratch = scratch;
+                return self.fail(e);
+            }
             off += take;
             self.pending_len = 0;
         }
         self.scratch = scratch;
         if off < n {
             if self.pending_len == 0 {
-                // Pending was fully consumed (or never held anything).
                 for (ch, plane) in planes.iter().enumerate() {
                     self.pending[ch].clear();
                     self.pending[ch].extend_from_slice(&plane[off..]);
                 }
                 self.pending_len = n - off;
             } else {
-                // Not enough to complete a frame: append to pending.
                 for (ch, plane) in planes.iter().enumerate() {
                     self.pending[ch].extend_from_slice(&plane[off..]);
                 }
@@ -209,51 +285,27 @@ impl Encoder {
         Ok(n)
     }
 
-    /// End of input: encode the zero-padded tail frame (if any) and report
-    /// tallies. With lookahead on, the tail push first flushes the
-    /// previously held full frame and the lookahead flush then emits the
-    /// tail itself; an exact-multiple input still has one held frame to
-    /// flush. Errors [`AacError::Encode`] when no samples were ever fed,
-    /// matching one-shot encode's empty-input rule.
-    pub fn finish<F>(mut self, on_frame: F) -> Result<EncodeInfo>
+    /// End of input: encode the zero-padded tail (if any) and report tallies.
+    /// Lookahead flushes the held frame first. Empty input is [`AacError::Encode`].
+    pub fn finish<F>(&mut self, on_frame: F) -> Result<EncodeInfo>
     where
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
+        self.ensure_open()?;
         if self.samples == 0 {
-            return Err(AacError::encode("encode: empty input"));
+            return self.fail(AacError::encode("encode: empty input"));
         }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);
-        if self.pending_len > 0 {
-            let tail = self.pending_len;
-            let mut bufs = [[0.0f32; FRAME]; 2];
-            for (ch, buf) in bufs.iter_mut().enumerate().take(self.channels) {
-                buf[..tail].copy_from_slice(&self.pending[ch][..tail]);
-            }
-            if self.enc.lookahead_enabled() {
-                let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
-                if let Some(au) = self.enc.push_frame(&planes)? {
-                    // The tail push encodes the previously held FULL frame.
-                    self.deliver(&au, FRAME, &mut scratch, &mut cb)?;
-                }
-                if let Some(au) = self.enc.flush()? {
-                    self.deliver(&au, tail, &mut scratch, &mut cb)?;
-                }
-            } else {
-                self.emit(&bufs, tail, &mut scratch, &mut cb)?;
-            }
-        } else if self.enc.lookahead_enabled()
-            && let Some(au) = self.enc.flush()?
-        {
-            self.deliver(&au, FRAME, &mut scratch, &mut cb)?;
-        }
-        for au in self.enc.drain_overlap()? {
-            self.deliver(&au, 0, &mut scratch, &mut cb)?;
-        }
+        let r = self.flush_end(&mut scratch, &mut cb);
         self.scratch = scratch;
+        if let Err(e) = r {
+            return self.fail(e);
+        }
         let n = self.samples;
         let block = FRAME as u64;
         let remainder = (block - (n % block)) % block;
+        self.life = Life::Finished;
         Ok(EncodeInfo {
             sample_rate: self.sample_rate,
             channels: self.channels,
@@ -266,10 +318,38 @@ impl Encoder {
         })
     }
 
-    /// Encode one full frame out of `bufs`, ADTS-wrap it into `scratch`,
-    /// deliver it to `cb`, and tally. With lookahead on, the push encodes
-    /// the previously held (full) frame instead — one frame of latency —
-    /// and the first push emits nothing.
+    fn flush_end<F>(&mut self, scratch: &mut Vec<u8>, cb: &mut F) -> Result<()>
+    where
+        F: FnMut(EncodedFrame<'_>) -> Result<()>,
+    {
+        if self.pending_len > 0 {
+            let tail = self.pending_len;
+            let mut bufs = [[0.0f32; FRAME]; 2];
+            for (ch, buf) in bufs.iter_mut().enumerate().take(self.channels) {
+                buf[..tail].copy_from_slice(&self.pending[ch][..tail]);
+            }
+            if self.enc.lookahead_enabled() {
+                let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
+                if let Some(au) = self.enc.push_frame(&planes)? {
+                    self.deliver(&au, FRAME, scratch, cb)?;
+                }
+                if let Some(au) = self.enc.flush()? {
+                    self.deliver(&au, tail, scratch, cb)?;
+                }
+            } else {
+                self.emit(&bufs, tail, scratch, cb)?;
+            }
+        } else if self.enc.lookahead_enabled()
+            && let Some(au) = self.enc.flush()?
+        {
+            self.deliver(&au, FRAME, scratch, cb)?;
+        }
+        for au in self.enc.drain_overlap()? {
+            self.deliver(&au, 0, scratch, cb)?;
+        }
+        Ok(())
+    }
+
     fn emit<F>(
         &mut self,
         bufs: &[[f32; FRAME]; 2],
@@ -291,7 +371,6 @@ impl Encoder {
         self.deliver(&au, samples, scratch, cb)
     }
 
-    /// ADTS-wrap `au` into `scratch`, deliver it to `cb`, and tally.
     fn deliver<F>(
         &mut self,
         au: &[u8],
@@ -304,13 +383,12 @@ impl Encoder {
     {
         scratch.clear();
         crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
+        self.aac_frames += 1;
+        self.bytes += scratch.len() as u64;
         cb(EncodedFrame {
             samples,
             au: scratch,
-        })?;
-        self.aac_frames += 1;
-        self.bytes += scratch.len() as u64;
-        Ok(())
+        })
     }
 }
 

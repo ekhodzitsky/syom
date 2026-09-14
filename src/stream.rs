@@ -58,6 +58,12 @@ enum Container {
 /// dropped by [`Decoder::finish`], matching one-shot decode. Whether input
 /// is undecodable is likewise decided at `finish` ([`AacError::NotAac`];
 /// LATM/LOAS keeps its decode-class error), not mid-`feed`.
+///
+/// Lifecycle: **open** → `feed` / `finish`; a parser, limit, or callback
+/// error moves to **failed**; a successful `finish` moves to **finished**.
+/// `feed` / `finish` on failed or finished return an error until
+/// [`Decoder::reset`]. `reset` clears LC/HE/PS overlap and counters and
+/// keeps buffer capacity.
 pub struct Decoder {
     opts: DecodeOptions,
     buf: Vec<u8>,
@@ -79,6 +85,14 @@ pub struct Decoder {
     emitted: u64,
     /// Last sink-frame sample count (0 until the first mono-fast-path frame).
     sink_frame_samples: usize,
+    life: Life,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Life {
+    Open,
+    Finished,
+    Failed,
 }
 
 impl Decoder {
@@ -100,16 +114,66 @@ impl Decoder {
             samples_out: 0,
             emitted: 0,
             sink_frame_samples: 0,
+            life: Life::Open,
         }
+    }
+
+    fn ensure_open(&self) -> Result<()> {
+        match self.life {
+            Life::Open => Ok(()),
+            Life::Finished => Err(AacError::decode("stream already finished; call reset()")),
+            Life::Failed => Err(AacError::decode("stream failed; call reset()")),
+        }
+    }
+
+    fn fail<T>(&mut self, e: AacError) -> Result<T> {
+        self.life = Life::Failed;
+        Err(e)
+    }
+
+    /// AAC frames handed to the callback (including a frame whose callback
+    /// then returned an error).
+    #[must_use]
+    pub fn frames(&self) -> u64 {
+        self.aac_frames
+    }
+
+    /// Per-channel samples handed to the callback.
+    #[must_use]
+    pub fn samples(&self) -> u64 {
+        self.samples_out
+    }
+
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        self.life == Life::Failed
+    }
+
+    #[must_use]
+    pub fn is_finished(&self) -> bool {
+        self.life == Life::Finished
+    }
+
+    /// Drop LC/HE/PS overlap, mux config, and counters. Buffer capacity is
+    /// kept. [`DecodeOptions`] are unchanged.
+    pub fn reset(&mut self) {
+        let cap = self.buf.capacity();
+        let scratch_cap = self.mono_scratch.capacity();
+        let opts = self.opts.clone();
+        *self = Self::new(opts);
+        self.buf.reserve(cap);
+        self.mono_scratch.reserve(scratch_cap);
     }
 
     /// Feed bytes; `on_frame` fires once per completed AAC frame. Returns
     /// the number of bytes consumed (all of them; partial frames are
-    /// buffered internally).
+    /// buffered internally). After an error the decoder is **failed**:
+    /// further `feed` / `finish` error until [`Self::reset`].
     pub fn feed<F>(&mut self, bytes: &[u8], on_frame: F) -> Result<usize>
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        self.ensure_open()?;
         self.opts.validate()?;
         let cap = usize::try_from(self.opts.memory.max_buffered_input_bytes).unwrap_or(usize::MAX);
         let cap = cap.max(1);
@@ -125,9 +189,11 @@ impl Decoder {
                     self.compact(&mut buf);
                 }
                 self.buf = buf;
-                res?;
+                if let Err(e) = res {
+                    return self.fail(e);
+                }
                 if self.buf.len() >= cap {
-                    return Err(AacError::from(BudgetExceeded {
+                    return self.fail(AacError::from(BudgetExceeded {
                         kind: BudgetKind::Input,
                         observed: self.buf.len() as u64,
                         max: self.opts.memory.max_buffered_input_bytes,
@@ -143,7 +209,9 @@ impl Decoder {
                 self.compact(&mut buf);
             }
             self.buf = buf;
-            res?;
+            if let Err(e) = res {
+                return self.fail(e);
+            }
         }
         Ok(bytes.len())
     }
@@ -163,15 +231,25 @@ impl Decoder {
 
     /// End of input: flush, drop a partial trailing frame, and report
     /// tallies. Errors [`AacError::NotAac`] when nothing decodable was seen.
-    pub fn finish<F>(mut self, on_frame: F) -> Result<StreamInfo>
+    /// On success the decoder is **finished**; on error it is **failed**.
+    pub fn finish<F>(&mut self, on_frame: F) -> Result<StreamInfo>
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        self.ensure_open()?;
         self.opts.validate()?;
         let buf = std::mem::take(&mut self.buf);
         let mut cb = on_frame;
-        self.pump(&buf, None, None, &mut cb, true)?;
-        self.tallies()
+        if let Err(e) = self.pump(&buf, None, None, &mut cb, true) {
+            return self.fail(e);
+        }
+        match self.tallies() {
+            Ok(info) => {
+                self.life = Life::Finished;
+                Ok(info)
+            }
+            Err(e) => self.fail(e),
+        }
     }
 
     /// One-shot over a complete slice (ADTS/LATM): sniffs and pumps without

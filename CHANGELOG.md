@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Streaming `Decoder` and `Encoder` lifecycle (TASK-45 / F18): open →
+  `feed`/`finish`; parser, limit, PCM, or callback errors are **failed**;
+  successful `finish` is **finished**. Further `feed`/`finish` error until
+  `reset()`. `finish` takes `&mut self` (no longer consumes the instance).
+  Counters include frames already handed to a callback that then failed.
+
 ### Fixed
 
 - M4A write rejects overflowing v0 box sizes, `stco` offsets, sample

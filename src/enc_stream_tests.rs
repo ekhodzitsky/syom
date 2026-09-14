@@ -221,23 +221,28 @@ fn sink(_: crate::EncodedFrame<'_>) -> Result<()> {
 #[test]
 fn feed_error_paths() -> Result<()> {
     let opts = EncodeOptions::adts();
-    // Wrong plane count for the constructed channel count.
+    // Wrong plane count does not consume PCM: the encoder stays open.
     let mut enc = Encoder::new(48_000, 2, &opts)?;
     let a = [0.0f32; 8];
     let e = enc.feed(&[&a], sink).err().ok_or(AacError::NotAac)?;
     assert!(matches!(e, AacError::Encode(_)), "plane count: {e:?}");
+    assert!(!enc.is_failed());
+    enc.feed(&[&a, &a], sink)?;
     // Unequal plane lengths.
     let mut enc = Encoder::new(48_000, 2, &opts)?;
     let b = [0.0f32; 9];
     let e = enc.feed(&[&a, &b], sink).err().ok_or(AacError::NotAac)?;
     assert!(matches!(e, AacError::Encode(_)), "unequal lengths: {e:?}");
-    // Non-finite sample.
+    assert!(!enc.is_failed());
+    // Non-finite sample fails the stream until reset.
     let mut enc = Encoder::new(48_000, 1, &opts)?;
     let nan = [f32::NAN; 8];
     let e = enc.feed(&[&nan], sink).err().ok_or(AacError::NotAac)?;
     assert!(matches!(e, AacError::Encode(_)), "NaN: {e:?}");
-    // A failed feed leaves the encoder usable.
+    assert!(enc.is_failed());
     let good = [0.0f32; 2048];
+    assert!(enc.feed(&[&good], sink).is_err(), "NaN is sticky");
+    enc.reset()?;
     let mut out = 0usize;
     enc.feed(&[&good], |f| {
         out += f.au.len();
@@ -251,11 +256,13 @@ fn feed_error_paths() -> Result<()> {
 
 #[test]
 fn finish_without_input_is_empty_error() -> Result<()> {
-    let enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
+    let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
     let e = enc.finish(sink).err().ok_or(AacError::NotAac)?;
     assert!(matches!(e, AacError::Encode(_)), "empty finish: {e:?}");
+    assert!(enc.is_failed());
+    assert!(enc.finish(sink).is_err(), "empty finish is sticky");
+    enc.reset()?;
     // Feeding empty slices is a no-op, not "input".
-    let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
     let empty: [&[f32]; 1] = [&[]];
     assert_eq!(enc.feed(&empty, sink)?, 0);
     let e = enc.finish(sink).err().ok_or(AacError::NotAac)?;
@@ -279,6 +286,11 @@ fn callback_abort_propagates() -> Result<()> {
         .ok_or(AacError::NotAac)?;
     assert_eq!(e.to_string(), "stop", "callback error surfaces verbatim");
     assert_eq!(fired, 1, "aborted on the first frame");
+    assert_eq!(enc.frames(), 1, "callback-seen frame is counted");
+    assert_eq!(enc.samples(), 1024, "consumed the aborted frame only");
+    assert!(enc.is_failed());
+    assert!(enc.feed(&planes, sink).is_err());
+    assert!(enc.finish(sink).is_err());
     // Fresh encoder with a pending tail: finish's callback fires and aborts.
     let mut enc = Encoder::new(48_000, 2, &opts)?;
     let planes: Vec<&[f32]> = pcm.iter().map(|p| &p[..100]).collect();
@@ -288,6 +300,8 @@ fn callback_abort_propagates() -> Result<()> {
         .err()
         .ok_or(AacError::NotAac)?;
     assert_eq!(e.to_string(), "stop at finish");
+    assert!(enc.is_failed());
+    assert_eq!(enc.frames(), 1);
     Ok(())
 }
 
@@ -303,5 +317,56 @@ fn info_fields_match_construction() -> Result<()> {
     assert_eq!(info.remainder, 0);
     assert_eq!(info.coded_samples, 3 * 1024);
     assert_eq!(info.bytes as usize, adts.len());
+    Ok(())
+}
+
+#[test]
+fn finished_is_sticky_until_reset() -> Result<()> {
+    let pcm = fixture(48_000, 2048);
+    let opts = EncodeOptions::adts();
+    let mut enc = Encoder::new(48_000, 2, &opts)?;
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    enc.feed(&planes, sink)?;
+    let info = enc.finish(sink)?;
+    assert!(enc.is_finished());
+    assert!(!enc.is_failed());
+    assert_eq!(enc.frames(), info.aac_frames);
+    assert!(enc.finish(sink).is_err());
+    assert!(enc.feed(&planes, sink).is_err());
+    enc.reset()?;
+    let mut out = Vec::new();
+    enc.feed(&planes, |f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    let info2 = enc.finish(|f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    assert_eq!(out, encode_with(&pcm, 48_000, &opts)?);
+    assert_eq!(info2.aac_frames, info.aac_frames);
+    Ok(())
+}
+
+#[test]
+fn reset_clears_held_lookahead_state() -> Result<()> {
+    let pcm = fixture(48_000, 3 * 1024);
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    let mut enc = Encoder::new(48_000, 2, &opts)?;
+    let prefix: Vec<&[f32]> = pcm.iter().map(|p| &p[..1024]).collect();
+    enc.feed(&prefix, sink)?;
+    assert_eq!(enc.frames(), 0, "first frame is held");
+    enc.reset()?;
+    let mut out = Vec::new();
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    enc.feed(&planes, |f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    enc.finish(|f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    assert_eq!(out, encode_with(&pcm, 48_000, &opts)?);
     Ok(())
 }
