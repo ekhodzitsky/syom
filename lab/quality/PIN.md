@@ -1,6 +1,7 @@
 # Encoder quality baseline pin (TASK-16)
 
 Isolated from the `syom` package. **Not invoked by `cargo test`.**
+TASK-68 ATH A/B is `syom_ath` (`make ath` / `ATH.md`), same isolation.
 
 ## Independent decoder
 

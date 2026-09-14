@@ -128,3 +128,12 @@ fn speech_and_unbounded_still_decode_sine() {
     assert_eq!(b.channels.len(), 1);
     assert_eq!(a.channels[0].len(), b.channels[0].len());
 }
+
+#[test]
+fn encode_ath_defaults_off() {
+    assert!(!EncodeOptions::default().ath);
+    assert!(!EncodeOptions::adts().ath);
+    assert!(!EncodeOptions::m4a().ath);
+    assert!(EncodeOptions::adts().with_ath(true).ath);
+    assert!(!EncodeOptions::adts().with_ath(true).with_ath(false).ath);
+}

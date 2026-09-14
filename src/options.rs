@@ -222,6 +222,10 @@ pub struct EncodeOptions {
     /// extra frame of latency (1024 samples) in both one-shot and push
     /// encode; the push `Encoder` flushes the held frame at `finish`.
     pub lookahead: bool,
+    /// Terhardt absolute-threshold floor (TASK-68). Default off: production
+    /// goldens stay byte-identical. When on, bands below ATH at 0 dBFS =
+    /// 96 dB SPL are dropped in addition to the −60 dB relative floor.
+    pub ath: bool,
 }
 
 impl Default for EncodeOptions {
@@ -230,6 +234,7 @@ impl Default for EncodeOptions {
             container: EncodeContainer::Adts,
             bitrate_bps: 128_000,
             lookahead: false,
+            ath: false,
         }
     }
 }
@@ -280,6 +285,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_lookahead(mut self, on: bool) -> Self {
         self.lookahead = on;
+        self
+    }
+
+    /// Terhardt ATH floor. Off by default; one-shot and push encode honor
+    /// it identically (byte-exact for the same options).
+    #[inline]
+    pub fn with_ath(mut self, on: bool) -> Self {
+        self.ath = on;
         self
     }
 }

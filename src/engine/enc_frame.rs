@@ -64,8 +64,7 @@ pub struct LcEncoder {
     bitrate_bps: u32,
     offsets: &'static [u16],
     short_offsets: &'static [u16],
-    /// Full 2048-tap KBD window pre-scaled by 32768 (decoder filterbank
-    /// output is s16-scaled before the public 1/32768 mapping).
+    /// Full 2048-tap KBD window pre-scaled by 32768 (s16 domain).
     window: Box<[f32; 2 * LONG_WINDOW_LEN]>,
     /// Start/stop/short analysis windows (same scaling).
     windows: ShortWindows,
@@ -75,12 +74,9 @@ pub struct LcEncoder {
     gains: [u8; 2],
     psy: Psy,
     target_q: [[f32; MAX_BANDS]; 2],
-    /// Unspent bits carried forward (bounded at one frame's budget): the
-    /// integer sf-offset step undershoots by up to ~11%, so frames may
-    /// spend accumulated savings. ADTS carries the VBR fullness marker.
+    /// Unspent bits carried forward (bounded at one frame's budget).
     credit: i64,
-    /// Stuffing debt (bits emitted above `budget`): later undershoot
-    /// frames pad less so 10 s payload/valid stays within ±3%.
+    /// Stuffing debt so 10 s payload/valid stays within ±3%.
     pad_debt: i64,
     /// This frame's per-band M/S decision (`ms_mask_present` 0/1/2).
     ms: MsBands,
@@ -92,8 +88,7 @@ pub struct LcEncoder {
     seq: WindowSequence,
     /// Per-channel attack detectors (OR'd for the shared CPE decision).
     detectors: [AttackDetector; 2],
-    /// One-frame attack lookahead: the detectors run one frame ahead of
-    /// the encode (`push_frame` / `flush` in the `lookahead` child module).
+    /// One-frame attack lookahead (`push_frame` / `flush`).
     lookahead: bool,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
@@ -190,13 +185,18 @@ impl LcEncoder {
         self.fs_index
     }
 
-    /// Opt into one-frame attack lookahead (see the module docs). Encode
-    /// via `push_frame` / `flush` (child module `lookahead`) instead of
-    /// `encode_frame`; one-shot `encode_with` and the push `Encoder` wire
-    /// this from `EncodeOptions::lookahead`.
+    /// Opt into one-frame attack lookahead (see the module docs).
     #[must_use]
     pub fn with_lookahead(mut self, on: bool) -> Self {
         self.lookahead = on;
+        self
+    }
+
+    /// Opt into Terhardt ATH on long and short psy (default off).
+    #[must_use]
+    pub(crate) fn with_ath(mut self, on: bool) -> Self {
+        self.psy.enable_ath(on);
+        self.psy_short.enable_ath(on);
         self
     }
 

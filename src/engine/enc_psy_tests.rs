@@ -94,6 +94,91 @@ fn short_psy_uses_short_bin_width() {
     );
 }
 
+fn band_of(offsets: &[u16], bin: u16) -> usize {
+    offsets.iter().position(|&o| o > bin).expect("band") - 1
+}
+
+/// 0 dBFS-ish MDCT coefficient matching `ath_band_energy`'s FS_BIN.
+const FS_BIN: f32 = 32768.0 * 512.0;
+
+#[test]
+fn ath_off_matches_default_mask() {
+    let (offsets, n_bands) = offsets_48k();
+    let spec = tone_spec(100);
+    let mut a = Psy::new(offsets, 48_000);
+    let mut b = Psy::new(offsets, 48_000);
+    b.enable_ath(false);
+    let mut ca = [false; MAX_BANDS];
+    let mut cb = [false; MAX_BANDS];
+    let mut tq = [0.0f32; MAX_BANDS];
+    a.analyze(&spec, offsets, 2048.0, &mut ca, &mut tq);
+    b.analyze(&spec, offsets, 2048.0, &mut cb, &mut tq);
+    assert_eq!(&ca[..n_bands], &cb[..n_bands]);
+}
+
+#[test]
+fn ath_silence_still_codes_nothing() {
+    let (offsets, n_bands) = offsets_48k();
+    let mut psy = Psy::new(offsets, 48_000);
+    psy.enable_ath(true);
+    let spec = [0.0f32; LONG_WINDOW_LEN];
+    let mut coded = [true; MAX_BANDS];
+    let mut tq = [1.0f32; MAX_BANDS];
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[..n_bands].iter().all(|&c| !c));
+}
+
+#[test]
+fn ath_drops_quiet_hf_that_relative_floor_keeps() {
+    let (offsets, _) = offsets_48k();
+    let mut spec = [0.0f32; LONG_WINDOW_LEN];
+    // 1 kHz ≈ bin 43, 16 kHz ≈ bin 682 at 48 kHz (bin_hz = 48000/2048).
+    spec[43] = FS_BIN;
+    spec[682] = FS_BIN * 0.01; // −40 dB
+    let b1k = band_of(offsets, 43);
+    let b16 = band_of(offsets, 682);
+    let mut psy = Psy::new(offsets, 48_000);
+    let mut coded = [false; MAX_BANDS];
+    let mut tq = [0.0f32; MAX_BANDS];
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[b1k], "1 kHz must be coded");
+    assert!(coded[b16], "relative floor keeps −40 dB HF");
+    psy.enable_ath(true);
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[b1k], "1 kHz still coded with ATH");
+    assert!(!coded[b16], "ATH must drop −40 dB 16 kHz");
+}
+
+#[test]
+fn ath_drops_inaudible_hf_tone_alone() {
+    let (offsets, _) = offsets_48k();
+    let mut spec = [0.0f32; LONG_WINDOW_LEN];
+    spec[682] = FS_BIN * 0.01; // −40 dBFS at 16 kHz, below Terhardt at 96 dB SPL FS
+    let b16 = band_of(offsets, 682);
+    let mut psy = Psy::new(offsets, 48_000);
+    let mut coded = [false; MAX_BANDS];
+    let mut tq = [0.0f32; MAX_BANDS];
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[b16], "relative floor codes the loudest band");
+    psy.enable_ath(true);
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(!coded[b16], "ATH must drop inaudible 16 kHz tone");
+}
+
+#[test]
+fn ath_keeps_quiet_but_audible_midband() {
+    let (offsets, _) = offsets_48k();
+    let mut spec = [0.0f32; LONG_WINDOW_LEN];
+    spec[43] = FS_BIN * 0.01; // −40 dBFS at 1 kHz: 56 dB SPL, ATH ~3 dB
+    let b1k = band_of(offsets, 43);
+    let mut psy = Psy::new(offsets, 48_000);
+    psy.enable_ath(true);
+    let mut coded = [false; MAX_BANDS];
+    let mut tq = [0.0f32; MAX_BANDS];
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[b1k], "−40 dB 1 kHz is above ATH");
+}
+
 fn frame_of(f: impl Fn(usize) -> f32) -> Vec<f32> {
     (0..LONG_WINDOW_LEN).map(f).collect()
 }

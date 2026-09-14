@@ -112,6 +112,7 @@ fn stream_and_encode_signatures_hold() -> Result<()> {
     assert_eq!(enc.remainder, 0);
     assert_eq!(EncodeContainer::default(), EncodeContainer::Adts);
     assert!(!EncodeOptions::default().lookahead);
+    assert!(!EncodeOptions::default().ath);
     assert_eq!(EncodeOptions::default().bitrate_bps, 128_000);
     Ok(())
 }

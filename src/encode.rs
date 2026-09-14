@@ -18,6 +18,13 @@ use crate::error::{AacError, Result};
 use crate::m4a_write;
 use crate::options::{EncodeContainer, EncodeOptions};
 
+/// Build an LC encoder honoring lookahead and ATH from `opts`.
+pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<LcEncoder> {
+    Ok(LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
+        .with_lookahead(opts.lookahead)
+        .with_ath(opts.ath))
+}
+
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
 ///
 /// One plane per channel (mono or stereo), all planes the same length; the
@@ -30,7 +37,8 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
 }
 
-/// Encode planar f32 PCM under `opts` (container + bitrate + lookahead).
+/// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
+/// optional ATH).
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at
@@ -39,8 +47,7 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
 pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
     validate(pcm, sample_rate, opts)?;
     let channels = pcm.len();
-    let mut enc =
-        LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?.with_lookahead(opts.lookahead);
+    let mut enc = new_lc(sample_rate, channels, opts)?;
     let n_samples = pcm[0].len();
     let n_frames = n_samples.div_ceil(FRAME);
     let mut payloads: Vec<Vec<u8>> = Vec::with_capacity(n_frames);

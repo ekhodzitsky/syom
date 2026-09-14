@@ -117,7 +117,7 @@ Do not use click SNR or aliased sine SNR as a gate.
 |---|---|
 | TASK-65 truthful ABR/CBR/reservoir semantics | **go** (undershoot is measured) |
 | TASK-66 meet documented LC average bitrate | **go** |
-| TASK-68/69 psy thresholds / tonality | **wait** on TASK-66 (else we tune a starved tonal coder) |
+| TASK-68/69 psy thresholds / tonality | TASK-66 landed. TASK-68 ATH **no-go as default** (`lab/quality/ATH.md`); TASK-69 still To Do |
 | TASK-70 transient pre-echo | **go** after a fixture whose alignment is priming |
 | TASK-75/76 PNS / intensity | **no-go** until rate is honest; do not copy lavc tools |
 | Treat this SNR as PEAQ/transparency | **no-go** |
@@ -129,6 +129,8 @@ Do not use click SNR or aliased sine SNR as a gate.
 ```sh
 # not invoked by cargo test
 cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_quality
+# TASK-68 ATH A/B (default vs with_ath)
+cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_ath
 ```
 
 Requires `lab/libavcodec/avc_driver` and `ffmpeg` on PATH for the native

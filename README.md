@@ -85,9 +85,11 @@ mono/stereo, 128 kbps). `bitrate_bps` is an ABR target (payload/valid
 `ID_END`; silence may undershoot) with
 `adts_buffer_fullness = 0x7FF` (no CBR reservoir). `encode_with` takes
 `EncodeOptions`:
-`EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`, and
+`EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`,
 `with_lookahead` (one-frame attack lookahead: better pre-echo suppression
-on early-in-frame onsets, one extra frame of latency, default off).
+on early-in-frame onsets, one extra frame of latency, default off), and
+`with_ath` (Terhardt absolute-threshold floor, default off; not the 0.x
+default — TASK-68 no-go on noise 128k / lecture).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD

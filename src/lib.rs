@@ -124,6 +124,10 @@ mod encode_rate_tests;
 mod encode_transient_tests;
 
 #[cfg(test)]
+#[path = "encode_ath_tests.rs"]
+mod encode_ath_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

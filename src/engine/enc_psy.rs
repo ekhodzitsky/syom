@@ -2,10 +2,11 @@
 //! matrix (computed once per encoder), flat 18 dB signal-to-mask ratio.
 //!
 //! Output is a per-band quantization-precision target: bands whose energy
-//! clears the masked threshold get full precision, partially masked bands
-//! get proportionally less, fully masked bands are dropped (ZERO_HCB). The
-//! rate loop's global offset still applies on top. Not a hearing model —
-//! just enough masking to stop coding inaudible sidelobes at full price.
+//! clears the masked threshold get full precision, fully masked bands are
+//! dropped (ZERO_HCB). The rate loop's global offset still applies on top.
+//! Default is not a hearing model — just enough masking to stop coding
+//! inaudible sidelobes at full price. Opt-in Terhardt ATH (TASK-68) raises
+//! the floor at insensitive frequencies; off by default so goldens match.
 
 use super::det_math;
 use super::enc_quant::MAX_BANDS;
@@ -24,8 +25,10 @@ pub struct Psy {
     n_bands: usize,
     /// `spread[i][j]`: fraction of band `j`'s energy masking band `i`.
     spread: Box<[[f32; MAX_BANDS]; MAX_BANDS]>,
-    /// scratch for band energies
     energy: [f32; MAX_BANDS],
+    /// Absolute-threshold energy per band (Terhardt, 0 dBFS = 96 dB SPL).
+    ath_energy: [f32; MAX_BANDS],
+    ath: bool,
 }
 
 /// Approximate Bark scale of `f` Hz. The `atan`s go through
@@ -33,6 +36,26 @@ pub struct Psy {
 /// platforms, and a 1-ulp band-center drift can flip a masking decision.
 fn bark(f: f32) -> f32 {
     13.0 * det_math::atan(0.00076 * f) + 3.5 * det_math::atan((f / 7500.0).powi(2))
+}
+
+/// Terhardt (1979) simplified ATH in dB SPL. `f_hz` is clamped to 20 Hz
+/// .. 24 kHz so the `f^4` term stays finite. Via [`det_math`], not libm.
+fn ath_db_spl(f_hz: f32) -> f32 {
+    let f = (f_hz * 0.001).clamp(0.02, 24.0);
+    let inv = det_math::exp2(-0.8 * det_math::log2(f));
+    let d = f - 3.3;
+    let gauss = det_math::exp2(-0.6 * d * d * std::f32::consts::LOG2_E);
+    3.64 * inv - 6.5 * gauss + 0.001 * f * f * f * f
+}
+
+/// 0 dBFS peak PCM = 96 dB SPL. One MDCT bin of a full-scale sine: window
+/// peak 32768, 2048-point coherent gain ≈ 512.
+const FS_SPL: f32 = 96.0;
+const FS_BIN: f32 = 32768.0 * 512.0;
+
+fn ath_band_energy(f_hz: f32) -> f32 {
+    let rel = det_math::exp2((ath_db_spl(f_hz) - FS_SPL) / 10.0 * det_math::LOG2_10);
+    FS_BIN * FS_BIN * rel
 }
 
 impl Psy {
@@ -47,13 +70,22 @@ impl Psy {
         Self::with_transform(offsets, sample_rate, 256)
     }
 
+    /// Terhardt absolute-threshold floor (default off). When on, a band
+    /// must also clear ATH energy at its center; silence stays uncoded.
+    pub fn enable_ath(&mut self, on: bool) {
+        self.ath = on;
+    }
+
     fn with_transform(offsets: &[u16], sample_rate: u32, transform: usize) -> Self {
         let n_bands = offsets.len() - 1;
         let bin_hz = sample_rate as f32 / transform as f32;
         let mut zb = [0.0f32; MAX_BANDS];
+        let mut ath_energy = [0.0f32; MAX_BANDS];
         for (b, z) in zb.iter_mut().enumerate().take(n_bands) {
             let center = (f32::from(offsets[b]) + f32::from(offsets[b + 1])) * 0.5 * bin_hz;
-            *z = bark(center.max(20.0));
+            let f = center.max(20.0);
+            *z = bark(f);
+            ath_energy[b] = ath_band_energy(f);
         }
         let mut spread = Box::new([[0.0f32; MAX_BANDS]; MAX_BANDS]);
         for (i, row) in spread.iter_mut().enumerate().take(n_bands) {
@@ -74,6 +106,8 @@ impl Psy {
             n_bands,
             spread,
             energy: [0.0; MAX_BANDS],
+            ath_energy,
+            ath: false,
         }
     }
 
@@ -89,10 +123,9 @@ impl Psy {
     }
 
     /// Analyze one channel's MDCT spectrum: a band is coded when its energy
-    /// clears both the masked threshold (18 dB SMR after spreading) and a
-    /// −60 dB relative-to-loudest floor. Coded bands get the full precision
-    /// target `max_q` — the rate loop's global offset trades precision for
-    /// bits uniformly on top.
+    /// clears the masked threshold (18 dB SMR after spreading) and a −60 dB
+    /// relative-to-loudest floor. With ATH on, also the Terhardt floor at
+    /// the band center. Coded bands get full-precision `max_q`.
     /// TODO: scale `target_q` by band tonality / partial masking.
     pub fn analyze(
         &mut self,
@@ -114,16 +147,15 @@ impl Psy {
             .copied()
             .fold(0.0f32, f32::max);
         let abs_floor = max_e * 1e-6; // −60 dB below the loudest band
-        let bands = self
-            .energy
-            .iter()
-            .zip(thresh.iter())
-            .zip(coded.iter_mut())
-            .zip(target_q.iter_mut())
-            .take(self.n_bands);
-        for (((&e, &t), c), tq) in bands {
-            *c = e > t.max(abs_floor);
-            *tq = if *c { max_q } else { 0.0 };
+        for b in 0..self.n_bands {
+            let t = thresh[b];
+            let floor = if self.ath {
+                t.max(abs_floor).max(self.ath_energy[b])
+            } else {
+                t.max(abs_floor)
+            };
+            coded[b] = self.energy[b] > floor;
+            target_q[b] = if coded[b] { max_q } else { 0.0 };
         }
     }
 }

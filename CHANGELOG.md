@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in Terhardt ATH floor (TASK-68): `EncodeOptions::with_ath`.
+  Default off — production goldens unchanged. Band floor becomes
+  `max(mask, −60 dB relative, ATH at 0 dBFS = 96 dB SPL)` via `det_math`.
+  Ablation (`lab/quality/ATH.md`): no-go as 0.x default (noise 128k and
+  lecture priming-SNR drop >0.5 dB). Silence stays uncoded.
 - Sample-accurate M4A seek (TASK-58): `M4aSeek` maps presentation samples
   through `elst`, resets LC/SBR/PS state, and prerolls before emit. LC
   mono/stereo uses 2 AUs (measured vs linear ≤ 2 LSB s16). HE/PS and

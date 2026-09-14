@@ -154,8 +154,7 @@ impl Encoder {
             ));
         }
         Ok(Self {
-            enc: LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
-                .with_lookahead(opts.lookahead),
+            enc: crate::encode::new_lc(sample_rate, channels, opts)?,
             sample_rate,
             channels,
             pending: [Vec::new(), Vec::new()],
@@ -216,8 +215,7 @@ impl Encoder {
     pub fn reset(&mut self) -> Result<()> {
         let pending_cap = [self.pending[0].capacity(), self.pending[1].capacity()];
         let scratch_cap = self.scratch.capacity();
-        self.enc = LcEncoder::new(self.sample_rate, self.channels, self.opts.bitrate_bps)?
-            .with_lookahead(self.opts.lookahead);
+        self.enc = crate::encode::new_lc(self.sample_rate, self.channels, &self.opts)?;
         for (i, p) in self.pending.iter_mut().enumerate() {
             p.clear();
             p.reserve(pending_cap[i]);
