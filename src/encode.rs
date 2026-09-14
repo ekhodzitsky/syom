@@ -6,6 +6,10 @@
 //! a bounded one-frame bit credit. Output is conformant enough that
 //! libavcodec decodes it; the lavc-decoded goldens under `src/goldens/`
 //! are the committed proof.
+//!
+//! PCM samples must be finite and in `[-1, 1]`. NaN, infinities, and
+//! `|x| > 1` are [`AacError::Encode`]. There is no silent clip. The push
+//! [`crate::Encoder`] uses the same rule.
 
 use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
 use crate::engine::enc_frame::LcEncoder;
@@ -14,7 +18,7 @@ use crate::error::{AacError, Result};
 use crate::m4a_write;
 use crate::options::{EncodeContainer, EncodeOptions};
 
-/// Encode planar f32 PCM (~[-1, 1]) to an ADTS stream: AAC-LC at 128 kbps.
+/// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
 ///
 /// One plane per channel (mono or stereo), all planes the same length; the
 /// last frame is zero-padded to 1024 samples. The stream carries the usual
@@ -114,8 +118,24 @@ fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<
     if pcm.iter().any(|p| p.len() != n) {
         return Err(AacError::encode("encode: channel planes differ in length"));
     }
-    if pcm.iter().any(|p| p.iter().any(|x| !x.is_finite())) {
-        return Err(AacError::encode("encode: non-finite sample"));
+    check_pcm_samples(pcm.iter().map(Vec::as_slice))?;
+    Ok(())
+}
+
+/// Finite samples in `[-1, 1]`. Shared by one-shot encode and push encode.
+pub(crate) fn check_pcm_samples<'a, I>(planes: I) -> Result<()>
+where
+    I: IntoIterator<Item = &'a [f32]>,
+{
+    for plane in planes {
+        for &x in plane {
+            if !x.is_finite() {
+                return Err(AacError::encode("encode: non-finite sample"));
+            }
+            if x.abs() > 1.0 {
+                return Err(AacError::encode("encode: sample amplitude exceeds ±1"));
+            }
+        }
     }
     Ok(())
 }

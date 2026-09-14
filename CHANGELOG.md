@@ -69,6 +69,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- Encode PCM must be finite and in `[-1, 1]`. NaN, infinities, and
+  `|x| > 1` are `Encode` errors on both one-shot and push APIs. There is
+  no silent clip. ±0, subnormals, and full-scale ±1 remain valid.
 - LC encode enforces 6144 bits per channel per 1024-sample frame,
   independent of the ADTS 8184-byte length ceiling. A requested bitrate
   that cannot fit that cap is `Encode` (not an over-limit frame). The

@@ -74,6 +74,10 @@ mod mem_iso_tests;
 mod encode_tests;
 
 #[cfg(test)]
+#[path = "encode_pcm_tests.rs"]
+mod encode_pcm_tests;
+
+#[cfg(test)]
 #[path = "encode_cmp_tests.rs"]
 mod encode_cmp_tests;
 

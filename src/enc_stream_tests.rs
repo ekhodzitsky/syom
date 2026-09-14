@@ -92,7 +92,7 @@ fn click_fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
     for k in 0..32 {
         lcg = lcg.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
         let u = (lcg >> 9) as f32 / (1u32 << 23) as f32 * 2.0 - 1.0;
-        pcm[0][3 * 1024 + 100 + k] += 0.8 * u;
+        pcm[0][3 * 1024 + 100 + k] += 0.4 * u;
     }
     pcm
 }

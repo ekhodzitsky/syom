@@ -77,7 +77,8 @@ pub struct EncodeInfo {
 /// Byte-exact with one-shot [`crate::encode_with`] on the same PCM, for any
 /// feed chunking. Peak RAM is one frame of PCM plus the current access
 /// unit. Validation matches one-shot encode: the ADTS sample-rate table,
-/// 1–2 channels, finite samples, equal plane lengths.
+/// 1–2 channels, finite samples in `[-1, 1]`, equal plane lengths.
+/// `|x| > 1` and non-finite samples are [`crate::AacError::Encode`] (no clip).
 pub struct Encoder {
     enc: LcEncoder,
     sample_rate: u32,
@@ -158,9 +159,7 @@ impl Encoder {
         if planes.iter().any(|p| p.len() != n) {
             return Err(AacError::encode("encode: channel planes differ in length"));
         }
-        if planes.iter().any(|p| p.iter().any(|x| !x.is_finite())) {
-            return Err(AacError::encode("encode: non-finite sample"));
-        }
+        crate::encode::check_pcm_samples(planes.iter().copied())?;
         let mut cb = on_frame;
         // Take the scratch so `cb` can borrow it while `self` mutates.
         let mut scratch = std::mem::take(&mut self.scratch);
