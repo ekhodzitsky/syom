@@ -1,0 +1,16 @@
+[package]
+name = "syom-lab-glint"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated glint-audio 0.11.0 AAC smoke (TASK-11). Not a workspace member."
+
+[dependencies]
+glint-audio = "=0.11.0"
+glint-audio-sys = "=0.11.0"
+syom = { path = "../.." }
+
+[[bin]]
+name = "glint_smoke"
+path = "src/main.rs"

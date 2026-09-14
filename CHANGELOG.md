@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated glint-audio 0.11.0 lab (`lab/glint`): crates.io pins
+  `df09912e…` / `b8c79457…`, MIT, C++17 native core vendored in
+  `glint-audio-sys`. Wrapper vs C ABI copy overhead is a separate lane.
+  AAC-LC only; no Cargo feature drops MP3/Opus. `GLINT_MODE=fixed` is
+  off. Quality `speed|normal|best`. Ordinary tests never link glint.
 - Isolated FAAC 1.31.1 encode lab (`lab/faac`): knik0/faac tag `faac-1.31.1`,
   SHA-256 `3191bf1b…`, LGPL kept off the product crate. In-process ADTS
   AAC-LC (`LOW`, MPEG-4, float PCM, TNS off). Requested `bitRate` is per

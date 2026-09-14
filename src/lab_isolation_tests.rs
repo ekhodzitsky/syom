@@ -31,6 +31,7 @@ fn src_does_not_spawn_ffmpeg_or_fdk() {
             || text.contains("Command::new(\"fdk")
             || text.contains("Command::new(\"faad")
             || text.contains("Command::new(\"faac")
+            || text.contains("Command::new(\"glint")
         {
             hits.push(ent);
         }
@@ -100,6 +101,32 @@ fn lab_faac_pin_is_isolated_1_31_1() {
     let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
     assert!(!product.contains("faac"));
     assert!(!product.contains("libfaac"));
+}
+
+#[test]
+fn lab_glint_pin_is_isolated_0_11_0() {
+    let pin = std::fs::read_to_string(root().join("lab/glint/PIN.md")).unwrap();
+    assert!(pin.contains("0.11.0"));
+    assert!(pin.contains("df09912ed6bd5062c86fd42b646de28c5727f4fb8e2c2adbd58e9465dff8cc12"));
+    assert!(pin.contains("b8c79457db4164f6fe521359cb4aba0f25e32c5094d8d0214a98a2242dda4ac6"));
+    assert!(pin.contains("GLINT_QUALITY"));
+    assert!(pin.contains("double"));
+    assert!(pin.contains("No Cargo feature"));
+    assert!(pin.contains("must not"));
+    let cargo = std::fs::read_to_string(root().join("lab/glint/Cargo.toml")).unwrap();
+    assert!(cargo.contains("glint-audio"));
+    assert!(cargo.contains("=0.11.0"));
+    let mk = std::fs::read_to_string(root().join("lab/glint/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/glint/REPORT.md")).unwrap();
+    assert!(report.contains("no-go"));
+    assert!(report.contains("syom"));
+    assert!(report.contains("13312"));
+    assert!(report.contains("98304"));
+    assert!(report.contains("speed") || report.contains("QUALITY"));
+    let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!product.contains("glint-audio"));
+    assert!(!product.contains("lab/glint"));
 }
 
 #[test]
