@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `max + 1` not). `DecodeOptions::memory` holds the numbers; `speech()`
   duration and `ChannelMode` are unchanged. Streaming workspace remains
   TASK-25.
+- Streaming `Decoder::feed` no longer inherits the 1 GiB lifetime
+  compressed-byte cap (F07 / TASK-25). Resident buffer, declared AU
+  length, and codec workspace are fenced independently of duration;
+  one-shot `decode` still uses the finite 1 GiB input budget. Chunked
+  vs whole-slice feeds stay sample-identical.
 - Offline AAC evaluation corpus (`corpus/manifest.json`) with in-tree golden
   hashes, deterministic boundary PCM, named licensed natural excerpts (not
   vendored), a coverage table, and `scripts/verify_corpus.py` that fails on

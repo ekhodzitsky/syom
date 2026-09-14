@@ -4,8 +4,9 @@
 //!
 //! Peak PCM memory is one AAC frame: decoded planes are borrowed by the
 //! frame callback and never accumulated by the decoder itself. The push
-//! decoder's input buffer holds at most one partial frame plus the bytes
-//! fed but not yet pumped (compacted past 64 KiB of consumed prefix).
+//! decoder's input buffer is capped at
+//! [`crate::DEFAULT_MAX_BUFFERED_INPUT_BYTES`] (resident, not a lifetime
+//! total — F07 / TASK-25).
 //!
 //! ```
 //! use syom::{DecodeOptions, Decoder};
@@ -27,12 +28,13 @@
 //! # Ok::<(), syom::AacError>(())
 //! ```
 
+use crate::budgets::{BudgetExceeded, BudgetKind};
 use crate::engine::decode::StreamDecoder;
 use crate::engine::error::Error as EngineError;
 use crate::engine::latm::MuxCfg;
 use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
-use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
+use crate::options::{ChannelMode, DecodeOptions};
 
 mod frame;
 mod m4a;
@@ -60,7 +62,6 @@ pub struct Decoder {
     opts: DecodeOptions,
     buf: Vec<u8>,
     pos: usize,
-    bytes_fed: u64,
     container: Container,
     dec: StreamDecoder,
     /// Sticky LATM `StreamMuxConfig()`; persists across feeds.
@@ -88,7 +89,6 @@ impl Decoder {
             opts,
             buf: Vec::new(),
             pos: 0,
-            bytes_fed: 0,
             container: Container::Unknown,
             dec,
             mux: None,
@@ -111,26 +111,54 @@ impl Decoder {
         F: FnMut(Frame<'_>) -> Result<()>,
     {
         self.opts.validate()?;
-        self.bytes_fed = self.bytes_fed.saturating_add(bytes.len() as u64);
-        if self.bytes_fed > DEFAULT_MAX_INPUT_BYTES {
-            return Err(AacError::too_long(
-                self.bytes_fed as f64 / 40_000.0, // rough lower bound, like decode_with
-                self.opts.max_duration_secs,
-            ));
-        }
-        // Take the buffer so `pump` can borrow it while mutating `self`.
-        let mut buf = std::mem::take(&mut self.buf);
-        buf.extend_from_slice(bytes);
+        let cap = usize::try_from(self.opts.memory.max_buffered_input_bytes).unwrap_or(usize::MAX);
+        let cap = cap.max(1);
         let mut cb = on_frame;
-        let res = self.pump(&buf, None, None, &mut cb, false);
-        // Compact the consumed prefix so `buf` stays O(frame + fresh input).
-        if res.is_ok() && self.pos >= 64 * 1024 && self.pos >= buf.len() / 2 {
-            buf.drain(..self.pos);
-            self.pos = 0;
+        let mut off = 0usize;
+        while off < bytes.len() {
+            let mut buf = std::mem::take(&mut self.buf);
+            self.compact(&mut buf);
+            let used = buf.len();
+            if used >= cap {
+                let res = self.pump(&buf, None, None, &mut cb, false);
+                if res.is_ok() {
+                    self.compact(&mut buf);
+                }
+                self.buf = buf;
+                res?;
+                if self.buf.len() >= cap {
+                    return Err(AacError::from(BudgetExceeded {
+                        kind: BudgetKind::Input,
+                        observed: self.buf.len() as u64,
+                        max: self.opts.memory.max_buffered_input_bytes,
+                    }));
+                }
+                continue;
+            }
+            let n = (bytes.len() - off).min(cap - used);
+            buf.extend_from_slice(&bytes[off..off + n]);
+            off += n;
+            let res = self.pump(&buf, None, None, &mut cb, false);
+            if res.is_ok() {
+                self.compact(&mut buf);
+            }
+            self.buf = buf;
+            res?;
         }
-        self.buf = buf;
-        res?;
         Ok(bytes.len())
+    }
+
+    fn compact(&mut self, buf: &mut Vec<u8>) {
+        if self.pos == 0 {
+            return;
+        }
+        if self.pos >= buf.len() {
+            buf.clear();
+            self.pos = 0;
+            return;
+        }
+        buf.drain(..self.pos);
+        self.pos = 0;
     }
 
     /// End of input: flush, drop a partial trailing frame, and report
@@ -205,12 +233,7 @@ where
     F: FnMut(Frame<'_>) -> Result<()>,
 {
     opts.validate()?;
-    if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
-        return Err(AacError::too_long(
-            data.len() as f64 / 40_000.0, // rough lower bound only for message
-            opts.max_duration_secs,
-        ));
-    }
+    opts.memory.check_input_finite(data.len() as u64)?;
     if sniff_is_isobmff(data) {
         return m4a::stream_m4a(data, opts, on_frame);
     }
@@ -227,11 +250,6 @@ pub(crate) fn decode_streaming_mono_into(
     dst: &mut Vec<f32>,
 ) -> Result<StreamInfo> {
     opts.validate()?;
-    if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
-        return Err(AacError::too_long(
-            data.len() as f64 / 40_000.0, // rough lower bound only for message
-            opts.max_duration_secs,
-        ));
-    }
+    opts.memory.check_input_finite(data.len() as u64)?;
     Decoder::new(opts.clone()).decode_slice_mono(data, est_frames, dst)
 }

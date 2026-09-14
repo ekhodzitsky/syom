@@ -78,6 +78,9 @@ impl Decoder {
                 }
             };
             let frame_len = usize::from(hdr.aac_frame_length);
+            self.opts
+                .memory
+                .check_declared_au(u64::from(hdr.aac_frame_length))?;
             if avail.len() < frame_len {
                 return Ok(()); // partial frame: wait (finish drops it)
             }
@@ -153,6 +156,7 @@ impl Decoder {
                 continue;
             }
             let mux_len = (v & 0x1FFF) as usize;
+            self.opts.memory.check_declared_au(mux_len as u64)?;
             if avail.len() < 3 + mux_len {
                 return Ok(()); // partial LOAS frame: wait (finish drops it)
             }
@@ -247,6 +251,7 @@ impl Decoder {
         }
         let n_ch_u32 = u32::try_from(n_ch).unwrap_or(u32::MAX);
         self.opts.memory.check_channels(n_ch_u32)?;
+        self.opts.memory.check_workspace(n_ch_u32, false, false)?;
         match self.locked {
             None => {
                 if rate == 0 || rate > self.opts.max_sample_rate {

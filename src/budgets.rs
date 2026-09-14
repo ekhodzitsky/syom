@@ -240,7 +240,7 @@ impl MemoryBudgets {
         ps: bool,
     ) -> Result<usize, BudgetExceeded> {
         self.check_channels(channels)?;
-        let Some(bytes) = workspace_lower_bound_bytes(channels, he, ps) else {
+        let Some(bytes) = codec_workspace_bytes(channels, he, ps) else {
             return Err(BudgetExceeded {
                 kind: BudgetKind::Workspace,
                 observed: u64::MAX,
@@ -262,12 +262,12 @@ pub fn pcm_bytes(channels: u32, samples: u64) -> Option<u64> {
     u64::from(channels).checked_mul(samples)?.checked_mul(4)
 }
 
-/// Lower-bound resident workspace (codec state + streaming input buffer).
-/// Collected PCM is the output budget, not this.
-pub fn workspace_lower_bound_bytes(channels: u32, he: bool, ps: bool) -> Option<u64> {
+/// Codec-only resident workspace (filterbank + optional SBR/PS). The
+/// streaming input buffer is a separate [`DEFAULT_MAX_BUFFERED_INPUT_BYTES`]
+/// budget.
+pub fn codec_workspace_bytes(channels: u32, he: bool, ps: bool) -> Option<u64> {
     let ch = u64::from(channels);
     let mut n = ch.checked_mul(LC_FILTERBANK_BYTES_PER_CH)?;
-    n = n.checked_add(DEFAULT_MAX_BUFFERED_INPUT_BYTES)?;
     if he {
         n = n.checked_add(ch.checked_mul(SBR_STATE_BYTES_PER_CH)?)?;
     }
@@ -275,6 +275,12 @@ pub fn workspace_lower_bound_bytes(channels: u32, he: bool, ps: bool) -> Option<
         n = n.checked_add(PS_STATE_BYTES)?;
     }
     Some(n)
+}
+
+/// Lower-bound resident workspace (codec state + streaming input buffer).
+/// Collected PCM is the output budget, not this.
+pub fn workspace_lower_bound_bytes(channels: u32, he: bool, ps: bool) -> Option<u64> {
+    codec_workspace_bytes(channels, he, ps)?.checked_add(DEFAULT_MAX_BUFFERED_INPUT_BYTES)
 }
 
 /// `Vec` capacity is `isize::MAX` bytes. `None` if `planned` cannot be a `usize`

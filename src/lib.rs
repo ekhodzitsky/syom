@@ -110,6 +110,10 @@ mod decode_mc_tests;
 mod stream_tests;
 
 #[cfg(test)]
+#[path = "stream_budget_tests.rs"]
+mod stream_budget_tests;
+
+#[cfg(test)]
 #[path = "stream_latm_tests.rs"]
 mod stream_latm_tests;
 
