@@ -18,7 +18,8 @@
 //!   skipped; if no usable AAC track remains, a clean error is returned.
 //!
 //! Boxes parsed: `ftyp` (sniff only), `moov/trak/mdia/minf/stbl`, `hdlr`
-//! (handler `soun`), `mdhd` (media timescale), `edts`/`elst` (encoder delay),
+//! (handler `soun`), `mvhd`/`mdhd` (timescale and duration), `edts`/`elst`
+//! (priming `media_time` and presentation `segment_duration`),
 //! `stsd` (`mp4a` entry → `esds` → ES_Descriptor(0x03) →
 //! DecoderConfigDescriptor(0x04) → DecoderSpecificInfo(0x05) = ASC),
 //! `stts` (total sample count for the duration budget), `stsc`, `stsz`,
@@ -54,8 +55,18 @@ pub(crate) struct AacTrack {
     pub frames: Vec<(u64, u32)>,
     /// First non-empty `elst.media_time` (ISO-BMFF media timescale), or 0.
     pub edit_start: u64,
+    /// First playable `elst.segment_duration` (movie timescale), or 0.
+    /// Decode does not yet trim this (TASK-43).
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub edit_duration: u64,
+    /// `mvhd` timescale for `edit_duration`. 0 if the box is missing.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub movie_timescale: u32,
     /// `mdhd` timescale for `edit_start`. 0 if the box is missing.
     pub media_timescale: u32,
+    /// `mdhd` duration (coded media units). 0 if missing/truncated.
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub media_duration: u64,
 }
 
 impl AacTrack {
@@ -68,6 +79,32 @@ impl AacTrack {
         let n = self.edit_start.saturating_mul(u64::from(sample_rate))
             / u64::from(self.media_timescale);
         usize::try_from(n).unwrap_or(usize::MAX)
+    }
+
+    /// Presentation length in media units: `elst.segment_duration` converted
+    /// with checked movie→media timescale. `None` if a timescale is missing
+    /// or the multiply overflows.
+    #[must_use]
+    #[cfg(test)]
+    pub(crate) fn presentation_samples(&self) -> Option<u64> {
+        if self.movie_timescale == 0 {
+            return None;
+        }
+        self.edit_duration
+            .checked_mul(u64::from(self.media_timescale))?
+            .checked_div(u64::from(self.movie_timescale))
+    }
+
+    /// Unplayed tail: `mdhd.duration − priming − presentation`. `None` when
+    /// presentation is unknown or the counts underflow (coded vs presentation
+    /// must not be swapped).
+    #[must_use]
+    #[cfg(test)]
+    pub(crate) fn remainder_samples(&self) -> Option<u64> {
+        let valid = self.presentation_samples()?;
+        self.media_duration
+            .checked_sub(self.edit_start)?
+            .checked_sub(valid)
     }
 }
 
@@ -318,6 +355,13 @@ struct SampleTable {
     total_samples: u64,
 }
 
+struct SoundMdia {
+    asc: Vec<u8>,
+    table: SampleTable,
+    timescale: u32,
+    duration: u64,
+}
+
 /// Parse one `stts` box body: total sample count is Σ entry.sample_count.
 fn parse_stts(data: &[u8], mem: &MemoryBudgets) -> Result<u64> {
     let count = read_u32(data, 4)? as usize;
@@ -345,6 +389,12 @@ fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
         .try_into()
         .map_err(|_| AacError::format("isomp4: truncated table"))?;
     Ok(u32::from_be_bytes(arr))
+}
+
+fn read_u64(data: &[u8], pos: usize) -> Result<u64> {
+    let hi = u64::from(read_u32(data, pos)?);
+    let lo = u64::from(read_u32(data, pos + 4)?);
+    Ok((hi << 32) | lo)
 }
 
 fn parse_stsz(data: &[u8], file_len: usize, mem: &MemoryBudgets) -> Result<Vec<u32>> {
@@ -546,8 +596,8 @@ fn parse_stbl(data: &[u8], stbl: BoxHdr, mem: &MemoryBudgets) -> Result<(Vec<u8>
     Ok((asc, table))
 }
 
-/// First `elst` entry with `media_time >= 0` (media timescale), else 0.
-fn parse_elst_start(body: &[u8], mem: &MemoryBudgets) -> Result<u64> {
+/// First `elst` entry with `media_time >= 0`: `(media_time, segment_duration)`.
+fn parse_elst(body: &[u8], mem: &MemoryBudgets) -> Result<(u64, u64)> {
     let version = *body
         .first()
         .ok_or_else(|| AacError::format("isomp4: truncated elst"))?;
@@ -555,24 +605,30 @@ fn parse_elst_start(body: &[u8], mem: &MemoryBudgets) -> Result<u64> {
     fence_entries(mem, count as u64, if version == 1 { 20 } else { 12 })?;
     let mut pos = 8usize;
     for _ in 0..count {
-        let (media_time, next) = if version == 1 {
-            let hi = u64::from(read_u32(body, pos + 8)?);
-            let lo = u64::from(read_u32(body, pos + 12)?);
-            (
-                i64::from_be_bytes(((hi << 32) | lo).to_be_bytes()),
-                pos + 20,
-            )
+        let (segment_duration, media_time, next) = if version == 1 {
+            let seg = read_u64(body, pos)?;
+            let mt = i64::from_be_bytes(read_u64(body, pos + 8)?.to_be_bytes());
+            (seg, mt, pos + 20)
         } else if version == 0 {
-            (i64::from(read_u32(body, pos + 4)? as i32), pos + 12)
+            (
+                u64::from(read_u32(body, pos)?),
+                i64::from(read_u32(body, pos + 4)? as i32),
+                pos + 12,
+            )
         } else {
             return Err(AacError::format("isomp4: unsupported elst version"));
         };
         if media_time >= 0 {
-            return Ok(media_time as u64);
+            return Ok((media_time as u64, segment_duration));
         }
         pos = next;
     }
-    Ok(0)
+    Ok((0, 0))
+}
+
+#[cfg(test)]
+fn parse_elst_start(body: &[u8], mem: &MemoryBudgets) -> Result<u64> {
+    Ok(parse_elst(body, mem)?.0)
 }
 
 fn parse_mdhd_timescale(body: &[u8]) -> Result<u32> {
@@ -587,16 +643,36 @@ fn parse_mdhd_timescale(body: &[u8]) -> Result<u32> {
     read_u32(body, off)
 }
 
+fn parse_mdhd_duration(body: &[u8]) -> Result<u64> {
+    let version = *body
+        .first()
+        .ok_or_else(|| AacError::format("isomp4: truncated mdhd"))?;
+    match version {
+        0 => Ok(u64::from(read_u32(body, 16)?)),
+        1 => read_u64(body, 24),
+        _ => Err(AacError::format("isomp4: unsupported mdhd version")),
+    }
+}
+
+fn parse_mvhd_timescale(body: &[u8]) -> Result<u32> {
+    let version = *body
+        .first()
+        .ok_or_else(|| AacError::format("isomp4: truncated mvhd"))?;
+    let off = match version {
+        0 => 12usize,
+        1 => 20usize,
+        _ => return Err(AacError::format("isomp4: unsupported mvhd version")),
+    };
+    read_u32(body, off)
+}
+
 /// Walk one `mdia` box: is it sound (`hdlr` = 'soun'), and if so parse its
 /// `minf/stbl` and `mdhd` timescale. Returns `None` for non-sound tracks.
-fn parse_mdia(
-    data: &[u8],
-    mdia: BoxHdr,
-    mem: &MemoryBudgets,
-) -> Result<Option<(Vec<u8>, SampleTable, u32)>> {
+fn parse_mdia(data: &[u8], mdia: BoxHdr, mem: &MemoryBudgets) -> Result<Option<SoundMdia>> {
     let mut is_sound = false;
     let mut table = None;
     let mut timescale = 0u32;
+    let mut media_duration = 0u64;
     for child in BoxIter::new(data, mdia.content_start, mdia.content_end) {
         let (hdr, typ) = child?;
         match &typ {
@@ -608,7 +684,9 @@ fn parse_mdia(
                 is_sound = handler == b"soun";
             }
             b"mdhd" => {
-                timescale = parse_mdhd_timescale(&data[hdr.content_start..hdr.content_end])?;
+                let body = &data[hdr.content_start..hdr.content_end];
+                timescale = parse_mdhd_timescale(body)?;
+                media_duration = parse_mdhd_duration(body).unwrap_or(0);
             }
             b"minf" => {
                 for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
@@ -623,7 +701,12 @@ fn parse_mdia(
     }
     if is_sound {
         let table = table.ok_or_else(|| AacError::format("isomp4: sound track without stbl"))?;
-        Ok(Some((table.0, table.1, timescale)))
+        Ok(Some(SoundMdia {
+            asc: table.0,
+            table: table.1,
+            timescale,
+            duration: media_duration,
+        }))
     } else {
         Ok(None)
     }
@@ -708,16 +791,20 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
     // also shows up as an `mvex` child of moov.
     fence_depth(mem, 1)?;
     let mut track = None;
+    let mut movie_timescale = 0u32;
     for child in BoxIter::new(data, moov.content_start, moov.content_end) {
         let (hdr, typ) = child?;
         if typ == BOX_MVEX {
             return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
+        } else if &typ == b"mvhd" {
+            movie_timescale = parse_mvhd_timescale(&data[hdr.content_start..hdr.content_end])?;
         } else if typ == BOX_TRAK {
             if track.is_some() {
                 continue;
             }
             fence_depth(mem, 2)?;
             let mut edit_start = 0u64;
+            let mut edit_duration = 0u64;
             let mut mdia_track = None;
             for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
                 let (shdr, styp) = sub?;
@@ -728,10 +815,10 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
                             let (ehdr, etyp) = ed?;
                             if &etyp == b"elst" {
                                 fence_depth(mem, 4)?;
-                                edit_start = parse_elst_start(
-                                    &data[ehdr.content_start..ehdr.content_end],
-                                    mem,
-                                )?;
+                                let (start, dur) =
+                                    parse_elst(&data[ehdr.content_start..ehdr.content_end], mem)?;
+                                edit_start = start;
+                                edit_duration = dur;
                             }
                         }
                     }
@@ -750,12 +837,19 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
                     _ => {}
                 }
             }
-            if let Some((asc, table, timescale)) = mdia_track {
-                track = Some((asc, table, timescale, edit_start));
+            if let Some(mdia) = mdia_track {
+                track = Some((
+                    mdia.asc,
+                    mdia.table,
+                    mdia.timescale,
+                    edit_start,
+                    edit_duration,
+                    mdia.duration,
+                ));
             }
         }
     }
-    let (asc, table, media_timescale, edit_start) =
+    let (asc, table, media_timescale, edit_start, edit_duration, media_duration) =
         track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
     let frames = build_frame_index(data.len(), &table, mem)?;
     Ok(AacTrack {
@@ -763,7 +857,10 @@ pub(crate) fn parse_aac_track_with(data: &[u8], mem: &MemoryBudgets) -> Result<A
         total_samples: table.total_samples,
         frames,
         edit_start,
+        edit_duration,
+        movie_timescale,
         media_timescale,
+        media_duration,
     })
 }
 

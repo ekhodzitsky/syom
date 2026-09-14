@@ -62,8 +62,9 @@ pub struct EncodedFrame<'a> {
 /// Tallies from a finished streaming encode.
 ///
 /// Input / bitstream tallies plus the AAC timeline (Apple QA1636-style).
-/// ADTS still cannot carry trim; M4A `elst.media_time` is [`Self::priming`]
-/// (TASK-42 writes remainder into the container).
+/// ADTS still cannot carry trim. M4A writes [`Self::priming`] as
+/// `elst.media_time`, [`Self::samples`] as `elst`/`mvhd` presentation
+/// duration, and [`Self::remainder`] as the unplayed `mdhd` tail.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EncodeInfo {
     /// Input sample rate.

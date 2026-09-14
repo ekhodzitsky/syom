@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- M4A encode writes Apple QA1636 timeline into `elst`/`mvhd`/`mdhd`
+  (TASK-42): presentation duration is valid source samples N (movie
+  timescale = sample rate, so N=1 is not truncated to 0 ms); priming is
+  `elst.media_time`; remainder is the unplayed `mdhd` tail
+  (`coded − priming − valid`). Decode still skips only `media_time`
+  (TASK-43).
+
 ### Added
 
 - LC encode overlap drain (TASK-41): finish emits one extra zero MDCT so

@@ -1,22 +1,28 @@
 //! Minimal ISOBMFF writer for AAC-LC: `ftyp` + `mdat` + `moov` (after
 //! `mdat`, so `stco` needs no patching). One sound track, one chunk,
-//! `stts` (n, 1024), per-frame `stsz`, absolute `stco`, and an
-//! `edts`/`elst` with `media_time = 1024` to skip encoder priming.
-//! `mdhd` duration is `n_frames * 1024` (includes priming and the
-//! overlap-drain frame). Remainder is not yet in `elst` (TASK-42).
+//! `stts` (n, 1024), per-frame `stsz`, absolute `stco`.
+//!
+//! Timeline (Apple QA1636): movie timescale = sample rate so counts are
+//! exact. `elst.media_time` = priming; `elst.segment_duration` /
+//! `mvhd`/`tkhd` duration = valid source samples; `mdhd` duration =
+//! coded `n_frames * 1024`. Remainder is the unplayed media tail
+//! `coded − priming − valid`. Decode still skips only `media_time`
+//! (TASK-43 trims the tail).
 //!
 //! The reader side ([`crate::isomp4`]) is the structural oracle: its
 //! `parse_esds` walk defines exactly what this writer emits.
 
 use crate::engine::asc::write_lc;
-use crate::error::Result;
+use crate::error::{AacError, Result};
 
 /// AAC-LC `objectTypeIndication`.
 const OBJECT_TYPE_AAC: u8 = 0x40;
 /// streamType: audio (5) << 2 | upstream flag 0 | reserved 1.
 const STREAM_TYPE_AUDIO: u8 = 0x15;
-/// Samples of encoder priming signalled via `elst.media_time`.
-const PRIMING_SAMPLES: u64 = 1024;
+
+fn u32_field(v: u64, what: &str) -> Result<u32> {
+    u32::try_from(v).map_err(|_| AacError::encode(format!("m4a: {what} exceeds u32")))
+}
 
 fn be32(out: &mut Vec<u8>, v: u32) {
     out.extend_from_slice(&v.to_be_bytes());
@@ -44,18 +50,45 @@ fn end_box(out: &mut [u8], at: usize) {
 }
 
 /// `ftyp M4A ` + `mdat` + `moov` for LC payloads (one `raw_data_block` per
-/// sample entry).
+/// sample entry). `valid_samples` is source length N; `priming` is encoder
+/// delay in media units (1024 for LC). Remainder is implied:
+/// `n_frames*1024 − priming − valid_samples`.
 pub fn mux_aac_lc(
     payloads: &[Vec<u8>],
     fs_index: u8,
     channels: usize,
     sample_rate: u32,
+    valid_samples: u64,
+    priming: u64,
 ) -> Result<Vec<u8>> {
-    let n_frames = payloads.len() as u32;
-    let total_samples = u64::from(n_frames) * 1024;
-    let duration_ms = total_samples * 1000 / u64::from(sample_rate.max(1));
-    let bits_ms = payloads.iter().map(Vec::len).sum::<usize>() as u64 * 8000;
-    let bitrate = bits_ms.checked_div(duration_ms).unwrap_or(0) as u32;
+    if payloads.is_empty() {
+        return Err(AacError::encode("m4a: no access units"));
+    }
+    if sample_rate == 0 {
+        return Err(AacError::encode("m4a: sample rate is 0"));
+    }
+    let n_frames = u32_field(payloads.len() as u64, "frame count")?;
+    let coded = u64::from(n_frames)
+        .checked_mul(1024)
+        .ok_or_else(|| AacError::encode("m4a: coded duration overflow"))?;
+    let play_end = priming
+        .checked_add(valid_samples)
+        .ok_or_else(|| AacError::encode("m4a: priming + valid overflow"))?;
+    if play_end > coded {
+        return Err(AacError::encode(
+            "m4a: valid samples exceed coded duration after priming",
+        ));
+    }
+    let presentation = u32_field(valid_samples, "presentation duration")?;
+    let media_duration = u32_field(coded, "media duration")?;
+    let media_time = u32_field(priming, "priming")?;
+    let payload_bytes: u64 = payloads.iter().map(|p| p.len() as u64).sum();
+    let bitrate = payload_bytes
+        .checked_mul(8)
+        .and_then(|b| b.checked_mul(u64::from(sample_rate)))
+        .and_then(|b| b.checked_div(coded))
+        .and_then(|b| u32::try_from(b).ok())
+        .unwrap_or(u32::MAX);
     let asc = write_lc(fs_index, channels as u8);
 
     let mut out = Vec::new();
@@ -67,19 +100,19 @@ pub fn mux_aac_lc(
     end_box(&mut out, ftyp);
     // mdat: payloads contiguous; the single stco entry points here.
     let mdat = start_box(&mut out, b"mdat");
-    let media_offset = out.len() as u32;
+    let media_offset = u32_field(out.len() as u64, "mdat offset")?;
     for p in payloads {
         out.extend_from_slice(p);
     }
     end_box(&mut out, mdat);
-    // moov
+    // moov: movie timescale = sample rate so elst duration is N exactly.
     let moov = start_box(&mut out, b"moov");
-    write_mvhd(&mut out, duration_ms);
+    write_mvhd(&mut out, sample_rate, presentation);
     let trak = start_box(&mut out, b"trak");
-    write_tkhd(&mut out, duration_ms);
-    write_edts(&mut out, duration_ms);
+    write_tkhd(&mut out, presentation);
+    write_edts(&mut out, presentation, media_time);
     let mdia = start_box(&mut out, b"mdia");
-    write_mdhd(&mut out, sample_rate, total_samples);
+    write_mdhd(&mut out, sample_rate, media_duration);
     write_hdlr(&mut out);
     let minf = start_box(&mut out, b"minf");
     let smhd = start_box(&mut out, b"smhd");
@@ -113,13 +146,13 @@ fn write_matrix(out: &mut Vec<u8>) {
     }
 }
 
-fn write_mvhd(out: &mut Vec<u8>, duration_ms: u64) {
+fn write_mvhd(out: &mut Vec<u8>, timescale: u32, duration: u32) {
     let b = start_box(out, b"mvhd");
     be32(out, 0); // version 0 + flags
     be32(out, 0); // creation_time
     be32(out, 0); // modification_time
-    be32(out, 1000); // timescale
-    be32(out, duration_ms.min(u64::from(u32::MAX)) as u32);
+    be32(out, timescale);
+    be32(out, duration);
     be32(out, 0x0001_0000); // rate 1.0
     be16(out, 0x0100); // volume 1.0
     be16(out, 0);
@@ -132,14 +165,14 @@ fn write_mvhd(out: &mut Vec<u8>, duration_ms: u64) {
     end_box(out, b);
 }
 
-fn write_tkhd(out: &mut Vec<u8>, duration_ms: u64) {
+fn write_tkhd(out: &mut Vec<u8>, duration: u32) {
     let b = start_box(out, b"tkhd");
     be32(out, 0x0000_0003); // version 0, flags: enabled | in_movie
     be32(out, 0); // creation_time
     be32(out, 0); // modification_time
     be32(out, 1); // track_id
     be32(out, 0);
-    be32(out, duration_ms.min(u64::from(u32::MAX)) as u32);
+    be32(out, duration);
     be64(out, 0);
     be16(out, 0); // layer
     be16(out, 0); // alternate_group
@@ -151,27 +184,27 @@ fn write_tkhd(out: &mut Vec<u8>, duration_ms: u64) {
     end_box(out, b);
 }
 
-/// `edts`/`elst` v0: one entry playing from media time 1024 (priming).
-fn write_edts(out: &mut Vec<u8>, duration_ms: u64) {
+/// `edts`/`elst` v0: play `segment_duration` movie units from `media_time`.
+fn write_edts(out: &mut Vec<u8>, segment_duration: u32, media_time: u32) {
     let edts = start_box(out, b"edts");
     let elst = start_box(out, b"elst");
     be32(out, 0); // version 0 + flags
     be32(out, 1); // entry_count
-    be32(out, duration_ms.min(u64::from(u32::MAX)) as u32); // segment_duration
-    be32(out, PRIMING_SAMPLES as u32); // media_time
+    be32(out, segment_duration);
+    be32(out, media_time);
     be16(out, 1); // media_rate_integer
     be16(out, 0); // media_rate_fraction
     end_box(out, elst);
     end_box(out, edts);
 }
 
-fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, total_samples: u64) {
+fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, duration: u32) {
     let b = start_box(out, b"mdhd");
     be32(out, 0); // version 0 + flags
     be32(out, 0); // creation_time
     be32(out, 0); // modification_time
     be32(out, sample_rate); // timescale
-    be32(out, total_samples.min(u64::from(u32::MAX)) as u32);
+    be32(out, duration);
     be16(out, 0x55C4); // language: und
     be16(out, 0);
     end_box(out, b);

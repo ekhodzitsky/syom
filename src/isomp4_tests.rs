@@ -3,8 +3,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use super::{
-    BoxHdr, extract_asc, parse_elst_start, parse_esds, parse_mdhd_timescale, parse_stco,
-    parse_stsc, read_box, read_desc_len, sniff_is_m4a,
+    AacTrack, BoxHdr, extract_asc, parse_elst, parse_elst_start, parse_esds, parse_mdhd_duration,
+    parse_mdhd_timescale, parse_mvhd_timescale, parse_stco, parse_stsc, read_box, read_desc_len,
+    sniff_is_m4a,
 };
 use crate::budgets::MemoryBudgets;
 use crate::error::AacError;
@@ -155,6 +156,14 @@ fn elst_v1_and_unsupported_and_negative_then_zero() {
     v1.extend_from_slice(&1024u64.to_be_bytes());
     v1.extend_from_slice(&0x0001_0000u32.to_be_bytes());
     assert_eq!(ok(parse_elst_start(&v1, &mem())), 1024);
+    assert_eq!(ok(parse_elst(&v1, &mem())), (1024, 0));
+
+    let mut v0 = vec![0u8; 4];
+    v0.extend_from_slice(&1u32.to_be_bytes());
+    v0.extend_from_slice(&28800u32.to_be_bytes());
+    v0.extend_from_slice(&1024u32.to_be_bytes());
+    v0.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+    assert_eq!(ok(parse_elst(&v0, &mem())), (1024, 28800));
 
     let mut bad = vec![2u8, 0, 0, 0];
     bad.extend_from_slice(&1u32.to_be_bytes());
@@ -179,4 +188,59 @@ fn mdhd_v1_and_unsupported() {
     v1.extend_from_slice(&48_000u32.to_be_bytes());
     assert_eq!(ok(parse_mdhd_timescale(&v1)), 48_000);
     assert!(parse_mdhd_timescale(&[3u8, 0, 0, 0]).is_err());
+}
+
+#[test]
+fn mdhd_duration_and_mvhd_timescale_are_checked() {
+    let mut mdhd = vec![0u8; 4];
+    mdhd.extend_from_slice(&[0u8; 8]);
+    mdhd.extend_from_slice(&48_000u32.to_be_bytes());
+    mdhd.extend_from_slice(&30720u32.to_be_bytes());
+    assert_eq!(ok(parse_mdhd_duration(&mdhd)), 30720);
+
+    let mut mdhd1 = vec![1u8, 0, 0, 0];
+    mdhd1.extend_from_slice(&[0u8; 16]);
+    mdhd1.extend_from_slice(&48_000u32.to_be_bytes());
+    mdhd1.extend_from_slice(&30720u64.to_be_bytes());
+    assert_eq!(ok(parse_mdhd_duration(&mdhd1)), 30720);
+    assert!(parse_mdhd_duration(&[3u8, 0, 0, 0]).is_err());
+
+    let mut mvhd = vec![0u8; 4];
+    mvhd.extend_from_slice(&[0u8; 8]);
+    mvhd.extend_from_slice(&48_000u32.to_be_bytes());
+    assert_eq!(ok(parse_mvhd_timescale(&mvhd)), 48_000);
+    assert!(parse_mvhd_timescale(&[3u8, 0, 0, 0]).is_err());
+}
+
+#[test]
+fn presentation_and_remainder_use_checked_arithmetic() {
+    let huge = AacTrack {
+        asc: Vec::new(),
+        total_samples: 0,
+        frames: Vec::new(),
+        edit_start: 1024,
+        edit_duration: u64::MAX,
+        movie_timescale: 2,
+        media_timescale: 3,
+        media_duration: 0,
+    };
+    assert!(
+        huge.presentation_samples().is_none(),
+        "overflowing movie→media convert"
+    );
+    let swapped = AacTrack {
+        asc: Vec::new(),
+        total_samples: 0,
+        frames: Vec::new(),
+        edit_start: 2048,
+        edit_duration: 30720,
+        movie_timescale: 48_000,
+        media_timescale: 48_000,
+        media_duration: 2048,
+    };
+    assert_eq!(swapped.presentation_samples(), Some(30720));
+    assert!(
+        swapped.remainder_samples().is_none(),
+        "coded < priming+valid must not wrap"
+    );
 }

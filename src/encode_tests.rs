@@ -476,6 +476,11 @@ fn lavc_matches_our_decode_of_our_m4a() {
         &m4a[..],
         "encoder output drifted from the committed golden; re-mint"
     );
-    // ffmpeg honours elst too: both sides skipped the 1024-sample priming.
+    let track = crate::isomp4::parse_aac_track(&fresh).expect("demux");
+    assert_eq!(track.edit_start, 1024);
+    assert_eq!(track.presentation_samples(), Some(pcm[0].len() as u64));
+    assert_eq!(track.remainder_samples(), Some(896));
+    assert_eq!(track.media_duration, 30 * 1024);
+    // ffmpeg PCM dump skips priming only (29696); container duration is N.
     assert_decode_matches_lavc(&fresh, lavc);
 }

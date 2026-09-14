@@ -64,9 +64,14 @@ pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> 
     payloads.extend(enc.drain_overlap()?);
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),
-        EncodeContainer::M4a => {
-            m4a_write::mux_aac_lc(&payloads, enc.fs_index(), channels, sample_rate)
-        }
+        EncodeContainer::M4a => m4a_write::mux_aac_lc(
+            &payloads,
+            enc.fs_index(),
+            channels,
+            sample_rate,
+            n_samples as u64,
+            FRAME as u64,
+        ),
     }
 }
 
