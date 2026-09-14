@@ -8,7 +8,7 @@ use crate::engine::adts::AdtsHeader;
 use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
 use crate::options::{ChannelMode, DEFAULT_MAX_INPUT_BYTES, DecodeOptions};
-use crate::stream::{decode_streaming, decode_streaming_mono_into};
+use crate::stream::{decode_read_streaming, decode_streaming, decode_streaming_mono_into};
 
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
 ///
@@ -46,6 +46,36 @@ pub fn read(path: impl AsRef<std::path::Path>) -> Result<DecodedAac> {
 /// Read a file and [`decode_with`] it.
 pub fn read_with(path: impl AsRef<std::path::Path>, opts: &DecodeOptions) -> Result<DecodedAac> {
     decode_with(&read_file_capped(path, DEFAULT_MAX_INPUT_BYTES)?, opts)
+}
+
+/// Decode ADTS/LOAS from a generic [`Read`] with speech-ingest defaults.
+/// Does not materialize the whole stream; M4A is [`AacError::Unsupported`].
+#[inline]
+pub fn decode_read<R: Read>(reader: R) -> Result<DecodedAac> {
+    decode_read_with(reader, &DecodeOptions::speech())
+}
+
+/// Decode ADTS/LOAS from `reader` under `opts`. Peak compressed RAM is the
+/// streaming resident cap, not the stream duration.
+pub fn decode_read_with<R: Read>(reader: R, opts: &DecodeOptions) -> Result<DecodedAac> {
+    let mut tracks: Vec<Vec<f32>> = Vec::new();
+    let info = decode_read_streaming(reader, opts, |f| {
+        let n_ch = u32::try_from(f.planar.len()).unwrap_or(u32::MAX);
+        if tracks.is_empty() {
+            opts.memory.check_channels(n_ch)?;
+            tracks.resize_with(f.planar.len(), Vec::new);
+        }
+        let next = tracks.first().map(|t| t.len() as u64).unwrap_or(0) + f.samples as u64;
+        opts.memory.check_output(n_ch, next)?;
+        for (dst, src) in tracks.iter_mut().zip(f.planar.iter()) {
+            dst.extend_from_slice(src);
+        }
+        Ok(())
+    })?;
+    Ok(DecodedAac {
+        sample_rate: info.sample_rate,
+        channels: tracks,
+    })
 }
 
 /// Load at most `limit` compressed bytes. Metadata larger than `limit` is

@@ -42,8 +42,10 @@ mod au;
 mod frame;
 mod m4a;
 mod pump;
+mod read;
 
 pub use frame::{Frame, StreamInfo};
+pub use read::decode_read_streaming;
 
 /// Container the push decoder has locked onto.
 enum Container {

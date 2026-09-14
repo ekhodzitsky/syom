@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Generic `Read` ADTS/LOAS decode (TASK-56): `Decoder::feed_read`,
+  `decode_read` / `decode_read_with` (collecting) and
+  `decode_read_streaming` (callback). Resident compressed buffer stays
+  the streaming cap; `Interrupted` is retried; other I/O is `AacError::Io`.
+  Truncated tails match push `finish`. M4A on a non-seekable reader is
+  `Unsupported(M4aPush)` (TASK-57).
 - Raw AAC access-unit decode (TASK-52): `Decoder::from_asc(asc, opts)`
   plus `decode_au` of complete `raw_data_block()` payloads (no ADTS/LATM
   wrap). LC/HE/PS PCM matches the equivalent framed goldens. Mid-stream

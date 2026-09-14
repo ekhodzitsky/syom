@@ -28,7 +28,9 @@ pub use budgets::{
 };
 #[cfg(test)]
 pub(crate) use decode::read_file_capped;
-pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
+pub use decode::{
+    DecodedAac, decode, decode_bytes, decode_read, decode_read_with, decode_with, read, read_with,
+};
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{encode, encode_with, write, write_with};
 pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
@@ -39,7 +41,7 @@ pub use options::{
     EncodeOptions,
 };
 pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
-pub use stream::{Decoder, Frame, StreamInfo, decode_streaming};
+pub use stream::{Decoder, Frame, StreamInfo, decode_read_streaming, decode_streaming};
 
 #[cfg(test)]
 #[path = "decode_tests.rs"]
@@ -140,6 +142,10 @@ mod stream_m4a_tests;
 #[cfg(test)]
 #[path = "stream_au_tests.rs"]
 mod stream_au_tests;
+
+#[cfg(test)]
+#[path = "stream_read_tests.rs"]
+mod stream_read_tests;
 
 #[cfg(test)]
 #[path = "error_tests.rs"]
