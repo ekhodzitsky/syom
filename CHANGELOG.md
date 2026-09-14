@@ -69,6 +69,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- M4A/LATM ASC SBR/PS flags seed the decoder: `sbr_present` activates HE
+  without waiting for a FIL payload. Output rate is the declared 1× or 2×
+  core rate (not a hardcoded 2×). 1× keeps core sample count; 2× without
+  payload is pure upsample. Other ratios are `Format`. ADTS still discovers
+  SBR from the bitstream. Downsampled high-band reconstruction stays 32-band
+  QMF (not on the product path).
 - Independent CCE is applied after IMDCT (`dest += gain * cce_pcm`) with
   CCE overlap keyed by element tag. Unity independent coupling of a
   silent SCE matches the coupling ICS decoded as SCE across frames.

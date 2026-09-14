@@ -160,6 +160,11 @@ impl Decoder {
                 if let Some(pce) = cfg.asc.pce.clone() {
                     self.dec.set_config_pce(pce);
                 }
+                self.dec.set_he_config(
+                    cfg.asc.sbr_present,
+                    cfg.asc.ps_present,
+                    cfg.asc.output_sample_rate,
+                );
                 self.mux = Some(cfg);
             }
             let cfg = self

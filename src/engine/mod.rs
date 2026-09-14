@@ -96,6 +96,10 @@ mod skip_tests;
 mod cce_tests;
 
 #[cfg(test)]
+#[path = "he_config_tests.rs"]
+mod he_config_tests;
+
+#[cfg(test)]
 #[path = "fb_pool_tests.rs"]
 mod fb_pool_tests;
 

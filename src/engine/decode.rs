@@ -40,6 +40,9 @@ pub struct StreamDecoder {
     sbr: Option<SbrDecoder>,
     sbr_hdr: Option<SbrHeader>,
     pub(crate) sbr_active: bool,
+    sbr_declared: bool,
+    ps_declared: bool,
+    sbr_out_rate: Option<u32>,
     pub(crate) pcm_l: Vec<f32>,
     pub(crate) pcm_r: Vec<f32>,
     pub(crate) frame_ch: Vec<Vec<f32>>,
@@ -68,6 +71,21 @@ impl StreamDecoder {
     /// Seed mapping from an ASC-embedded PCE (M4A/LATM). In-band PCE still wins.
     pub(crate) fn set_config_pce(&mut self, pce: PceChannelMap) {
         self.pce = Some(pce);
+    }
+
+    /// Seed HE/PS from ASC so output rate does not wait on a FIL payload.
+    pub(crate) fn set_he_config(&mut self, sbr: bool, ps: bool, output_rate: u32) {
+        self.sbr_declared = sbr;
+        self.ps_declared = ps;
+        if sbr && output_rate != 0 {
+            self.sbr_active = true;
+            self.sbr_out_rate = Some(output_rate);
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn he_config(&self) -> (bool, bool, Option<u32>) {
+        (self.sbr_declared, self.ps_declared, self.sbr_out_rate)
     }
 
     #[cfg(test)]
@@ -215,7 +233,7 @@ impl StreamDecoder {
                 }
                 IdSynEle::Fil => {
                     let cnt = fill_count(&mut br)?;
-                    let fs_sbr = sample_rate.saturating_mul(2);
+                    let fs_sbr = self.sbr_out_rate.unwrap_or(sample_rate.saturating_mul(2));
                     let start = br.bit_position();
                     match ExtensionPayload::parse_with_sbr(
                         &mut br,
@@ -340,8 +358,13 @@ impl StreamDecoder {
         if !self.sbr_active || planar.is_empty() {
             return Ok((planar, sample_rate));
         }
+        let fs_sbr = match self.sbr_out_rate {
+            Some(out) if out == sample_rate => return Ok((planar, sample_rate)),
+            Some(out) if out == sample_rate.saturating_mul(2) => out,
+            Some(_) => return Err(Error::Format("SBR output rate must be 1x or 2x core")),
+            None => sample_rate.saturating_mul(2),
+        };
         let n_ch = planar.len();
-        let fs_sbr = sample_rate.saturating_mul(2);
         if self.sbr.is_none() {
             self.sbr = Some(SbrDecoder::new(fs_sbr, n_ch)?);
         }
