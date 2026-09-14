@@ -318,14 +318,16 @@ fn per_band_never_worse_than_whole_pair() -> Result<()> {
             .map(|(l, r)| enc.encode_frame(&[l, r]))
             .collect()
     };
-    // Tonal content fits under the 128k budget, so coded bytes reflect the
-    // decision directly: per-band must be strictly smaller here.
+    // Tonal content fits under the 128k budget; ABR unused bytes after
+    // ID_END equalize transport size, so compare coded length (trailing
+    // zeros stripped). Per-band must be strictly smaller here.
+    let coded_len = |p: &[u8]| p.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
     let tonal: Vec<_> = (0..8).map(|t| ab_frame(t, 0.2, true)).collect();
     let whole = encode_all(false, &tonal)?;
     let per_band = encode_all(true, &tonal)?;
     let (bw, bp): (usize, usize) = (
-        whole.iter().map(Vec::len).sum(),
-        per_band.iter().map(Vec::len).sum(),
+        whole.iter().map(|p| coded_len(p)).sum(),
+        per_band.iter().map(|p| coded_len(p)).sum(),
     );
     eprintln!("asymmetric tonal split @128k: whole-pair {bw} B, per-band {bp} B");
     assert!(bp < bw, "per-band {bp} B should beat whole-pair {bw} B");

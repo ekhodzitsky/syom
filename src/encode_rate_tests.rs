@@ -261,64 +261,211 @@ fn live_rate_matrix_payload_vs_transport_vs_duration() -> Result<()> {
             .unwrap()
     };
     let silence = find("silence", 128_000);
-    let sine64 = find("sine440", 64_000);
-    let sine128 = find("sine440", 128_000);
-    let noise64 = find("noise", 64_000);
-    let noise128 = find("noise", 128_000);
-    let trem = find("tremolo", 128_000);
-    let speech = find("lecture", 128_000);
-    // Current contract (TASK-65): bitrate_bps is a per-frame ceiling.
-    // Easy content undershoots; noise spends the budget.
     assert!(
         ratio(silence) < 0.15,
-        "silence should not spend 128k: {:.0}",
+        "silence must not be stuffed to 128k: {:.0}",
         silence.payload_bps_valid
     );
+    Ok(())
+}
+
+const N10: usize = 10 * N1;
+
+fn tile(planes: &[Vec<f32>], n: usize) -> Vec<Vec<f32>> {
+    planes
+        .iter()
+        .map(|p| (0..n).map(|i| p[i % p.len()]).collect())
+        .collect()
+}
+
+fn assert_abr_pm3(r: &Row) {
+    let rel = (ratio(r) - 1.0).abs();
     assert!(
-        ratio(sine64) < 0.50 && ratio(sine128) < 0.40,
-        "tonal undershoot: 64k {:.0} 128k {:.0}",
-        sine64.payload_bps_valid,
-        sine128.payload_bps_valid
+        rel <= 0.03,
+        "{} {}k: payload/valid {:.0} bps (ratio {:.3}, need ±3%) bits[{}, {:.0}, {}] budget {}",
+        r.name,
+        r.requested / 1000,
+        r.payload_bps_valid,
+        ratio(r),
+        r.bits_min,
+        r.bits_mean,
+        r.bits_max,
+        r.budget
     );
+    let cap = MAX_BITS_PER_CHANNEL * r.info.channels;
+    assert!(r.bits_max <= cap, "{} over LC cap", r.name);
+    assert!(r.fullness_vbr);
+}
+
+#[test]
+fn ten_second_non_silent_tracks_meet_abr_pm3() -> Result<()> {
+    let lecture = decode_with(
+        include_bytes!("goldens/lecture.m4a"),
+        &DecodeOptions::audio(),
+    )?;
+    let trem_l = sine(N10, 440.0, 0.4);
+    let trem_r: Vec<f32> = trem_l.iter().map(|x| x * 0.8).collect();
+    let clips = [
+        Sweep {
+            name: "sine10s",
+            class: "tonal",
+            pcm: vec![sine(N10, 440.0, 0.5)],
+            bps: 128_000,
+        },
+        Sweep {
+            name: "noise10s",
+            class: "noise",
+            pcm: vec![noise(N10, 0.4)],
+            bps: 64_000,
+        },
+        Sweep {
+            name: "noise10s",
+            class: "noise",
+            pcm: vec![noise(N10, 0.4)],
+            bps: 128_000,
+        },
+        Sweep {
+            name: "tremolo10s",
+            class: "stereo",
+            pcm: vec![trem_l, trem_r],
+            bps: 128_000,
+        },
+        Sweep {
+            name: "lecture10s",
+            class: "speech",
+            pcm: tile(&lecture.channels, N10),
+            bps: 128_000,
+        },
+    ];
+    for s in &clips {
+        let r = row(s)?;
+        eprintln!(
+            "ABR {} req {} pay/valid {:.0} ratio {:.3} bits mean {:.0}/{}",
+            r.name,
+            r.requested,
+            r.payload_bps_valid,
+            ratio(&r),
+            r.bits_mean,
+            r.budget
+        );
+        assert_abr_pm3(&r);
+    }
+    Ok(())
+}
+
+#[test]
+fn short_and_impossible_rates_stay_exceptions() -> Result<()> {
+    let pcm = vec![sine(1000, 440.0, 0.5)];
+    let r = row(&Sweep {
+        name: "short",
+        class: "tonal",
+        pcm,
+        bps: 128_000,
+    })?;
+    assert!(r.info.samples < 2048);
+    assert!(r.bits_max <= MAX_BITS_PER_CHANNEL);
+    assert!(Encoder::new(RATE, 1, &EncodeOptions::adts().with_bitrate_bps(0)).is_err());
+    assert!(Encoder::new(RATE, 1, &EncodeOptions::adts().with_bitrate_bps(1_000_000)).is_err());
+    Ok(())
+}
+
+#[test]
+fn abr_fill_keeps_sine_audible_after_priming() -> Result<()> {
+    let src = sine(N1, 440.0, 0.5);
+    let r = row(&Sweep {
+        name: "sine_snr",
+        class: "tonal",
+        pcm: vec![src.clone()],
+        bps: 128_000,
+    })?;
+    // 1 s pay/valid includes drain; ±3% is the ≥10 s gate (`ten_second_*`).
+    assert!(r.fullness_vbr);
+    assert!(r.bits_max <= MAX_BITS_PER_CHANNEL);
     assert!(
-        (0.80..=1.20).contains(&ratio(noise64)) && (0.80..=1.20).contains(&ratio(noise128)),
-        "noise should spend the ceiling: 64k {:.0} 128k {:.0}",
-        noise64.payload_bps_valid,
-        noise128.payload_bps_valid
+        ratio(&r) < 1.10,
+        "1 s sine pay/valid {:.3} (drain may exceed ±3%)",
+        ratio(&r)
     );
+    let dec = decode_with(
+        &encode_with(
+            std::slice::from_ref(&src),
+            RATE,
+            &EncodeOptions::adts().with_bitrate_bps(128_000),
+        )?,
+        &DecodeOptions::unbounded(),
+    )?;
+    let skip = 1024usize;
+    let y = &dec.channels[0][skip..skip + N1];
+    let mut sig = 0.0f64;
+    let mut err = 0.0f64;
+    for (a, b) in src.iter().zip(y.iter()) {
+        let a = f64::from(*a);
+        let d = a - f64::from(*b);
+        sig += a * a;
+        err += d * d;
+    }
+    let snr = 10.0 * (sig / err.max(1e-20)).log10();
     assert!(
-        ratio(trem) < 0.50,
-        "correlated stereo undershoots 128k: {:.0}",
-        trem.payload_bps_valid
-    );
-    assert!(
-        ratio(speech) < 0.85,
-        "lecture speech does not hit 128k today: {:.0}",
-        speech.payload_bps_valid
+        snr > 25.0 && y.iter().all(|x| x.is_finite()),
+        "sine SNR after ABR fill {snr:.1} dB"
     );
     Ok(())
 }
 
 #[test]
-fn four_second_sine_still_undershoots_so_drain_is_not_the_cause() -> Result<()> {
-    let pcm = vec![sine(4 * N1, 440.0, 0.5)];
-    let r = row(&Sweep {
-        name: "sine4s",
-        class: "tonal",
-        pcm,
-        bps: 128_000,
-    })?;
-    assert!(
-        ratio(&r) < 0.40,
-        "4 s sine payload/valid still {:.0} bps vs 128k",
-        r.payload_bps_valid
-    );
-    assert!(
-        r.bits_mean < r.budget as f64 * 0.30,
-        "mean frame bits {:.0} vs budget {}",
-        r.bits_mean,
-        r.budget
-    );
+fn abr_undershoot_pads_trailing_zeros_after_end() -> Result<()> {
+    let src = sine(N1, 440.0, 0.5);
+    let (adts, _) = encode_tracked(&[src], 128_000)?;
+    let frames = walk_frames(&adts)?;
+    let mut pos = 0usize;
+    let mut saw_pad = false;
+    for &(fullness, pay) in &frames {
+        assert_eq!(fullness, 0x7FF);
+        let (hdr, off) = AdtsHeader::parse(&adts[pos..]).map_err(crate::AacError::from)?;
+        let fl = usize::from(hdr.aac_frame_length);
+        let payload = &adts[pos + off..pos + fl];
+        if pay * 8 >= budget_bits(128_000, 1) * 97 / 100 && payload.len() >= 16 {
+            saw_pad |= payload[payload.len() - 16..].iter().all(|&b| b == 0);
+        }
+        pos += fl;
+    }
+    assert!(saw_pad, "leftover budget must be unused bytes after ID_END");
+    Ok(())
+}
+
+#[test]
+fn abr_trailing_pad_is_pcm_neutral() -> Result<()> {
+    let l = sine(N1 / 4, 440.0, 0.5);
+    let r = sine(N1 / 4, 2_997.0, 0.4);
+    let stuffed = encode_with(
+        &[l, r],
+        RATE,
+        &EncodeOptions::adts().with_bitrate_bps(128_000),
+    )?;
+    let mut pos = 0usize;
+    let mut stripped = Vec::with_capacity(stuffed.len());
+    while pos < stuffed.len() {
+        let (hdr, off) = AdtsHeader::parse(&stuffed[pos..]).map_err(crate::AacError::from)?;
+        let fl = usize::from(hdr.aac_frame_length);
+        let mut payload = stuffed[pos + off..pos + fl].to_vec();
+        while payload.last() == Some(&0) {
+            payload.pop();
+        }
+        crate::encode::adts_frame_into(
+            &payload,
+            hdr.sampling_frequency_index,
+            usize::from(hdr.channel_configuration.max(1)),
+            &mut stripped,
+        );
+        pos += fl;
+    }
+    let a = decode_with(&stuffed, &DecodeOptions::unbounded())?;
+    let b = decode_with(&stripped, &DecodeOptions::unbounded())?;
+    assert_eq!(a.sample_rate, b.sample_rate);
+    assert_eq!(a.channels.len(), b.channels.len());
+    for (l, r) in a.channels.iter().zip(b.channels.iter()) {
+        assert_eq!(l, r, "trailing unused bytes must not change PCM");
+    }
     Ok(())
 }
 

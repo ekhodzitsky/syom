@@ -9,12 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- LC ABR (TASK-66): leftover per-frame budget is unused bytes after
+  `ID_END` (decoder stops at END; PCM-neutral). 10 s sine/noise/tremolo/
+  lecture hit payload/valid ±3% (measured 1.002–1.003). Silence is not
+  stuffed. ADTS stays `0x7FF` (no CBR reservoir). Leftover-band fill at
+  TARGET_Q was measured and rejected (sine residual SNR ~0 dB). Encoder
+  goldens reminted (`enc48{,m,t,l}`); lavc s16 PCM unchanged. Report:
+  `corpus/rate/REPORT.md`.
 - Encoder rate contract (TASK-65): `bitrate_bps` is a per-frame
   ceiling (capped VBR, ADTS `0x7FF`, one-frame `credit`, not a bit
-  reservoir). Live matrix: noise 128k payload/valid ≈ 131 kbps;
-  sine/tremolo/lecture undershoot (23/38/62 kbps). TASK-66 target is
-  ±3% payload/valid on ≥10 s non-silent budget-limited tracks; CBR
-  reservoir and TVBR are no-go for 0.x. Report: `corpus/rate/REPORT.md`.
+  reservoir). TASK-66 spends leftover budget so long non-silent
+  tracks meet ±3% payload/valid. CBR reservoir and TVBR stay no-go
+  for 0.x.
 - `DecodeOptions::audio()`: split channels with the same 2 h / 192 kHz
   lecture caps as `speech()` (TASK-50). `decode` / `read` /
   `DecodeOptions::default()` stay speech-mono. `unbounded()` remains the

@@ -18,10 +18,10 @@
       "channel_order": "L R",
       "priming_samples": 1024,
       "comparison": "deterministic",
-      "provenance_gap": null,
-      "engine_build": "ffmpeg 7.0.2-static (johnvansickle), 2026-09-14 TASK-41 overlap drain",
-      "remainder_samples": 896,
-      "valid_samples": 28800,
+      "provenance_gap": "ffmpeg/libavcodec version and build flags were not recorded at mint",
+      "engine_build": null,
+      "remainder_samples": null,
+      "valid_samples": null,
       "sha256": "beeaa81daec9340765429b9e664f7adca0ad04d82cd7c2e5476d7edfc64249ae"
     },
     {
@@ -158,7 +158,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "eaa98b4aa3d0e6829159239b0940109f40c0af9782d9f1d628075a96badc5f68"
+      "sha256": "f88886873f4d3c6d8466e1f43334d1645cf325aefae25963affcb3e12a8aad14"
     },
     {
       "id": "enc48l.adts",
@@ -175,24 +175,24 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "056ae9becd4545faa5fe0929655ef6f5d260dc322dc6fac9864403b74b914f8e"
+      "sha256": "6549fe3d06e5f730a6877c7d298b856e564709451214c8f2ded30ee9833f4761"
     },
     {
       "id": "enc48m.m4a",
       "path": "src/goldens/enc48m.m4a",
       "role": "committed-fixture",
-      "engine": "syom LC encode",
+      "engine": "unknown (historical checkout)",
       "pcm_precision": "bitstream",
       "comparison": "deterministic",
-      "provenance_gap": null,
-      "engine_build": "syom 0.6.0 TASK-42 elst remainder/valid; movie timescale = sample rate",
-      "priming_samples": 1024,
-      "remainder_samples": 896,
-      "valid_samples": 28800,
-      "channel_order": "L R",
-      "command": "MINT_GOLDENS=1 cargo test --lib encode_tests::mint_lavc_m4a_golden",
-      "settings": "EncodeOptions::m4a(); lavc s16 PCM length is still coded-priming (ffmpeg dumps skip media_time only)",
-      "sha256": "269cd2abcebb8e59ba61f4cd07f8a1ba98b4dd48fbc6982c6a640e3019a3dd45"
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "3984ad4198cca4132a5c47d0a3f0f7d1bc74d2cc3d864fd90e2799196756eb66"
     },
     {
       "id": "enc48t.adts",
@@ -209,7 +209,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "74974a985f0146c29b57ee92a6cb800a21350f787cb923fca2f27d9fb04f12f4"
+      "sha256": "fd6e06604973300814bbefd0dc3be74c9268e708b8191858df506cc39872e7de"
     },
     {
       "id": "he48.adts",

@@ -119,15 +119,28 @@ impl LcEncoder {
                     }
                 }
             }
-            let mut peaks = [0.0f32; MAX_BANDS];
-            enc_quant::band_peaks(spec, self.offsets, &mut peaks);
-            enc_quant::raw_scalefactors(&peaks, tq, offset, q);
-            *gain = enc_quant::normalize_sf(q);
-            enc_quant::quantize(spec, self.offsets, q);
-            *books = enc_section::plan_books(q);
+            Self::quant_one_long(self.offsets, q, tq, spec, books, gain, offset);
             total += enc_section::channel_body_bits(books, q, *gain, standalone, tns);
         }
         total + 7 // byte-align pad ceiling
+    }
+
+    /// Quantize + section-plan one long channel from existing `coded` / `target_q`.
+    fn quant_one_long(
+        offsets: &[u16],
+        q: &mut crate::engine::enc_quant::QuantChannel,
+        tq: &[f32; MAX_BANDS],
+        spec: &[f32; LONG_WINDOW_LEN],
+        books: &mut [u8; MAX_BANDS],
+        gain: &mut u8,
+        offset: i32,
+    ) {
+        let mut peaks = [0.0f32; MAX_BANDS];
+        enc_quant::band_peaks(spec, offsets, &mut peaks);
+        enc_quant::raw_scalefactors(&peaks, tq, offset, q);
+        *gain = enc_quant::normalize_sf(q);
+        enc_quant::quantize(spec, offsets, q);
+        *books = enc_section::plan_books(q);
     }
 
     /// Hard cap: drop the highest coded bands until the frame fits
@@ -191,5 +204,51 @@ impl LcEncoder {
             &self.tns,
             self.channels,
         )
+    }
+
+    /// Pad an undersized frame with unused bytes after `ID_END` so payload
+    /// bits sit in `[97%, 100%]` of `limit`. Returns `(payload, coded_bits)`
+    /// where `coded_bits` is the size before padding — one-frame `credit`
+    /// must use that, or stuffing would starve the next frame's rate loop.
+    /// The decoder stops at END; trailing zeros are unused ADTS bytes.
+    /// All-zero spectra are not padded (silence exception). Not CBR.
+    pub(super) fn fit_budget(&mut self, limit: usize) -> (Vec<u8>, usize) {
+        let limit = limit.min(max_frame_bits(self.channels));
+        self.drop_bands_until(limit);
+        let mut out = self.emit();
+        let coded = out.len().saturating_mul(8);
+        if self.quant_all_zero() {
+            return (out, coded);
+        }
+        // Pad to the ABR ceiling, minus stuffing debt from earlier frames
+        // that spent credit above `budget`. Search/drop still use credit;
+        // this only changes unused bytes after ID_END.
+        let budget = self.budget_bits().min(limit);
+        let pad_to = if self.pad_debt > 0 {
+            budget.saturating_sub(self.pad_debt as usize)
+        } else {
+            budget
+        };
+        if coded < pad_to.saturating_mul(97) / 100 {
+            let target = (pad_to / 8).min(MAX_PAYLOAD_BYTES);
+            if out.len() < target {
+                out.resize(target, 0);
+            }
+        }
+        let emitted = out.len().saturating_mul(8) as i64;
+        self.pad_debt = (self.pad_debt + emitted - budget as i64).max(0);
+        (out, coded)
+    }
+
+    fn quant_all_zero(&self) -> bool {
+        if self.seq.is_eight_short() {
+            self.chans_s[..self.channels]
+                .iter()
+                .all(|q| q.quant.iter().all(|&x| x == 0))
+        } else {
+            self.chans[..self.channels]
+                .iter()
+                .all(|q| q.quant.iter().all(|&x| x == 0))
+        }
     }
 }

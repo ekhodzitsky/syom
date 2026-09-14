@@ -254,32 +254,13 @@ fn band_noise_quality_floor_stereo_128k() {
 }
 
 #[test]
-fn correlated_stereo_uses_ms_and_saves_bits() {
+fn correlated_stereo_uses_ms() {
     // Nearly identical channels: M/S collapses the side channel.
+    // ABR leftover pad equalizes file size to `bitrate_bps`, so M/S is
+    // checked by right-channel tracking of the 0.98× pair, not bytes.
     let l = sine(48_000, 0.25, 440.0, 0.5);
     let r: Vec<f32> = l.iter().map(|&x| x * 0.98).collect();
     let corr = encode(&[l.clone(), r], 48_000).expect("correlated");
-    // Per-band M/S keeps genuinely decorrelated bands on L/R, so the old
-    // separate-sines contrast no longer isolates the M/S saving (L/R codes
-    // that pair cheaply too). Independent full-band noise — which no stereo
-    // tool can help — is the honest expensive baseline.
-    let mut s1 = 0x0BAD_F00Du32;
-    let mut s2 = 0x5EED_1234u32;
-    let n = 12_000usize;
-    let (mut n1, mut n2) = (Vec::with_capacity(n), Vec::with_capacity(n));
-    for _ in 0..n {
-        s1 = s1.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
-        s2 = s2.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
-        n1.push(0.5 * (((s1 >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0));
-        n2.push(0.5 * (((s2 >> 9) as f32 / (1u32 << 23) as f32) * 2.0 - 1.0));
-    }
-    let decorr = encode(&[n1, n2], 48_000).expect("decorrelated");
-    assert!(
-        corr.len() * 5 < decorr.len() * 4,
-        "correlated {} B should save >20% vs decorrelated {} B",
-        corr.len(),
-        decorr.len()
-    );
     let dec = decode_with(&corr, &crate::DecodeOptions::unbounded()).expect("decode");
     let want_r: Vec<f32> = dec.channels[0].iter().map(|&x| x * 0.98).collect();
     // 0.98x differs from 1.0x by -34 dB, so a faithful M/S decode of r

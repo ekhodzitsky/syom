@@ -79,6 +79,9 @@ pub struct LcEncoder {
     /// integer sf-offset step undershoots by up to ~11%, so frames may
     /// spend accumulated savings. ADTS carries the VBR fullness marker.
     credit: i64,
+    /// Stuffing debt (bits emitted above `budget`): later undershoot
+    /// frames pad less so 10 s payload/valid stays within ±3%.
+    pad_debt: i64,
     /// This frame's per-band M/S decision (`ms_mask_present` 0/1/2).
     ms: MsBands,
     /// This frame's per-channel TNS decision (`enc_tns`; off on short).
@@ -157,6 +160,7 @@ impl LcEncoder {
             psy: Psy::new(offsets, sample_rate),
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
+            pad_debt: 0,
             ms: MsBands::off(),
             tns: [EncTns::off(), EncTns::off()],
             prev_seq: WindowSequence::OnlyLong,
@@ -360,13 +364,11 @@ impl LcEncoder {
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
         let offset = self.search_offset(&specs, &psy_specs, spend);
         self.build(&specs, &psy_specs, offset);
-        self.drop_bands_until(spend.min(rate::max_frame_bits(self.channels)));
-        let out = self.emit();
+        let (out, coded) = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)));
         if out.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
             return Err(Error::Format("LC encoder: frame exceeds 6144 bits/channel"));
         }
-        self.credit =
-            (self.credit + budget as i64 - (out.len() * 8) as i64).clamp(0, budget as i64);
+        self.credit = (self.credit + budget as i64 - coded as i64).clamp(0, budget as i64);
         self.prev_seq = self.seq;
         Ok(out)
     }
