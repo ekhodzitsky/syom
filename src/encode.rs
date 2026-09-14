@@ -18,11 +18,11 @@ use crate::error::{AacError, Result};
 use crate::m4a_write;
 use crate::options::{EncodeContainer, EncodeOptions};
 
-/// Build an LC encoder honoring lookahead and ATH from `opts`.
+/// Build an LC encoder honoring lookahead, ATH, and tonality from `opts`.
 pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<LcEncoder> {
     Ok(LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
         .with_lookahead(opts.lookahead)
-        .with_ath(opts.ath))
+        .with_psy(opts.ath, opts.tonality))
 }
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
@@ -38,7 +38,7 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
 }
 
 /// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
-/// optional ATH).
+/// optional ATH / tonality).
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at

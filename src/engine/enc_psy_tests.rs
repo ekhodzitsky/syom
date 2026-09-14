@@ -166,6 +166,74 @@ fn ath_drops_inaudible_hf_tone_alone() {
 }
 
 #[test]
+fn tonality_off_matches_default_mask_and_q() {
+    let (offsets, n_bands) = offsets_48k();
+    let spec = tone_spec(100);
+    let mut a = Psy::new(offsets, 48_000);
+    let mut b = Psy::new(offsets, 48_000);
+    b.enable_tonality(false);
+    let mut ca = [false; MAX_BANDS];
+    let mut cb = [false; MAX_BANDS];
+    let mut ta = [0.0f32; MAX_BANDS];
+    let mut tb = [0.0f32; MAX_BANDS];
+    a.analyze(&spec, offsets, 2048.0, &mut ca, &mut ta);
+    b.analyze(&spec, offsets, 2048.0, &mut cb, &mut tb);
+    assert_eq!(&ca[..n_bands], &cb[..n_bands]);
+    assert_eq!(&ta[..n_bands], &tb[..n_bands]);
+}
+
+#[test]
+fn tonality_silence_still_codes_nothing() {
+    let (offsets, n_bands) = offsets_48k();
+    let mut psy = Psy::new(offsets, 48_000);
+    psy.enable_tonality(true);
+    let spec = [0.0f32; LONG_WINDOW_LEN];
+    let mut coded = [true; MAX_BANDS];
+    let mut tq = [1.0f32; MAX_BANDS];
+    psy.analyze(&spec, offsets, 2048.0, &mut coded, &mut tq);
+    assert!(coded[..n_bands].iter().all(|&c| !c));
+}
+
+#[test]
+fn tonality_keeps_tone_full_q_and_lowers_noise_q() {
+    let (offsets, n_bands) = offsets_48k();
+    let mut tone = [0.0f32; LONG_WINDOW_LEN];
+    tone[100] = 1e6;
+    tone[101] = 3e5;
+    let mut noise = [0.0f32; LONG_WINDOW_LEN];
+    for (i, v) in noise.iter_mut().enumerate() {
+        *v = if i % 2 == 0 { 1e4 } else { -1e4 };
+    }
+    let mut psy = Psy::new(offsets, 48_000);
+    psy.enable_tonality(true);
+    let mut coded = [false; MAX_BANDS];
+    let mut tq = [0.0f32; MAX_BANDS];
+    psy.analyze(&tone, offsets, 2048.0, &mut coded, &mut tq);
+    let tone_band = offsets.iter().position(|&o| o > 100).expect("band") - 1;
+    assert!(coded[tone_band]);
+    assert!(
+        (tq[tone_band] - 2048.0).abs() < 50.0,
+        "tone target_q {}",
+        tq[tone_band]
+    );
+    let mut nc = [false; MAX_BANDS];
+    let mut nq = [0.0f32; MAX_BANDS];
+    psy.analyze(&noise, offsets, 2048.0, &mut nc, &mut nq);
+    let n_coded = nc[..n_bands].iter().filter(|c| **c).count().max(1);
+    let mean_q: f32 = nq[..n_bands]
+        .iter()
+        .zip(nc[..n_bands].iter())
+        .filter(|(_, c)| **c)
+        .map(|(q, _)| *q)
+        .sum::<f32>()
+        / n_coded as f32;
+    assert!(
+        mean_q < 2048.0 * 0.6,
+        "flat noise should get reduced target_q, got {mean_q}"
+    );
+}
+
+#[test]
 fn ath_keeps_quiet_but_audible_midband() {
     let (offsets, _) = offsets_48k();
     let mut spec = [0.0f32; LONG_WINDOW_LEN];

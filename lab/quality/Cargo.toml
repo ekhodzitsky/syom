@@ -17,3 +17,7 @@ path = "src/main.rs"
 [[bin]]
 name = "syom_ath"
 path = "src/ath.rs"
+
+[[bin]]
+name = "syom_tonality"
+path = "src/tonality.rs"

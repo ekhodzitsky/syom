@@ -88,8 +88,9 @@ mono/stereo, 128 kbps). `bitrate_bps` is an ABR target (payload/valid
 `EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`,
 `with_lookahead` (one-frame attack lookahead: better pre-echo suppression
 on early-in-frame onsets, one extra frame of latency, default off), and
-`with_ath` (Terhardt absolute-threshold floor, default off; not the 0.x
-default — TASK-68 no-go on noise 128k / lecture).
+`with_ath` (Terhardt absolute-threshold floor, default off; TASK-68
+no-go as 0.x default), and `with_tonality` (Johnston SFM `target_q`
+scale, default off; TASK-69 no-go as 0.x default).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD

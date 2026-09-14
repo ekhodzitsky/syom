@@ -226,6 +226,9 @@ pub struct EncodeOptions {
     /// goldens stay byte-identical. When on, bands below ATH at 0 dBFS =
     /// 96 dB SPL are dropped in addition to the −60 dB relative floor.
     pub ath: bool,
+    /// Johnston SFM tonality (TASK-69). Default off. When on, noise-like
+    /// bands get a lower `target_q` (0.25×); the coded mask is unchanged.
+    pub tonality: bool,
 }
 
 impl Default for EncodeOptions {
@@ -235,6 +238,7 @@ impl Default for EncodeOptions {
             bitrate_bps: 128_000,
             lookahead: false,
             ath: false,
+            tonality: false,
         }
     }
 }
@@ -293,6 +297,14 @@ impl EncodeOptions {
     #[inline]
     pub fn with_ath(mut self, on: bool) -> Self {
         self.ath = on;
+        self
+    }
+
+    /// Johnston SFM tonality. Off by default; one-shot and push encode
+    /// honor it identically (byte-exact for the same options).
+    #[inline]
+    pub fn with_tonality(mut self, on: bool) -> Self {
+        self.tonality = on;
         self
     }
 }

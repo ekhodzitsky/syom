@@ -29,6 +29,8 @@ pub struct Psy {
     /// Absolute-threshold energy per band (Terhardt, 0 dBFS = 96 dB SPL).
     ath_energy: [f32; MAX_BANDS],
     ath: bool,
+    /// Johnston SFM tonality → per-band `target_q` (TASK-69). Default off.
+    tonality: bool,
 }
 
 /// Approximate Bark scale of `f` Hz. The `atan`s go through
@@ -58,6 +60,28 @@ fn ath_band_energy(f_hz: f32) -> f32 {
     FS_BIN * FS_BIN * rel
 }
 
+/// Johnston spectral-flatness tonality in `[0, 1]`: 1 = tone, 0 = noise.
+/// 1-bin bands have no shape — keep full precision (`1.0`).
+fn band_tonality(bins: &[f32]) -> f32 {
+    let n = bins.len();
+    if n < 2 {
+        return 1.0;
+    }
+    let eps = 1e-20f32;
+    let mut sum = 0.0f32;
+    let mut log_sum = 0.0f32;
+    for &x in bins {
+        let p = x * x + eps;
+        sum += p;
+        log_sum += det_math::log2(p);
+    }
+    let am = sum / n as f32;
+    let gm = det_math::exp2(log_sum / n as f32);
+    let sfm = (gm / am).clamp(1e-12, 1.0);
+    let sfm_db = 10.0 * det_math::log2(sfm) / det_math::LOG2_10;
+    (sfm_db / -60.0).clamp(0.0, 1.0)
+}
+
 impl Psy {
     /// Build the spreading matrix for this rate's long-window bands.
     pub fn new(offsets: &[u16], sample_rate: u32) -> Self {
@@ -74,6 +98,11 @@ impl Psy {
     /// must also clear ATH energy at its center; silence stays uncoded.
     pub fn enable_ath(&mut self, on: bool) {
         self.ath = on;
+    }
+
+    /// Scale `target_q` by Johnston SFM (default off). Coded mask unchanged.
+    pub fn enable_tonality(&mut self, on: bool) {
+        self.tonality = on;
     }
 
     fn with_transform(offsets: &[u16], sample_rate: u32, transform: usize) -> Self {
@@ -108,6 +137,7 @@ impl Psy {
             energy: [0.0; MAX_BANDS],
             ath_energy,
             ath: false,
+            tonality: false,
         }
     }
 
@@ -125,8 +155,8 @@ impl Psy {
     /// Analyze one channel's MDCT spectrum: a band is coded when its energy
     /// clears the masked threshold (18 dB SMR after spreading) and a −60 dB
     /// relative-to-loudest floor. With ATH on, also the Terhardt floor at
-    /// the band center. Coded bands get full-precision `max_q`.
-    /// TODO: scale `target_q` by band tonality / partial masking.
+    /// the band center. Coded bands get `max_q`, or Johnston-scaled `target_q`
+    /// when tonality is on (noise-like bands 0.25·`max_q`; mask unchanged).
     pub fn analyze(
         &mut self,
         spec: &[f32],
@@ -155,7 +185,16 @@ impl Psy {
                 t.max(abs_floor)
             };
             coded[b] = self.energy[b] > floor;
-            target_q[b] = if coded[b] { max_q } else { 0.0 };
+            target_q[b] = if !coded[b] {
+                0.0
+            } else if self.tonality {
+                let lo = usize::from(offsets[b]);
+                let hi = usize::from(offsets[b + 1]);
+                let a = band_tonality(&spec[lo..hi]);
+                (max_q * (0.25 + 0.75 * a)).max(1.0)
+            } else {
+                max_q
+            };
         }
     }
 }

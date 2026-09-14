@@ -192,11 +192,13 @@ impl LcEncoder {
         self
     }
 
-    /// Opt into Terhardt ATH on long and short psy (default off).
+    /// Opt-in ATH / tonality on long and short psy (default off).
     #[must_use]
-    pub(crate) fn with_ath(mut self, on: bool) -> Self {
-        self.psy.enable_ath(on);
-        self.psy_short.enable_ath(on);
+    pub(crate) fn with_psy(mut self, ath: bool, tonality: bool) -> Self {
+        self.psy.enable_ath(ath);
+        self.psy.enable_tonality(tonality);
+        self.psy_short.enable_ath(ath);
+        self.psy_short.enable_tonality(tonality);
         self
     }
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in Johnston SFM tonality (TASK-69): `EncodeOptions::with_tonality`.
+  Default off — production goldens unchanged. Noise-like bands get
+  0.25× `target_q`; the coded mask is unchanged. Ablation
+  (`lab/quality/TONALITY.md`): no-go as 0.x default (aggregate
+  priming-SNR including sine/tremolo < 0.3 dB; mix +0.5 dB).
 - Opt-in Terhardt ATH floor (TASK-68): `EncodeOptions::with_ath`.
   Default off — production goldens unchanged. Band floor becomes
   `max(mask, −60 dB relative, ATH at 0 dBFS = 96 dB SPL)` via `det_math`.

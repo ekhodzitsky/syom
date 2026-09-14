@@ -137,3 +137,16 @@ fn encode_ath_defaults_off() {
     assert!(EncodeOptions::adts().with_ath(true).ath);
     assert!(!EncodeOptions::adts().with_ath(true).with_ath(false).ath);
 }
+
+#[test]
+fn encode_tonality_defaults_off() {
+    assert!(!EncodeOptions::default().tonality);
+    assert!(!EncodeOptions::adts().tonality);
+    assert!(EncodeOptions::adts().with_tonality(true).tonality);
+    assert!(
+        !EncodeOptions::adts()
+            .with_tonality(true)
+            .with_tonality(false)
+            .tonality
+    );
+}
