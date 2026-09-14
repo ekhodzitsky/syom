@@ -12,7 +12,7 @@ fn main() -> ExitCode {
     let mut args = env::args().skip(1);
     let Some(cmd) = args.next() else {
         eprintln!(
-            "usage: glint_smoke decode <adts> | encode-sine RATE CH KBPS QUALITY OUT | overhead | smoke <sine48.adts>"
+            "usage: glint_smoke decode <adts> | encode-sine RATE CH KBPS QUALITY OUT | encode-pcm RATE CH KBPS QUALITY IN.s16le.interleaved OUT | overhead | smoke <sine48.adts>"
         );
         return ExitCode::from(2);
     };
@@ -40,6 +40,20 @@ fn main() -> ExitCode {
                 Ok(()) => ExitCode::SUCCESS,
                 Err(e) => {
                     eprintln!("FAIL encode-sine: {e}");
+                    ExitCode::from(1)
+                }
+            }
+        }
+        "encode-pcm" => {
+            let got: Vec<String> = args.collect();
+            if got.len() != 6 {
+                eprintln!("encode-pcm RATE CH KBPS QUALITY IN.s16le.interleaved OUT.adts");
+                return ExitCode::from(2);
+            }
+            match encode_pcm_file(&got) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("FAIL encode-pcm: {e}");
                     ExitCode::from(1)
                 }
             }
@@ -158,6 +172,33 @@ fn sine_i16(n: u32, ch: u32, rate: u32, hz: f64, peak: f64) -> Vec<i16> {
     out
 }
 
+fn encode_pcm_file(got: &[String]) -> Result<(), String> {
+    let rate: u32 = got[0].parse().map_err(|_| "rate")?;
+    let ch: u32 = got[1].parse().map_err(|_| "ch")?;
+    let kbps: u32 = got[2].parse().map_err(|_| "kbps")?;
+    let quality: u32 = got[3].parse().map_err(|_| "quality")?;
+    let raw = fs::read(&got[4]).map_err(|e| e.to_string())?;
+    if raw.len() % 2 != 0 {
+        return Err("odd s16le".into());
+    }
+    let mut pcm = Vec::with_capacity(raw.len() / 2);
+    for c in raw.chunks_exact(2) {
+        pcm.push(i16::from_le_bytes([c[0], c[1]]));
+    }
+    let adts = encode_pcm_aac_checked(&pcm, rate, ch, kbps, quality)?;
+    fs::write(&got[5], &adts).map_err(|e| e.to_string())?;
+    println!(
+        "ok encode-pcm rate={} ch={} kbps={} quality={} adts_bytes={} samples={}",
+        rate,
+        ch,
+        kbps,
+        quality,
+        adts.len(),
+        pcm.len() as u32 / ch
+    );
+    Ok(())
+}
+
 fn encode_pcm_aac_checked(
     pcm: &[i16],
     rate: u32,
@@ -262,7 +303,8 @@ fn smoke_all(sine48: &Path) -> Result<(), String> {
     let gpcm = dec.decode(&syom_ref);
     let gch = s.ch.max(1);
     let gsamples = gpcm.len() / gch;
-    let syom_pcm = decode_with(&syom_ref, &DecodeOptions::unbounded()).map_err(|e| e.to_string())?;
+    let syom_pcm =
+        decode_with(&syom_ref, &DecodeOptions::unbounded()).map_err(|e| e.to_string())?;
     let mut max_abs = 0.0f32;
     if gsamples == s.samples && syom_pcm.channels.len() == gch {
         for (i, &x) in gpcm.iter().enumerate() {

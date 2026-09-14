@@ -100,6 +100,36 @@ pub fn score_pair(p: Pair<'_>) -> Outcome {
             detail: format!("delay_samples={delay} valid={valid}"),
         };
     }
+    scored_overlap(p, delay, valid)
+}
+
+/// Encoder-vs-source scoring: delay is reported, not a diagnostic.
+/// Decoder-vs-decoder comparisons should keep [`score_pair`].
+pub fn score_encode_pair(p: Pair<'_>) -> Outcome {
+    match score_pair(Pair {
+        rate: p.rate,
+        reference: p.reference,
+        degraded: p.degraded,
+        coded_bytes: p.coded_bytes,
+    }) {
+        Outcome::Diagnostic {
+            kind: DiagKind::Delayed,
+            ..
+        } => {
+            let delay = estimate_delay(&p.reference[0], &p.degraded[0]);
+            let (_a, _b, valid) = overlap(&p.reference[0], &p.degraded[0], delay);
+            if valid == 0 {
+                return Outcome::Unscorable {
+                    reason: "no overlap after delay".into(),
+                };
+            }
+            scored_overlap(p, delay, valid)
+        }
+        other => other,
+    }
+}
+
+fn scored_overlap(p: Pair<'_>, delay: i32, valid: usize) -> Outcome {
     let mut max_abs = 0.0f32;
     let mut err = 0.0f64;
     let mut sig = 0.0f64;
@@ -119,13 +149,15 @@ pub fn score_pair(p: Pair<'_>) -> Outcome {
     };
     let dur = valid as f64 / p.rate as f64;
     let actual_bps = p.coded_bytes.map(|b| 8.0 * b as f64 / dur);
+    let n_ref = p.reference[0].len() as i64;
+    let n_deg = p.degraded[0].len() as i64;
     Outcome::Scored(Score {
         delay_samples: delay,
         valid_samples: valid,
         snr_db,
         max_abs,
         actual_bps,
-        priming_remainder: n_deg as i64 - n_ref as i64,
+        priming_remainder: n_deg - n_ref,
     })
 }
 
@@ -173,9 +205,7 @@ fn estimate_delay(r: &[f32], d: &[f32]) -> i32 {
     if pad.abs() >= DELAY_DIAG_SAMPLES {
         return pad;
     }
-    let max_lag = MAX_LAG
-        .min((r.len().min(d.len()) / 2) as i32)
-        .max(1);
+    let max_lag = MAX_LAG.min((r.len().min(d.len()) / 2) as i32).max(1);
     let min_n = (r.len().min(d.len()) / 2).max(32);
     let mut best_lag = 0i32;
     let mut best = f64::NEG_INFINITY;

@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated encoder quality lab (`lab/quality`, TASK-16): same-clip LC
+  64/128 kbps synth matrix (syom vs FFmpeg 9.0.1 vs ffmpeg 7.0.2 CLI),
+  independent lavc PCM, alignment SNR. Held-out split unused. Apple and
+  HE encode unresolved. Ordinary tests never run the lab.
 - LC encode overlap drain (TASK-41): finish emits one extra zero MDCT so
   the last source samples reconstruct. `EncodeInfo` reports `priming`
   (1024), `remainder` (pad in the last content block), and

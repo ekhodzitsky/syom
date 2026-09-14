@@ -169,6 +169,24 @@ fn lab_baseline_pin_is_isolated() {
 }
 
 #[test]
+fn lab_quality_report_is_offline_not_spawned() {
+    let pin = std::fs::read_to_string(root().join("lab/quality/PIN.md")).unwrap();
+    assert!(pin.contains("Not invoked by `cargo test`"));
+    assert!(pin.contains("held-out"));
+    let mk = std::fs::read_to_string(root().join("lab/quality/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/quality/REPORT.md")).unwrap();
+    assert!(report.contains("TASK-16"));
+    assert!(report.contains("67992") || report.contains("68.0"));
+    assert!(report.contains("unresolved") || report.contains("Apple"));
+    assert!(report.contains("no-go"));
+    assert!(report.contains("held-out"));
+    let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!cargo.contains("syom-lab-quality"));
+    assert!(!cargo.contains("lab/quality"));
+}
+
+#[test]
 fn lab_prime_report_is_offline_not_spawned() {
     let report = std::fs::read_to_string(root().join("lab/prime/REPORT.md")).unwrap();
     assert!(report.contains("omitted"));

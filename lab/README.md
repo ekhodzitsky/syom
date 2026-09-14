@@ -15,6 +15,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [score](score/) | alignment / SNR diagnostics (not PEAQ) | TASK-13 |
 | [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
 | [prime](prime/) | encoder priming / omitted tail (TASK-40) | TASK-40 |
+| [quality](quality/) | same-bitrate LC encode SNR/rate (TASK-16) | TASK-16 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 

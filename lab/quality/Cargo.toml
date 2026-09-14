@@ -1,0 +1,15 @@
+[package]
+name = "syom-lab-quality"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated same-bitrate encoder quality baseline (TASK-16). Not a workspace member."
+
+[dependencies]
+syom = { path = "../.." }
+syom-lab-score = { path = "../score" }
+
+[[bin]]
+name = "syom_quality"
+path = "src/main.rs"
