@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in short-window TNS (TASK-72): `EncodeOptions::with_short_tns`.
+  Default off — long TNS and `enc48t` goldens unchanged. Per-window
+  LPC order ≤ 7, 2 dB gate, syntax parsed by `tns::TnsData`. Ablation
+  (`lab/quality/SHORT_TNS.md`): +2.3 dB click-region error, **no-go**
+  as 0.x default (< 3 dB). Grouping still 8×1 (TASK-71).
 - Causal pre-echo position sweep (TASK-70): `encode_preecho_tests` names
   in-frame pos < 448 as the failing subset. Lookahead vs causal is
   19.5–37 dB on shipped `encode_with`. LongStart `target_q` boost was

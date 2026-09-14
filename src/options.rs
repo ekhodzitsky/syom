@@ -229,6 +229,8 @@ pub struct EncodeOptions {
     /// Johnston SFM tonality (TASK-69). Default off. When on, noise-like
     /// bands get a lower `target_q` (0.25×); the coded mask is unchanged.
     pub tonality: bool,
+    /// Short-window TNS (TASK-72). Default off — long TNS unchanged.
+    pub short_tns: bool,
 }
 
 impl Default for EncodeOptions {
@@ -239,6 +241,7 @@ impl Default for EncodeOptions {
             lookahead: false,
             ath: false,
             tonality: false,
+            short_tns: false,
         }
     }
 }
@@ -305,6 +308,13 @@ impl EncodeOptions {
     #[inline]
     pub fn with_tonality(mut self, on: bool) -> Self {
         self.tonality = on;
+        self
+    }
+
+    /// Short-window TNS. Off by default; long-window TNS is unchanged.
+    #[inline]
+    pub fn with_short_tns(mut self, on: bool) -> Self {
+        self.short_tns = on;
         self
     }
 }

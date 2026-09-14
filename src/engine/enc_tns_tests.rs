@@ -187,10 +187,11 @@ fn short_frames_and_disabled_stay_off() -> Result<()> {
         3,
         &coded,
         true,
+        false,
     );
     assert!(
         !off[0].is_on() && !off[1].is_on(),
-        "short frames: no TNS (v1)"
+        "short frames: TNS off unless short_tns"
     );
     let off = decide_frame(
         &mut specs,
@@ -199,6 +200,7 @@ fn short_frames_and_disabled_stay_off() -> Result<()> {
         offsets,
         3,
         &coded,
+        false,
         false,
     );
     assert!(!off[0].is_on() && !off[1].is_on(), "A/B knob off");
@@ -210,6 +212,7 @@ fn short_frames_and_disabled_stay_off() -> Result<()> {
         3,
         &coded,
         true,
+        false,
     );
     assert!(
         on[0].is_on() && on[1].is_on(),

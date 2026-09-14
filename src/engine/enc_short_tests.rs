@@ -5,6 +5,7 @@
 
 use super::super::bits::{BitReader, BitWriter};
 use super::super::enc_quant::{MAX_GROUPS, QuantShort, UNREPRESENTABLE};
+use super::super::enc_tns::EncTns;
 use super::super::ics::IcsInfo;
 use super::super::section::SectionData;
 use super::super::sf::{self, ScaleFactors};
@@ -78,8 +79,8 @@ fn short_channel_body_parses_back() {
         }
     }
     let mut w = BitWriter::new();
-    emit_channel_body_short(&mut w, offsets, &books, &q, 100, true);
-    let counted = channel_body_bits_short(&books, &q, 100, true);
+    emit_channel_body_short(&mut w, offsets, &books, &q, 100, true, &EncTns::off());
+    let counted = channel_body_bits_short(&books, &q, 100, true, &EncTns::off());
     assert_eq!(
         w.bit_len() as usize,
         counted,
@@ -159,7 +160,7 @@ fn short_sf_dpcm_continues_across_groups() {
     fill_costs(&mut q, offsets);
     let books = plan_books_short(&q);
     let mut w = BitWriter::new();
-    emit_channel_body_short(&mut w, offsets, &books, &q, 100, true);
+    emit_channel_body_short(&mut w, offsets, &books, &q, 100, true, &EncTns::off());
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
     let gg = br.read(8).expect("gg") as u8;

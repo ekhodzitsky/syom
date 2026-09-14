@@ -32,6 +32,34 @@ const OFFSET_LO: i32 = -8;
 const OFFSET_HI: i32 = 80;
 
 impl LcEncoder {
+    pub(crate) fn with_short_tns(mut self, on: bool) -> Self {
+        self.short_tns = on;
+        self
+    }
+
+    pub(super) fn apply_tns(
+        &mut self,
+        specs: &mut [[f32; LONG_WINDOW_LEN]; 2],
+        coded: &[[bool; crate::engine::enc_quant::MAX_BANDS]; 2],
+        enabled: bool,
+    ) {
+        let offsets = if self.seq.is_eight_short() {
+            self.short_offsets
+        } else {
+            self.offsets
+        };
+        self.tns = crate::engine::enc_tns::decide_frame(
+            specs,
+            self.channels,
+            self.seq,
+            offsets,
+            self.fs_index,
+            coded,
+            enabled,
+            self.short_tns,
+        );
+    }
+
     /// Smallest global sf offset whose frame fits the bit budget (frame
     /// bits decrease as the offset grows; the smallest fitting offset is
     /// the finest quantization we can afford).
@@ -87,6 +115,7 @@ impl LcEncoder {
                     &mut self.books_s[ch],
                     &mut self.gains[ch],
                     standalone,
+                    &self.tns[ch],
                 );
             }
             return total + 7; // byte-align pad ceiling
@@ -191,6 +220,7 @@ impl LcEncoder {
                 &self.books_s[..],
                 &self.gains,
                 &self.ms,
+                &self.tns,
                 self.channels,
             );
         }

@@ -22,7 +22,8 @@ use crate::options::{EncodeContainer, EncodeOptions};
 pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<LcEncoder> {
     Ok(LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
         .with_lookahead(opts.lookahead)
-        .with_psy(opts.ath, opts.tonality))
+        .with_psy(opts.ath, opts.tonality)
+        .with_short_tns(opts.short_tns))
 }
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.

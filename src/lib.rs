@@ -136,6 +136,10 @@ mod encode_tonality_tests;
 mod encode_preecho_tests;
 
 #[cfg(test)]
+#[path = "encode_short_tns_tests.rs"]
+mod encode_short_tns_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

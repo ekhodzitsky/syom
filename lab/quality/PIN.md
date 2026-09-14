@@ -3,7 +3,8 @@
 Isolated from the `syom` package. **Not invoked by `cargo test`.**
 TASK-68 ATH A/B is `syom_ath` (`make ath` / `ATH.md`). TASK-69 tonality
 A/B is `syom_tonality` (`make tonality` / `TONALITY.md`). TASK-70 pre-echo
-sweep is ordinary `encode_preecho_tests` plus `PREECHO.md`. Same isolation.
+sweep is ordinary `encode_preecho_tests` plus `PREECHO.md`. TASK-72 short
+TNS is `encode_short_tns_tests` plus `SHORT_TNS.md`. Same isolation.
 
 ## Independent decoder
 

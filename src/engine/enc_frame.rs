@@ -39,7 +39,7 @@ use super::enc_ms::{self, MsBands};
 use super::enc_psy::{AttackDetector, Psy};
 use super::enc_quant::{MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantShort};
 use super::enc_short::{self, ShortWindows};
-use super::enc_tns::{self, EncTns};
+use super::enc_tns::EncTns;
 use super::error::{Error, Result};
 use super::filterbank::window_left;
 use super::ics::{WindowSequence, WindowShape};
@@ -90,6 +90,7 @@ pub struct LcEncoder {
     detectors: [AttackDetector; 2],
     /// One-frame attack lookahead (`push_frame` / `flush`).
     lookahead: bool,
+    short_tns: bool,
     /// The frame held for the lookahead decision (a private copy — the
     /// caller's buffers are reused between pushes).
     held: Option<Box<lookahead::HeldFrame>>,
@@ -162,6 +163,7 @@ impl LcEncoder {
             seq: WindowSequence::OnlyLong,
             detectors: [AttackDetector::new(), AttackDetector::new()],
             lookahead: false,
+            short_tns: false,
             held: None,
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
@@ -335,15 +337,7 @@ impl LcEncoder {
         let tns_enabled = self.tns_enabled;
         #[cfg(not(test))]
         let tns_enabled = true;
-        self.tns = enc_tns::decide_frame(
-            &mut specs,
-            self.channels,
-            self.seq,
-            self.offsets,
-            self.fs_index,
-            &coded,
-            tns_enabled,
-        );
+        self.apply_tns(&mut specs, &coded, tns_enabled);
         // Per-band M/S decision, once per frame before the rate loop
         // (`enc_ms` module docs); chosen bands are transformed in place.
         self.ms = if self.channels == 2 {

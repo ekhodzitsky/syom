@@ -150,3 +150,9 @@ fn encode_tonality_defaults_off() {
             .tonality
     );
 }
+
+#[test]
+fn encode_short_tns_defaults_off() {
+    assert!(!EncodeOptions::default().short_tns);
+    assert!(EncodeOptions::adts().with_short_tns(true).short_tns);
+}

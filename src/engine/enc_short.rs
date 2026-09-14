@@ -14,6 +14,7 @@ use super::enc_ms::MsBands;
 use super::enc_psy::Psy;
 use super::enc_quant::{self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
 use super::enc_section::{emit_ics_info, plan_books_into};
+use super::enc_tns::EncTns;
 use super::filterbank::window_left;
 use super::ics::WindowSequence;
 use super::mdct::mdct_into_f32;
@@ -108,6 +109,7 @@ pub fn channel_build(
     books: &mut [u8; MAX_FLAT_SHORT],
     gain: &mut u8,
     standalone: bool,
+    tns: &EncTns,
 ) -> usize {
     let n_sfb = q.n_sfb;
     for w in 0..MAX_GROUPS {
@@ -118,6 +120,15 @@ pub fn channel_build(
             &mut q.coded[w * n_sfb..(w + 1) * n_sfb],
             &mut tq[w * n_sfb..(w + 1) * n_sfb],
         );
+        if tns.short().window_on(w) {
+            let hi = n_sfb.min(14);
+            for b in 0..hi {
+                if !q.coded[w * n_sfb + b] {
+                    q.coded[w * n_sfb + b] = true;
+                    tq[w * n_sfb + b] = crate::engine::enc_frame::TARGET_Q;
+                }
+            }
+        }
     }
     let mut peaks = [0.0f32; MAX_FLAT_SHORT];
     enc_quant::band_peaks_short(spec, offsets, n_sfb, &mut peaks);
@@ -125,7 +136,7 @@ pub fn channel_build(
     *gain = enc_quant::normalize_sf_short(q);
     enc_quant::quantize_short(spec, offsets, q);
     *books = plan_books_short(q);
-    channel_body_bits_short(books, q, *gain, standalone)
+    channel_body_bits_short(books, q, *gain, standalone, tns)
 }
 
 /// Total frame bits of the built short state (element overhead included).
@@ -141,7 +152,13 @@ pub fn frame_bits(
         total += 1 + 15 + ms_overhead; // common_window + ics_info (short) + ms_mask
     }
     for ch in 0..channels {
-        total += channel_body_bits_short(&books[ch], &chans[ch], gains[ch], channels == 1);
+        total += channel_body_bits_short(
+            &books[ch],
+            &chans[ch],
+            gains[ch],
+            channels == 1,
+            &EncTns::off(),
+        );
     }
     total
 }
@@ -183,13 +200,16 @@ pub fn emit_frame(
     books: &[[u8; MAX_FLAT_SHORT]],
     gains: &[u8],
     ms: &MsBands,
+    tns: &[EncTns],
     channels: usize,
 ) -> Vec<u8> {
     let mut w = BitWriter::new();
     if channels == 1 {
         w.write(0, 3); // SCE
         w.write(0, 4); // tag
-        emit_channel_body_short(&mut w, offsets, &books[0], &chans[0], gains[0], true);
+        emit_channel_body_short(
+            &mut w, offsets, &books[0], &chans[0], gains[0], true, &tns[0],
+        );
     } else {
         w.write(1, 3); // CPE
         w.write(0, 4); // tag
@@ -197,7 +217,9 @@ pub fn emit_frame(
         emit_ics_info(&mut w, WindowSequence::EightShort, chans[0].n_sfb as u8);
         ms.emit(&mut w); // ms_mask_present + optional per-group ms_used bits
         for ch in 0..channels {
-            emit_channel_body_short(&mut w, offsets, &books[ch], &chans[ch], gains[ch], false);
+            emit_channel_body_short(
+                &mut w, offsets, &books[ch], &chans[ch], gains[ch], false, &tns[ch],
+            );
         }
     }
     w.write(7, 3); // END
@@ -303,6 +325,7 @@ pub fn channel_body_bits_short(
     q: &QuantShort,
     global_gain: u8,
     standalone: bool,
+    tns: &EncTns,
 ) -> usize {
     let mut bits = 8; // global_gain
     if standalone {
@@ -333,7 +356,7 @@ pub fn channel_body_bits_short(
         prev = sf;
         bits += row[usize::from(cb)] as usize;
     }
-    bits += 3; // pulse + tns + gain flags
+    bits += 2 + tns.bits(); // pulse + gain, tns flag + payload
     bits
 }
 
@@ -347,6 +370,7 @@ pub fn emit_channel_body_short(
     q: &QuantShort,
     global_gain: u8,
     standalone: bool,
+    tns: &EncTns,
 ) {
     w.write(u32::from(global_gain), 8);
     if standalone {
@@ -355,7 +379,7 @@ pub fn emit_channel_body_short(
     emit_section_data_short(w, sfb_cb, q.n_sfb);
     emit_scale_factors_short(w, sfb_cb, q, global_gain);
     w.write_bit(false); // pulse_data_present
-    w.write_bit(false); // tns_data_present
+    tns.emit(w);
     w.write_bit(false); // gain_control_data_present
     emit_spectral_short(w, offsets, sfb_cb, q);
 }

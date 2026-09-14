@@ -11,8 +11,9 @@
 //!
 //! v1 design:
 //!
-//! - Long-family frames only (OnlyLong / LongStart / LongStop). Short
-//!   frames keep `tns_data_present = 0` (TODO: order ≤ 7 short windows).
+//! - Long-family frames by default. Short frames keep
+//!   `tns_data_present = 0` unless `EncodeOptions::with_short_tns`
+//!   (TASK-72, order ≤ 7, opt-in).
 //! - The filter span is the coded-band span reported by the psy model on
 //!   the *original* spectrum, `[first_coded, last_coded+1)` clamped to
 //!   `tns_max_bands` — never the whole table. A whitening filter is
@@ -51,6 +52,14 @@ use super::enc_quant::MAX_BANDS;
 use super::ics::WindowSequence;
 use super::swb::LONG_WINDOW_LEN;
 
+#[path = "enc_tns_short.rs"]
+mod short;
+pub use short::{EncTnsShort, decide_short};
+
+#[cfg(test)]
+#[path = "enc_tns_short_tests.rs"]
+mod enc_tns_short_tests;
+
 /// All-pole order ceiling for long windows (Table 4.54; the decoder clamps
 /// long-window orders to 12).
 pub const MAX_ORDER: usize = 12;
@@ -83,6 +92,9 @@ pub struct EncTns {
     length: u8,
     /// 4-bit wire coefficients (two's complement in the low nibble).
     coef: [u8; MAX_ORDER],
+    /// Short-window payload (TASK-72). When `short.is_on()`, emit uses
+    /// short syntax and the long fields stay off.
+    short: EncTnsShort,
 }
 
 impl EncTns {
@@ -96,13 +108,14 @@ impl EncTns {
             spacer: 0,
             length: 0,
             coef: [0; MAX_ORDER],
+            short: EncTnsShort::off(),
         }
     }
 
     /// `true` when a filter is emitted.
     #[cfg(test)]
     pub fn is_on(&self) -> bool {
-        self.on
+        self.on || self.short.is_on()
     }
 
     /// The active filter's scalefactor band span when on — every band in
@@ -120,6 +133,9 @@ impl EncTns {
     /// Bits occupied in the channel body: the present flag plus, when on,
     /// the Table 4.54 payload (one window; order-0 spacer + active filter).
     pub fn bits(&self) -> usize {
+        if self.short.is_on() {
+            return self.short.bits();
+        }
         if !self.on {
             return 1;
         }
@@ -133,6 +149,10 @@ impl EncTns {
     /// exact mirror of [`super::tns::TnsData::parse`] (long windows: 2-bit
     /// `n_filt`, 6-bit `length`, 5-bit `order`).
     pub fn emit(&self, w: &mut BitWriter) {
+        if self.short.is_on() {
+            self.short.emit(w);
+            return;
+        }
         w.write_bit(self.on);
         if !self.on {
             return;
@@ -311,6 +331,7 @@ pub fn decide_long(
         spacer,
         length,
         coef: [0; MAX_ORDER],
+        short: EncTnsShort::off(),
     };
     let mut kq = [0.0f32; MAX_ORDER];
     for i in 0..order {
@@ -347,9 +368,20 @@ pub fn decide_frame(
     fs_index: u8,
     coded: &[[bool; MAX_BANDS]; 2],
     enabled: bool,
+    short_tns: bool,
 ) -> [EncTns; 2] {
-    if !enabled || seq.is_eight_short() {
+    if !enabled {
         return [EncTns::off(), EncTns::off()];
+    }
+    if seq.is_eight_short() {
+        if !short_tns {
+            return [EncTns::off(), EncTns::off()];
+        }
+        let mut out = [EncTns::off(), EncTns::off()];
+        for ch in 0..channels {
+            out[ch].set_short(decide_short(&mut specs[ch], offsets, fs_index));
+        }
+        return out;
     }
     let mut out = [EncTns::off(), EncTns::off()];
     for ch in 0..channels {
