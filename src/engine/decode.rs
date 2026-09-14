@@ -6,6 +6,7 @@ use super::bits::BitReader;
 use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes, mono_mix, reorder};
 use super::error::{Error, Result};
 use super::extension_payload::ExtensionPayload;
+use super::fb_pool::{FbPool, reject_dup};
 use super::filterbank::Filterbank;
 use super::ics_body::parse_ics_into;
 use super::pns::Lcg;
@@ -55,9 +56,8 @@ pub struct StreamDecoder {
     /// Sticky `program_config_element()` channel map; wins over
     /// `channel_configuration` once seen (§4.4.2.4).
     pce: Option<PceChannelMap>,
-    /// Per-channel filterbank state for the multichannel path. Mono/stereo
-    /// keep using `fb_l` / `fb_r` directly.
-    fb_pool: Vec<Filterbank>,
+    /// Per-element overlap keyed by `(kind, tag)`. cfg 1/2 use `fb_l`/`fb_r`.
+    fb_pool: FbPool,
     /// Bytes consumed by the last `raw_data_block()` (byte-aligned).
     pub(crate) last_rdb_bytes: usize,
 }
@@ -161,6 +161,7 @@ impl StreamDecoder {
         }
         self.n_ch = 0;
         self.elems.clear();
+        self.fb_pool.begin_frame();
         let mut last_syn = IdSynEle::Sce;
         let mut pending_sbr: Option<Box<SbrExtensionData>> = None;
         loop {
@@ -173,8 +174,14 @@ impl StreamDecoder {
                 IdSynEle::Sce | IdSynEle::Lfe => {
                     last_syn = id;
                     let tag = br.read(4)? as u8;
+                    let kind = if id == IdSynEle::Sce {
+                        ElemKind::Sce
+                    } else {
+                        ElemKind::Lfe
+                    };
                     if multichannel {
-                        self.fb_swap_in(self.n_ch);
+                        reject_dup(&self.elems, kind, tag)?;
+                        self.fb_pool.swap_in(kind, tag, &mut self.fb_l);
                     }
                     let (ics, tns) = parse_ics_into(
                         &mut br,
@@ -188,12 +195,7 @@ impl StreamDecoder {
                     )?;
                     self.finish_sce(ics, tns.as_ref(), fs_index)?;
                     if multichannel {
-                        self.fb_swap_in(self.n_ch);
-                        let kind = if id == IdSynEle::Sce {
-                            ElemKind::Sce
-                        } else {
-                            ElemKind::Lfe
-                        };
+                        self.fb_pool.swap_in(kind, tag, &mut self.fb_l);
                         self.elems.push(Element {
                             kind,
                             tag,
@@ -206,11 +208,12 @@ impl StreamDecoder {
                     last_syn = IdSynEle::Cpe;
                     let tag = br.read(4)? as u8;
                     if multichannel {
-                        self.fb_swap_pair(self.n_ch);
+                        reject_dup(&self.elems, ElemKind::Cpe, tag)?;
+                        self.fb_pool.swap_pair(tag, &mut self.fb_l, &mut self.fb_r);
                     }
                     self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
                     if multichannel {
-                        self.fb_swap_pair(self.n_ch);
+                        self.fb_pool.swap_pair(tag, &mut self.fb_l, &mut self.fb_r);
                         self.elems.push(Element {
                             kind: ElemKind::Cpe,
                             tag,
@@ -265,6 +268,7 @@ impl StreamDecoder {
         br.byte_align()?;
         self.last_rdb_bytes = (br.bit_position() / 8) as usize;
         if self.fast_mono && pending_sbr.is_none() && !self.sbr_active {
+            self.fb_pool.retain_seen();
             return Ok(sample_rate);
         }
         if self.fast_mono {
@@ -293,6 +297,7 @@ impl StreamDecoder {
         let planar = std::mem::take(&mut self.frame_ch);
         let (planar, sample_rate) = self.apply_sbr(planar, sample_rate, pending_sbr)?;
         self.frame_ch = planar;
+        self.fb_pool.retain_seen();
         Ok(sample_rate)
     }
 
@@ -329,24 +334,6 @@ impl StreamDecoder {
         };
         dst.extend(src.iter().map(|&v| v * INV_S16));
         Ok(rate)
-    }
-
-    /// Multichannel: swap per-channel filterbank state for decode-order
-    /// channel `ch` into `fb_l` (call again after the element to swap back).
-    fn fb_swap_in(&mut self, ch: usize) {
-        while self.fb_pool.len() <= ch {
-            self.fb_pool.push(Filterbank::new());
-        }
-        std::mem::swap(&mut self.fb_l, &mut self.fb_pool[ch]);
-    }
-
-    /// Same for a CPE: channels `ch`/`ch+1` into `fb_l`/`fb_r`.
-    fn fb_swap_pair(&mut self, ch: usize) {
-        while self.fb_pool.len() <= ch + 1 {
-            self.fb_pool.push(Filterbank::new());
-        }
-        std::mem::swap(&mut self.fb_l, &mut self.fb_pool[ch]);
-        std::mem::swap(&mut self.fb_r, &mut self.fb_pool[ch + 1]);
     }
 
     fn push_pcm(&mut self, right: bool) {

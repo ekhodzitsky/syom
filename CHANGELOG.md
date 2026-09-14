@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- Multichannel filterbank overlap is keyed by channel-element `(kind, tag)`,
+  not bitstream encounter order. Legal reordering keeps each identity's
+  history; identities missing from a frame are dropped so a later tag reuse
+  or mono/stereo/layout change starts cold. Duplicate identities in one
+  access unit are `Format`. cfg 1–2 still use `fb_l`/`fb_r`.
 - In-band and ASC-seeded PCE must declare LC, match the stream sample-rate
   index, and list exactly the channel elements in the access unit. Missing,
   extra, or wrong-type tags, and layouts above 5.1, are `Format` errors

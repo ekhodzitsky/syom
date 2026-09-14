@@ -48,7 +48,7 @@ fn write_ics_line(w: &mut BitWriter, line_sfb: u8) {
     }
 }
 
-fn write_sce(w: &mut BitWriter, tag: u8, line_sfb: u8) {
+pub(super) fn write_sce(w: &mut BitWriter, tag: u8, line_sfb: u8) {
     w.write(0, 3); // ID_SCE
     w.write(u32::from(tag), 4);
     write_ics_line(w, line_sfb);
@@ -60,7 +60,7 @@ fn write_lfe(w: &mut BitWriter, tag: u8, line_sfb: u8) {
     write_ics_line(w, line_sfb);
 }
 
-fn write_cpe(w: &mut BitWriter, tag: u8, line_l: u8, line_r: u8) {
+pub(super) fn write_cpe(w: &mut BitWriter, tag: u8, line_l: u8, line_r: u8) {
     w.write(1, 3); // ID_CPE
     w.write(u32::from(tag), 4);
     w.write_bit(false); // common_window
@@ -92,7 +92,7 @@ fn write_cce_stub(w: &mut BitWriter) {
 
 /// PCE (front/back lists + LFE tags; no side/assoc/cc), byte-aligned per
 /// `byte_align()` counted from the element start (PCE is frame-initial here).
-fn write_pce(w: &mut BitWriter, front: &[(bool, u8)], back: &[(bool, u8)], lfe: &[u8]) {
+pub(super) fn write_pce(w: &mut BitWriter, front: &[(bool, u8)], back: &[(bool, u8)], lfe: &[u8]) {
     w.write(5, 3); // ID_PCE
     w.write(0, 4); // element_instance_tag
     w.write(1, 2); // object_type LC
@@ -147,13 +147,13 @@ fn lfe_payload(tag: u8, line_sfb: u8) -> Vec<u8> {
     w.finish()
 }
 
-fn decode_planes(payload: &[u8], config: u8) -> Result<Vec<Vec<f32>>, Error> {
+pub(super) fn decode_planes(payload: &[u8], config: u8) -> Result<Vec<Vec<f32>>, Error> {
     let mut dec = StreamDecoder::new();
     let frame = dec.decode_raw_data_block(2, 3, 48_000, config, 1, payload)?;
     Ok(frame.planar)
 }
 
-fn wrap_adts(payload: &[u8]) -> Vec<u8> {
+pub(super) fn wrap_adts(payload: &[u8]) -> Vec<u8> {
     let hdr = AdtsHeader {
         mpeg_version_mpeg2: false,
         protection_absent: true,
@@ -433,7 +433,7 @@ fn pce_mismatch_is_format_not_silence() {
     );
 }
 
-fn pce_frame(
+pub(super) fn pce_frame(
     front: &[(bool, u8)],
     back: &[(bool, u8)],
     lfe: &[u8],

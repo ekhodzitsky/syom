@@ -22,6 +22,7 @@ pub(crate) mod enc_short;
 pub(crate) mod enc_tns;
 pub(crate) mod error;
 pub mod extension_payload;
+pub(crate) mod fb_pool;
 pub mod filterbank;
 pub mod huff;
 pub mod huff_esc;
@@ -84,6 +85,10 @@ mod tools_tests;
 #[cfg(test)]
 #[path = "channel_map_tests.rs"]
 mod channel_map_tests;
+
+#[cfg(test)]
+#[path = "fb_pool_tests.rs"]
+mod fb_pool_tests;
 
 #[cfg(test)]
 #[path = "golden_tests.rs"]
