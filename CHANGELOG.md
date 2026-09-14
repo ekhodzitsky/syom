@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- M4A write rejects overflowing v0 box sizes, `stco` offsets, sample
+  sizes and `stsd` 16.16 rates instead of wrapping `u32` (TASK-44).
+  Ceiling is `u32::MAX` bytes (`co64`/largesize later). 88.2/96 kHz M4A
+  is an error until a wider sample-entry field exists; 64 kHz and below
+  stay valid.
 - M4A decode honours `elst` presentation end (TASK-43): skip `media_time`,
   then emit at most `segment_duration` at the output rate. Empty edits,
   multiple edits, `media_rate ≠ 1`, and inexact timescale conversion are

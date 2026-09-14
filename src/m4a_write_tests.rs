@@ -4,7 +4,7 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use super::mux_aac_lc;
+use super::{MAX_M4A_V0_BYTES, box_size, mux_aac_lc, rate_16_16, u8_desc, u32_field};
 use crate::engine::adts::ADTS_SAMPLE_RATES_HZ;
 use crate::engine::asc::AudioSpecificConfig;
 use crate::error::Result;
@@ -204,5 +204,71 @@ fn encode_elst_retains_first_and_last_for_causal_and_lookahead() -> Result<()> {
         assert!((i1 as i32 - 2047).abs() <= 8, "last i={i1}");
         assert!(a1 > 0.2, "last {a1} lookahead={lookahead}");
     }
+    Ok(())
+}
+
+#[test]
+fn box_size_and_u32_fields_reject_overflow_without_huge_alloc() {
+    assert_eq!(box_size(100, 0).unwrap(), 100);
+    assert_eq!(box_size(20, 10).unwrap(), 10);
+    assert!(
+        box_size(10, 20)
+            .unwrap_err()
+            .to_string()
+            .contains("underflow")
+    );
+    assert_eq!(box_size(u32::MAX as usize, 0).unwrap(), u32::MAX);
+    assert_eq!(u32_field(u64::from(u32::MAX), "x").unwrap(), u32::MAX);
+    let err = u32_field(u64::from(u32::MAX) + 1, "box size").unwrap_err();
+    assert!(err.to_string().contains("exceeds u32"), "{err}");
+    assert_eq!(MAX_M4A_V0_BYTES, u64::from(u32::MAX));
+    #[cfg(target_pointer_width = "64")]
+    {
+        let err = box_size((u32::MAX as usize) + 1, 0).unwrap_err();
+        assert!(err.to_string().contains("exceeds u32"), "{err}");
+    }
+}
+
+#[test]
+fn stsd_16_16_and_descriptor_lengths_are_checked() {
+    assert_eq!(rate_16_16(48_000).unwrap(), 48_000u32 << 16);
+    assert_eq!(rate_16_16(64_000).unwrap(), 64_000u32 << 16);
+    assert!(
+        rate_16_16(88_200)
+            .unwrap_err()
+            .to_string()
+            .contains("16.16")
+    );
+    assert!(
+        rate_16_16(96_000)
+            .unwrap_err()
+            .to_string()
+            .contains("16.16")
+    );
+    assert_eq!(u8_desc(127, "ASC").unwrap(), 127);
+    assert!(
+        u8_desc(128, "ASC")
+            .unwrap_err()
+            .to_string()
+            .contains("multi-byte")
+    );
+}
+
+#[test]
+fn mux_rejects_96k_stsd_rate_and_keeps_64k() -> Result<()> {
+    let p = payloads();
+    let err = mux_aac_lc(&p, 0, 1, 96_000, 2048, 1024).unwrap_err();
+    assert!(err.to_string().contains("16.16"), "{err}");
+    let m4a = mux_aac_lc(&p, 2, 1, 64_000, 2048, 1024)?;
+    let stsd = box_body(&m4a, b"stsd").expect("stsd");
+    let mp4a_box = &stsd[8..];
+    assert_eq!(&mp4a_box[4..8], b"mp4a");
+    let mp4a_size = be_u32(mp4a_box, 0) as usize;
+    let mp4a = &mp4a_box[8..mp4a_size];
+    assert_eq!(be_u32(mp4a, 24), 64_000u32 << 16);
+    let track = crate::isomp4::parse_aac_track(&m4a)?;
+    assert_eq!(track.media_timescale, 64_000);
+    assert_eq!(track.edit_duration, 2048);
+    assert_eq!(track.media_duration, 3 * 1024);
     Ok(())
 }

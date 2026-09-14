@@ -2,6 +2,11 @@
 //! `mdat`, so `stco` needs no patching). One sound track, one chunk,
 //! `stts` (n, 1024), per-frame `stsz`, absolute `stco`.
 //!
+//! Ceiling: version-0 32-bit boxes and `stco` (not `co64` / largesize).
+//! Every size, offset, sample count and duration must fit in `u32` or the
+//! mux errors before returning bytes. Max file size is [`MAX_M4A_V0_BYTES`].
+//! A later seekable/large-file sink can emit `co64` using the same checks.
+//!
 //! Timeline (Apple QA1636): movie timescale = sample rate so counts are
 //! exact. `elst.media_time` = priming; `elst.segment_duration` /
 //! `mvhd`/`tkhd` duration = valid source samples; `mdhd` duration =
@@ -19,9 +24,18 @@ use crate::error::{AacError, Result};
 const OBJECT_TYPE_AAC: u8 = 0x40;
 /// streamType: audio (5) << 2 | upstream flag 0 | reserved 1.
 const STREAM_TYPE_AUDIO: u8 = 0x15;
+/// Version-0 box / `stco` ceiling. Larger files need `co64` (TASK-60).
+pub(crate) const MAX_M4A_V0_BYTES: u64 = u32::MAX as u64;
 
 fn u32_field(v: u64, what: &str) -> Result<u32> {
     u32::try_from(v).map_err(|_| AacError::encode(format!("m4a: {what} exceeds u32")))
+}
+
+fn box_size(total: usize, at: usize) -> Result<u32> {
+    let size = total
+        .checked_sub(at)
+        .ok_or_else(|| AacError::encode("m4a: box size underflow"))?;
+    u32_field(size as u64, "box size")
 }
 
 fn be32(out: &mut Vec<u8>, v: u32) {
@@ -44,9 +58,10 @@ fn start_box(out: &mut Vec<u8>, typ: &[u8; 4]) -> usize {
     at
 }
 
-fn end_box(out: &mut [u8], at: usize) {
-    let size = (out.len() - at) as u32;
+fn end_box(out: &mut [u8], at: usize) -> Result<()> {
+    let size = box_size(out.len(), at)?;
     out[at..at + 4].copy_from_slice(&size.to_be_bytes());
+    Ok(())
 }
 
 /// `ftyp M4A ` + `mdat` + `moov` for LC payloads (one `raw_data_block` per
@@ -82,14 +97,37 @@ pub fn mux_aac_lc(
     let presentation = u32_field(valid_samples, "presentation duration")?;
     let media_duration = u32_field(coded, "media duration")?;
     let media_time = u32_field(priming, "priming")?;
-    let payload_bytes: u64 = payloads.iter().map(|p| p.len() as u64).sum();
+    let mut sample_sizes = Vec::with_capacity(payloads.len());
+    let mut payload_bytes = 0u64;
+    for p in payloads {
+        let n = u32_field(p.len() as u64, "sample size")?;
+        payload_bytes = payload_bytes
+            .checked_add(u64::from(n))
+            .ok_or_else(|| AacError::encode("m4a: payload length overflow"))?;
+        sample_sizes.push(n);
+    }
+    let stsz_bytes = u64::from(n_frames)
+        .checked_mul(4)
+        .ok_or_else(|| AacError::encode("m4a: stsz table overflow"))?;
+    let planned = payload_bytes
+        .checked_add(stsz_bytes)
+        .and_then(|v| v.checked_add(1024))
+        .ok_or_else(|| AacError::encode("m4a: file size overflow"))?;
+    if planned > MAX_M4A_V0_BYTES {
+        return Err(AacError::encode(
+            "m4a: file exceeds 32-bit box/stco ceiling",
+        ));
+    }
     let bitrate = payload_bytes
         .checked_mul(8)
         .and_then(|b| b.checked_mul(u64::from(sample_rate)))
         .and_then(|b| b.checked_div(coded))
         .and_then(|b| u32::try_from(b).ok())
         .unwrap_or(u32::MAX);
-    let asc = write_lc(fs_index, channels as u8);
+    let ch8 =
+        u8::try_from(channels).map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
+    let rate_fixed = rate_16_16(sample_rate)?;
+    let asc = write_lc(fs_index, ch8);
 
     let mut out = Vec::new();
     // ftyp
@@ -97,46 +135,52 @@ pub fn mux_aac_lc(
     out.extend_from_slice(b"M4A ");
     be32(&mut out, 0); // minor version
     out.extend_from_slice(b"M4A mp42isom");
-    end_box(&mut out, ftyp);
+    end_box(&mut out, ftyp)?;
     // mdat: payloads contiguous; the single stco entry points here.
     let mdat = start_box(&mut out, b"mdat");
     let media_offset = u32_field(out.len() as u64, "mdat offset")?;
     for p in payloads {
         out.extend_from_slice(p);
     }
-    end_box(&mut out, mdat);
+    end_box(&mut out, mdat)?;
     // moov: movie timescale = sample rate so elst duration is N exactly.
     let moov = start_box(&mut out, b"moov");
-    write_mvhd(&mut out, sample_rate, presentation);
+    write_mvhd(&mut out, sample_rate, presentation)?;
     let trak = start_box(&mut out, b"trak");
-    write_tkhd(&mut out, presentation);
-    write_edts(&mut out, presentation, media_time);
+    write_tkhd(&mut out, presentation)?;
+    write_edts(&mut out, presentation, media_time)?;
     let mdia = start_box(&mut out, b"mdia");
-    write_mdhd(&mut out, sample_rate, media_duration);
-    write_hdlr(&mut out);
+    write_mdhd(&mut out, sample_rate, media_duration)?;
+    write_hdlr(&mut out)?;
     let minf = start_box(&mut out, b"minf");
     let smhd = start_box(&mut out, b"smhd");
     be32(&mut out, 0); // version/flags
     be16(&mut out, 0); // balance
     be16(&mut out, 0);
-    end_box(&mut out, smhd);
-    write_dinf(&mut out);
+    end_box(&mut out, smhd)?;
+    write_dinf(&mut out)?;
     let stbl = start_box(&mut out, b"stbl");
-    write_stsd(&mut out, &asc, channels, sample_rate, bitrate);
-    write_stts(&mut out, n_frames);
-    write_stsc(&mut out, n_frames);
-    write_stsz(&mut out, payloads);
+    write_stsd(&mut out, &asc, u16::from(ch8), rate_fixed, bitrate)?;
+    write_stts(&mut out, n_frames)?;
+    write_stsc(&mut out, n_frames)?;
+    write_stsz(&mut out, n_frames, &sample_sizes)?;
     let stco = start_box(&mut out, b"stco");
     be32(&mut out, 0);
     be32(&mut out, 1);
     be32(&mut out, media_offset);
-    end_box(&mut out, stco);
-    end_box(&mut out, stbl);
-    end_box(&mut out, minf);
-    end_box(&mut out, mdia);
-    end_box(&mut out, trak);
-    end_box(&mut out, moov);
+    end_box(&mut out, stco)?;
+    end_box(&mut out, stbl)?;
+    end_box(&mut out, minf)?;
+    end_box(&mut out, mdia)?;
+    end_box(&mut out, trak)?;
+    end_box(&mut out, moov)?;
+    u32_field(out.len() as u64, "file size")?;
     Ok(out)
+}
+
+fn rate_16_16(sample_rate: u32) -> Result<u32> {
+    u32::try_from(u64::from(sample_rate) << 16)
+        .map_err(|_| AacError::encode("m4a: sample rate exceeds stsd 16.16"))
 }
 
 /// 9 × u32 identity matrix (0x10000 / 0x40000000 fixed point).
@@ -146,7 +190,7 @@ fn write_matrix(out: &mut Vec<u8>) {
     }
 }
 
-fn write_mvhd(out: &mut Vec<u8>, timescale: u32, duration: u32) {
+fn write_mvhd(out: &mut Vec<u8>, timescale: u32, duration: u32) -> Result<()> {
     let b = start_box(out, b"mvhd");
     be32(out, 0); // version 0 + flags
     be32(out, 0); // creation_time
@@ -162,10 +206,10 @@ fn write_mvhd(out: &mut Vec<u8>, timescale: u32, duration: u32) {
         be32(out, 0); // pre_defined
     }
     be32(out, 2); // next_track_id
-    end_box(out, b);
+    end_box(out, b)
 }
 
-fn write_tkhd(out: &mut Vec<u8>, duration: u32) {
+fn write_tkhd(out: &mut Vec<u8>, duration: u32) -> Result<()> {
     let b = start_box(out, b"tkhd");
     be32(out, 0x0000_0003); // version 0, flags: enabled | in_movie
     be32(out, 0); // creation_time
@@ -181,11 +225,11 @@ fn write_tkhd(out: &mut Vec<u8>, duration: u32) {
     write_matrix(out);
     be32(out, 0); // width
     be32(out, 0); // height
-    end_box(out, b);
+    end_box(out, b)
 }
 
 /// `edts`/`elst` v0: play `segment_duration` movie units from `media_time`.
-fn write_edts(out: &mut Vec<u8>, segment_duration: u32, media_time: u32) {
+fn write_edts(out: &mut Vec<u8>, segment_duration: u32, media_time: u32) -> Result<()> {
     let edts = start_box(out, b"edts");
     let elst = start_box(out, b"elst");
     be32(out, 0); // version 0 + flags
@@ -194,11 +238,11 @@ fn write_edts(out: &mut Vec<u8>, segment_duration: u32, media_time: u32) {
     be32(out, media_time);
     be16(out, 1); // media_rate_integer
     be16(out, 0); // media_rate_fraction
-    end_box(out, elst);
-    end_box(out, edts);
+    end_box(out, elst)?;
+    end_box(out, edts)
 }
 
-fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, duration: u32) {
+fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, duration: u32) -> Result<()> {
     let b = start_box(out, b"mdhd");
     be32(out, 0); // version 0 + flags
     be32(out, 0); // creation_time
@@ -207,10 +251,10 @@ fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, duration: u32) {
     be32(out, duration);
     be16(out, 0x55C4); // language: und
     be16(out, 0);
-    end_box(out, b);
+    end_box(out, b)
 }
 
-fn write_hdlr(out: &mut Vec<u8>) {
+fn write_hdlr(out: &mut Vec<u8>) -> Result<()> {
     let b = start_box(out, b"hdlr");
     be32(out, 0); // version/flags
     be32(out, 0); // pre_defined
@@ -219,24 +263,30 @@ fn write_hdlr(out: &mut Vec<u8>) {
     be32(out, 0);
     be32(out, 0); // reserved
     out.push(0); // empty name
-    end_box(out, b);
+    end_box(out, b)
 }
 
 /// `dinf` with a self-contained `url ` data reference.
-fn write_dinf(out: &mut Vec<u8>) {
+fn write_dinf(out: &mut Vec<u8>) -> Result<()> {
     let dinf = start_box(out, b"dinf");
     let dref = start_box(out, b"dref");
     be32(out, 0); // version/flags
     be32(out, 1); // entry_count
     let url = start_box(out, b"url ");
     be32(out, 1); // version 0, flags 1: media data is in this file
-    end_box(out, url);
-    end_box(out, dref);
-    end_box(out, dinf);
+    end_box(out, url)?;
+    end_box(out, dref)?;
+    end_box(out, dinf)
 }
 
 /// `stsd` with one `mp4a` AudioSampleEntry v0 carrying `esds`.
-fn write_stsd(out: &mut Vec<u8>, asc: &[u8], channels: usize, sample_rate: u32, bitrate: u32) {
+fn write_stsd(
+    out: &mut Vec<u8>,
+    asc: &[u8],
+    channels: u16,
+    rate_fixed: u32,
+    bitrate: u32,
+) -> Result<()> {
     let stsd = start_box(out, b"stsd");
     be32(out, 0); // version/flags
     be32(out, 1); // entry_count
@@ -248,31 +298,34 @@ fn write_stsd(out: &mut Vec<u8>, asc: &[u8], channels: usize, sample_rate: u32, 
     be16(out, 0); // version 0
     be16(out, 0); // revision
     be32(out, 0); // vendor
-    be16(out, channels as u16);
+    be16(out, channels);
     be16(out, 16); // sample size
     be16(out, 0); // compression id
     be16(out, 0); // packet size
-    be32(out, sample_rate << 16); // 16.16 fixed rate
-    write_esds(out, asc, bitrate);
-    end_box(out, mp4a);
-    end_box(out, stsd);
+    be32(out, rate_fixed);
+    write_esds(out, asc, bitrate)?;
+    end_box(out, mp4a)?;
+    end_box(out, stsd)
 }
 
 /// `esds`: version/flags, then the descriptor tree ES_Descriptor 0x03 →
 /// DecoderConfig 0x04 (objectType 0x40, streamType 0x15) →
 /// DecoderSpecificInfo 0x05 = ASC, → SLConfig 0x06 predefined 2. All
 /// descriptor bodies are under 128 bytes, so lengths are single bytes.
-fn write_esds(out: &mut Vec<u8>, asc: &[u8], bitrate: u32) {
+fn write_esds(out: &mut Vec<u8>, asc: &[u8], bitrate: u32) -> Result<()> {
     let esds = start_box(out, b"esds");
     be32(out, 0); // version/flags
     let dc_len = 13 + 2 + asc.len() + 2 + 1;
     let es_len = 3 + 2 + dc_len;
+    let dc_len = u8_desc(dc_len, "decoder config")?;
+    let es_len = u8_desc(es_len, "ES descriptor")?;
+    let asc_len = u8_desc(asc.len(), "ASC")?;
     out.push(0x03);
-    out.push(es_len as u8);
+    out.push(es_len);
     be16(out, 1); // ES_ID
     out.push(0); // flags: no stream dependence / URL / OCR
     out.push(0x04);
-    out.push(dc_len as u8);
+    out.push(dc_len);
     out.push(OBJECT_TYPE_AAC);
     out.push(STREAM_TYPE_AUDIO);
     // bufferSizeDB
@@ -282,45 +335,54 @@ fn write_esds(out: &mut Vec<u8>, asc: &[u8], bitrate: u32) {
     be32(out, bitrate); // maxBitrate
     be32(out, bitrate); // avgBitrate
     out.push(0x05);
-    out.push(asc.len() as u8);
+    out.push(asc_len);
     out.extend_from_slice(asc);
     out.push(0x06);
     out.push(1);
     out.push(2); // predefined = 2
-    end_box(out, esds);
+    end_box(out, esds)
+}
+
+fn u8_desc(v: usize, what: &str) -> Result<u8> {
+    if v >= 128 {
+        return Err(AacError::encode(format!(
+            "m4a: {what} needs multi-byte descriptor length"
+        )));
+    }
+    u8::try_from(v).map_err(|_| AacError::encode(format!("m4a: {what} exceeds u8")))
 }
 
 /// `stts` v0: every sample is 1024 media units.
-fn write_stts(out: &mut Vec<u8>, n_frames: u32) {
+fn write_stts(out: &mut Vec<u8>, n_frames: u32) -> Result<()> {
     let b = start_box(out, b"stts");
     be32(out, 0);
     be32(out, 1); // entry_count
     be32(out, n_frames);
     be32(out, 1024);
-    end_box(out, b);
+    end_box(out, b)
 }
 
 /// `stsc` v0: one chunk holding all samples.
-fn write_stsc(out: &mut Vec<u8>, n_frames: u32) {
+fn write_stsc(out: &mut Vec<u8>, n_frames: u32) -> Result<()> {
     let b = start_box(out, b"stsc");
     be32(out, 0);
     be32(out, 1); // entry_count
     be32(out, 1); // first_chunk (1-based)
     be32(out, n_frames); // samples_per_chunk
     be32(out, 1); // sample_description_index
-    end_box(out, b);
+    end_box(out, b)
 }
 
-/// `stsz` v0 with per-frame sizes.
-fn write_stsz(out: &mut Vec<u8>, payloads: &[Vec<u8>]) {
+/// `stsz` v0 with per-frame sizes (already checked to fit `u32`).
+fn write_stsz(out: &mut Vec<u8>, n_frames: u32, sizes: &[u32]) -> Result<()> {
     let b = start_box(out, b"stsz");
     be32(out, 0);
     be32(out, 0); // sample_size 0 ⇒ per-entry table
-    be32(out, payloads.len() as u32);
-    for p in payloads {
-        be32(out, p.len() as u32);
+    be32(out, n_frames);
+    for &n in sizes {
+        be32(out, n);
     }
-    end_box(out, b);
+    end_box(out, b)
 }
 
 #[cfg(test)]
