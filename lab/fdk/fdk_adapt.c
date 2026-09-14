@@ -48,19 +48,25 @@ int fdk_decode_adts(const uint8_t *data, size_t len, FdkPcm *out) {
         snprintf(out->error, sizeof(out->error), "oom");
         return -1;
     }
-    while (pos < len) {
-        UCHAR *ptr = (UCHAR *)(data + pos);
-        UINT avail = (UINT)(len - pos);
-        UINT valid = avail;
-        AAC_DECODER_ERROR err = aacDecoder_Fill(dec, &ptr, &avail, &valid);
-        if (err != AAC_DEC_OK) {
-            snprintf(out->error, sizeof(out->error), "Fill %d", (int)err);
-            break;
+    for (;;) {
+        AAC_DECODER_ERROR err;
+        if (pos < len) {
+            UCHAR *ptr = (UCHAR *)(data + pos);
+            UINT avail = (UINT)(len - pos);
+            UINT valid = avail;
+            err = aacDecoder_Fill(dec, &ptr, &avail, &valid);
+            if (err != AAC_DEC_OK) {
+                snprintf(out->error, sizeof(out->error), "Fill %d", (int)err);
+                break;
+            }
+            pos = len - (size_t)valid;
         }
-        pos = len - valid;
         err = aacDecoder_DecodeFrame(dec, frame, 8 * 2048, 0);
-        if (err == AAC_DEC_NOT_ENOUGH_BITS)
+        if (err == AAC_DEC_NOT_ENOUGH_BITS) {
+            if (pos >= len)
+                break;
             continue;
+        }
         if (err != AAC_DEC_OK) {
             snprintf(out->error, sizeof(out->error), "DecodeFrame %d", (int)err);
             break;
@@ -95,8 +101,8 @@ int fdk_decode_adts(const uint8_t *data, size_t len, FdkPcm *out) {
                     }
                     planes[c] = p;
                 }
-                cap = cap ? ncap : 0;
-                if (!cap)
+                cap = ncap;
+                if (!planes[0])
                     break;
             }
             for (i = 0; i < n; i++)

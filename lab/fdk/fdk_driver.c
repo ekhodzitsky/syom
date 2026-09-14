@@ -2,6 +2,7 @@
 
 #include "fdk_adapt.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,6 +60,55 @@ int main(int argc, char **argv) {
         free(buf);
         return rc == 0 ? 0 : 1;
     }
-    fprintf(stderr, "usage: %s id | decode-adts FILE\n", argv[0]);
+    if (argc == 6 && strcmp(argv[1], "encode-sine") == 0) {
+        uint32_t rate = (uint32_t)atoi(argv[2]);
+        int ch = atoi(argv[3]);
+        uint32_t bps = (uint32_t)atoi(argv[4]);
+        const char *path = argv[5];
+        int n, i, c;
+        float *planes[2] = {NULL, NULL};
+        FdkEnc enc;
+        FILE *f;
+        if (rate == 0 || (ch != 1 && ch != 2) || bps == 0) {
+            fprintf(stderr, "encode-sine RATE CH BITRATE_BPS OUT.adts\n");
+            return 2;
+        }
+        n = (int)(rate * 2u);
+        for (c = 0; c < ch; c++) {
+            planes[c] = malloc((size_t)n * sizeof(float));
+            if (!planes[c])
+                return 2;
+            for (i = 0; i < n; i++)
+                planes[c][i] = (float)(0.5 * sin(2.0 * 3.141592653589793 * 440.0 *
+                                                 (double)i / (double)rate));
+        }
+        if (fdk_encode_lc_adts((const float *const *)planes, ch, n, rate, bps, &enc) !=
+            0) {
+            printf("{\"ok\":false,\"lane\":\"encode\",\"error\":\"%s\"}\n", enc.error);
+            for (c = 0; c < ch; c++)
+                free(planes[c]);
+            return 1;
+        }
+        f = fopen(path, "wb");
+        if (!f || fwrite(enc.adts, 1, enc.adts_len, f) != enc.adts_len) {
+            fprintf(stderr, "write %s\n", path);
+            if (f)
+                fclose(f);
+            fdk_enc_free(&enc);
+            for (c = 0; c < ch; c++)
+                free(planes[c]);
+            return 2;
+        }
+        fclose(f);
+        printf("{\"ok\":true,\"lane\":\"encode\",\"engine\":\"%s\",\"adts_bytes\":%zu,"
+               "\"delay\":%d,\"aot\":%d,\"afterburner\":%d,\"bitrate_bps\":%u}\n",
+               fdk_engine_id(), enc.adts_len, enc.delay, enc.aot, enc.afterburner, bps);
+        fdk_enc_free(&enc);
+        for (c = 0; c < ch; c++)
+            free(planes[c]);
+        return 0;
+    }
+    fprintf(stderr, "usage: %s id | decode-adts FILE | encode-sine RATE CH BPS OUT\n",
+            argv[0]);
     return 2;
 }

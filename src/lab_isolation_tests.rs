@@ -76,6 +76,10 @@ fn lab_fdk_pin_is_isolated_v2_0_3() {
     let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
     assert!(!cargo.contains("fdk"));
     assert!(!cargo.contains("fdk-aac"));
+    let report = std::fs::read_to_string(root().join("lab/fdk/REPORT.md")).unwrap();
+    assert!(report.contains("13312"));
+    assert!(report.contains("no-go"));
+    assert!(report.contains("lavc"));
 }
 
 #[test]

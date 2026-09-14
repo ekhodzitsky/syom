@@ -92,7 +92,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Not a workspace member; ordinary tests never link or spawn ffmpeg.
 - Isolated native FDK lab (`lab/fdk`, fdk-aac v2.0.3 pin, Fraunhofer license
   kept off the product crate): LC ADTS decode/encode adapter, afterburner
-  off, delay reported. Ordinary tests never link FDK.
+  off, delay reported. In-process smoke (zig-c++ GNU, 170 TUs): sine48
+  13312 samples, HE/PS goldens length-match syom at 48 kHz, LC encode
+  128 kbps is 32426 B / 97280 samples (independent lavc). syom rejects
+  that FDK ADTS FIL (`extension_payload invalid`). Ordinary tests never
+  link FDK.
 - Isolated-process memory runner (`benches/mem_iso.rs`): one OS process per
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The

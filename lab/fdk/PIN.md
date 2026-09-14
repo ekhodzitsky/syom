@@ -38,7 +38,10 @@ M4A demux is outside codec timing (same rule as TASK-6).
 
 ## Host note (this checkout)
 
-In-process smoke needs a C++ compiler to build libfdk-aac. The TASK-6
-FFmpeg adapter is C and was smoked. If `g++`/`cc1plus` is missing, build
-the FDK prefix on a machine that has it and point `FDK_PREFIX` here.
-Ordinary syom tests never do that.
+In-process smoke: compile the 170 CMake-listed `.cpp` files with
+`lab/glint/bin/cxx.sh` (zig-c++ `-target x86_64-linux-gnu`,
+`-fno-exceptions -fno-rtti -Wno-date-time`), `ar rcs libfdk-aac.a`,
+copy public headers into `$FDK_PREFIX/include`. Host has no `g++` in
+`PATH` and no GNU make; the driver is built with gcc 15.2.0 + the same
+zig-c++ linker (`lab/fdk/build_driver.sh`). Ordinary syom tests never
+do that.
