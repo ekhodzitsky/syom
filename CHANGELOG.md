@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Matched-output LC/HE/PS performance baseline (TASK-15): `cargo bench
+  --bench baseline` runs the same `run_preflight` as Criterion, then 20
+  timed reps (median / p95 / bootstrap CI). Historical BENCH.md decode
+  rows stay labeled; ranking uses this table. `perf` stacks unavailable
+  (`perf_event_paranoid=4`). Ordinary tests never time the harness.
 - Isolated scoring lab (`lab/score`): independent-decode alignment, valid
   duration, actual ES bitrate, SNR/max-abs. Silence, delay, truncation,
   channel-swap and channel mismatch are diagnostics, not high quality

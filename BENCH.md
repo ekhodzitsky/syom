@@ -10,7 +10,36 @@ throughput. Primary lane is planar split (`DecodeOptions::unbounded()`);
 `lc_adts_speech` and `lc_adts_discard` are separately named equal-work
 lanes. Historical decode wall/sample-count rows below used unequal
 workloads (speech mix vs discarded/core-only output) and stay labeled
-**historical** until a matched-output baseline replaces them.
+**historical**. Ranking uses the matched-output baseline (TASK-15).
+
+Matched-output wall timings (Linux x86_64, 2026-09-14): `cargo bench
+--bench baseline` (not Criterion). 4 warmup + 20 reps, median / p95 /
+bootstrap 95% CI of the median, `taskset -c 0`, `profile.bench` thin
+LTO. Preflight is `syom::decode_cmp::run_preflight`. Full raw samples
+and optimization go/no-go: [lab/baseline/REPORT.md](lab/baseline/REPORT.md).
+
+| group (planar_split unless named) | syom median | timed peers |
+|---|---|---|
+| lc_adts (48 kHz 1 ch 13312) | **106 µs** | symphonia 131 µs; rusty_aac 179 ms; oxideav-aac 175 ms |
+| lc_m4a (44.1 kHz 1 ch 11264) | **101 µs** | rusty/oxideav no ISOBMFF; symphonia length mismatch (12288) |
+| he_adts (48 kHz 2 ch 18432) | **1.53 ms** | rusty/symphonia core-only 24 kHz; oxideav 1 ch |
+| he_m4a | **1.55 ms** | peers non-comparable |
+| ps_adts (48 kHz 2 ch 53248) | **7.96 ms** | oxideav-aac 372 ms; rusty/symphonia core-only |
+| mc_adts (48 kHz 6 ch 20480) | **940 µs** | oxideav-aac 1.68 s; symphonia not constructed |
+| lecture_m4a stereo | **140 µs** | peers non-comparable |
+| lc_adts_speech / discard | **105 / 104 µs** | named lanes, not mixed into planar_split |
+| enc_lc_mono / stereo (sine, not equal-rate) | **419 / 869 µs** | content-limited ~43 / 65 kbps vs 128k request |
+
+Push-decoder latency on `sine48.adts`: `Decoder::new` 100 ns, first
+output 8.5 µs, remaining feeds 97 µs, finish 246 ns.
+
+Isolated-process memory (`cargo bench --bench mem_iso`, one_shot): LC
+peak live 121 KiB / 363 allocs; HE 576 KiB / 1889; PS 1.21 MiB / 11056.
+Streaming retained workspace ~37–40 KiB (plateau).
+
+Kernel `perf_event_paranoid=4` blocks function profiles on this host.
+aarch64 and in-process lavc/FDK wall cells are missing (adapters exist
+in `lab/`, not linked here). C peers stay `c-peers-unavailable`.
 
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).

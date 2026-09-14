@@ -13,6 +13,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [faac](faac/) | FAAC 1.31.1 (`libfaac` ADTS LC) | TASK-9 |
 | [glint](glint/) | glint-audio 0.11.0 (C++17 AAC-LC) | TASK-11 |
 | [score](score/) | alignment / SNR diagnostics (not PEAQ) | TASK-13 |
+| [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 

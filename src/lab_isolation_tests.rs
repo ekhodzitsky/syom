@@ -157,6 +157,18 @@ fn lab_score_pin_is_isolated_not_peaq_certified() {
 }
 
 #[test]
+fn lab_baseline_pin_is_isolated() {
+    let pin = std::fs::read_to_string(root().join("lab/baseline/PIN.md")).unwrap();
+    assert!(pin.contains("run_preflight"));
+    assert!(pin.contains("Not invoked by `cargo test"));
+    let mk = std::fs::read_to_string(root().join("lab/baseline/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/baseline/REPORT.md")).unwrap();
+    assert!(report.contains("no-go"));
+    assert!(report.contains("105532"));
+}
+
+#[test]
 fn lab_fdk_aac_rust_pin_is_isolated_0_2_3() {
     let pin = std::fs::read_to_string(root().join("lab/fdk-aac-rust/PIN.md")).unwrap();
     assert!(pin.contains("0.2.3"));

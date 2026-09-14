@@ -62,6 +62,10 @@ mod decode_read_tests;
 mod decode_cmp_tests;
 
 #[cfg(test)]
+#[path = "baseline_tests.rs"]
+mod baseline_tests;
+
+#[cfg(test)]
 #[path = "corpus_tests.rs"]
 mod corpus_tests;
 
