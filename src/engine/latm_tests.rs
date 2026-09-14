@@ -97,7 +97,7 @@ fn frame_len_types_and_mux_tail_and_latm_value() -> Result<(), Error> {
     push_bits(&mut b, crc, 8);
     let bytes = bits_to_bytes(&b);
     let mut br = BitReader::new(&bytes);
-    skip_mux_tail(&mut br, 0)?;
+    skip_mux_tail(&mut br, 0, false)?;
 
     // otherDataPresent (byte-escaped form), crcCheckPresent = 0.
     let mut b = Vec::new();
@@ -108,17 +108,60 @@ fn frame_len_types_and_mux_tail_and_latm_value() -> Result<(), Error> {
     b.push(false); // crcCheckPresent = 0
     let bytes = bits_to_bytes(&b);
     let mut br = BitReader::new(&bytes);
-    skip_mux_tail(&mut br, 0)?;
+    skip_mux_tail(&mut br, 0, false)?;
 
     let mut w = BitWriter::new();
-    w.write(1, 8);
-    w.write_bit(true);
-    w.write(2, 8);
-    w.write_bit(false);
+    w.write(0, 2);
+    w.write(0xAB, 8);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    assert_eq!(latm_value(&mut br)?, (1 << 8) | 2);
+    assert_eq!(latm_value(&mut br)?, 0xAB);
+
+    let mut w = BitWriter::new();
+    w.write(1, 2);
+    w.write(0x0102, 16);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    assert_eq!(latm_value(&mut br)?, 0x0102);
     Ok(())
+}
+
+#[test]
+fn mux_v1_latmgetvalue_parses_lc_48k() -> Result<(), Error> {
+    // TASK-17 latm-mux-v1-latmgetvalue-2bit
+    let bytes = [0x80, 0x08, 0x00, 0x01, 0x01, 0x18, 0x81, 0xfe, 0x00];
+    let mut br = BitReader::new(&bytes);
+    let cfg = MuxCfg::parse(&mut br)?;
+    assert_eq!(cfg.asc.aot, 2);
+    assert_eq!(cfg.asc.sample_rate, 48_000);
+    assert_eq!(cfg.asc.channel_configuration, 1);
+    assert_eq!(cfg.frame_length_type, 0);
+    Ok(())
+}
+
+#[test]
+fn mux_v1_asc_longer_than_asclen_is_error() {
+    let mut w = BitWriter::new();
+    w.write_bit(true); // audioMuxVersion
+    w.write_bit(false); // versionA
+    w.write(0, 2); // tara bytesForValue=0
+    w.write(0, 8); // tara
+    w.write_bit(true); // same time
+    w.write(0, 6);
+    w.write(0, 4);
+    w.write(0, 3);
+    w.write(0, 2); // ascLen bytesForValue=0
+    w.write(8, 8); // ascLen=8 < 16-bit LC ASC
+    w.write(2, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(0, 3);
+    let bytes = w.finish();
+    let mut br = BitReader::new(&bytes);
+    assert!(matches!(
+        MuxCfg::parse(&mut br),
+        Err(Error::Format("LATM ASC longer than ascLen"))
+    ));
 }
 
 #[test]

@@ -54,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   peer/case, reporting baseline RSS, peak RSS delta, peak live heap, alloc
   count/bytes and retained live separately for one-shot vs streaming. The
   in-process `mem` bench is unchanged historical.
+- LATM `latmGetValue` is the 2-bit length prefix used by FFmpeg/FDK/FAAD2
+  (`bytesForValue` then `(n+1)*8` bits). `audioMuxVersion=1` other-data
+  length uses that form; an ASC that overruns `ascLen` is an error.
 - ADTS `protection_absent=0` frames verify `crc_check` with the ISO/IEC
   11172-3 CRC-16 (poly `0x8005`, init `0xFFFF`, no inversion) over the
   13818-7 header and raw-data-block protected bits. Mismatch is

@@ -298,8 +298,8 @@
       "kind": "valid",
       "finding": "F12",
       "hex": "80080001011881fe00",
-      "bit_notes": "audioMuxVersion=1, versionA=0, latmGetValue tara=0 (2-bit length 0 + 8 bits), ASC length 16 via 2-bit latmGetValue, LC 48 kHz mono, frameLengthType=0. Independent grammar, not syom latm_value.",
-      "agreement": "diverge",
+      "bit_notes": "audioMuxVersion=1, versionA=0, latmGetValue tara=0 (2-bit length 0 + 8 bits), ASC length 16 via 2-bit latmGetValue, LC 48 kHz mono, frameLengthType=0.",
+      "agreement": "match",
       "follow_on": "TASK-30",
       "independent": {
         "aot": 2,

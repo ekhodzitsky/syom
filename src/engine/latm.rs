@@ -44,12 +44,15 @@ impl MuxCfg {
             let start = br.bit_position();
             let (asc, _) = AudioSpecificConfig::parse_from_reader(br)?;
             let used = br.bit_position().saturating_sub(start);
+            if used > u64::from(asc_len) {
+                return Err(Error::Format("LATM ASC longer than ascLen"));
+            }
             if used < u64::from(asc_len) {
                 br.skip((u64::from(asc_len) - used) as u32)?;
             }
             let frame_length_type = br.read(3)? as u8;
             let frame_length = read_frame_len(br, frame_length_type)?;
-            skip_mux_tail(br, cfg_start)?;
+            skip_mux_tail(br, cfg_start, true)?;
             return Ok(Self {
                 asc,
                 frame_length_type,
@@ -59,7 +62,7 @@ impl MuxCfg {
         let (asc, _) = AudioSpecificConfig::parse_from_reader(br)?;
         let frame_length_type = br.read(3)? as u8;
         let frame_length = read_frame_len(br, frame_length_type)?;
-        skip_mux_tail(br, cfg_start)?;
+        skip_mux_tail(br, cfg_start, false)?;
         Ok(Self {
             asc,
             frame_length_type,
@@ -79,21 +82,26 @@ fn read_frame_len(br: &mut BitReader<'_>, ty: u8) -> Result<u32> {
     }
 }
 
-fn skip_mux_tail(br: &mut BitReader<'_>, cfg_start: u64) -> Result<()> {
+fn skip_mux_tail(br: &mut BitReader<'_>, cfg_start: u64, audio_mux_version: bool) -> Result<()> {
     let other = br.read_bit()?;
     if other {
-        let escaped = br.read_bit()?;
-        if escaped {
-            loop {
-                let more = br.read_bit()?;
-                let _ = br.read(8)?;
-                if !more {
-                    break;
-                }
-            }
+        if audio_mux_version {
+            // ISO/IEC 14496-3: otherDataLenBits = latmGetValue()
+            let _ = latm_value(br)?;
         } else {
-            let n = br.read(8)? + 1;
-            br.skip(n)?;
+            let escaped = br.read_bit()?;
+            if escaped {
+                loop {
+                    let more = br.read_bit()?;
+                    let _ = br.read(8)?;
+                    if !more {
+                        break;
+                    }
+                }
+            } else {
+                let n = br.read(8)? + 1;
+                br.skip(n)?;
+            }
         }
     }
     // crcCheckSum covers StreamMuxConfig() up to but excluding
@@ -110,12 +118,11 @@ fn skip_mux_tail(br: &mut BitReader<'_>, cfg_start: u64) -> Result<()> {
     Ok(())
 }
 
+/// `latmGetValue()`: 2-bit `bytesForValue` then `(n+1)*8` bits
+/// (FFmpeg `latm_get_value`, FDK `LatmGetValue`, FAAD2).
 fn latm_value(br: &mut BitReader<'_>) -> Result<u32> {
-    let mut v = br.read(8)?;
-    while br.read_bit()? {
-        v = (v << 8) | br.read(8)?;
-    }
-    Ok(v)
+    let n = br.read(2)?;
+    br.read((n + 1) * 8)
 }
 
 pub(crate) fn read_payload(br: &mut BitReader<'_>, cfg: &MuxCfg) -> Result<Vec<u8>> {
