@@ -1,6 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+mod budgets;
 mod decode;
 #[doc(hidden)]
 pub mod decode_cmp;
@@ -18,6 +19,13 @@ mod options;
 mod sniff;
 mod stream;
 
+pub use budgets::{
+    BudgetExceeded, BudgetKind, DEFAULT_MAX_BOX_DEPTH, DEFAULT_MAX_BUFFERED_INPUT_BYTES,
+    DEFAULT_MAX_CHANNELS, DEFAULT_MAX_DECLARED_AU_BYTES, DEFAULT_MAX_INDEX_ENTRIES,
+    DEFAULT_MAX_METADATA_BYTES, DEFAULT_MAX_OUTPUT_BYTES, DEFAULT_MAX_WORKSPACE_BYTES, InputScope,
+    MemoryBudgets, allocable_bytes, check_planned, input_cap_applies, pcm_bytes,
+    workspace_lower_bound_bytes,
+};
 #[cfg(test)]
 pub(crate) use decode::read_file_capped;
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};

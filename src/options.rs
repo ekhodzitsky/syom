@@ -1,9 +1,14 @@
 //! Decode options: channel mode and duration / rate caps.
+//!
+//! Memory budgets (compressed bytes, collected PCM, channels, M4A index,
+//! resident workspace) live in [`crate::budgets`] and are independent of
+//! `max_duration_secs`. `speech()` duration and `ChannelMode` are unchanged.
 
-/// Hard upper bound on buffered compressed input (1 GiB).
+/// Hard upper bound on a finite compressed buffer or file (1 GiB).
 ///
-/// Duration caps remain the real guard; this only fences pathological headers
-/// before the first frame is found.
+/// Applies to one-shot `decode` / `decode_with` / `decode_streaming` /
+/// `read`. Independent of `max_duration_secs`. Streaming `Decoder::feed`
+/// must not inherit this as a lifetime cap ([`crate::InputScope`]; TASK-25).
 pub const DEFAULT_MAX_INPUT_BYTES: u64 = 1 << 30;
 
 /// Duration / rate caps for a lecture-length MP4.

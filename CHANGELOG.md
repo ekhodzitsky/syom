@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Independent memory budgets (TASK-23 / F07): named constants and checked
+  accounting (`MemoryBudgets`) for finite compressed input (1 GiB),
+  collected planar f32 (4 GiB), channels (8), M4A index/metadata
+  (2^20 entries / 16 MiB), and resident workspace (8 MiB). Duration is
+  not a memory cap. Streaming `feed` must not inherit a lifetime
+  compressed-byte cap (enforcement: TASK-24 collection, TASK-25
+  streaming). `speech()` Mono / 7200 s / 48 kHz is unchanged.
 - Offline AAC evaluation corpus (`corpus/manifest.json`) with in-tree golden
   hashes, deterministic boundary PCM, named licensed natural excerpts (not
   vendored), a coverage table, and `scripts/verify_corpus.py` that fails on
