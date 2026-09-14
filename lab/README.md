@@ -2,12 +2,13 @@
 
 Isolated from the `syom` package. Not a Cargo workspace member. Product
 `[dependencies]` stay empty; ordinary tests never download, link, or spawn
-ffmpeg / FDK.
+ffmpeg / FDK / FAAD2.
 
 | Adapter | Pin | Status |
 |---|---|---|
 | [libavcodec](libavcodec/) | FFmpeg 9.0.1 native `aac` | TASK-6 |
 | [fdk](fdk/) | fdk-aac v2.0.3 | TASK-7 |
+| [faad2](faad2/) | FAAD2 2.11.3 (`FAAD_FMT_FLOAT`) | TASK-8 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 
@@ -15,4 +16,5 @@ See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 # after a local FFmpeg 9.0.1 prefix exists:
 make -C lab/libavcodec FFMPEG_PREFIX=/path/to/prefix
 python3 lab/smoke.py --driver lab/libavcodec/avc_driver
+python3 lab/faad2/smoke.py lab/faad2/faad_driver
 ```

@@ -69,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- Isolated FAAD2 2.11.3 decode lab (`lab/faad2`, GPL-2.0-or-later kept
+  off the product crate): ADTS in-process `FAAD_FMT_FLOAT`, metadata and
+  a classified disagreement report vs FFmpeg 9.0.1. Ordinary tests never
+  link or spawn FAAD2.
 - Encode PCM must be finite and in `[-1, 1]`. NaN, infinities, and
   `|x| > 1` are `Encode` errors on both one-shot and push APIs. There is
   no silent clip. ±0, subnormals, and full-scale ±1 remain valid.

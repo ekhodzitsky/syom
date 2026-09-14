@@ -29,6 +29,7 @@ fn src_does_not_spawn_ffmpeg_or_fdk() {
         if text.contains("Command::new(\"ffmpeg\")")
             || text.contains("Command::new(\"ffprobe\")")
             || text.contains("Command::new(\"fdk")
+            || text.contains("Command::new(\"faad")
         {
             hits.push(ent);
         }
@@ -73,6 +74,28 @@ fn lab_fdk_pin_is_isolated_v2_0_3() {
     let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
     assert!(!cargo.contains("fdk"));
     assert!(!cargo.contains("fdk-aac"));
+}
+
+#[test]
+fn lab_faad2_pin_is_isolated_2_11_3() {
+    let pin = std::fs::read_to_string(root().join("lab/faad2/PIN.md")).unwrap();
+    assert!(pin.contains("2.11.3"));
+    assert!(pin.contains("860ab62087e336c1844a70e33196c1790b525fb9a9e7b6ac4fab1a1a4e4d5ce8"));
+    assert!(pin.contains("FAAD_FMT_FLOAT"));
+    assert!(pin.contains("GPL-2.0-or-later"));
+    let adapt = std::fs::read_to_string(root().join("lab/faad2/faad_adapt.c")).unwrap();
+    assert!(adapt.contains("NeAACDecDecode"));
+    assert!(adapt.contains("FAAD_FMT_FLOAT"));
+    assert!(adapt.contains("NeAACDecInit"));
+    let mk = std::fs::read_to_string(root().join("lab/faad2/Makefile")).unwrap();
+    assert!(mk.contains("FAAD2_PREFIX"));
+    assert!(mk.contains("Not invoked by cargo test"));
+    let disagree = std::fs::read_to_string(root().join("lab/faad2/DISAGREE.md")).unwrap();
+    assert!(disagree.contains("alignment / priming"));
+    assert!(disagree.contains("channel labels"));
+    let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!cargo.contains("faad"));
+    assert!(!cargo.contains("libfaad"));
 }
 
 fn walk(dir: std::path::PathBuf) -> Vec<std::path::PathBuf> {
