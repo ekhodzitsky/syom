@@ -391,3 +391,88 @@ fn reset_clears_held_lookahead_state() -> Result<()> {
     assert_eq!(out, encode_with(&pcm, 48_000, &opts)?);
     Ok(())
 }
+
+#[test]
+fn reset_does_not_leak_rate_credit_into_next_session() -> Result<()> {
+    let loud = [vec![0.9f32; 2048]];
+    let quiet = [(0..2048)
+        .map(|i| 0.05 * (2.0 * std::f32::consts::PI * 1000.0 * i as f32 / 48_000.0).sin())
+        .collect::<Vec<f32>>()];
+    let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
+    let planes: Vec<&[f32]> = loud.iter().map(Vec::as_slice).collect();
+    enc.feed(&planes, sink)?;
+    enc.finish(sink)?;
+    enc.reset()?;
+    let mut out = Vec::new();
+    let planes: Vec<&[f32]> = quiet.iter().map(Vec::as_slice).collect();
+    enc.feed(&planes, |f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    enc.finish(|f| {
+        out.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    assert_eq!(out, encode_with(&quiet, 48_000, &EncodeOptions::adts())?);
+    Ok(())
+}
+
+#[test]
+fn reset_same_pcm_is_byte_exact_twice() -> Result<()> {
+    let pcm = fixture(48_000, 3 * 1024);
+    let want = encode_with(&pcm, 48_000, &EncodeOptions::adts())?;
+    let mut enc = Encoder::new(48_000, 2, &EncodeOptions::adts())?;
+    for pass in 0..2 {
+        enc.reset()?;
+        let mut out = Vec::new();
+        let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+        enc.feed(&planes, |f| {
+            out.extend_from_slice(f.au);
+            Ok(())
+        })?;
+        enc.finish(|f| {
+            out.extend_from_slice(f.au);
+            Ok(())
+        })?;
+        assert_eq!(out, want, "pass {pass}");
+    }
+    Ok(())
+}
+
+#[test]
+fn two_encoders_reset_are_reentrant() -> Result<()> {
+    let a_pcm = fixture(48_000, 2048);
+    let b_pcm = fixture(44_100, 2048);
+    let opts = EncodeOptions::adts();
+    let mut a = Encoder::new(48_000, 2, &opts)?;
+    let mut b = Encoder::new(44_100, 2, &opts)?;
+    let pa: Vec<&[f32]> = a_pcm.iter().map(Vec::as_slice).collect();
+    let pb: Vec<&[f32]> = b_pcm.iter().map(Vec::as_slice).collect();
+    a.feed(&pa, sink)?;
+    a.finish(sink)?;
+    b.feed(&pb, sink)?;
+    b.finish(sink)?;
+    a.reset()?;
+    b.reset()?;
+    let mut oa = Vec::new();
+    let mut ob = Vec::new();
+    a.feed(&pa, |f| {
+        oa.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    a.finish(|f| {
+        oa.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    b.feed(&pb, |f| {
+        ob.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    b.finish(|f| {
+        ob.extend_from_slice(f.au);
+        Ok(())
+    })?;
+    assert_eq!(oa, encode_with(&a_pcm, 48_000, &opts)?);
+    assert_eq!(ob, encode_with(&b_pcm, 44_100, &opts)?);
+    Ok(())
+}

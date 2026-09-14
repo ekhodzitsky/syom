@@ -41,6 +41,10 @@ fn baseline_report_records_ci_memory_and_go_nogo() {
     assert!(report.contains("perf_event_paranoid"));
     assert!(report.contains("no-go"));
     assert!(report.contains("TASK-80"));
+    assert!(report.contains("TASK-77"));
+    let reset = std::fs::read_to_string(root().join("lab/baseline/RESET.md")).unwrap();
+    assert!(reset.contains("Encoder::new"));
+    assert!(reset.contains("go"));
     assert!(report.contains("13312"));
     let pin = std::fs::read_to_string(root().join("lab/baseline/PIN.md")).unwrap();
     assert!(pin.contains("AMD Ryzen"));

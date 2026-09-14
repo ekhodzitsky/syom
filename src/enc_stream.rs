@@ -112,7 +112,6 @@ pub struct Encoder {
     samples: u64,
     aac_frames: u64,
     bytes: u64,
-    opts: EncodeOptions,
     life: Life,
 }
 
@@ -165,7 +164,6 @@ impl Encoder {
             samples: 0,
             aac_frames: 0,
             bytes: 0,
-            opts: opts.clone(),
             life: Life::Open,
         })
     }
@@ -212,19 +210,16 @@ impl Encoder {
         self.life == Life::Finished
     }
 
-    /// Drop filterbank/psy state, pending PCM, and counters. Vector
-    /// capacity is kept. Rate, channels, and [`EncodeOptions`] are unchanged.
+    /// Drop overlap, rate credit, pending PCM, and counters. Prepared KBD
+    /// windows, psy spreading, and vector capacity are kept. Rate, channels,
+    /// and [`EncodeOptions`] are unchanged. No global cache.
     pub fn reset(&mut self) -> Result<()> {
-        let pending_cap = [self.pending[0].capacity(), self.pending[1].capacity()];
-        let scratch_cap = self.scratch.capacity();
-        self.enc = crate::encode::new_lc(self.sample_rate, self.channels, &self.opts)?;
-        for (i, p) in self.pending.iter_mut().enumerate() {
+        self.enc.reset();
+        for p in &mut self.pending {
             p.clear();
-            p.reserve(pending_cap[i]);
         }
         self.pending_len = 0;
         self.scratch.clear();
-        self.scratch.reserve(scratch_cap);
         self.samples = 0;
         self.aac_frames = 0;
         self.bytes = 0;

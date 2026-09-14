@@ -2,7 +2,6 @@
 //! payloads. No ADTS/LATM wrap; the caller is the demuxer.
 
 use crate::engine::asc::AudioSpecificConfig;
-use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
 use crate::options::{ChannelMode, DecodeOptions};
 
@@ -74,7 +73,7 @@ impl Decoder {
             return Ok(());
         }
         let mono = self.dec.mix_down_mono;
-        self.dec = StreamDecoder::new();
+        self.dec.reset();
         self.dec.mix_down_mono = mono;
         if let Some(pce) = cfg.pce.clone() {
             self.dec.set_config_pce(pce);

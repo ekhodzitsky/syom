@@ -54,7 +54,7 @@ pub(crate) fn collect_push(data: &[u8], opts: &DecodeOptions, chunk: usize) -> R
     })
 }
 
-fn collect_into(dec: &mut Decoder, data: &[u8]) -> Result<Collected> {
+pub(crate) fn collect_into(dec: &mut Decoder, data: &[u8]) -> Result<Collected> {
     let mut tracks: Vec<Vec<f32>> = Vec::new();
     let mut cb = |f: Frame<'_>| push_frame_into(&mut tracks, f);
     dec.feed(data, &mut cb)?;

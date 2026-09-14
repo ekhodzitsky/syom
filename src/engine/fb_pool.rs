@@ -35,6 +35,11 @@ impl FbPool {
         self.slots.retain(|s| s.seen);
     }
 
+    /// Drop identities and overlap; keep `Vec` capacity for the next session.
+    pub(crate) fn reset(&mut self) {
+        self.slots.clear();
+    }
+
     pub(crate) fn swap_in(&mut self, kind: ElemKind, tag: u8, fb: &mut Filterbank) {
         std::mem::swap(fb, self.slot(kind, tag, 0));
     }

@@ -107,7 +107,7 @@ or >5% p95 elsewhere.
 | TASK-78 LC steady allocs | lc_adts stream 363 allocs | 4 | **go** (DOC-3 zero-alloc target; not the LC wall) |
 | TASK-82 x86 SIMD | lc_adts 106 µs, this host avx2 | 5 | **go** |
 | TASK-83 rate/quant | enc_lc_mono 419 µs | 6 | **go** |
-| TASK-77 workspace reuse | retained 37–40 KiB | 7 | **go** (plateau already; reuse is API) |
+| TASK-77 workspace reuse | Encoder::new 8 allocs / 82 KiB / 19 µs | 7 | **go** (reset 0 allocs / 0.37 µs, −98%; see RESET.md) |
 | TASK-84 first-output | 8.5 µs vs 106 µs total | 8 | **no-go** as a speed gate (already small) |
 
 ## Missing

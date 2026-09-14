@@ -174,6 +174,10 @@ mod decode_mc_tests;
 mod stream_tests;
 
 #[cfg(test)]
+#[path = "stream_reset_tests.rs"]
+mod stream_reset_tests;
+
+#[cfg(test)]
 #[path = "stream_budget_tests.rs"]
 mod stream_budget_tests;
 

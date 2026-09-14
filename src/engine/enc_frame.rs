@@ -375,6 +375,9 @@ mod refine;
 #[path = "enc_frame_lookahead.rs"]
 mod lookahead;
 
+#[path = "enc_frame_reset.rs"]
+mod reset;
+
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]
 mod enc_frame_tests;

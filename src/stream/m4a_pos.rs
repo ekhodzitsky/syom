@@ -128,7 +128,7 @@ impl<R: Read + Seek> M4aSeek<R> {
     }
 
     fn reset_codec(&mut self) {
-        self.dec = StreamDecoder::new();
+        self.dec.reset();
         self.dec.mix_down_mono = self.mono;
         if let Some(pce) = self.asc.pce.clone() {
             self.dec.set_config_pce(pce);

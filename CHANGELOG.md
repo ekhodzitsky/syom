@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Prepared codec workspace reuse (TASK-77): `Decoder::reset` /
+  `Encoder::reset` drop signal/config (overlap, HE/PS/PCE, LCG, rate
+  credit, lookahead) and keep allocated KBD windows, psy spreading,
+  spectral/PCM planes, and buffer capacity. No global cache. Encoder
+  reset is 0 setup allocs (−98% vs rebuilding `LcEncoder`). LC
+  second-session allocs 79→66 (per-frame remainder is TASK-78); HE SBR
+  still rebuilt (TASK-79). Goldens unchanged (`lab/baseline/RESET.md`).
 - Frame/stream channel and timing metadata (TASK-61): `Channel`, `Layout`,
   `FrameMeta` (`Copy`, 8-plane labels, no per-frame heap). `Frame::meta`,
   `DecodedAac`/`StreamInfo` `{core_rate, layout, priming, remainder}`.

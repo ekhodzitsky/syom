@@ -75,7 +75,7 @@ enum Container {
 /// error moves to **failed**; a successful `finish` moves to **finished**.
 /// `feed` / `finish` on failed or finished return an error until
 /// [`Decoder::reset`]. `reset` clears LC/HE/PS overlap and counters and
-/// keeps buffer capacity.
+/// keeps prepared workspace capacity.
 pub struct Decoder {
     opts: DecodeOptions,
     buf: Vec<u8>,
@@ -174,15 +174,35 @@ impl Decoder {
         self.life == Life::Finished
     }
 
-    /// Drop LC/HE/PS overlap, mux config, and counters. Buffer capacity is
-    /// kept. [`DecodeOptions`] are unchanged.
+    /// Drop LC/HE/PS overlap, mux config, and counters. Prepared workspace
+    /// capacity (filterbank slots, spectral/PCM planes, input buffer) is
+    /// kept. [`DecodeOptions`] are unchanged. No global cache.
     pub fn reset(&mut self) {
-        let cap = self.buf.capacity();
-        let scratch_cap = self.mono_scratch.capacity();
-        let opts = self.opts.clone();
-        *self = Self::new(opts);
-        self.buf.reserve(cap);
-        self.mono_scratch.reserve(scratch_cap);
+        self.dec.reset();
+        self.buf.clear();
+        self.pos = 0;
+        self.container = Container::Unknown;
+        self.mux = None;
+        self.au = None;
+        self.mono_scratch.clear();
+        self.locked = None;
+        self.max_samples = 0;
+        self.aac_frames = 0;
+        self.samples_decoded = 0;
+        self.samples_out = 0;
+        self.emitted = 0;
+        self.sink_frame_samples = 0;
+        self.life = Life::Open;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_pcm_cap(&self) -> usize {
+        self.dec.pcm_l.capacity()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_buf_cap(&self) -> usize {
+        self.buf.capacity()
     }
 
     /// Feed bytes; `on_frame` fires once per completed AAC frame. Returns

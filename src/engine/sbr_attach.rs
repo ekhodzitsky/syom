@@ -47,6 +47,11 @@ impl SbrPool {
         self.slots.retain(|s| s.seen);
     }
 
+    /// Drop SBR/PS instances and headers; keep `Vec` capacity.
+    pub(crate) fn reset(&mut self) {
+        self.slots.clear();
+    }
+
     pub(crate) fn prev_header(&self, kind: ElemKind, tag: u8) -> Option<SbrHeader> {
         self.slots
             .iter()

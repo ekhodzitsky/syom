@@ -371,3 +371,6 @@ impl StreamDecoder {
 
 #[path = "decode_meta.rs"]
 mod meta;
+
+#[path = "decode_reset.rs"]
+mod reset;

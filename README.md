@@ -123,7 +123,9 @@ Each callback gets one AAC `Frame` of borrowed planar f32 (valid
 for the callback only; return `Err` to abort) and `finish` yields
 `StreamInfo` tallies. A parser, limit, or callback error **fails** the
 instance; a successful `finish` **finishes** it; further `feed`/`finish`
-error until `reset()`. `finish` takes `&mut self`. Peak PCM RAM is one
+error until `reset()`, which keeps prepared workspace capacity
+(filterbank slots, spectral/PCM planes, encoder KBD/psy) and does not
+use a global cache. `finish` takes `&mut self`. Peak PCM RAM is one
 frame. Encode has the mirror shape: `Encoder::new` plus `feed` takes PCM
 chunks of any size and fires per ADTS-wrapped access unit (byte-exact
 with one-shot `encode_with`; M4A rejected — `stco` needs finish-time
