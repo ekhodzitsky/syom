@@ -205,8 +205,11 @@ pub enum EncodeContainer {
 #[non_exhaustive]
 pub struct EncodeOptions {
     pub container: EncodeContainer,
-    /// Target bitrate in bits per second (whole stream). Must not exceed
-    /// AAC-LC 6144 bits/channel per 1024-sample frame
+    /// Per-frame bit **ceiling** in bits per second of the whole stream
+    /// (TASK-65). Not CBR and not a guaranteed average: easy/tonal
+    /// content undershoots; dense noise spends the budget. ADTS writes
+    /// `adts_buffer_fullness = 0x7FF` (VBR / no reservoir). Must not
+    /// exceed AAC-LC 6144 bits/channel per 1024-sample frame
     /// (`6144 · channels · sample_rate / 1024`).
     pub bitrate_bps: u32,
     /// One-frame attack lookahead (default off). When on, the attack

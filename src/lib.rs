@@ -110,6 +110,10 @@ mod encode_pcm_tests;
 mod encode_cmp_tests;
 
 #[cfg(test)]
+#[path = "encode_rate_tests.rs"]
+mod encode_rate_tests;
+
+#[cfg(test)]
 #[path = "encode_transient_tests.rs"]
 mod encode_transient_tests;
 

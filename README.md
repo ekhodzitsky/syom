@@ -61,7 +61,9 @@ layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.
 No duration/rate ceiling: `DecodeOptions::unbounded()`.
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
-mono/stereo, 128 kbps). `encode_with` takes `EncodeOptions`:
+mono/stereo, 128 kbps). `bitrate_bps` is a per-frame ceiling (capped
+VBR, `adts_buffer_fullness = 0x7FF`): noise spends it, tonal/speech
+undershoot today (TASK-65/66). `encode_with` takes `EncodeOptions`:
 `EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`, and
 `with_lookahead` (one-frame attack lookahead: better pre-echo suppression
 on early-in-frame onsets, one extra frame of latency, default off).

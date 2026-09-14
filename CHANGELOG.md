@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Encoder rate contract (TASK-65): `bitrate_bps` is a per-frame
+  ceiling (capped VBR, ADTS `0x7FF`, one-frame `credit`, not a bit
+  reservoir). Live matrix: noise 128k payload/valid ≈ 131 kbps;
+  sine/tremolo/lecture undershoot (23/38/62 kbps). TASK-66 target is
+  ±3% payload/valid on ≥10 s non-silent budget-limited tracks; CBR
+  reservoir and TVBR are no-go for 0.x. Report: `corpus/rate/REPORT.md`.
 - `DecodeOptions::audio()`: split channels with the same 2 h / 192 kHz
   lecture caps as `speech()` (TASK-50). `decode` / `read` /
   `DecodeOptions::default()` stay speech-mono. `unbounded()` remains the
