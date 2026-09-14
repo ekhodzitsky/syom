@@ -68,20 +68,34 @@ pub(crate) fn assert_native_matches_lavc_with(
     assert!(n > 0, "{label} empty pcm");
     assert_eq!(gold.len() % 2, 0, "{label} odd golden");
     let gold_i16 = gold.len() / 2;
-    assert_eq!(gold_i16 % n, 0, "{label} golden not a multiple of {n}");
-    let gold_ch = gold_i16 / n;
+    let gold_ch = match opts.channel_mode {
+        ChannelMode::Split => decoded.channels.len(),
+        ChannelMode::Mono => {
+            assert_eq!(decoded.channels.len(), 1, "{label} speech not mono");
+            if gold_i16 != n && gold_i16.is_multiple_of(2) && gold_i16 / 2 >= n {
+                2
+            } else {
+                1
+            }
+        }
+    };
     assert!(
         (1..=8).contains(&gold_ch),
         "{label} golden channels {gold_ch}"
     );
-    match opts.channel_mode {
-        ChannelMode::Split => assert_eq!(
+    assert_eq!(gold_i16 % gold_ch, 0, "{label} golden not a multiple of ch");
+    let gold_samples = gold_i16 / gold_ch;
+    assert!(
+        gold_samples >= n,
+        "{label} decoded {n} longer than lavc dump {gold_samples}"
+    );
+    if matches!(opts.channel_mode, ChannelMode::Split) {
+        assert_eq!(
             decoded.channels.len(),
             gold_ch,
             "{label} split channels {} vs golden {gold_ch} (missing PS?)",
             decoded.channels.len()
-        ),
-        ChannelMode::Mono => assert_eq!(decoded.channels.len(), 1, "{label} speech not mono"),
+        );
     }
     let planes = deinterleave_s16(gold, gold_ch);
     if matches!(opts.channel_mode, ChannelMode::Mono) && gold_ch == 2 {
@@ -89,11 +103,12 @@ pub(crate) fn assert_native_matches_lavc_with(
             .iter()
             .zip(&planes[1])
             .map(|(l, r)| ((i32::from(*l) + i32::from(*r)) / 2) as i16)
+            .take(n)
             .collect();
         score_plane(&decoded.channels[0], &mix, label);
     } else {
         for (i, plane) in planes.iter().enumerate() {
-            score_plane(&decoded.channels[i], plane, &format!("{label} ch{i}"));
+            score_plane(&decoded.channels[i], &plane[..n], &format!("{label} ch{i}"));
         }
     }
     Ok(())

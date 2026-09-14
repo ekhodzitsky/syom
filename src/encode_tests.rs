@@ -404,10 +404,14 @@ fn lavc_matches_our_decode_of_our_adts() {
 /// The oracle tolerance check: our decode of `stream` vs the committed
 /// ffmpeg-decoded s16 — ≤ 2 LSB s16 max error, ≥ 55 dB SNR per channel.
 fn assert_decode_matches_lavc(stream: &[u8], lavc: &[u8]) {
+    assert_decode_matches_lavc_n(stream, lavc, lavc.len() / 4);
+}
+
+fn assert_decode_matches_lavc_n(stream: &[u8], lavc: &[u8], n: usize) {
     let dec = decode_with(stream, &crate::DecodeOptions::unbounded()).expect("decode");
     assert_eq!(dec.channels.len(), 2);
-    let frames = lavc.len() / 4; // s16 stereo interleaved
-    assert_eq!(dec.channels[0].len(), frames, "frame count vs lavc");
+    assert_eq!(dec.channels[0].len(), n, "frame count vs lavc");
+    assert!(lavc.len() / 4 >= n);
     for (ch, got) in dec.channels.iter().enumerate() {
         let mut max_lsb = 0u32;
         let mut ps = 0.0f64;
@@ -436,8 +440,7 @@ fn m4a_roundtrip_matches_adts_minus_priming() {
     let dm = decode_with(&m4a, &crate::DecodeOptions::unbounded()).expect("decode m4a");
     assert_eq!(dm.sample_rate, 48_000);
     assert_eq!(dm.channels.len(), 2);
-    // elst media_time = 1024: the M4A drops exactly the priming frame.
-    assert_eq!(dm.channels[0].len() + 1024, da.channels[0].len());
+    assert_eq!(dm.channels[0].len(), pcm[0].len(), "M4A presentation is N");
     for ch in 0..2 {
         let a = &da.channels[ch];
         let m = &dm.channels[ch];
@@ -481,6 +484,6 @@ fn lavc_matches_our_decode_of_our_m4a() {
     assert_eq!(track.presentation_samples(), Some(pcm[0].len() as u64));
     assert_eq!(track.remainder_samples(), Some(896));
     assert_eq!(track.media_duration, 30 * 1024);
-    // ffmpeg PCM dump skips priming only (29696); container duration is N.
-    assert_decode_matches_lavc(&fresh, lavc);
+    // ffmpeg PCM dump skips priming only (29696); syom honours duration N.
+    assert_decode_matches_lavc_n(&fresh, lavc, pcm[0].len());
 }

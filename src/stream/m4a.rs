@@ -1,8 +1,10 @@
 //! M4A/ISOBMFF frame walk for `decode_streaming` (slice-only: the frame
-//! index needs `moov`). The `elst` encoder delay is honoured as a skip
-//! counter *before* emission — frames fully inside the skip region are
-//! still decoded (SBR/IMDCT overlap state) but not emitted; a partially
-//! skipped frame emits `plane[skip..]`.
+//! index needs `moov`). A supported one-entry `elst` is honoured as a skip
+//! of `media_time` then a cap of `segment_duration` at the output rate —
+//! frames fully inside the skip region are still decoded (SBR/IMDCT overlap)
+//! but not emitted; a partial frame emits `plane[skip..skip+play]`. Empty
+//! edits, multiple edits, non-1.0 rates, and inexact timescale conversion
+//! are errors, not a silent prefix skip.
 
 use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
@@ -20,7 +22,11 @@ where
     F: FnMut(Frame<'_>) -> Result<()>,
 {
     let track = isomp4::parse_aac_track_with(data, &opts.memory).map_err(|e| {
-        if e.is_format_class() {
+        // Unsupported/malformed elst must stay Format (precise), not collapse
+        // to NotAac the way a random ftyp lookalike does.
+        if matches!(&e, AacError::Format(m) if m.contains("elst")) {
+            e
+        } else if e.is_format_class() {
             AacError::NotAac
         } else {
             e
@@ -51,7 +57,7 @@ where
     dec.set_he_config(asc.sbr_present, asc.ps_present, asc.output_sample_rate);
     dec.mix_down_mono = mono;
     let mut scratch: Vec<f32> = Vec::new();
-    let mut skip_left = track.skip_samples(out_rate);
+    let (mut skip_left, mut play_left) = track.edit_window(out_rate)?;
     let mut locked: Option<(u32, usize)> = None;
     let mut aac_frames = 0u64;
     let mut emitted = 0u64;
@@ -123,20 +129,36 @@ where
         }
         let start = skip_left;
         skip_left = 0;
+        let mut take = n - start;
+        if let Some(left) = play_left.as_mut() {
+            if *left == 0 {
+                break;
+            }
+            take = take.min(*left);
+            *left -= take;
+        }
+        if take == 0 {
+            continue;
+        }
         emitted += 1;
-        samples_out += (n - start) as u64;
+        samples_out += take as u64;
+        let end = start + take;
         if mono {
-            let plane: [&[f32]; 1] = [&scratch[start..]];
+            let plane: [&[f32]; 1] = [&scratch[start..end]];
             on_frame(Frame {
                 sample_rate: rate,
-                samples: n - start,
+                samples: take,
                 planar: &plane,
             })?;
         } else {
-            let planes: Vec<&[f32]> = dec.frame_planes().iter().map(|ch| &ch[start..]).collect();
+            let planes: Vec<&[f32]> = dec
+                .frame_planes()
+                .iter()
+                .map(|ch| &ch[start..end])
+                .collect();
             on_frame(Frame {
                 sample_rate: rate,
-                samples: n - start,
+                samples: take,
                 planar: &planes,
             })?;
         }

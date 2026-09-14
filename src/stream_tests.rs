@@ -349,7 +349,7 @@ fn streaming_does_not_accumulate_pcm() -> Result<()> {
         Ok(())
     })?;
     assert_eq!(total, info.samples);
-    assert!(total >= 12 * 1024, "lecture has many frames: {total}");
+    assert!(total >= 10 * 1024, "lecture has many frames: {total}");
     assert!(
         peak_frame <= 8192,
         "one frame stays one frame: {peak_frame}"

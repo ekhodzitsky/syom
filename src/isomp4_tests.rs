@@ -156,14 +156,14 @@ fn elst_v1_and_unsupported_and_negative_then_zero() {
     v1.extend_from_slice(&1024u64.to_be_bytes());
     v1.extend_from_slice(&0x0001_0000u32.to_be_bytes());
     assert_eq!(ok(parse_elst_start(&v1, &mem())), 1024);
-    assert_eq!(ok(parse_elst(&v1, &mem())), (1024, 0));
+    assert_eq!(ok(parse_elst(&v1, &mem())), Some((1024, 0)));
 
     let mut v0 = vec![0u8; 4];
     v0.extend_from_slice(&1u32.to_be_bytes());
     v0.extend_from_slice(&28800u32.to_be_bytes());
     v0.extend_from_slice(&1024u32.to_be_bytes());
     v0.extend_from_slice(&0x0001_0000u32.to_be_bytes());
-    assert_eq!(ok(parse_elst(&v0, &mem())), (1024, 28800));
+    assert_eq!(ok(parse_elst(&v0, &mem())), Some((1024, 28800)));
 
     let mut bad = vec![2u8, 0, 0, 0];
     bad.extend_from_slice(&1u32.to_be_bytes());
@@ -178,7 +178,19 @@ fn elst_v1_and_unsupported_and_negative_then_zero() {
     skip.extend_from_slice(&10u32.to_be_bytes());
     skip.extend_from_slice(&0u32.to_be_bytes());
     skip.extend_from_slice(&0x0001_0000u32.to_be_bytes());
-    assert_eq!(ok(parse_elst_start(&skip, &mem())), 0);
+    let err = parse_elst(&skip, &mem()).unwrap_err();
+    assert!(
+        err.to_string().contains("multiple"),
+        "empty-then-playable must not collapse to a prefix skip: {err}"
+    );
+
+    let mut empty = vec![0u8; 4];
+    empty.extend_from_slice(&1u32.to_be_bytes());
+    empty.extend_from_slice(&10u32.to_be_bytes());
+    empty.extend_from_slice(&(-1i32 as u32).to_be_bytes());
+    empty.extend_from_slice(&0x0001_0000u32.to_be_bytes());
+    let err = parse_elst(&empty, &mem()).unwrap_err();
+    assert!(err.to_string().contains("empty"), "{err}");
 }
 
 #[test]
@@ -223,11 +235,13 @@ fn presentation_and_remainder_use_checked_arithmetic() {
         movie_timescale: 2,
         media_timescale: 3,
         media_duration: 0,
+        has_elst: true,
     };
     assert!(
         huge.presentation_samples().is_none(),
         "overflowing movie→media convert"
     );
+    assert!(huge.edit_window(3).is_err(), "overflowing edit_window");
     let swapped = AacTrack {
         asc: Vec::new(),
         total_samples: 0,
@@ -237,6 +251,7 @@ fn presentation_and_remainder_use_checked_arithmetic() {
         movie_timescale: 48_000,
         media_timescale: 48_000,
         media_duration: 2048,
+        has_elst: true,
     };
     assert_eq!(swapped.presentation_samples(), Some(30720));
     assert!(

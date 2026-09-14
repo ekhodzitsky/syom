@@ -6,8 +6,8 @@
 //! exact. `elst.media_time` = priming; `elst.segment_duration` /
 //! `mvhd`/`tkhd` duration = valid source samples; `mdhd` duration =
 //! coded `n_frames * 1024`. Remainder is the unplayed media tail
-//! `coded − priming − valid`. Decode still skips only `media_time`
-//! (TASK-43 trims the tail).
+//! `coded − priming − valid`. Decode skips `media_time` and caps
+//! emission at the presentation duration.
 //!
 //! The reader side ([`crate::isomp4`]) is the structural oracle: its
 //! `parse_esds` walk defines exactly what this writer emits.

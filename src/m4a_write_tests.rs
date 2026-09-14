@@ -58,6 +58,7 @@ fn mux_parses_back_structurally() -> Result<()> {
     // single-entry table we (and ffmpeg) write.
     assert_eq!(track.total_samples, 3);
     assert_eq!(track.edit_start, 1024, "priming via elst media_time");
+    assert!(track.has_elst);
     assert_eq!(track.edit_duration, 2048);
     assert_eq!(track.movie_timescale, 48_000);
     assert_eq!(track.media_timescale, 48_000);
@@ -177,6 +178,8 @@ fn encode_elst_matches_source_length_short_and_unaligned() -> Result<()> {
         assert_eq!(be_u32(mdhd, 16), coded_len(n) as u32);
         let mvhd = box_body(&m4a, b"mvhd").expect("mvhd");
         assert_eq!(be_u32(mvhd, 16), n as u32);
+        let dec = decode_with(&m4a, &DecodeOptions::unbounded())?;
+        assert_eq!(dec.channels[0].len(), n as usize, "decode length n={n}");
     }
     Ok(())
 }
