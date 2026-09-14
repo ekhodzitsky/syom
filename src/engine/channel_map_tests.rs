@@ -11,6 +11,7 @@ use super::channel_map::{
 use super::decode::StreamDecoder;
 use super::error::Error;
 use super::huff_quad::{H1_CODE, H1_LEN};
+use crate::layout::Channel;
 
 /// Same gain as `golden_tests`: one quant-1 bin peaks around 4k LSB.
 const AUDIBLE_GAIN: u8 = 188;
@@ -326,14 +327,17 @@ fn mono_mix_is_mean_of_non_lfe_planes() {
         PlaneMap {
             src: Some(0),
             lfe: false,
+            label: Channel::FrontLeft,
         },
         PlaneMap {
             src: Some(1),
             lfe: false,
+            label: Channel::FrontRight,
         },
         PlaneMap {
             src: Some(2),
             lfe: true,
+            label: Channel::Lfe,
         },
     ];
     assert_eq!(mono_mix(&planes, &order), vec![2.0; 4]);
@@ -342,10 +346,12 @@ fn mono_mix_is_mean_of_non_lfe_planes() {
         PlaneMap {
             src: Some(0),
             lfe: true,
+            label: Channel::Lfe,
         },
         PlaneMap {
             src: Some(1),
             lfe: true,
+            label: Channel::Lfe,
         },
     ];
     assert_eq!(mono_mix(&planes[..2], &all_lfe), vec![2.0; 4]);

@@ -1,25 +1,12 @@
 //! Channel element → output plane mapping.
 //!
-//! Two sources of truth, PCE winning when present:
-//!
-//! - `program_config_element()` (ISO/IEC 14496-3 §4.4.2.4): explicit element
-//!   tags in front / side / back / LFE lists. Output planes follow PCE
-//!   declaration order — front, then side, then back (a CPE emits L then R),
-//!   then LFEs. A PCE must be LC, match the stream `sf_index`, list exactly
-//!   the frame's channel elements, and yield at most 6 planes; otherwise
-//!   `Error::Format` (not silence or extra planes).
-//! - ADTS/ASC `channel_configuration` (Table 4.1): default element→channel
-//!   assignment. Output planes follow the lavc default layouts, proven by the
-//!   committed goldens (`src/decode_mc_tests.rs`):
-//!   cfg 3 = FL FR FC, cfg 4 = FL FR FC BC, cfg 5 = FL FR FC BL BR,
-//!   cfg 6 = FL FR FC LFE BL BR.
-//!
-//! Speech mono (one rule): arithmetic mean of the decoded non-LFE planes;
-//! LFE planes are mixed only when nothing else exists. For stereo this
-//! reduces to the historical `0.5·(L+R)`.
+//! PCE wins when present (front/side/back/LFE declaration order; LC, matching
+//! `sf_index`, exact tags, ≤6 planes). Else Table 4.1 / lavc order
+//! (5.1 = FL FR FC LFE BL BR). Speech mono = mean of non-LFE planes.
 
 use super::bits::BitReader;
 use super::error::{Error, Result};
+use crate::layout::Channel;
 
 /// Decoded syntactic element kind relevant to channel mapping.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -170,6 +157,11 @@ fn read_element_list(br: &mut BitReader<'_>, n: usize) -> Result<Vec<(bool, u8)>
 pub(crate) struct PlaneMap {
     pub src: Option<usize>,
     pub lfe: bool,
+    pub label: Channel,
+}
+
+fn plane(src: Option<usize>, lfe: bool, label: Channel) -> PlaneMap {
+    PlaneMap { src, lfe, label }
 }
 
 /// Map decode-order element planes to output planes (see module docs).
@@ -189,10 +181,11 @@ pub(crate) fn map_planes(
     for (i, e) in elems.iter().enumerate() {
         if !used[i] {
             for p in 0..e.planes() {
-                out.push(PlaneMap {
-                    src: Some(e.plane + p),
-                    lfe: e.kind == ElemKind::Lfe,
-                });
+                out.push(plane(
+                    Some(e.plane + p),
+                    e.kind == ElemKind::Lfe,
+                    Channel::Other,
+                ));
             }
         }
     }
@@ -205,6 +198,7 @@ fn default_slots(config: u8, elems: &[Element], used: &mut [bool]) -> Vec<PlaneM
     use ElemKind::{Cpe, Lfe, Sce};
     const L: usize = 0;
     const R: usize = 1;
+    let labels = crate::layout::mpeg_channels(config);
     let slots: &[(ElemKind, usize, usize)] = match config {
         1 => &[(Sce, 0, L)],
         2 => &[(Cpe, 0, L), (Cpe, 0, R)],
@@ -229,24 +223,19 @@ fn default_slots(config: u8, elems: &[Element], used: &mut [bool]) -> Vec<PlaneM
         _ => return identity(elems, used),
     };
     let mut out = Vec::with_capacity(slots.len());
-    for &(kind, occ, part) in slots {
+    for (i, &(kind, occ, part)) in slots.iter().enumerate() {
+        let label = labels.get(i).copied().unwrap_or(Channel::Other);
         let hit = elems
             .iter()
             .enumerate()
             .filter(|(_, e)| e.kind == kind)
             .nth(occ);
         match hit {
-            Some((i, e)) => {
-                used[i] = true;
-                out.push(PlaneMap {
-                    src: Some(e.plane + part),
-                    lfe: kind == Lfe,
-                });
+            Some((ei, e)) => {
+                used[ei] = true;
+                out.push(plane(Some(e.plane + part), kind == Lfe, label));
             }
-            None => out.push(PlaneMap {
-                src: None,
-                lfe: kind == Lfe,
-            }),
+            None => out.push(plane(None, kind == Lfe, label)),
         }
     }
     out
@@ -262,14 +251,18 @@ fn pce_map(pce: &PceChannelMap, elems: &[Element], fs_index: u8) -> Result<Vec<P
     }
     let mut used = vec![false; elems.len()];
     let mut out = Vec::new();
-    for list in [&pce.front, &pce.side, &pce.back] {
-        for &(is_cpe, tag) in list {
-            let kind = if is_cpe { ElemKind::Cpe } else { ElemKind::Sce };
-            push_tagged(&mut out, elems, &mut used, kind, tag)?;
-        }
-    }
+    pce_list(&mut out, elems, &mut used, &pce.front, List::Front)?;
+    pce_list(&mut out, elems, &mut used, &pce.side, List::Side)?;
+    pce_list(&mut out, elems, &mut used, &pce.back, List::Back)?;
     for &tag in &pce.lfe {
-        push_tagged(&mut out, elems, &mut used, ElemKind::Lfe, tag)?;
+        push_tagged(
+            &mut out,
+            elems,
+            &mut used,
+            ElemKind::Lfe,
+            tag,
+            &[Channel::Lfe],
+        )?;
     }
     if used.iter().any(|&u| !u) {
         return Err(Error::Format("PCE extra channel element"));
@@ -280,12 +273,46 @@ fn pce_map(pce: &PceChannelMap, elems: &[Element], fs_index: u8) -> Result<Vec<P
     Ok(out)
 }
 
+#[derive(Clone, Copy)]
+enum List {
+    Front,
+    Side,
+    Back,
+}
+
+fn pce_list(
+    out: &mut Vec<PlaneMap>,
+    elems: &[Element],
+    used: &mut [bool],
+    list: &[(bool, u8)],
+    where_: List,
+) -> Result<()> {
+    let mut sce = 0usize;
+    for &(is_cpe, tag) in list {
+        let kind = if is_cpe { ElemKind::Cpe } else { ElemKind::Sce };
+        let labels: &[Channel] = match (where_, is_cpe, sce) {
+            (List::Front, true, _) => &[Channel::FrontLeft, Channel::FrontRight],
+            (List::Front, false, 0) => &[Channel::FrontCenter],
+            (List::Side, true, _) => &[Channel::SideLeft, Channel::SideRight],
+            (List::Back, true, _) => &[Channel::BackLeft, Channel::BackRight],
+            (List::Back, false, 0) => &[Channel::BackCenter],
+            _ => &[Channel::Other],
+        };
+        if !is_cpe {
+            sce += 1;
+        }
+        push_tagged(out, elems, used, kind, tag, labels)?;
+    }
+    Ok(())
+}
+
 fn push_tagged(
     out: &mut Vec<PlaneMap>,
     elems: &[Element],
     used: &mut [bool],
     kind: ElemKind,
     tag: u8,
+    labels: &[Channel],
 ) -> Result<()> {
     let hit = elems
         .iter()
@@ -300,10 +327,11 @@ fn push_tagged(
     };
     used[i] = true;
     for p in 0..n {
-        out.push(PlaneMap {
-            src: Some(e.plane + p),
-            lfe: kind == ElemKind::Lfe,
-        });
+        out.push(plane(
+            Some(e.plane + p),
+            kind == ElemKind::Lfe,
+            labels.get(p).copied().unwrap_or(Channel::Other),
+        ));
     }
     Ok(())
 }
@@ -313,10 +341,11 @@ fn identity(elems: &[Element], used: &mut [bool]) -> Vec<PlaneMap> {
     for (i, e) in elems.iter().enumerate() {
         used[i] = true;
         for p in 0..e.planes() {
-            out.push(PlaneMap {
-                src: Some(e.plane + p),
-                lfe: e.kind == ElemKind::Lfe,
-            });
+            out.push(plane(
+                Some(e.plane + p),
+                e.kind == ElemKind::Lfe,
+                Channel::Other,
+            ));
         }
     }
     out

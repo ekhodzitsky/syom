@@ -57,6 +57,7 @@ pub struct StreamDecoder {
     pub(crate) pending: Vec<PendingChan>,
     pub(crate) cces: Vec<super::cce::CcePayload>,
     pub(crate) last_rdb_bytes: usize,
+    last_meta: crate::layout::FrameMeta,
 }
 
 impl StreamDecoder {
@@ -253,6 +254,7 @@ impl StreamDecoder {
         if was_fast && !he {
             self.fb_pool.retain_seen();
             self.fast_mono = was_fast;
+            self.store_meta(channel_configuration, sample_rate, sample_rate, None, 1);
             return Ok(sample_rate);
         }
         self.frame_ch.truncate(self.n_ch);
@@ -279,10 +281,18 @@ impl StreamDecoder {
             }
             self.fb_pool.retain_seen();
             self.fast_mono = was_fast;
+            self.store_meta(
+                channel_configuration,
+                sample_rate,
+                sample_rate,
+                order.as_deref(),
+                self.frame_ch.len(),
+            );
             return Ok(sample_rate);
         }
+        let core = sample_rate;
         let planar = std::mem::take(&mut self.frame_ch);
-        let (planar, sample_rate) = super::sbr_attach::apply_and_layout(
+        let (planar, out_rate) = super::sbr_attach::apply_and_layout(
             &mut self.sbr_pool,
             &self.elems,
             planar,
@@ -297,7 +307,14 @@ impl StreamDecoder {
         self.fb_pool.retain_seen();
         self.sbr_pool.retain_seen();
         self.fast_mono = was_fast;
-        Ok(sample_rate)
+        self.store_meta(
+            channel_configuration,
+            core,
+            out_rate,
+            order.as_deref(),
+            self.frame_ch.len(),
+        );
+        Ok(out_rate)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -351,3 +368,6 @@ impl StreamDecoder {
         self.n_ch += 1;
     }
 }
+
+#[path = "decode_meta.rs"]
+mod meta;

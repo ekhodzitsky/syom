@@ -89,6 +89,8 @@ pub struct EncodeInfo {
     pub remainder: u64,
     /// `aac_frames * 1024` (decoded ADTS length before container trim).
     pub coded_samples: u64,
+    /// MPEG layout of the coded planes (`1` mono / `2` stereo).
+    pub layout: crate::Layout,
 }
 
 /// Resumable push encoder: planar f32 chunks in, ADTS frames out.
@@ -315,6 +317,7 @@ impl Encoder {
             priming: block,
             remainder,
             coded_samples: self.aac_frames * block,
+            layout: crate::Layout::Mpeg(self.channels as u8),
         })
     }
 

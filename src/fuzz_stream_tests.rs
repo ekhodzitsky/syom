@@ -37,10 +37,7 @@ fn push_decode(
     assert!(!dec.is_failed());
     assert!(dec.is_finished());
     assert_eq!(info.samples, tracks.first().map_or(0, Vec::len) as u64);
-    Ok(crate::DecodedAac {
-        sample_rate: info.sample_rate,
-        channels: tracks,
-    })
+    Ok(crate::DecodedAac::from_info(info, tracks))
 }
 
 fn push_encode(pcm: &[Vec<f32>], chunk: usize) -> Result<Vec<u8>, AacError> {

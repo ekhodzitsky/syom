@@ -73,6 +73,7 @@ where
     dec.mix_down_mono = mono;
     let mut scratch: Vec<f32> = Vec::new();
     let (mut skip_left, mut play_left) = track.edit_window(out_rate)?;
+    let skip0 = skip_left;
     let mut locked: Option<(u32, usize)> = None;
     let mut aac_frames = 0u64;
     let mut emitted = 0u64;
@@ -165,6 +166,7 @@ where
                 sample_rate: rate,
                 samples: take,
                 planar: &plane,
+                meta: dec.last_meta(),
             })?;
         } else {
             let planes: Vec<&[f32]> = dec
@@ -176,6 +178,7 @@ where
                 sample_rate: rate,
                 samples: take,
                 planar: &planes,
+                meta: dec.last_meta(),
             })?;
         }
     }
@@ -184,11 +187,22 @@ where
         return Err(AacError::NotAac);
     }
     let (sample_rate, channels) = locked.unwrap_or((out_rate, 0));
+    let priming = track.has_elst.then_some(skip0 as u64);
+    let remainder = track.has_elst.then_some(
+        track
+            .total_samples
+            .saturating_sub(skip0 as u64)
+            .saturating_sub(samples_out),
+    );
     Ok(StreamInfo {
         sample_rate,
+        core_rate: dec.last_core_rate(),
         channels,
+        layout: dec.last_meta().layout,
         aac_frames,
         samples: samples_out,
+        priming,
+        remainder,
     })
 }
 

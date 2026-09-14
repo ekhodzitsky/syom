@@ -12,6 +12,7 @@ pub mod encode_cmp;
 mod engine;
 mod error;
 mod isomp4;
+mod layout;
 mod m4a_write;
 #[doc(hidden)]
 pub mod mem_iso;
@@ -36,6 +37,7 @@ pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{encode, encode_with, write, write_with};
 pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
 pub use isomp4::sniff_is_isobmff;
+pub use layout::{Channel, FrameMeta, Layout, MAX_PLANES, mpeg_channels};
 pub use options::{
     ChannelMode, DEFAULT_MAX_DECODE_SAMPLE_RATE, DEFAULT_MAX_DURATION_SECS,
     DEFAULT_MAX_INPUT_BYTES, DEFAULT_MAX_SAMPLE_RATE, DecodeOptions, EncodeContainer,

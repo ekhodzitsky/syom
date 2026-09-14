@@ -1,11 +1,13 @@
 //! Streaming frame types: the borrowed [`Frame`] delivered to the callback
 //! and the [`StreamInfo`] tallies returned at end of stream.
 
+use crate::layout::{FrameMeta, Layout};
+
 /// One decoded AAC frame: planar f32 in [-1, 1], one plane per channel.
 ///
 /// The planes borrow decoder scratch and are valid **only for the duration
-/// of the frame callback** — copy them out to keep them. Channel labels
-/// and presentation timing are TASK-61 (`#[non_exhaustive]`).
+/// of the frame callback** — copy them out to keep them. [`Self::meta`] is
+/// `Copy` (no per-frame heap).
 #[non_exhaustive]
 pub struct Frame<'a> {
     /// Native sample rate after SBR (2× the core rate for HE-AAC).
@@ -14,6 +16,8 @@ pub struct Frame<'a> {
     pub samples: usize,
     /// Planes in the same channel order as [`crate::DecodedAac`].
     pub planar: &'a [&'a [f32]],
+    /// Channel labels, core/output rate, layout (TASK-61).
+    pub meta: FrameMeta,
 }
 
 /// Tallies from a finished stream decode.
@@ -22,10 +26,19 @@ pub struct Frame<'a> {
 pub struct StreamInfo {
     /// Native sample rate of the stream (0 if nothing decodable was seen).
     pub sample_rate: u32,
+    /// Core AAC rate (before SBR). `0` if nothing decodable was seen.
+    pub core_rate: u32,
     /// Channels per emitted frame (0 if nothing decodable was seen).
     pub channels: usize,
+    /// How the planes were produced.
+    pub layout: Layout,
     /// Payload frames decoded, including edit-list-skipped ones.
     pub aac_frames: u64,
     /// Output samples per channel after any `elst` skip.
     pub samples: u64,
+    /// Encoder delay skipped at the start, when the container says so.
+    /// ADTS has no trim → [`None`].
+    pub priming: Option<u64>,
+    /// Unplayed coded tail, when the container says so. ADTS → [`None`].
+    pub remainder: Option<u64>,
 }

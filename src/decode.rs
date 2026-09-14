@@ -26,6 +26,27 @@ use crate::stream::{
 pub struct DecodedAac {
     pub sample_rate: u32,
     pub channels: Vec<Vec<f32>>,
+    /// Core AAC rate (before SBR). Same as [`Self::sample_rate`] for LC.
+    pub core_rate: u32,
+    /// Channel layout of [`Self::channels`].
+    pub layout: crate::Layout,
+    /// Encoder delay skipped at the start, when the container says so.
+    pub priming: Option<u64>,
+    /// Unplayed coded tail, when the container says so.
+    pub remainder: Option<u64>,
+}
+
+impl DecodedAac {
+    pub(crate) fn from_info(info: crate::StreamInfo, channels: Vec<Vec<f32>>) -> Self {
+        Self {
+            sample_rate: info.sample_rate,
+            channels,
+            core_rate: info.core_rate,
+            layout: info.layout,
+            priming: info.priming,
+            remainder: info.remainder,
+        }
+    }
 }
 
 /// Decode ADTS, M4A, or LATM/LOAS bytes with speech-ingest defaults.
@@ -84,10 +105,7 @@ pub fn decode_seek_with<R: Read + Seek>(reader: R, opts: &DecodeOptions) -> Resu
         }
         Ok(())
     })?;
-    Ok(DecodedAac {
-        sample_rate: info.sample_rate,
-        channels: tracks,
-    })
+    Ok(DecodedAac::from_info(info, tracks))
 }
 
 /// Decode ADTS/LOAS from a generic [`Read`] with speech-ingest defaults.
@@ -114,10 +132,7 @@ pub fn decode_read_with<R: Read>(reader: R, opts: &DecodeOptions) -> Result<Deco
         }
         Ok(())
     })?;
-    Ok(DecodedAac {
-        sample_rate: info.sample_rate,
-        channels: tracks,
-    })
+    Ok(DecodedAac::from_info(info, tracks))
 }
 
 /// Load at most `limit` compressed bytes. Metadata larger than `limit` is
@@ -146,10 +161,7 @@ pub fn decode_with(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
         // per-frame scratch or callback copy.
         let mut track: Vec<f32> = Vec::new();
         let info = decode_streaming_mono_into(data, opts, est_frames, &mut track)?;
-        return Ok(DecodedAac {
-            sample_rate: info.sample_rate,
-            channels: vec![track],
-        });
+        return Ok(DecodedAac::from_info(info, vec![track]));
     }
     let mut tracks: Vec<Vec<f32>> = Vec::new();
     let info = decode_streaming(data, opts, |f| {
@@ -181,10 +193,7 @@ pub fn decode_with(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
         }
         Ok(())
     })?;
-    Ok(DecodedAac {
-        sample_rate: info.sample_rate,
-        channels: tracks,
-    })
+    Ok(DecodedAac::from_info(info, tracks))
 }
 
 /// ADTS frame-count estimate for output pre-sizing: walk the frame headers

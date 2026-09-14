@@ -364,6 +364,7 @@ impl Decoder {
             sample_rate: rate,
             samples: n_samples,
             planar,
+            meta: self.dec.last_meta(),
         })
     }
 }

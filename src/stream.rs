@@ -314,9 +314,13 @@ impl Decoder {
         let (sample_rate, channels) = self.locked.unwrap_or((0, 0));
         Ok(StreamInfo {
             sample_rate,
+            core_rate: self.dec.last_core_rate(),
             channels,
+            layout: self.dec.last_meta().layout,
             aac_frames: self.aac_frames,
             samples: self.samples_out,
+            priming: None,
+            remainder: None,
         })
     }
 }

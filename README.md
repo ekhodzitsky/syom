@@ -78,6 +78,8 @@ assert_eq!(kind(syom::decode(&[]).unwrap_err()), "not-aac");
 From a path: `syom::read("clip.m4a")?` (speech-mono, 2 h). Keep coded
 layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.
 No duration/rate ceiling: `DecodeOptions::unbounded()`.
+Streaming `Frame::meta` (`Copy`) names planes (5.1 = FL FR FC LFE BL BR)
+and core vs output rate; ADTS priming stays `None`.
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
 mono/stereo, 128 kbps). `bitrate_bps` is an ABR target (payload/valid

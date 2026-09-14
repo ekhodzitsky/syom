@@ -323,6 +323,7 @@ impl<R: Read + Seek> M4aSeek<R> {
                     sample_rate: rate,
                     samples: take,
                     planar: &plane,
+                    meta: self.dec.last_meta(),
                 })?;
             } else {
                 let planes: Vec<&[f32]> = self
@@ -335,6 +336,7 @@ impl<R: Read + Seek> M4aSeek<R> {
                     sample_rate: rate,
                     samples: take,
                     planar: &planes,
+                    meta: self.dec.last_meta(),
                 })?;
             }
         }
@@ -346,9 +348,18 @@ impl<R: Read + Seek> M4aSeek<R> {
             .unwrap_or((self.asc.output_sample_rate, if self.mono { 1 } else { 0 }));
         Ok(StreamInfo {
             sample_rate,
+            core_rate: self.dec.last_core_rate(),
             channels,
+            layout: self.dec.last_meta().layout,
             aac_frames,
             samples: samples_out,
+            priming: self.track.has_elst.then_some(self.skip),
+            remainder: self.track.has_elst.then_some(
+                self.track
+                    .total_samples
+                    .saturating_sub(self.skip)
+                    .saturating_sub(samples_out),
+            ),
         })
     }
 }

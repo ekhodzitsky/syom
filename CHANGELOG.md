@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frame/stream channel and timing metadata (TASK-61): `Channel`, `Layout`,
+  `FrameMeta` (`Copy`, 8-plane labels, no per-frame heap). `Frame::meta`,
+  `DecodedAac`/`StreamInfo` `{core_rate, layout, priming, remainder}`.
+  ADTS priming/remainder stay `None`; M4A with `elst` reports skip/tail.
+  MPEG 5.1 = FL FR FC LFE BL BR. Speech downmix is `Layout::SpeechMono`.
+  `EncodeInfo::layout` is `Mpeg(1|2)`. `speech()` default unchanged.
 - Opt-in intensity stereo (TASK-76): `EncodeOptions::with_intensity`.
   Default off — goldens unchanged. Long-window HF (`≥ 6 kHz`, `|ρ| ≥ 0.85`)
   right-channel `INTENSITY_HCB`/`HCB2` + `is_pos`. Ablation
