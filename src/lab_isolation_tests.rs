@@ -58,6 +58,23 @@ fn lab_pin_and_adapter_are_native_aac_in_process() {
     assert!(mk.contains("Not invoked by cargo test"));
 }
 
+#[test]
+fn lab_fdk_pin_is_isolated_v2_0_3() {
+    let pin = std::fs::read_to_string(root().join("lab/fdk/PIN.md")).unwrap();
+    assert!(pin.contains("2.0.3"));
+    assert!(pin.contains("e25671cd96b10bad896aa42ab91a695a9e573395262baed4e4a2ff178d6a3a78"));
+    assert!(pin.contains("AFTERBURNER=0"));
+    assert!(pin.contains("AACENC_TRANSMUX=2"));
+    assert!(pin.contains("Fraunhofer"));
+    let adapt = std::fs::read_to_string(root().join("lab/fdk/fdk_adapt.c")).unwrap();
+    assert!(adapt.contains("aacDecoder_DecodeFrame"));
+    assert!(adapt.contains("aacEncEncode"));
+    assert!(adapt.contains("AACENC_AFTERBURNER"));
+    let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!cargo.contains("fdk"));
+    assert!(!cargo.contains("fdk-aac"));
+}
+
 fn walk(dir: std::path::PathBuf) -> Vec<std::path::PathBuf> {
     let mut out = Vec::new();
     for e in std::fs::read_dir(dir).unwrap() {

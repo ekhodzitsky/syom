@@ -1,5 +1,7 @@
 libavcodec/avc_driver
 libavcodec/*.o
+fdk/fdk_driver
+fdk/*.o
 build/
 prefix/
 ffmpeg-*.tar.*

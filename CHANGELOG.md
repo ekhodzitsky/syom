@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Isolated native libavcodec lab (`lab/libavcodec`, FFmpeg 9.0.1 pin):
   in-process ADTS access-unit decode, container decode, and LC ADTS encode.
   Not a workspace member; ordinary tests never link or spawn ffmpeg.
+- Isolated native FDK lab (`lab/fdk`, fdk-aac v2.0.3 pin, Fraunhofer license
+  kept off the product crate): LC ADTS decode/encode adapter, afterburner
+  off, delay reported. Ordinary tests never link FDK.
 
 ## [0.6.0] - 2026-09-06
 

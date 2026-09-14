@@ -7,7 +7,7 @@ ffmpeg / FDK.
 | Adapter | Pin | Status |
 |---|---|---|
 | [libavcodec](libavcodec/) | FFmpeg 9.0.1 native `aac` | TASK-6 |
-| FDK | v2.0.3 | TASK-7 (separate) |
+| [fdk](fdk/) | fdk-aac v2.0.3 | TASK-7 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 
