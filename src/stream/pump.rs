@@ -37,9 +37,7 @@ impl Decoder {
                 return Ok(()); // wait for enough bytes to sniff
             }
             if sniff_is_isobmff(avail) {
-                return Err(AacError::format(
-                    "aac: M4A/ISOBMFF needs random access; use decode_streaming",
-                ));
+                return Err(AacError::Unsupported(crate::UnsupportedFeature::M4aPush));
             }
             // Sniff order and ADTS fallback mirror `decode_with`.
             self.container = if sniff_is_adts(avail) || !sniff_is_latm(avail) {
@@ -49,7 +47,7 @@ impl Decoder {
             };
         }
         match self.container {
-            Container::Adts => self.pump_adts(buf, sink, est_frames, on_frame),
+            Container::Adts => self.pump_adts(buf, sink, est_frames, on_frame, final_flush),
             Container::Latm => self.pump_latm(buf, sink, est_frames, on_frame),
             Container::Unknown => Ok(()),
         }
@@ -61,6 +59,7 @@ impl Decoder {
         mut sink: Option<&mut Vec<f32>>,
         est_frames: Option<usize>,
         on_frame: &mut F,
+        final_flush: bool,
     ) -> Result<()>
     where
         F: FnMut(Frame<'_>) -> Result<()>,
@@ -71,18 +70,23 @@ impl Decoder {
                 Ok(v) => v,
                 // Partial header: wait for more bytes (finish drops it).
                 Err(EngineError::UnexpectedEnd) => return Ok(()),
-                // Definite garbage: resync one byte, like the one-shot loop.
-                Err(_) => {
+                // No sync: resync one byte (garbage prefix / inter-frame junk).
+                Err(EngineError::AdtsSyncNotFound) => {
                     self.pos += 1;
                     continue;
                 }
+                // Definite header syntax: do not skip into NotAac (TASK-51).
+                Err(e) => return Err(AacError::from(e)),
             };
             let frame_len = usize::from(hdr.aac_frame_length);
             self.opts
                 .memory
                 .check_declared_au(u64::from(hdr.aac_frame_length))?;
             if avail.len() < frame_len {
-                return Ok(()); // partial frame: wait (finish drops it)
+                if final_flush && self.emitted == 0 {
+                    return Err(AacError::truncated_at(Some(self.pos as u64)));
+                }
+                return Ok(()); // wait; finish drops a trailing partial frame
             }
             if !hdr.protection_absent {
                 crate::engine::adts_crc::verify_adts_crc(&avail[..frame_len], &hdr)
@@ -98,9 +102,7 @@ impl Decoder {
                     let rate = self
                         .dec
                         .decode_adts_header_payload(&hdr, payload, Some(dst))
-                        .map_err(|e| {
-                            AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}"))
-                        })?;
+                        .map_err(AacError::from)?;
                     let n = dst.len() - before;
                     self.tally(rate, 1, n)?;
                     self.sink_frame_samples = n;
@@ -123,16 +125,16 @@ impl Decoder {
 
     /// Decode one ADTS payload: mono fast path into `mono_scratch`, or
     /// scaled planes borrowed via `frame_planes`.
-    fn decode_adts(&mut self, hdr: &AdtsHeader, payload: &[u8], idx: u64) -> Result<u32> {
+    fn decode_adts(&mut self, hdr: &AdtsHeader, payload: &[u8], _idx: u64) -> Result<u32> {
         if matches!(self.opts.channel_mode, ChannelMode::Mono) {
             self.mono_scratch.clear();
             self.dec
                 .decode_adts_header_payload(hdr, payload, Some(&mut self.mono_scratch))
-                .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}")))
+                .map_err(AacError::from)
         } else {
             self.dec
                 .decode_adts_header_payload(hdr, payload, None)
-                .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e}")))
+                .map_err(AacError::from)
         }
     }
 

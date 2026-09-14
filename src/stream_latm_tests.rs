@@ -171,13 +171,13 @@ fn latm_truncated_tail_parity() -> Result<()> {
 fn loas_corrupt_crc_propagates_mid_stream() -> Result<()> {
     let corrupt = splice_he48_crc(true)?;
     match crate::decode_with(&corrupt, &DecodeOptions::unbounded()) {
-        Err(AacError::Decode(msg)) => assert!(msg.contains("CRC"), "{msg}"),
+        Err(AacError::Malformed(crate::MalformedKind::LatmCrc)) => {}
         other => panic!("expected CRC decode error, got {other:?}"),
     }
     // Same error surfaces from `feed`, not only at finish.
     let mut dec = Decoder::new(DecodeOptions::unbounded());
     match dec.feed(&corrupt, |_| Ok(())) {
-        Err(AacError::Decode(msg)) => assert!(msg.contains("CRC"), "{msg}"),
+        Err(AacError::Malformed(crate::MalformedKind::LatmCrc)) => {}
         other => panic!("expected CRC error from feed, got {other:?}"),
     }
     Ok(())
@@ -200,23 +200,23 @@ fn latm_stream_with_no_frames_is_decode_error_like_oneshot() {
     let data = [0x56, 0xE0, 0x00]; // (0x2B7 << 13) | mux_len 0
     assert!(matches!(
         crate::decode_with(&data, &DecodeOptions::speech()),
-        Err(AacError::Decode(_))
+        Err(AacError::Malformed(_) | AacError::Truncated { .. })
     ));
     // 3 bytes sit under the sniff window during feed; the empty-payload
-    // decode-class error surfaces at finish.
+    // error surfaces at finish (not NotAac).
     let mut dec = Decoder::new(DecodeOptions::speech());
     assert!(dec.feed(&data, |_| Ok(())).is_ok());
     match dec.finish(|_| Ok(())) {
-        Err(AacError::Decode(_)) => {}
-        other => panic!("expected decode-class error, got {other:?}"),
+        Err(AacError::Malformed(_) | AacError::Truncated { .. }) => {}
+        other => panic!("expected malformed/truncated, got {other:?}"),
     }
-    // LOAS sync seen, but the announced body never arrives: decode-class too.
+    // LOAS sync seen, but the announced body never arrives.
     let data = [0x56, 0xE7, 0xFF, 0x00, 0x00]; // mux_len 0x7FF, body absent
     let mut dec = Decoder::new(DecodeOptions::speech());
     assert!(dec.feed(&data, |_| Ok(())).is_ok());
     match dec.finish(|_| Ok(())) {
-        Err(AacError::Decode(_)) => {}
-        other => panic!("expected decode-class error, got {other:?}"),
+        Err(AacError::Malformed(_) | AacError::Truncated { .. }) => {}
+        other => panic!("expected malformed/truncated, got {other:?}"),
     }
 }
 

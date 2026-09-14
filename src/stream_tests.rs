@@ -324,7 +324,7 @@ fn m4a_push_is_rejected() {
     let mut dec = Decoder::new(DecodeOptions::speech());
     assert_eq!(dec.feed(&m4a[..4], |_| Ok(())).ok(), Some(4));
     match dec.feed(&m4a[4..], |_| Ok(())) {
-        Err(AacError::Format(msg)) => assert!(msg.contains("random access"), "{msg}"),
+        Err(AacError::Unsupported(crate::UnsupportedFeature::M4aPush)) => {}
         other => panic!("expected m4a reject, got {other:?}"),
     }
 }

@@ -140,8 +140,8 @@ fn error_paths_are_encode_errors() {
     ];
     for e in cases {
         assert!(
-            matches!(e, AacError::Encode(_)),
-            "expected Encode, got {e:?}"
+            matches!(e, AacError::Encode(_) | AacError::InvalidPcm(_)),
+            "expected Encode/InvalidPcm, got {e:?}"
         );
         assert!(!e.to_string().is_empty(), "stable Display");
     }

@@ -8,8 +8,8 @@
 //! are the committed proof.
 //!
 //! PCM samples must be finite and in `[-1, 1]`. NaN, infinities, and
-//! `|x| > 1` are [`AacError::Encode`]. There is no silent clip. The push
-//! [`crate::Encoder`] uses the same rule.
+//! `|x| > 1` are [`AacError::InvalidPcm`]. There is no silent clip. The
+//! push [`crate::Encoder`] uses the same rule.
 
 use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
 use crate::engine::enc_frame::LcEncoder;
@@ -116,10 +116,10 @@ fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<
     }
     let n = pcm[0].len();
     if n == 0 {
-        return Err(AacError::encode("encode: empty input"));
+        return Err(AacError::InvalidPcm(crate::PcmReject::Empty));
     }
     if pcm.iter().any(|p| p.len() != n) {
-        return Err(AacError::encode("encode: channel planes differ in length"));
+        return Err(AacError::InvalidPcm(crate::PcmReject::PlaneLength));
     }
     check_pcm_samples(pcm.iter().map(Vec::as_slice))?;
     Ok(())
@@ -133,10 +133,10 @@ where
     for plane in planes {
         for &x in plane {
             if !x.is_finite() {
-                return Err(AacError::encode("encode: non-finite sample"));
+                return Err(AacError::InvalidPcm(crate::PcmReject::NonFinite));
             }
             if x.abs() > 1.0 {
-                return Err(AacError::encode("encode: sample amplitude exceeds ±1"));
+                return Err(AacError::InvalidPcm(crate::PcmReject::Amplitude));
             }
         }
     }

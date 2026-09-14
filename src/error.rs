@@ -1,23 +1,103 @@
 //! Typed errors for the AAC reader (stable `Display`, no `anyhow`).
 
 use crate::budgets::{BudgetExceeded, BudgetKind};
+use crate::engine::error::Error as EngineError;
 use std::fmt;
 use std::io;
 
 /// Result alias for this crate.
 pub type Result<T> = std::result::Result<T, AacError>;
 
-/// Errors produced while sniffing or decoding AAC / M4A streams.
+/// Unsupported AOT / transport / tool (not malformed syntax).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum UnsupportedFeature {
+    /// `audioObjectType` other than LC/SBR/PS.
+    AudioObjectType(u8),
+    /// `frameLengthFlag == 1` (960-line).
+    FrameLength960,
+    /// No SWB table / reserved ADTS rate index.
+    SampleRateIndex(u8),
+    /// LATM `audioMuxVersionA == 1`.
+    LatmVersionA,
+    /// LATM `frameLengthType` is not AAC.
+    LatmFrameLengthType,
+    /// FIL `extension_type` we do not implement.
+    Extension(u8),
+    /// Push [`crate::Decoder`] cannot seek ISOBMFF.
+    M4aPush,
+    /// Push [`crate::Encoder`] cannot write M4A (`stco` needs finish).
+    EncodeM4aStreaming,
+}
+
+/// Malformed syntax (CRC, Huffman, lengths). Truncation is [`AacError::Truncated`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum MalformedKind {
+    AdtsSync,
+    AdtsLayer,
+    AdtsFrameLength,
+    AdtsCrc,
+    Huffman,
+    Ics,
+    Section,
+    Spectrum,
+    Filterbank,
+    Codebook,
+    LatmCrc,
+    LatmConfig,
+    LatmMux,
+    Sbr,
+    Ps,
+    Syntax,
+}
+
+/// Push `Decoder` / `Encoder` used after finish or fail.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LifecycleState {
+    Failed,
+    Finished,
+}
+
+/// Encoder rejected the PCM domain (not a bitrate/container knob).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum PcmReject {
+    NonFinite,
+    Amplitude,
+    Empty,
+    PlaneLength,
+    ChannelCount,
+}
+
+/// Errors produced while sniffing, decoding, or encoding AAC.
 ///
-/// `#[non_exhaustive]`: TASK-51 will add distinguishable unsupported /
-/// truncated / lifecycle variants. Match with `_` or named variants;
-/// do not string-match [`Self::Format`] / [`Self::Decode`] / [`Self::Encode`].
+/// `#[non_exhaustive]`: match with `_` or named variants. Prefer
+/// [`Self::Unsupported`], [`Self::Truncated`], [`Self::Malformed`],
+/// [`Self::Lifecycle`], [`Self::InvalidPcm`] over string-matching
+/// [`Self::Format`] / [`Self::Decode`] / [`Self::Encode`].
+///
+/// ```
+/// fn classify(e: syom::AacError) -> &'static str {
+///     match e {
+///         syom::AacError::NotAac => "not-aac",
+///         syom::AacError::Unsupported(_) => "unsupported",
+///         syom::AacError::Truncated { .. } => "truncated",
+///         syom::AacError::Malformed(_) => "malformed",
+///         syom::AacError::Limit { .. } | syom::AacError::TooLong { .. } => "limit",
+///         syom::AacError::InvalidPcm(_) | syom::AacError::InvalidLimits(_) => "invalid",
+///         syom::AacError::Lifecycle { .. } => "lifecycle",
+///         _ => "other",
+///     }
+/// }
+/// assert_eq!(classify(syom::AacError::NotAac), "not-aac");
+/// ```
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum AacError {
     /// Underlying `Read` / `Seek` failure.
     Io(io::Error),
-    /// Stream is not ADTS or M4A/AAC.
+    /// Stream is not ADTS, LATM/LOAS, or M4A/AAC.
     NotAac,
     /// Sample rate is zero or above the configured ceiling.
     UnsupportedSampleRate { rate: u32, max: u32 },
@@ -31,11 +111,21 @@ pub enum AacError {
         observed: u64,
         max: u64,
     },
-    /// Structural / demux failure.
+    /// Legal bitstream we do not implement.
+    Unsupported(UnsupportedFeature),
+    /// Input ended mid-header or mid-payload. `at` is a byte offset when known.
+    Truncated { at: Option<u64> },
+    /// CRC / Huffman / length / ICS syntax.
+    Malformed(MalformedKind),
+    /// `feed` / `finish` after a failed or finished streaming instance.
+    Lifecycle { state: LifecycleState },
+    /// Encoder PCM is empty, non-finite, `|x|>1`, or plane-shaped wrong.
+    InvalidPcm(PcmReject),
+    /// Structural / demux failure (leftover; prefer the variants above).
     Format(String),
-    /// Decoder engine rejected a frame.
+    /// Decoder engine rejected a frame (leftover mid-stream semantics).
     Decode(String),
-    /// Encoder rejected input or could not meet constraints.
+    /// Encoder rejected input or could not meet constraints (leftover).
     Encode(String),
 }
 
@@ -82,9 +172,71 @@ impl AacError {
         }
     }
 
+    #[inline]
+    pub fn truncated_at(at: Option<u64>) -> Self {
+        Self::Truncated { at }
+    }
+
+    #[inline]
+    pub fn with_truncated_at(self, at: u64) -> Self {
+        match self {
+            Self::Truncated { at: None } => Self::Truncated { at: Some(at) },
+            other => other,
+        }
+    }
+
     /// Whether this should surface as generic unsupported-format upstream.
     pub fn is_format_class(&self) -> bool {
         matches!(self, Self::NotAac | Self::Format(_))
+    }
+}
+
+impl fmt::Display for UnsupportedFeature {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AudioObjectType(a) => write!(f, "aac: unsupported audioObjectType {a}"),
+            Self::FrameLength960 => write!(f, "aac: 960-line frames are Media"),
+            Self::SampleRateIndex(i) => {
+                write!(f, "aac: no SWB table for samplingFrequencyIndex {i}")
+            }
+            Self::LatmVersionA => write!(f, "aac: LATM audioMuxVersionA reserved"),
+            Self::LatmFrameLengthType => write!(f, "aac: LATM frameLengthType not AAC"),
+            Self::Extension(t) => write!(f, "aac: extension_type {t}"),
+            Self::M4aPush => write!(
+                f,
+                "aac: M4A/ISOBMFF needs random access; use decode_streaming"
+            ),
+            Self::EncodeM4aStreaming => {
+                write!(
+                    f,
+                    "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with"
+                )
+            }
+        }
+    }
+}
+
+impl fmt::Display for MalformedKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            Self::AdtsSync => "aac: ADTS sync not found",
+            Self::AdtsLayer => "aac: ADTS layer must be 0",
+            Self::AdtsFrameLength => "aac: ADTS frame length too small",
+            Self::AdtsCrc => "aac: ADTS CRC mismatch",
+            Self::Huffman => "aac: Huffman codeword invalid",
+            Self::Ics => "aac: invalid ics_info",
+            Self::Section => "aac: section_data overrun",
+            Self::Spectrum => "aac: spectral geometry invalid",
+            Self::Filterbank => "aac: filterbank length mismatch",
+            Self::Codebook => "aac: invalid codebook",
+            Self::LatmCrc => "aac: LATM CRC mismatch",
+            Self::LatmConfig => "aac: LATM config out of range",
+            Self::LatmMux => "aac: LATM missing StreamMuxConfig",
+            Self::Sbr => "aac: SBR payload invalid",
+            Self::Ps => "aac: PS data invalid",
+            Self::Syntax => "aac: malformed syntax",
+        };
+        f.write_str(s)
     }
 }
 
@@ -109,6 +261,27 @@ impl fmt::Display for AacError {
                 observed,
                 max,
             } => write!(f, "decode budget exceeded ({kind}: {observed} > {max})"),
+            Self::Unsupported(feat) => write!(f, "{feat}"),
+            Self::Truncated { at } => match at {
+                Some(n) => write!(f, "aac: unexpected end of bitstream at byte {n}"),
+                None => write!(f, "aac: unexpected end of bitstream"),
+            },
+            Self::Malformed(kind) => write!(f, "{kind}"),
+            Self::Lifecycle { state } => match state {
+                LifecycleState::Failed => write!(f, "stream failed; call reset()"),
+                LifecycleState::Finished => write!(f, "stream already finished; call reset()"),
+            },
+            Self::InvalidPcm(PcmReject::NonFinite) => write!(f, "encode: non-finite sample"),
+            Self::InvalidPcm(PcmReject::Amplitude) => {
+                write!(f, "encode: sample amplitude exceeds ±1")
+            }
+            Self::InvalidPcm(PcmReject::Empty) => write!(f, "encode: empty input"),
+            Self::InvalidPcm(PcmReject::PlaneLength) => {
+                write!(f, "encode: channel planes differ in length")
+            }
+            Self::InvalidPcm(PcmReject::ChannelCount) => {
+                write!(f, "encode: channel plane count mismatch")
+            }
             Self::Format(msg) | Self::Decode(msg) | Self::Encode(msg) => write!(f, "{msg}"),
         }
     }
@@ -139,8 +312,53 @@ impl From<BudgetExceeded> for AacError {
     }
 }
 
-impl From<crate::engine::error::Error> for AacError {
-    fn from(value: crate::engine::error::Error) -> Self {
-        Self::decode(value.to_string())
+impl From<EngineError> for AacError {
+    fn from(value: EngineError) -> Self {
+        match value {
+            EngineError::UnexpectedEnd => Self::Truncated { at: None },
+            EngineError::AdtsSyncNotFound => Self::Malformed(MalformedKind::AdtsSync),
+            EngineError::AdtsLayerNonZero => Self::Malformed(MalformedKind::AdtsLayer),
+            EngineError::AdtsReservedSampleRateIndex => {
+                Self::Unsupported(UnsupportedFeature::SampleRateIndex(0xFF))
+            }
+            EngineError::AdtsFrameLengthTooSmall => Self::Malformed(MalformedKind::AdtsFrameLength),
+            EngineError::AdtsCrcMismatch => Self::Malformed(MalformedKind::AdtsCrc),
+            EngineError::UnsupportedAot(a) => {
+                Self::Unsupported(UnsupportedFeature::AudioObjectType(a))
+            }
+            EngineError::UnsupportedFrameLength => {
+                Self::Unsupported(UnsupportedFeature::FrameLength960)
+            }
+            EngineError::UnsupportedSampleRateIndex(i) => {
+                Self::Unsupported(UnsupportedFeature::SampleRateIndex(i))
+            }
+            EngineError::IcsInfoInvalid => Self::Malformed(MalformedKind::Ics),
+            EngineError::SectionDataOverrun => Self::Malformed(MalformedKind::Section),
+            EngineError::InvalidCodebook(_) => Self::Malformed(MalformedKind::Codebook),
+            EngineError::HuffmanInvalid => Self::Malformed(MalformedKind::Huffman),
+            EngineError::SpectrumInvalid => Self::Malformed(MalformedKind::Spectrum),
+            EngineError::FilterbankInvalid => Self::Malformed(MalformedKind::Filterbank),
+            EngineError::LoasSyncInvalid => Self::Malformed(MalformedKind::LatmMux),
+            EngineError::LatmAudioMuxVersionAReserved => {
+                Self::Unsupported(UnsupportedFeature::LatmVersionA)
+            }
+            EngineError::LatmConfigOutOfRange => Self::Malformed(MalformedKind::LatmConfig),
+            EngineError::LatmCrcMismatch => Self::Malformed(MalformedKind::LatmCrc),
+            EngineError::LatmNoPreviousMuxConfig => Self::Malformed(MalformedKind::LatmMux),
+            EngineError::LatmUnsupportedFrameLengthType => {
+                Self::Unsupported(UnsupportedFeature::LatmFrameLengthType)
+            }
+            EngineError::SbrQmfInvalid
+            | EngineError::SbrFreqBandInvalid
+            | EngineError::SbrGridInvalid
+            | EngineError::SbrHuffInvalid
+            | EngineError::ExtensionPayloadInvalid => Self::Malformed(MalformedKind::Sbr),
+            EngineError::PsDataInvalid => Self::Malformed(MalformedKind::Ps),
+            EngineError::UnsupportedExtensionSbr(t) | EngineError::UnsupportedExtensionType(t) => {
+                Self::Unsupported(UnsupportedFeature::Extension(t))
+            }
+            EngineError::UnsupportedCce => Self::Unsupported(UnsupportedFeature::Extension(0)),
+            EngineError::Format(msg) => Self::Decode(format!("aac: {msg}")),
+        }
     }
 }

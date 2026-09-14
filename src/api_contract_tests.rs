@@ -129,6 +129,15 @@ fn errors_are_matchable_without_thiserror() {
             max: 8_000
         }
     ));
+    let e = decode_with(
+        SINE,
+        &DecodeOptions {
+            max_duration_secs: f64::NAN,
+            ..DecodeOptions::speech()
+        },
+    )
+    .unwrap_err();
+    assert!(matches!(e, AacError::InvalidLimits(_)));
 }
 
 #[test]

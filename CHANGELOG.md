@@ -9,10 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Matchable `AacError` classes (TASK-51): `Unsupported`, `Truncated`
+  (`at` byte offset when known), `Malformed`, `Lifecycle`, `InvalidPcm`.
+  Engine failures map by variant, not by string. `Format` / `Decode` /
+  `Encode` remain leftovers. `#[non_exhaustive]` match `_` still required.
+  M4A push decode and streaming M4A encode are `Unsupported`, not
+  `Format`/`Encode`. Truncated ADTS with no complete frame is `Truncated`,
+  not `NotAac`.
 - Stateful Decoder/Encoder lifecycle fuzz (TASK-49): ordinary tests
   replay `corpus/fuzz/lifecycle.txt` and assert chunked vs one-shot
   PCM/bytes, sticky fail/reset, corrupt-frame finite PCM, and encoder
-  NaN/`|x|>1` as `Encode` errors (not roundtrip). Isolated
+  NaN/`|x|>1` as `InvalidPcm` (not roundtrip). Isolated
   `lab/fuzz` `syom_fuzz_state` is never spawned by `cargo test`.
 - Bounded parser-fuzz smoke corpus (TASK-48): ordinary tests replay
   `corpus/fuzz/` plus goldens through `decode_with` / sniff and the
@@ -39,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Encoder PCM domain (`NaN`/`Inf`/`|x|>1`, empty, plane mismatch) is
+  `InvalidPcm`, not leftover `Encode` (TASK-51).
 - Streaming `Decoder` and `Encoder` lifecycle (TASK-45 / F18): open →
   `feed`/`finish`; parser, limit, PCM, or callback errors are **failed**;
   successful `finish` is **finished**. Further `feed`/`finish` error until

@@ -56,6 +56,25 @@ fn main() -> syom::Result<()> {
 }
 ```
 
+Errors are matchable without scraping `Display` (`AacError` is
+`#[non_exhaustive]` — keep a `_` arm):
+
+```rust
+fn kind(e: syom::AacError) -> &'static str {
+    match e {
+        syom::AacError::NotAac => "not-aac",
+        syom::AacError::Unsupported(_) => "unsupported",
+        syom::AacError::Truncated { .. } => "truncated",
+        syom::AacError::Malformed(_) => "malformed",
+        syom::AacError::Limit { .. } | syom::AacError::TooLong { .. } => "limit",
+        syom::AacError::InvalidPcm(_) | syom::AacError::InvalidLimits(_) => "invalid",
+        syom::AacError::Lifecycle { .. } => "lifecycle",
+        _ => "other",
+    }
+}
+assert_eq!(kind(syom::decode(&[]).unwrap_err()), "not-aac");
+```
+
 From a path: `syom::read("clip.m4a")?` (speech-mono, 2 h). Keep coded
 layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.
 No duration/rate ceiling: `DecodeOptions::unbounded()`.

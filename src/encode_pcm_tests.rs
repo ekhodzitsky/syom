@@ -31,8 +31,8 @@ fn push(pcm: &[Vec<f32>], chunk: usize) -> Result<Vec<u8>, AacError> {
 
 fn err_msg(e: AacError) -> String {
     assert!(
-        matches!(e, AacError::Encode(_)),
-        "expected Encode, got {e:?}"
+        matches!(e, AacError::InvalidPcm(_)),
+        "expected InvalidPcm, got {e:?}"
     );
     e.to_string()
 }
@@ -85,5 +85,8 @@ fn signed_zero_subnormal_and_full_scale_encode() {
 fn huge_finite_does_not_panic() {
     let pcm = vec![vec![f32::MAX; 1024]];
     let e = oneshot(&pcm).expect_err("must reject before MDCT");
-    assert!(matches!(e, AacError::Encode(_)));
+    assert!(matches!(
+        e,
+        AacError::InvalidPcm(crate::PcmReject::Amplitude)
+    ));
 }

@@ -31,7 +31,7 @@ pub(crate) use decode::read_file_capped;
 pub use decode::{DecodedAac, decode, decode_bytes, decode_with, read, read_with};
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{encode, encode_with, write, write_with};
-pub use error::{AacError, Result};
+pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
 pub use isomp4::sniff_is_isobmff;
 pub use options::{
     ChannelMode, DEFAULT_MAX_DECODE_SAMPLE_RATE, DEFAULT_MAX_DURATION_SECS,

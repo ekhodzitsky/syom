@@ -97,7 +97,7 @@ pub struct EncodeInfo {
 /// feed chunking. Peak RAM is one frame of PCM plus the current access
 /// unit. Validation matches one-shot encode: the ADTS sample-rate table,
 /// 1–2 channels, finite samples in `[-1, 1]`, equal plane lengths.
-/// `|x| > 1` and non-finite samples are [`crate::AacError::Encode`] (no clip).
+/// `|x| > 1` and non-finite samples are [`crate::AacError::InvalidPcm`] (no clip).
 pub struct Encoder {
     enc: LcEncoder,
     sample_rate: u32,
@@ -125,8 +125,8 @@ impl Encoder {
     /// New encoder for `channels` planes at `sample_rate` under `opts`.
     ///
     /// Errors [`AacError::Encode`] on an unsupported rate, channel count,
-    /// zero bitrate, or [`EncodeContainer::M4a`] (M4A cannot be streamed
-    /// incrementally; use [`crate::encode_with`]).
+    /// or zero bitrate. [`EncodeContainer::M4a`] is [`AacError::Unsupported`]
+    /// (use [`crate::encode_with`]; M4A needs finish-time sizes).
     pub fn new(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<Self> {
         if !ADTS_SAMPLE_RATES_HZ.contains(&sample_rate) {
             return Err(AacError::encode(format!(
@@ -149,8 +149,8 @@ impl Encoder {
             )));
         }
         if opts.container != EncodeContainer::Adts {
-            return Err(AacError::encode(
-                "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with",
+            return Err(AacError::Unsupported(
+                crate::UnsupportedFeature::EncodeM4aStreaming,
             ));
         }
         Ok(Self {
@@ -172,8 +172,12 @@ impl Encoder {
     fn ensure_open(&self) -> Result<()> {
         match self.life {
             Life::Open => Ok(()),
-            Life::Finished => Err(AacError::encode("stream already finished; call reset()")),
-            Life::Failed => Err(AacError::encode("stream failed; call reset()")),
+            Life::Finished => Err(AacError::Lifecycle {
+                state: crate::LifecycleState::Finished,
+            }),
+            Life::Failed => Err(AacError::Lifecycle {
+                state: crate::LifecycleState::Failed,
+            }),
         }
     }
 
@@ -236,15 +240,11 @@ impl Encoder {
     {
         self.ensure_open()?;
         if planes.len() != self.channels {
-            return Err(AacError::encode(format!(
-                "encode: expected {} channel plane(s), got {}",
-                self.channels,
-                planes.len()
-            )));
+            return Err(AacError::InvalidPcm(crate::PcmReject::ChannelCount));
         }
         let n = planes.first().map_or(0, |p| p.len());
         if planes.iter().any(|p| p.len() != n) {
-            return Err(AacError::encode("encode: channel planes differ in length"));
+            return Err(AacError::InvalidPcm(crate::PcmReject::PlaneLength));
         }
         if let Err(e) = crate::encode::check_pcm_samples(planes.iter().copied()) {
             return self.fail(e);
@@ -288,14 +288,14 @@ impl Encoder {
     }
 
     /// End of input: encode the zero-padded tail (if any) and report tallies.
-    /// Lookahead flushes the held frame first. Empty input is [`AacError::Encode`].
+    /// Lookahead flushes the held frame first. Empty input is [`AacError::InvalidPcm`].
     pub fn finish<F>(&mut self, on_frame: F) -> Result<EncodeInfo>
     where
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
         self.ensure_open()?;
         if self.samples == 0 {
-            return self.fail(AacError::encode("encode: empty input"));
+            return self.fail(AacError::InvalidPcm(crate::PcmReject::Empty));
         }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);

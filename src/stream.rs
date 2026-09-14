@@ -121,12 +121,17 @@ impl Decoder {
     fn ensure_open(&self) -> Result<()> {
         match self.life {
             Life::Open => Ok(()),
-            Life::Finished => Err(AacError::decode("stream already finished; call reset()")),
-            Life::Failed => Err(AacError::decode("stream failed; call reset()")),
+            Life::Finished => Err(AacError::Lifecycle {
+                state: crate::LifecycleState::Finished,
+            }),
+            Life::Failed => Err(AacError::Lifecycle {
+                state: crate::LifecycleState::Failed,
+            }),
         }
     }
 
     fn fail<T>(&mut self, e: AacError) -> Result<T> {
+        let e = e.with_truncated_at(self.pos as u64);
         self.life = Life::Failed;
         Err(e)
     }

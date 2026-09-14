@@ -108,9 +108,13 @@ fn flipped_crc_byte_is_crc_mismatch_not_truncation() {
         Err(Error::AdtsCrcMismatch)
     ));
     let err = decode_with(&prot, &DecodeOptions::unbounded()).unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("CRC"), "{msg}");
-    assert!(!msg.contains("unexpected end"), "{msg}");
+    assert!(
+        matches!(
+            err,
+            crate::AacError::Malformed(crate::MalformedKind::AdtsCrc)
+        ),
+        "{err}"
+    );
 }
 
 #[test]

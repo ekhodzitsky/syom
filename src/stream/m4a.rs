@@ -32,8 +32,7 @@ where
             e
         }
     })?;
-    let (asc, _) = AudioSpecificConfig::parse(&track.asc)
-        .map_err(|e| AacError::format(format!("aac: bad AudioSpecificConfig: {e:?}")))?;
+    let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
     let out_rate = asc.output_sample_rate;
     if out_rate == 0 || out_rate > opts.max_sample_rate {
         return Err(AacError::sample_rate(out_rate, opts.max_sample_rate));
@@ -64,7 +63,7 @@ where
     let mut decoded = 0u64; // per-channel, pre-skip (cap counter)
     let mut samples_out = 0u64;
 
-    for (idx, &(off, len)) in track.frames.iter().enumerate() {
+    for &(off, len) in &track.frames {
         let payload = sample_payload(data, off, len)?;
         let rate = if mono {
             scratch.clear();
@@ -77,7 +76,7 @@ where
                 payload,
                 &mut scratch,
             )
-            .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e:?}")))?
+            .map_err(AacError::from)?
         } else {
             dec.decode_frame_scaled(
                 asc.aot,
@@ -86,7 +85,7 @@ where
                 asc.channel_configuration,
                 payload,
             )
-            .map_err(|e| AacError::decode(format!("aac: decode failed at frame {idx}: {e}")))?
+            .map_err(AacError::from)?
         };
         aac_frames += 1;
         let (n_ch, n) = if mono {

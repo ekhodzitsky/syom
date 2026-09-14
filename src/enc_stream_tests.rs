@@ -199,8 +199,8 @@ fn constructor_error_paths() -> Result<()> {
     for e in cases {
         let e = e.ok_or(AacError::NotAac)?;
         assert!(
-            matches!(e, AacError::Encode(_)),
-            "expected Encode, got {e:?}"
+            matches!(e, AacError::Encode(_) | AacError::Unsupported(_)),
+            "expected Encode/Unsupported, got {e:?}"
         );
         assert!(!e.to_string().is_empty(), "stable Display");
     }
@@ -209,7 +209,13 @@ fn constructor_error_paths() -> Result<()> {
     let e = Encoder::new(48_000, 2, &EncodeOptions::m4a())
         .err()
         .ok_or(AacError::NotAac)?;
-    assert!(e.to_string().contains("encode_with"), "{e}");
+    assert!(
+        matches!(
+            e,
+            AacError::Unsupported(crate::UnsupportedFeature::EncodeM4aStreaming)
+        ),
+        "{e}"
+    );
     Ok(())
 }
 
@@ -225,20 +231,29 @@ fn feed_error_paths() -> Result<()> {
     let mut enc = Encoder::new(48_000, 2, &opts)?;
     let a = [0.0f32; 8];
     let e = enc.feed(&[&a], sink).err().ok_or(AacError::NotAac)?;
-    assert!(matches!(e, AacError::Encode(_)), "plane count: {e:?}");
+    assert!(
+        matches!(e, AacError::InvalidPcm(crate::PcmReject::ChannelCount)),
+        "plane count: {e:?}"
+    );
     assert!(!enc.is_failed());
     enc.feed(&[&a, &a], sink)?;
     // Unequal plane lengths.
     let mut enc = Encoder::new(48_000, 2, &opts)?;
     let b = [0.0f32; 9];
     let e = enc.feed(&[&a, &b], sink).err().ok_or(AacError::NotAac)?;
-    assert!(matches!(e, AacError::Encode(_)), "unequal lengths: {e:?}");
+    assert!(
+        matches!(e, AacError::InvalidPcm(crate::PcmReject::PlaneLength)),
+        "unequal lengths: {e:?}"
+    );
     assert!(!enc.is_failed());
     // Non-finite sample fails the stream until reset.
     let mut enc = Encoder::new(48_000, 1, &opts)?;
     let nan = [f32::NAN; 8];
     let e = enc.feed(&[&nan], sink).err().ok_or(AacError::NotAac)?;
-    assert!(matches!(e, AacError::Encode(_)), "NaN: {e:?}");
+    assert!(
+        matches!(e, AacError::InvalidPcm(crate::PcmReject::NonFinite)),
+        "NaN: {e:?}"
+    );
     assert!(enc.is_failed());
     let good = [0.0f32; 2048];
     assert!(enc.feed(&[&good], sink).is_err(), "NaN is sticky");
@@ -258,7 +273,10 @@ fn feed_error_paths() -> Result<()> {
 fn finish_without_input_is_empty_error() -> Result<()> {
     let mut enc = Encoder::new(48_000, 1, &EncodeOptions::adts())?;
     let e = enc.finish(sink).err().ok_or(AacError::NotAac)?;
-    assert!(matches!(e, AacError::Encode(_)), "empty finish: {e:?}");
+    assert!(
+        matches!(e, AacError::InvalidPcm(crate::PcmReject::Empty)),
+        "empty finish: {e:?}"
+    );
     assert!(enc.is_failed());
     assert!(enc.finish(sink).is_err(), "empty finish is sticky");
     enc.reset()?;
@@ -266,7 +284,10 @@ fn finish_without_input_is_empty_error() -> Result<()> {
     let empty: [&[f32]; 1] = [&[]];
     assert_eq!(enc.feed(&empty, sink)?, 0);
     let e = enc.finish(sink).err().ok_or(AacError::NotAac)?;
-    assert!(matches!(e, AacError::Encode(_)), "empty feeds: {e:?}");
+    assert!(
+        matches!(e, AacError::InvalidPcm(crate::PcmReject::Empty)),
+        "empty feeds: {e:?}"
+    );
     Ok(())
 }
 

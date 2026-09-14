@@ -156,8 +156,8 @@ fn encoder_invalid_pcm_is_encode_error_not_roundtrip() {
         let plane = [bad];
         let e = enc.feed(&[&plane], |_| Ok(())).expect_err("invalid");
         assert!(
-            matches!(e, AacError::Encode(_)),
-            "oracle is Encode, got {e:?} for {bad:?}"
+            matches!(e, AacError::InvalidPcm(_)),
+            "oracle is InvalidPcm, got {e:?} for {bad:?}"
         );
         assert!(enc.is_failed());
         assert!(enc.feed(&[&[0.0][..]], |_| Ok(())).is_err());
