@@ -70,7 +70,8 @@ pub enum Error {
     UnsupportedExtensionType(u8),
     /// FIL `extension_payload` structural error.
     ExtensionPayloadInvalid,
-    /// `coupling_channel_element()` parsed; gain application is TASK-35/36.
+    /// Reserved: coupling used to be fenced before reconstruction.
+    #[allow(dead_code)]
     UnsupportedCce,
 }
 

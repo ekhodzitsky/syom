@@ -137,11 +137,11 @@ fn truncated_gain_is_unexpected_end() {
 }
 
 #[test]
-fn public_decode_fences_independent_cce() {
+fn public_decode_independent_cce_missing_target_is_error() {
     let mut w = BitWriter::new();
     w.write(2, 3); // ID_CCE
     w.write(0, 4);
-    w.write_bit(true); // independent
+    w.write_bit(true);
     w.write(0, 3);
     w.write_bit(false);
     w.write(0, 4);
@@ -153,7 +153,7 @@ fn public_decode_fences_independent_cce() {
     let err = crate::decode(&wrap_adts(&w.finish())).expect_err("CCE");
     let msg = err.to_string();
     assert!(
-        msg.contains("UnsupportedCce") || msg.contains("not implemented"),
+        msg.contains("CCE missing target") || msg.contains("Format"),
         "{msg}"
     );
 }

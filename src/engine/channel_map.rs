@@ -27,6 +27,7 @@ pub(crate) enum ElemKind {
     Sce,
     Cpe,
     Lfe,
+    Cce,
 }
 
 /// One decoded element; `plane` is its first plane in decode (element) order.
@@ -42,7 +43,7 @@ impl Element {
     fn planes(&self) -> usize {
         match self.kind {
             ElemKind::Cpe => 2,
-            ElemKind::Sce | ElemKind::Lfe => 1,
+            ElemKind::Sce | ElemKind::Lfe | ElemKind::Cce => 1,
         }
     }
 }
@@ -292,7 +293,7 @@ fn push_tagged(
         .find(|(i, e)| !used[*i] && e.kind == kind && e.tag == tag);
     let n = match kind {
         ElemKind::Cpe => 2,
-        ElemKind::Sce | ElemKind::Lfe => 1,
+        ElemKind::Sce | ElemKind::Lfe | ElemKind::Cce => 1,
     };
     let Some((i, e)) = hit else {
         return Err(Error::Format("PCE missing channel element"));

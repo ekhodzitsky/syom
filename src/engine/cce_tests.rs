@@ -43,6 +43,19 @@ fn rdb(body: impl FnOnce(&mut BitWriter)) -> Vec<u8> {
     w.finish()
 }
 
+fn write_cce_ind_sce(w: &mut BitWriter, tgt: u8, line_sfb: u8) {
+    w.write(2, 3);
+    w.write(0, 4);
+    w.write_bit(true);
+    w.write(0, 3);
+    w.write_bit(false);
+    w.write(u32::from(tgt), 4);
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write(0, 2);
+    write_ics_line(w, line_sfb);
+}
+
 fn write_cce_dep_sce(w: &mut BitWriter, tgt: u8, line_sfb: u8) {
     w.write(2, 3);
     w.write(0, 4);
@@ -251,6 +264,51 @@ fn public_decode_dependent_cce_succeeds() {
     let pcm = crate::decode_with(&bytes, &crate::DecodeOptions::unbounded()).unwrap();
     assert_eq!(pcm.channels.len(), 1);
     assert!(pcm.channels[0].iter().any(|s| s.abs() > 1e-4));
+}
+
+#[test]
+fn independent_unity_on_silent_sce_matches_audible() -> Result<(), Error> {
+    let audible = decode_planes(&rdb(|w| write_sce(w, 0, 1)), 1)?;
+    let coupled = decode_planes(
+        &rdb(|w| {
+            write_silent_sce(w, 0);
+            write_cce_ind_sce(w, 0, 1);
+        }),
+        1,
+    )?;
+    assert_eq!(coupled.len(), 1);
+    for (i, (a, b)) in audible[0].iter().zip(coupled[0].iter()).enumerate() {
+        assert!(
+            (a - b).abs() <= 1e-3,
+            "ind sample {i}: audible {a} vs coupled {b}"
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn independent_second_frame_keeps_cce_overlap() -> Result<(), Error> {
+    let a = rdb(|w| write_sce(w, 0, 1));
+    let b = rdb(|w| write_sce(w, 0, 3));
+    let mut refd = super::decode::StreamDecoder::new();
+    refd.decode_raw_data_block(2, 3, 48_000, 1, 1, &a)?;
+    let want = refd.decode_raw_data_block(2, 3, 48_000, 1, 1, &b)?;
+    let ca = rdb(|w| {
+        write_silent_sce(w, 0);
+        write_cce_ind_sce(w, 0, 1);
+    });
+    let cb = rdb(|w| {
+        write_silent_sce(w, 0);
+        write_cce_ind_sce(w, 0, 3);
+    });
+    let mut dec = super::decode::StreamDecoder::new();
+    dec.decode_raw_data_block(2, 3, 48_000, 1, 1, &ca)?;
+    let got = dec.decode_raw_data_block(2, 3, 48_000, 1, 1, &cb)?;
+    assert_eq!(got.planar.len(), 1);
+    for (i, (x, y)) in want.planar[0].iter().zip(got.planar[0].iter()).enumerate() {
+        assert!((x - y).abs() <= 1e-3, "overlap sample {i}");
+    }
+    Ok(())
 }
 
 #[test]

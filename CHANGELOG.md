@@ -69,11 +69,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- Independent CCE is applied after IMDCT (`dest += gain * cce_pcm`) with
+  CCE overlap keyed by element tag. Unity independent coupling of a
+  silent SCE matches the coupling ICS decoded as SCE across frames.
 - Dependent CCE is reconstructed on spectral coefficients (FFmpeg
   `apply_dependent_coupling`) at BEFORE_TNS or BETWEEN_TNS_AND_IMDCT.
   A silent CCE is a no-op; unity coupling of a silent SCE matches the
   coupling-channel ICS decoded as SCE. Missing targets are `Format`.
-  Independent (after-IMDCT) CCE remains `UnsupportedCce` (TASK-36).
   Non-CCE streams are unchanged.
 - Multichannel filterbank overlap is keyed by channel-element `(kind, tag)`,
   not bitstream encounter order. Legal reordering keeps each identity's

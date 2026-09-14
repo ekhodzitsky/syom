@@ -207,11 +207,7 @@ impl StreamDecoder {
                     self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, multichannel);
                 }
                 IdSynEle::Cce => {
-                    let cce = parse_cce(&mut br, fs_index, core_aot)?;
-                    if cce.independent {
-                        return Err(Error::UnsupportedCce);
-                    }
-                    self.cces.push(cce);
+                    self.cces.push(parse_cce(&mut br, fs_index, core_aot)?);
                 }
                 IdSynEle::Dse => skip_dse(&mut br)?,
                 IdSynEle::Pce => {

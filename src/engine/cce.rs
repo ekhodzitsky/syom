@@ -201,6 +201,57 @@ pub fn apply_dependent(
     Ok(())
 }
 
+fn add_pcm(dst: &mut [f32], src: &[f32], gain: f32) {
+    for (d, s) in dst.iter_mut().zip(src.iter()) {
+        *d += gain * *s;
+    }
+}
+
+fn plane_index(ids: &[(ElemKind, u8, u8)], kind: ElemKind, tag: u8, part: u8) -> Result<usize> {
+    ids.iter()
+        .position(|id| id.0 == kind && id.1 == tag && id.2 == part)
+        .ok_or(Error::Format("CCE missing target"))
+}
+
+/// After-IMDCT independent coupling: `dest += gain[list][0] * cce_pcm`.
+pub fn apply_independent_pcm(
+    planes: &mut [Vec<f32>],
+    ids: &[(ElemKind, u8, u8)],
+    cce_pcm: &[f32],
+    cce: &CcePayload,
+) -> Result<()> {
+    let mut list = 0usize;
+    for t in &cce.targets {
+        let gain = |i: usize| {
+            cce.gains
+                .get(i)
+                .and_then(|g| g.first())
+                .copied()
+                .unwrap_or(1.0)
+        };
+        if t.is_cpe {
+            let ch_select = (u8::from(t.cc_l) << 1) | u8::from(t.cc_r);
+            if ch_select != 1 {
+                let i = plane_index(ids, ElemKind::Cpe, t.tag, 0)?;
+                add_pcm(&mut planes[i], cce_pcm, gain(list));
+                if ch_select != 0 {
+                    list += 1;
+                }
+            }
+            if ch_select != 2 {
+                let i = plane_index(ids, ElemKind::Cpe, t.tag, 1)?;
+                add_pcm(&mut planes[i], cce_pcm, gain(list));
+                list += 1;
+            }
+        } else {
+            let i = plane_index(ids, ElemKind::Sce, t.tag, 0)?;
+            add_pcm(&mut planes[i], cce_pcm, gain(list));
+            list += 1;
+        }
+    }
+    Ok(())
+}
+
 fn find_chan(
     pending: &mut [PendingChan],
     kind: ElemKind,

@@ -364,7 +364,7 @@ fn dse_pce_lfe_with_silent_end() -> Result<(), Error> {
 }
 
 #[test]
-fn cce_then_silent_sce_is_unsupported() {
+fn cce_then_silent_sce_independent_decodes() -> Result<(), Error> {
     let mut w = BitWriter::new();
     w.write(2, 3); // CCE
     w.write(0, 4);
@@ -401,10 +401,9 @@ fn cce_then_silent_sce_is_unsupported() {
     w.write_bit(false);
     w.write(7, 3);
     let mut dec = StreamDecoder::new();
-    let err = dec
-        .decode_raw_data_block(2, 3, 48_000, 1, 1, &w.finish())
-        .expect_err("CCE");
-    assert!(matches!(err, Error::UnsupportedCce));
+    let frame = dec.decode_raw_data_block(2, 3, 48_000, 1, 1, &w.finish())?;
+    assert_eq!(frame.channels, 1);
+    Ok(())
 }
 
 #[test]
