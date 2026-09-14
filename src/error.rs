@@ -17,6 +17,8 @@ pub enum AacError {
     UnsupportedSampleRate { rate: u32, max: u32 },
     /// Decoded (or declared) duration exceeds the configured budget.
     TooLong { observed_secs: f64, max_secs: f64 },
+    /// `DecodeOptions` are not a usable limit set (NaN, negative, etc.).
+    InvalidLimits(String),
     /// Structural / demux failure.
     Format(String),
     /// Decoder engine rejected a frame.
@@ -54,6 +56,11 @@ impl AacError {
         Self::UnsupportedSampleRate { rate, max }
     }
 
+    #[inline]
+    pub fn invalid_limits(msg: impl Into<String>) -> Self {
+        Self::InvalidLimits(msg.into())
+    }
+
     /// Whether this should surface as generic unsupported-format upstream.
     pub fn is_format_class(&self) -> bool {
         matches!(self, Self::NotAac | Self::Format(_))
@@ -75,6 +82,7 @@ impl fmt::Display for AacError {
                 f,
                 "Audio file too long ({observed_secs:.0}s). Maximum supported: {max_secs:.0}s."
             ),
+            Self::InvalidLimits(msg) => write!(f, "invalid decode limits: {msg}"),
             Self::Format(msg) | Self::Decode(msg) | Self::Encode(msg) => write!(f, "{msg}"),
         }
     }

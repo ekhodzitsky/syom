@@ -26,6 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discard-output are separately named. Historical BENCH.md decode rows
   stay labeled until a matched-output baseline replaces them. Product
   `decode` / `speech()` defaults are unchanged.
+- Invalid `DecodeOptions` duration/rate limits (NaN, −∞, negative duration,
+  zero `max_sample_rate`, zero `max_decode_sample_rate` with a finite
+  duration) now error as `AacError::InvalidLimits` before decode work.
+  `+∞` remains the explicit unbounded contract. NaN/−∞ no longer open an
+  unlimited frame budget.
 
 ## [0.6.0] - 2026-09-06
 

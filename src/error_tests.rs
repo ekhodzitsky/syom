@@ -15,6 +15,11 @@ fn display_and_source_cover_variants() -> Result<()> {
     assert!(AacError::too_long(9.0, 1.0).to_string().contains("9s"));
     assert_eq!(AacError::format("f").to_string(), "f");
     assert_eq!(AacError::decode("d").to_string(), "d");
+    assert!(
+        AacError::invalid_limits("NaN")
+            .to_string()
+            .contains("invalid decode limits")
+    );
     assert!(AacError::NotAac.is_format_class());
     assert!(AacError::format("f").is_format_class());
     assert!(!AacError::decode("d").is_format_class());

@@ -107,6 +107,7 @@ impl Decoder {
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        self.opts.validate()?;
         self.bytes_fed = self.bytes_fed.saturating_add(bytes.len() as u64);
         if self.bytes_fed > DEFAULT_MAX_INPUT_BYTES {
             return Err(AacError::too_long(
@@ -135,6 +136,7 @@ impl Decoder {
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        self.opts.validate()?;
         let buf = std::mem::take(&mut self.buf);
         let mut cb = on_frame;
         self.pump(&buf, None, None, &mut cb, true)?;
@@ -148,6 +150,7 @@ impl Decoder {
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        self.opts.validate()?;
         let mut cb = on_frame;
         self.pump(data, None, None, &mut cb, true)?;
         self.tallies()
@@ -165,6 +168,7 @@ impl Decoder {
         fn ignore(_: Frame<'_>) -> Result<()> {
             Ok(())
         }
+        self.opts.validate()?;
         self.pump(data, Some(dst), est_frames, &mut ignore, true)?;
         self.tallies()
     }
@@ -197,6 +201,7 @@ pub fn decode_streaming<F>(data: &[u8], opts: &DecodeOptions, on_frame: F) -> Re
 where
     F: FnMut(Frame<'_>) -> Result<()>,
 {
+    opts.validate()?;
     if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
         return Err(AacError::too_long(
             data.len() as f64 / 40_000.0, // rough lower bound only for message
@@ -218,6 +223,7 @@ pub(crate) fn decode_streaming_mono_into(
     est_frames: Option<usize>,
     dst: &mut Vec<f32>,
 ) -> Result<StreamInfo> {
+    opts.validate()?;
     if data.len() as u64 > DEFAULT_MAX_INPUT_BYTES {
         return Err(AacError::too_long(
             data.len() as f64 / 40_000.0, // rough lower bound only for message
