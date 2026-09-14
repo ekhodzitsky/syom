@@ -54,6 +54,7 @@ use crate::options::{EncodeContainer, EncodeOptions};
 ///
 /// The bytes borrow encoder scratch and are valid **only for the duration
 /// of the callback** — copy them out to keep them.
+#[non_exhaustive]
 pub struct EncodedFrame<'a> {
     /// Input samples per channel this frame carries: 1024, or the tail
     /// remainder at [`Encoder::finish`] (that frame is zero-padded to 1024
@@ -70,6 +71,7 @@ pub struct EncodedFrame<'a> {
 /// `elst.media_time`, [`Self::samples`] as `elst`/`mvhd` presentation
 /// duration, and [`Self::remainder`] as the unplayed `mdhd` tail.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct EncodeInfo {
     /// Input sample rate.
     pub sample_rate: u32,

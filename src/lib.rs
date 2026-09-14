@@ -54,6 +54,10 @@ mod decode_budget_tests;
 mod docs_tests;
 
 #[cfg(test)]
+#[path = "api_contract_tests.rs"]
+mod api_contract_tests;
+
+#[cfg(test)]
 #[path = "decode_read_tests.rs"]
 mod decode_read_tests;
 

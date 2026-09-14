@@ -4,7 +4,9 @@
 /// One decoded AAC frame: planar f32 in [-1, 1], one plane per channel.
 ///
 /// The planes borrow decoder scratch and are valid **only for the duration
-/// of the frame callback** — copy them out to keep them.
+/// of the frame callback** — copy them out to keep them. Channel labels
+/// and presentation timing are TASK-61 (`#[non_exhaustive]`).
+#[non_exhaustive]
 pub struct Frame<'a> {
     /// Native sample rate after SBR (2× the core rate for HE-AAC).
     pub sample_rate: u32,
@@ -16,6 +18,7 @@ pub struct Frame<'a> {
 
 /// Tallies from a finished stream decode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct StreamInfo {
     /// Native sample rate of the stream (0 if nothing decodable was seen).
     pub sample_rate: u32,

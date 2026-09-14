@@ -25,6 +25,17 @@ fn speech_defaults() {
 }
 
 #[test]
+fn audio_is_split_with_speech_caps() {
+    let a = DecodeOptions::audio();
+    assert_eq!(a.channel_mode, ChannelMode::Split);
+    assert_eq!(
+        a.max_duration_secs,
+        DecodeOptions::speech().max_duration_secs
+    );
+    a.validate().unwrap();
+}
+
+#[test]
 fn nan_and_negative_duration_no_longer_mean_unlimited() {
     // Prior bug: !is_finite() (NaN and -inf) returned usize::MAX.
     let nan = speech_with_duration(f64::NAN);

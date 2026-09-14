@@ -20,6 +20,11 @@ pub const DEFAULT_MAX_SAMPLE_RATE: u32 = 192_000;
 pub const DEFAULT_MAX_DECODE_SAMPLE_RATE: u32 = 48_000;
 
 /// Whether decoded channels are mixed to mono or kept separate.
+///
+/// [`Default`] is [`Self::Mono`]: it follows [`DecodeOptions::speech`],
+/// the one-call [`crate::decode`] / [`crate::read`] contract. General
+/// audio uses [`DecodeOptions::audio`] or [`DecodeOptions::unbounded`]
+/// ([`Self::Split`]), not a silent default flip.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ChannelMode {
     #[default]
@@ -28,7 +33,12 @@ pub enum ChannelMode {
 }
 
 /// Options for `decode_with`.
+///
+/// `#[non_exhaustive]`: new fields (memory, labels, timing) may appear
+/// before 1.0. Construct via [`Self::speech`], [`Self::audio`],
+/// [`Self::unbounded`], or `..` update syntax.
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct DecodeOptions {
     pub channel_mode: ChannelMode,
     /// Hard upper bound on decoded audio length (seconds).
@@ -54,13 +64,36 @@ impl Default for DecodeOptions {
 }
 
 impl DecodeOptions {
-    /// Mono + lecture caps (same as [`Default`]).
+    /// Mono + lecture caps (same as [`Default`]). One-call [`crate::decode`]
+    /// / [`crate::read`] use this. Stereo and 5.1 are mixed to one plane.
     #[inline]
     pub fn speech() -> Self {
         Self::default()
     }
 
-    /// No practical duration / rate ceiling.
+    /// Split channels + the same 2 h / 192 kHz lecture caps as [`speech`].
+    ///
+    /// Collection still uses the default 4 GiB / 8-channel fences, not
+    /// [`Self::unbounded`]. `decode` / `read` stay speech-mono; pass this
+    /// to [`crate::decode_with`] / [`crate::read_with`] when coded layout
+    /// must be kept.
+    ///
+    /// ```
+    /// use syom::{decode, decode_with, DecodeOptions};
+    /// let bytes = include_bytes!("goldens/lecture.m4a");
+    /// assert_eq!(decode(bytes)?.channels.len(), 1);
+    /// assert_eq!(decode_with(bytes, &DecodeOptions::audio())?.channels.len(), 2);
+    /// # Ok::<(), syom::AacError>(())
+    /// ```
+    #[inline]
+    pub fn audio() -> Self {
+        Self {
+            channel_mode: ChannelMode::Split,
+            ..Self::speech()
+        }
+    }
+
+    /// Split channels, no practical duration / rate ceiling.
     #[inline]
     pub fn unbounded() -> Self {
         Self {
@@ -153,7 +186,10 @@ impl DecodeOptions {
 }
 
 /// Output container for the encoder.
+///
+/// `#[non_exhaustive]`: LATM/LOAS encode is a later transport (TASK-94).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub enum EncodeContainer {
     /// ADTS elementary stream.
     #[default]
@@ -163,7 +199,10 @@ pub enum EncodeContainer {
 }
 
 /// Options for `encode_with` / `write_with`.
+///
+/// `#[non_exhaustive]`: rate-control / preset fields may appear (TASK-65).
 #[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub struct EncodeOptions {
     pub container: EncodeContainer,
     /// Target bitrate in bits per second (whole stream). Must not exceed

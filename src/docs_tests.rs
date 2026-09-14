@@ -21,6 +21,10 @@ fn readme_install_matches_package_version() {
     );
     assert!(readme.contains("per-band"), "encoder M/S is per-band");
     assert!(readme.contains("BENCH.md"), "link historical benches");
+    assert!(
+        readme.contains("DecodeOptions::audio()"),
+        "0.x split helper must be named"
+    );
 }
 
 #[test]

@@ -16,7 +16,11 @@ use crate::stream::{decode_streaming, decode_streaming_mono_into};
 /// (`channel_configuration` 3–6) follows the libavcodec layout order
 /// (5.1 = FL FR FC LFE BL BR); PCE streams follow PCE declaration order
 /// (front, side, back, LFE). Speech mono is the mean of the non-LFE planes.
+/// PCM is presentation-valid: M4A honours `elst`; ADTS has no trim, so
+/// decoded length includes codec delay. Channel labels and decode-side
+/// priming/remainder are TASK-61; `#[non_exhaustive]` leaves room.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct DecodedAac {
     pub sample_rate: u32,
     pub channels: Vec<Vec<f32>>,

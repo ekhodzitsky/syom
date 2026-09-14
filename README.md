@@ -49,13 +49,16 @@ fn main() -> syom::Result<()> {
     assert!(!syom::sniff_aac(b"ID3"));
     let speech = syom::DecodeOptions::speech();
     assert_eq!(speech.channel_mode, syom::ChannelMode::Mono);
+    let audio = syom::DecodeOptions::audio();
+    assert_eq!(audio.channel_mode, syom::ChannelMode::Split);
     let _ = syom::DecodeOptions::unbounded();
     Ok(())
 }
 ```
 
-From a path: `syom::read("clip.m4a")?`. Caps:
-`decode_with(bytes, &DecodeOptions::speech().with_channel_mode(syom::ChannelMode::Split))`.
+From a path: `syom::read("clip.m4a")?` (speech-mono, 2 h). Keep coded
+layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.
+No duration/rate ceiling: `DecodeOptions::unbounded()`.
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
 mono/stereo, 128 kbps). `encode_with` takes `EncodeOptions`:

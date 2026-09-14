@@ -99,6 +99,7 @@ pub struct BudgetExceeded {
 
 /// Named memory limits. `Default` is the speech-ingest set.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub struct MemoryBudgets {
     pub max_input_bytes: u64,
     pub max_buffered_input_bytes: u64,

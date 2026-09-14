@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `DecodeOptions::audio()`: split channels with the same 2 h / 192 kHz
+  lecture caps as `speech()` (TASK-50). `decode` / `read` /
+  `DecodeOptions::default()` stay speech-mono. `unbounded()` remains the
+  no-ceiling helper. Public config/output/error types are
+  `#[non_exhaustive]` so TASK-51/61/65 can extend them.
+
 ### Changed
 
 - Streaming `Decoder` and `Encoder` lifecycle (TASK-45 / F18): open →

@@ -8,7 +8,12 @@ use std::io;
 pub type Result<T> = std::result::Result<T, AacError>;
 
 /// Errors produced while sniffing or decoding AAC / M4A streams.
+///
+/// `#[non_exhaustive]`: TASK-51 will add distinguishable unsupported /
+/// truncated / lifecycle variants. Match with `_` or named variants;
+/// do not string-match [`Self::Format`] / [`Self::Decode`] / [`Self::Encode`].
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum AacError {
     /// Underlying `Read` / `Seek` failure.
     Io(io::Error),
