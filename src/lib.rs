@@ -6,6 +6,8 @@ mod decode;
 pub mod decode_cmp;
 mod enc_stream;
 mod encode;
+#[doc(hidden)]
+pub mod encode_cmp;
 mod engine;
 mod error;
 mod isomp4;
@@ -56,6 +58,10 @@ mod oracle_tests;
 #[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
+
+#[cfg(test)]
+#[path = "encode_cmp_tests.rs"]
+mod encode_cmp_tests;
 
 #[cfg(test)]
 #[path = "encode_transient_tests.rs"]

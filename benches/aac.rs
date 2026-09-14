@@ -9,6 +9,9 @@ use std::hint::black_box;
 
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
 use syom::decode_cmp::{Candidate, Lane, run_preflight, syom_candidate, syom_discard};
+use syom::encode_cmp::{
+    EncodeCandidate, EncodeCollect, run_encode_preflight, syom_encode_candidate,
+};
 use syom::{decode, encode};
 
 // Types `mod peers` imports via `use super::{...}`.
@@ -134,18 +137,17 @@ fn enc_stereo_input() -> (Vec<Vec<f32>>, u32) {
     (vec![l, r], rate)
 }
 
-/// rusty_aac 0.5 encode → ADTS-wrapped bytes (parity with syom::encode).
-fn rusty_encode(pcm: &[Vec<f32>], rate: u32) -> usize {
+fn rusty_encode_collect(pcm: &[Vec<f32>], rate: u32, requested_bps: u32) -> EncodeCollect {
     let mut enc = rusty_aac::AacEncoder::new(rusty_aac::AacEncoderConfig {
-        bitrate_bps: 128_000,
+        bitrate_bps: requested_bps,
         ..Default::default()
     });
     let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
     if enc.push_pcm_planar(&planes, rate).is_err() {
-        return 0;
+        return EncodeCollect::Failed("rusty push".into());
     }
     enc.finish();
-    let mut total = 0usize;
+    let mut bytes = Vec::new();
     while let Ok(p) = enc.next_packet() {
         let hdr = rusty_aac::AdtsHeader {
             object_type: 2,
@@ -154,21 +156,43 @@ fn rusty_encode(pcm: &[Vec<f32>], rate: u32) -> usize {
             frame_length: 7 + p.data.len(),
             header_len: 7,
         };
-        total += rusty_aac::write_adts_header(&hdr).len() + p.data.len();
+        bytes.extend_from_slice(&rusty_aac::write_adts_header(&hdr));
+        bytes.extend_from_slice(&p.data);
     }
-    total
+    if bytes.is_empty() {
+        EncodeCollect::Failed("rusty produced no packets".into())
+    } else {
+        EncodeCollect::Adts(bytes)
+    }
 }
 
-fn syom_encode(pcm: &[Vec<f32>], rate: u32) {
-    let _ = black_box(encode(pcm, rate));
+fn rusty_encode_candidate() -> EncodeCandidate {
+    EncodeCandidate {
+        id: "rusty_aac",
+        version: "0.5.0",
+        encode: rusty_encode_collect,
+    }
 }
 
-fn enc_group(c: &mut Criterion, name: &str, pcm: &[Vec<f32>], rate: u32) {
+fn enc_group(c: &mut Criterion, name: &'static str, pcm: &[Vec<f32>], rate: u32) {
+    const REQ: u32 = 128_000;
+    let cands = [syom_encode_candidate(), rusty_encode_candidate()];
+    let pf = run_encode_preflight(name, pcm, rate, REQ, &cands);
+    eprint!("{}", pf.report());
+    let Some(timed) = pf.timed_ids() else {
+        panic!("encode preflight abort\n{}", pf.report());
+    };
     let mut g = c.benchmark_group(name);
     let bytes = (pcm.len() * pcm.first().map_or(0, Vec::len) * 4) as u64;
     g.throughput(Throughput::Bytes(bytes));
-    g.bench_function("syom", |b| b.iter(|| syom_encode(pcm, rate)));
-    g.bench_function("rusty_aac", |b| b.iter(|| rusty_encode(pcm, rate)));
+    if timed.contains(&"syom") {
+        g.bench_function("syom", |b| b.iter(|| black_box(encode(pcm, rate))));
+    }
+    if timed.contains(&"rusty_aac") {
+        g.bench_function("rusty_aac", |b| {
+            b.iter(|| black_box(rusty_encode_collect(pcm, rate, REQ)))
+        });
+    }
     g.finish();
 }
 

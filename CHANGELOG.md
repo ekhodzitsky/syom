@@ -40,6 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   goldens: SHA-256, comparison policy (deterministic vs PNS), mint command
   when known, and explicit gaps where ffmpeg versions were never recorded.
   No silent remint; ordinary tests still do not spawn ffmpeg.
+- Encoder Criterion groups run an untimed preflight (`encode_cmp`) that
+  records ADTS/payload bytes, decoded duration and achieved bitrate, aborts
+  on failed encode/decode, and labels rate mismatch >1% as non-matched
+  (not an equal-rate cell). HE encode remains an unavailable separate cell.
 
 ## [0.6.0] - 2026-09-06
 
