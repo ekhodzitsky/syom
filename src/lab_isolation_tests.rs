@@ -134,6 +134,29 @@ fn lab_glint_pin_is_isolated_0_11_0() {
 }
 
 #[test]
+fn lab_score_pin_is_isolated_not_peaq_certified() {
+    let pin = std::fs::read_to_string(root().join("lab/score/PIN.md")).unwrap();
+    assert!(pin.contains("BS.1387"));
+    assert!(pin.contains("unavailable"));
+    assert!(pin.contains("ViSQOL"));
+    assert!(pin.contains("must not") || pin.contains("Not invoked"));
+    let cargo = std::fs::read_to_string(root().join("lab/score/Cargo.toml")).unwrap();
+    assert!(cargo.contains("syom-lab-score"));
+    assert!(!cargo.contains("[workspace]"));
+    let mk = std::fs::read_to_string(root().join("lab/score/Makefile")).unwrap();
+    assert!(mk.contains("Not invoked by cargo test"));
+    let report = std::fs::read_to_string(root().join("lab/score/REPORT.md")).unwrap();
+    assert!(report.contains("no-go"));
+    assert!(report.contains("Silent"));
+    assert!(report.contains("Delayed"));
+    assert!(report.contains("13312"));
+    let product = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
+    assert!(!product.contains("lab/score"));
+    assert!(!product.contains("visqol"));
+    assert!(!product.contains("peaq"));
+}
+
+#[test]
 fn lab_fdk_aac_rust_pin_is_isolated_0_2_3() {
     let pin = std::fs::read_to_string(root().join("lab/fdk-aac-rust/PIN.md")).unwrap();
     assert!(pin.contains("0.2.3"));

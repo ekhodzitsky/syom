@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Isolated scoring lab (`lab/score`): independent-decode alignment, valid
+  duration, actual ES bitrate, SNR/max-abs. Silence, delay, truncation,
+  channel-swap and channel mismatch are diagnostics, not high quality
+  scores. PEAQ BS.1387 and ViSQOL are unavailable on this host and are
+  not claimed. Ordinary tests never link the scorer.
 - Isolated glint-audio 0.11.0 lab (`lab/glint`): crates.io pins
   `df09912e…` / `b8c79457…`, MIT, C++17 native core vendored in
   `glint-audio-sys`. Wrapper vs C ABI copy overhead is a separate lane.

@@ -1,0 +1,18 @@
+[package]
+name = "syom-lab-score"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated alignment/objective scoring (TASK-13). Not a workspace member."
+
+[dependencies]
+syom = { path = "../.." }
+
+[[bin]]
+name = "syom_score"
+path = "src/main.rs"
+
+[lib]
+name = "syom_lab_score"
+path = "src/lib.rs"
