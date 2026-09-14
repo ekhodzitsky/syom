@@ -169,6 +169,15 @@ fn lab_baseline_pin_is_isolated() {
 }
 
 #[test]
+fn lab_prime_report_is_offline_not_spawned() {
+    let report = std::fs::read_to_string(root().join("lab/prime/REPORT.md")).unwrap();
+    assert!(report.contains("omitted"));
+    assert!(report.contains("no-go"));
+    assert!(report.contains("2048"));
+    assert!(report.contains("elst"));
+}
+
+#[test]
 fn lab_fdk_aac_rust_pin_is_isolated_0_2_3() {
     let pin = std::fs::read_to_string(root().join("lab/fdk-aac-rust/PIN.md")).unwrap();
     assert!(pin.contains("0.2.3"));

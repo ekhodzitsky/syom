@@ -58,15 +58,25 @@ pub struct EncodedFrame<'a> {
 }
 
 /// Tallies from a finished streaming encode.
+///
+/// These are **input / bitstream** counts, not a valid-duration timeline.
+/// ADTS carries no priming or remainder. One-shot M4A always writes
+/// `elst.media_time = 1024` and `mdhd` duration `aac_frames * 1024`
+/// (includes priming). Decoded ADTS length is `aac_frames * 1024` after
+/// zero-padding the last input block; that padded length is **not** the
+/// number of valid source samples (TASK-40). The last up-to-1024 input
+/// samples of a 1024-aligned encode are omitted from reconstruction
+/// (TASK-41 drain), which this struct does not yet describe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EncodeInfo {
     /// Input sample rate.
     pub sample_rate: u32,
     /// Channels per frame (1 or 2).
     pub channels: usize,
-    /// AAC frames emitted, including the zero-padded tail frame.
+    /// AAC frames emitted, including the zero-padded tail **block** (not an
+    /// overlap-drain frame).
     pub aac_frames: u64,
-    /// Input samples per channel consumed.
+    /// Input samples per channel consumed (source length, not decoded PCM).
     pub samples: u64,
     /// Bytes handed to the callback (ADTS headers included).
     pub bytes: u64,

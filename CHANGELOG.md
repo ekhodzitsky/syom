@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Encoder priming / tail contract (TASK-40): decoded ADTS length is
+  `ceil(N/1024)*1024` and is **not** valid duration. A last-sample impulse
+  on 1024-aligned input is omitted (overlap not drained), confirmed by
+  syom, oxideav-aac and lavc. `EncodeInfo.samples` is source length.
+  M4A still signals `elst.media_time = 1024`; a one-frame file is empty
+  after that skip. No encoder repair (TASK-41).
 - Matched-output LC/HE/PS performance baseline (TASK-15): `cargo bench
   --bench baseline` runs the same `run_preflight` as Criterion, then 20
   timed reps (median / p95 / bootstrap CI). Historical BENCH.md decode

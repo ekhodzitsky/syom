@@ -22,7 +22,9 @@ use crate::options::{EncodeContainer, EncodeOptions};
 ///
 /// One plane per channel (mono or stereo), all planes the same length; the
 /// last frame is zero-padded to 1024 samples. The stream carries the usual
-/// 1024-sample codec priming (first decoded frame is a fade-in).
+/// 1024-sample codec priming (first decoded frame is a fade-in). Decoded
+/// ADTS length is `ceil(N/1024)*1024`, which is **not** valid duration. A
+/// last-sample impulse on 1024-aligned input is omitted (no overlap drain).
 #[inline]
 pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
