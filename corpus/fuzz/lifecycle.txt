@@ -1,0 +1,26 @@
+# TASK-49 replayable lifecycle seed (ordinary tests + lab/fuzz --replay).
+# Decoder: sine48.adts in 1/7/64-byte partitions, finish, reset, HE after reset.
+DNEW
+DFEED 1
+DFEED 7
+DFEED 64
+DFINISH
+DRESET
+DHE
+DFEED 13
+DFINISH
+DRESET
+DCBFAIL
+DFEED 0
+DRESET
+# Encoder: short tail (not a 1024 multiple), then invalid amplitudes.
+ENEW 48000 1
+EFEED 777
+EFEED 2223
+EFINISH
+ERESET
+ENEW 48000 1
+EFEEDNAN
+ERESET
+ENEW 48000 1
+EFEEDOVER

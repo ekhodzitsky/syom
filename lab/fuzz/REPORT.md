@@ -38,5 +38,21 @@ assert the known-invalid ADTS length seed reaches
 ## Limits
 
 Speech decode caps and a 64 KiB mutation ceiling bound work. This
-campaign is an initial smoke, not TASK-103 qualification. Stateful
-`Decoder`/`Encoder` fuzz is TASK-49.
+campaign is an initial smoke, not TASK-103 qualification.
+
+## TASK-49 stateful Decoder/Encoder
+
+Harness: `syom_fuzz_state` — random `feed` / `finish` / `reset` /
+failing callback / corrupted chunk / NaN/`|x|>1` PCM on `sine48`,
+`he48`, `latm48`. Ordinary tests replay `corpus/fuzz/lifecycle.txt`.
+
+| profile | wall | iters | crashes (panics) |
+|---|---:|---:|---:|
+| debug | 10.002 s | 16496 | 0 |
+| release | 8.375 s | 200000 | 0 |
+
+Command: `cargo run --release --manifest-path lab/fuzz/Cargo.toml --bin syom_fuzz_state -- --seconds 30 --iters 200000`
+(the iteration cap stopped the release run before 30 s).
+
+Findings: none minimized. Unresolved: none. Not proof of exhaustive
+safety; not a sanitizer campaign (stable rustc 1.97.1).

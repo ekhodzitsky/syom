@@ -25,4 +25,10 @@ loads these plus committed goldens. Ordinary tests never spawn the campaign.
 | `latm-truncated.bin` | LOAS sync only | LATM / decode error |
 | `m4a-truncated.bin` | `ftyp` size 24, 8 bytes present | ISOBMFF / decode error |
 
+## Lifecycle (TASK-49)
+
+| file | intent |
+|---|---|
+| `lifecycle.txt` | Replayable Decoder/Encoder op script (chunked feed, finish, reset, HE after reset, callback fail, short-tail encode, NaN/`|x|>1`) |
+
 Authored 2026-09-14. Not a coverage claim.

@@ -4,7 +4,7 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 license = "MIT"
-description = "Isolated std mutational parser fuzz (TASK-48). Not a workspace member."
+description = "Isolated std mutational parser and stateful stream fuzz (TASK-48/49). Not a workspace member."
 
 [dependencies]
 syom = { path = "../.." }
@@ -12,3 +12,7 @@ syom = { path = "../.." }
 [[bin]]
 name = "syom_fuzz"
 path = "src/main.rs"
+
+[[bin]]
+name = "syom_fuzz_state"
+path = "src/state.rs"

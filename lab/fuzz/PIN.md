@@ -22,6 +22,17 @@ Seeds: committed goldens (`sine48.adts`, `latm48.latm`, `sine441.m4a`,
 Decode uses `DecodeOptions::speech()` (lecture caps + memory budgets).
 Mutations are capped at 64 KiB.
 
+## Stateful campaign (TASK-49)
+
+```sh
+make -C lab/fuzz run-state
+```
+
+`syom_fuzz_state` issues random `Decoder`/`Encoder` `feed` / `finish` /
+`reset` / failing-callback / corrupted-chunk / invalid-PCM steps on
+`sine48` / `he48` / `latm48`. Ordinary tests replay
+`corpus/fuzz/lifecycle.txt` instead of spawning this binary.
+
 ## Sanitizer
 
 Host toolchain is rustc 1.97.1 stable (`rust-toolchain.toml`).

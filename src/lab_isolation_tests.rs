@@ -261,6 +261,8 @@ fn lab_fuzz_is_isolated_std_mutator() {
     assert!(!product.contains("lab/fuzz"));
     assert!(!product.contains("libfuzzer-sys"));
     assert!(!product.contains("cargo-fuzz"));
+    assert!(pin.contains("TASK-49") || report.contains("TASK-49"));
+    assert!(mk.contains("syom_fuzz_state") || mk.contains("run-state"));
 }
 
 fn walk(dir: std::path::PathBuf) -> Vec<std::path::PathBuf> {

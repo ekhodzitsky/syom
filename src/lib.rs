@@ -148,3 +148,7 @@ mod fuzz_smoke_tests;
 #[cfg(test)]
 #[path = "fuzz_parse_tests.rs"]
 mod fuzz_parse_tests;
+
+#[cfg(test)]
+#[path = "fuzz_stream_tests.rs"]
+mod fuzz_stream_tests;

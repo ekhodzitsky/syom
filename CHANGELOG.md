@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Stateful Decoder/Encoder lifecycle fuzz (TASK-49): ordinary tests
+  replay `corpus/fuzz/lifecycle.txt` and assert chunked vs one-shot
+  PCM/bytes, sticky fail/reset, corrupt-frame finite PCM, and encoder
+  NaN/`|x|>1` as `Encode` errors (not roundtrip). Isolated
+  `lab/fuzz` `syom_fuzz_state` is never spawned by `cargo test`.
 - Bounded parser-fuzz smoke corpus (TASK-48): ordinary tests replay
   `corpus/fuzz/` plus goldens through `decode_with` / sniff and the
   BitReader, ASC, ADTS, LATM and PCE parsers. Mutational campaign is
