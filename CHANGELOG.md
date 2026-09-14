@@ -69,6 +69,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `raw_data_block()` (1..=4). CRC-present payloads skip the header
   position table (`7+2N` bytes) and per-block 16-bit fields; CRC values
   are not checked (TASK-29). Single-block goldens are unchanged.
+- In-band and ASC-seeded PCE must declare LC, match the stream sample-rate
+  index, and list exactly the channel elements in the access unit. Missing,
+  extra, or wrong-type tags, and layouts above 5.1, are `Format` errors
+  rather than silent extra planes or synthesized silence. Default
+  `channel_configuration` 1–6 mapping is unchanged.
 - ASC `channel_configuration=0` now parses the embedded
   `program_config_element` (LC object type, matching core rate, unique
   tags). M4A/LATM seed the decoder map from it; in-band PCE still wins.

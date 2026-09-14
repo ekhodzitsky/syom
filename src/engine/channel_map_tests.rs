@@ -2,9 +2,12 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
+use super::adts::AdtsHeader;
 use super::asc::AudioSpecificConfig;
 use super::bits::{BitReader, BitWriter};
-use super::channel_map::{ElemKind, Element, PlaneMap, map_planes, mono_mix, parse_pce};
+use super::channel_map::{
+    ElemKind, Element, PceChannelMap, PlaneMap, map_planes, mono_mix, parse_pce,
+};
 use super::decode::StreamDecoder;
 use super::error::Error;
 use super::huff_quad::{H1_CODE, H1_LEN};
@@ -92,7 +95,7 @@ fn write_cce_stub(w: &mut BitWriter) {
 fn write_pce(w: &mut BitWriter, front: &[(bool, u8)], back: &[(bool, u8)], lfe: &[u8]) {
     w.write(5, 3); // ID_PCE
     w.write(0, 4); // element_instance_tag
-    w.write(0, 2); // object_type
+    w.write(1, 2); // object_type LC
     w.write(3, 4); // 48 kHz
     w.write(front.len() as u32, 4);
     w.write(0, 4); // side
@@ -150,6 +153,38 @@ fn decode_planes(payload: &[u8], config: u8) -> Result<Vec<Vec<f32>>, Error> {
     Ok(frame.planar)
 }
 
+fn wrap_adts(payload: &[u8]) -> Vec<u8> {
+    let hdr = AdtsHeader {
+        mpeg_version_mpeg2: false,
+        protection_absent: true,
+        profile: 1,
+        sampling_frequency_index: 3,
+        channel_configuration: 0,
+        aac_frame_length: (7 + payload.len()) as u16,
+        adts_buffer_fullness: 0x7FF,
+        number_of_raw_data_blocks_in_frame: 1,
+    };
+    let mut out = hdr.write().to_vec();
+    out.extend_from_slice(payload);
+    out
+}
+
+fn pce_lc(front: Vec<(bool, u8)>) -> PceChannelMap {
+    PceChannelMap {
+        object_type: 1,
+        sf_index: 3,
+        front,
+        ..Default::default()
+    }
+}
+
+fn assert_fmt(got: Result<Vec<PlaneMap>, Error>, msg: &str) {
+    match got {
+        Err(Error::Format(m)) => assert_eq!(m, msg),
+        other => panic!("expected Format({msg:?}), got {other:?}"),
+    }
+}
+
 #[test]
 fn parse_pce_reads_front_back_lfe_lists() -> Result<(), Error> {
     let mut w = BitWriter::new();
@@ -158,6 +193,8 @@ fn parse_pce_reads_front_back_lfe_lists() -> Result<(), Error> {
     let mut br = BitReader::new(&bytes);
     let _id = br.read(3)?;
     let pce = parse_pce(&mut br)?;
+    assert_eq!(pce.object_type, 1);
+    assert_eq!(pce.sf_index, 3);
     assert_eq!(pce.front, vec![(false, 5), (true, 2)]);
     assert_eq!(pce.back, vec![(true, 1)]);
     assert_eq!(pce.lfe, vec![0]);
@@ -227,7 +264,7 @@ fn default_config_6_maps_to_lavc_5_1_order() {
         el(ElemKind::Cpe, 1, 3),
         el(ElemKind::Lfe, 0, 5),
     ];
-    let order = map_planes(&elems, None, 6);
+    let order = map_planes(&elems, None, 6, 3).unwrap();
     // lavc 5.1: FL FR FC LFE BL BR.
     assert_eq!(
         srcs(&order),
@@ -246,12 +283,12 @@ fn default_configs_3_to_5_map_to_lavc_layouts() {
     ];
     // cfg 3 = FL FR FC (second SCE absent).
     assert_eq!(
-        srcs(&map_planes(&elems[..2], None, 3)),
+        srcs(&map_planes(&elems[..2], None, 3, 3).unwrap()),
         vec![Some(1), Some(2), Some(0)]
     );
     // cfg 4 = FL FR FC BC.
     assert_eq!(
-        srcs(&map_planes(&elems, None, 4)),
+        srcs(&map_planes(&elems, None, 4, 3).unwrap()),
         vec![Some(1), Some(2), Some(0), Some(3)]
     );
     // cfg 5 = FL FR FC BL BR (second element is a CPE, not SCE).
@@ -261,7 +298,7 @@ fn default_configs_3_to_5_map_to_lavc_layouts() {
         el(ElemKind::Cpe, 1, 3),
     ];
     assert_eq!(
-        srcs(&map_planes(&elems5, None, 5)),
+        srcs(&map_planes(&elems5, None, 5, 3).unwrap()),
         vec![Some(1), Some(2), Some(0), Some(3), Some(4)]
     );
 }
@@ -275,7 +312,7 @@ fn missing_element_maps_to_silence_extra_keeps_audio() {
         el(ElemKind::Cpe, 1, 3),
         el(ElemKind::Sce, 7, 5),
     ];
-    let order = map_planes(&elems, None, 6);
+    let order = map_planes(&elems, None, 6, 3).unwrap();
     assert_eq!(
         srcs(&order),
         vec![Some(1), Some(2), Some(0), None, Some(3), Some(4), Some(5)]
@@ -360,5 +397,95 @@ fn cce_between_channels_does_not_corrupt_them() -> Result<(), Error> {
     assert_eq!(planar.len(), 2, "CCE must not emit a plane");
     assert_eq!(planar[0], ref_a[0], "channel before CCE corrupted");
     assert_eq!(planar[1], ref_b[0], "channel after CCE corrupted");
+    Ok(())
+}
+
+#[test]
+fn pce_mismatch_is_format_not_silence() {
+    let s0 = [el(ElemKind::Sce, 0, 0)];
+    let mut p = pce_lc(vec![(false, 0)]);
+    p.object_type = 0;
+    assert_fmt(map_planes(&s0, Some(&p), 0, 3), "PCE object_type is not LC");
+    p = pce_lc(vec![(false, 0)]);
+    p.sf_index = 4;
+    assert_fmt(
+        map_planes(&s0, Some(&p), 0, 3),
+        "PCE sf_index does not match stream",
+    );
+    assert_fmt(
+        map_planes(&[], Some(&pce_lc(vec![(false, 5)])), 0, 3),
+        "PCE missing channel element",
+    );
+    let two = [el(ElemKind::Sce, 0, 0), el(ElemKind::Sce, 1, 1)];
+    assert_fmt(
+        map_planes(&two, Some(&pce_lc(vec![(false, 0)])), 0, 3),
+        "PCE extra channel element",
+    );
+    assert_fmt(
+        map_planes(&s0, Some(&pce_lc(vec![(true, 0)])), 0, 3),
+        "PCE missing channel element",
+    );
+    let seven: Vec<_> = (0..7).map(|t| el(ElemKind::Sce, t, t as usize)).collect();
+    let front: Vec<_> = (0..7).map(|t| (false, t)).collect();
+    assert_fmt(
+        map_planes(&seven, Some(&pce_lc(front)), 0, 3),
+        "PCE layout exceeds 5.1",
+    );
+}
+
+fn pce_frame(
+    front: &[(bool, u8)],
+    back: &[(bool, u8)],
+    lfe: &[u8],
+    body: impl FnOnce(&mut BitWriter),
+) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    write_pce(&mut w, front, back, lfe);
+    body(&mut w);
+    w.write(7, 3);
+    w.finish()
+}
+
+#[test]
+fn pce_decode_rejects_inconsistent_elements() {
+    let err = |p: Vec<u8>| decode_planes(&p, 0).unwrap_err();
+    assert!(matches!(
+        err(pce_frame(&[(false, 5)], &[], &[], |_| {})),
+        Error::Format("PCE missing channel element")
+    ));
+    let extra = pce_frame(&[(false, 0)], &[], &[], |w| {
+        write_sce(w, 0, 1);
+        write_sce(w, 1, 3);
+    });
+    assert!(matches!(
+        err(extra.clone()),
+        Error::Format("PCE extra channel element")
+    ));
+    assert!(matches!(
+        err(pce_frame(&[(true, 0)], &[], &[], |w| write_sce(w, 0, 1))),
+        Error::Format("PCE missing channel element")
+    ));
+    let msg = crate::decode(&wrap_adts(&extra)).unwrap_err().to_string();
+    assert!(msg.contains("PCE extra channel element"), "{msg}");
+}
+
+#[test]
+fn pce_speech_mono_excludes_declared_lfe() -> Result<(), Error> {
+    let payload = pce_frame(&[(false, 5), (true, 2)], &[(true, 1)], &[0], |w| {
+        write_cpe(w, 1, 6, 8);
+        write_lfe(w, 0, 2);
+        write_sce(w, 5, 1);
+        write_cpe(w, 2, 3, 5);
+    });
+    let split = decode_planes(&payload, 0)?;
+    let mut dec = StreamDecoder::new();
+    dec.mix_down_mono = true;
+    let mono = dec.decode_raw_data_block(2, 3, 48_000, 0, 1, &payload)?;
+    assert_eq!(mono.planar.len(), 1);
+    let inv = 1.0 / 5.0;
+    for (i, &mv) in mono.planar[0].iter().enumerate() {
+        let mean = (0..5).map(|c| split[c][i]).sum::<f32>() * inv;
+        assert!((mv - mean).abs() <= 1e-3, "sample {i} mixed LFE");
+    }
     Ok(())
 }

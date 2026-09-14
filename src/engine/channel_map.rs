@@ -5,7 +5,9 @@
 //! - `program_config_element()` (ISO/IEC 14496-3 §4.4.2.4): explicit element
 //!   tags in front / side / back / LFE lists. Output planes follow PCE
 //!   declaration order — front, then side, then back (a CPE emits L then R),
-//!   then LFEs.
+//!   then LFEs. A PCE must be LC, match the stream `sf_index`, list exactly
+//!   the frame's channel elements, and yield at most 6 planes; otherwise
+//!   `Error::Format` (not silence or extra planes).
 //! - ADTS/ASC `channel_configuration` (Table 4.1): default element→channel
 //!   assignment. Output planes follow the lavc default layouts, proven by the
 //!   committed goldens (`src/decode_mc_tests.rs`):
@@ -170,18 +172,19 @@ pub(crate) struct PlaneMap {
 }
 
 /// Map decode-order element planes to output planes (see module docs).
-/// Elements the config/PCE does not expect keep their audio, appended in
-/// decode order; expected elements missing from the frame map to silence.
+/// Config 1–6: missing slots are silence; extra elements are appended.
+/// A PCE requires LC, matching `fs_index`, exact `(kind, tag)`, ≤6 planes.
 pub(crate) fn map_planes(
     elems: &[Element],
     pce: Option<&PceChannelMap>,
     channel_configuration: u8,
-) -> Vec<PlaneMap> {
+    fs_index: u8,
+) -> Result<Vec<PlaneMap>> {
+    if let Some(p) = pce {
+        return pce_map(p, elems, fs_index);
+    }
     let mut used = vec![false; elems.len()];
-    let mut out = match pce {
-        Some(p) => pce_slots(p, elems, &mut used),
-        None => default_slots(channel_configuration, elems, &mut used),
-    };
+    let mut out = default_slots(channel_configuration, elems, &mut used);
     for (i, e) in elems.iter().enumerate() {
         if !used[i] {
             for p in 0..e.planes() {
@@ -192,7 +195,7 @@ pub(crate) fn map_planes(
             }
         }
     }
-    out
+    Ok(out)
 }
 
 /// `(kind, occurrence among elements of that kind, channel of pair)` per
@@ -249,18 +252,31 @@ fn default_slots(config: u8, elems: &[Element], used: &mut [bool]) -> Vec<PlaneM
 }
 
 /// PCE declaration order: front, side, back (CPE as L then R), then LFEs.
-fn pce_slots(pce: &PceChannelMap, elems: &[Element], used: &mut [bool]) -> Vec<PlaneMap> {
+fn pce_map(pce: &PceChannelMap, elems: &[Element], fs_index: u8) -> Result<Vec<PlaneMap>> {
+    if pce.object_type != 1 {
+        return Err(Error::Format("PCE object_type is not LC"));
+    }
+    if pce.sf_index != fs_index {
+        return Err(Error::Format("PCE sf_index does not match stream"));
+    }
+    let mut used = vec![false; elems.len()];
     let mut out = Vec::new();
     for list in [&pce.front, &pce.side, &pce.back] {
         for &(is_cpe, tag) in list {
             let kind = if is_cpe { ElemKind::Cpe } else { ElemKind::Sce };
-            push_tagged(&mut out, elems, used, kind, tag);
+            push_tagged(&mut out, elems, &mut used, kind, tag)?;
         }
     }
     for &tag in &pce.lfe {
-        push_tagged(&mut out, elems, used, ElemKind::Lfe, tag);
+        push_tagged(&mut out, elems, &mut used, ElemKind::Lfe, tag)?;
     }
-    out
+    if used.iter().any(|&u| !u) {
+        return Err(Error::Format("PCE extra channel element"));
+    }
+    if out.len() > 6 {
+        return Err(Error::Format("PCE layout exceeds 5.1"));
+    }
+    Ok(out)
 }
 
 fn push_tagged(
@@ -269,7 +285,7 @@ fn push_tagged(
     used: &mut [bool],
     kind: ElemKind,
     tag: u8,
-) {
+) -> Result<()> {
     let hit = elems
         .iter()
         .enumerate()
@@ -278,25 +294,17 @@ fn push_tagged(
         ElemKind::Cpe => 2,
         ElemKind::Sce | ElemKind::Lfe => 1,
     };
-    match hit {
-        Some((i, e)) => {
-            used[i] = true;
-            for p in 0..n {
-                out.push(PlaneMap {
-                    src: Some(e.plane + p),
-                    lfe: kind == ElemKind::Lfe,
-                });
-            }
-        }
-        None => {
-            for _ in 0..n {
-                out.push(PlaneMap {
-                    src: None,
-                    lfe: kind == ElemKind::Lfe,
-                });
-            }
-        }
+    let Some((i, e)) = hit else {
+        return Err(Error::Format("PCE missing channel element"));
+    };
+    used[i] = true;
+    for p in 0..n {
+        out.push(PlaneMap {
+            src: Some(e.plane + p),
+            lfe: kind == ElemKind::Lfe,
+        });
     }
+    Ok(())
 }
 
 fn identity(elems: &[Element], used: &mut [bool]) -> Vec<PlaneMap> {

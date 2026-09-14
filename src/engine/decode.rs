@@ -20,8 +20,7 @@ use super::skip::{fill_count, skip_cce, skip_dse};
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
 
-/// Owned per-frame output; used by engine unit tests. The product paths
-/// (streaming + mono fast path) borrow planes via `frame_planes` instead.
+/// Owned per-frame output for engine tests (product paths borrow `frame_planes`).
 #[cfg(test)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DecodedFrame {
@@ -136,9 +135,7 @@ impl StreamDecoder {
         Ok(rate)
     }
 
-    /// Planes left by the last `decode_into_bufs` call, truncated to the
-    /// channel count (filterbank scale unless reached via
-    /// `decode_frame_scaled`).
+    /// Last `decode_into_bufs` planes (filterbank scale unless scaled).
     pub(crate) fn frame_planes(&self) -> &[Vec<f32>] {
         &self.frame_ch
     }
@@ -156,8 +153,7 @@ impl StreamDecoder {
         }
         let core_aot = 2;
         let mut br = BitReader::new(payload);
-        // Multichannel path: per-channel filterbanks, element→plane mapping.
-        // Mono/stereo (cfg 1/2, no PCE) keep the fast path untouched.
+        // cfg 0 / ≥3 / PCE: per-channel FBs. cfg 1/2 keep the fast path.
         let multichannel =
             channel_configuration == 0 || channel_configuration >= 3 || self.pce.is_some();
         if multichannel {
@@ -278,11 +274,15 @@ impl StreamDecoder {
             self.fast_mono = true;
         }
         self.frame_ch.truncate(self.n_ch);
-        if multichannel && !self.frame_ch.is_empty() {
-            let order = map_planes(&self.elems, self.pce.as_ref(), channel_configuration);
+        if self.pce.is_some() || (multichannel && !self.frame_ch.is_empty()) {
+            let order = map_planes(
+                &self.elems,
+                self.pce.as_ref(),
+                channel_configuration,
+                fs_index,
+            )?;
             reorder(&mut self.frame_ch, &order);
             if self.mix_down_mono {
-                // One rule: arithmetic mean of the non-LFE planes.
                 let mono = mono_mix(&self.frame_ch, &order);
                 self.pcm_l.clear();
                 self.pcm_l.extend_from_slice(&mono);
