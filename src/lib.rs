@@ -2,6 +2,8 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod decode;
+#[doc(hidden)]
+pub mod decode_cmp;
 mod enc_stream;
 mod encode;
 mod engine;
@@ -28,6 +30,10 @@ pub use stream::{Decoder, Frame, StreamInfo, decode_streaming};
 #[cfg(test)]
 #[path = "decode_tests.rs"]
 mod decode_tests;
+
+#[cfg(test)]
+#[path = "decode_cmp_tests.rs"]
+mod decode_cmp_tests;
 
 #[cfg(test)]
 #[path = "encode_tests.rs"]

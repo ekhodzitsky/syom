@@ -1,22 +1,21 @@
-//! In-process AAC decode vs Rust peers (bytes → PCM).
+//! In-process AAC decode vs Rust peers (bytes → planar PCM).
 //!
-//! oxideav-aac 0.1.7 decodes ADTS (LC + SBR + PS) but has no ISOBMFF
-//! demux, so it joins the ADTS groups only. C peers (lavc / libfdk) are
-//! not linked here; see BENCH.md.
+//! Every timed candidate first passes [`syom::decode_cmp::run_preflight`].
+//! Failed collects abort the group; HE/core-only and mismatched lengths
+//! are non-comparable (no throughput). Primary lane is planar split at
+//! native rate. C peers (lavc / libfdk) are not linked here; see BENCH.md.
 
 use std::hint::black_box;
-use std::io::Cursor;
 
 use criterion::{Criterion, Throughput, criterion_group, criterion_main};
-use oxideav_aac::decode::StreamDecoder;
-use rusty_aac::AacDecoder;
-use symphonia::core::codecs::CodecParameters;
-use symphonia::core::codecs::audio::AudioDecoderOptions;
-use symphonia::core::formats::probe::Hint;
-use symphonia::core::formats::{FormatOptions, TrackType};
-use symphonia::core::io::MediaSourceStream;
-use symphonia::core::meta::MetadataOptions;
+use syom::decode_cmp::{Candidate, Lane, run_preflight, syom_candidate, syom_discard};
 use syom::{decode, encode};
+
+// Types `mod peers` imports via `use super::{...}`.
+#[allow(unused_imports)]
+use syom::decode_cmp::{Collect, Pcm};
+
+mod peers;
 
 const LC_ADTS: &[u8] = include_bytes!("../src/goldens/sine48.adts");
 const LC_M4A: &[u8] = include_bytes!("../src/goldens/sine441.m4a");
@@ -25,71 +24,95 @@ const HE_M4A: &[u8] = include_bytes!("../src/goldens/he48.m4a");
 const PS_ADTS: &[u8] = include_bytes!("../src/goldens/ps48.adts");
 const MC_ADTS: &[u8] = include_bytes!("../src/goldens/mc51.adts");
 
-fn syom_ok(bytes: &[u8]) {
-    let _ = black_box(decode(bytes));
+fn adts_candidates() -> [Candidate; 4] {
+    [
+        syom_candidate(),
+        peers::rusty_candidate(),
+        peers::oxideav_candidate(),
+        peers::symphonia_adts_candidate(),
+    ]
 }
 
-fn rusty_adts(bytes: &[u8]) {
-    let mut dec = AacDecoder::new();
-    let mut pos = 0usize;
-    while pos + 7 <= bytes.len() {
-        let Ok(hdr) = rusty_aac::parse_adts(&bytes[pos..]) else {
-            break;
-        };
-        let end = (pos + hdr.frame_length).min(bytes.len());
-        let _ = dec.decode(&bytes[pos..end], None);
-        if hdr.frame_length == 0 {
-            break;
-        }
-        pos = end;
-    }
+fn m4a_candidates() -> [Candidate; 4] {
+    [
+        syom_candidate(),
+        peers::rusty_candidate(),
+        peers::oxideav_candidate(),
+        peers::symphonia_m4a_candidate(),
+    ]
 }
 
-fn oxideav_adts(bytes: &[u8]) {
-    let mut dec = StreamDecoder::new();
-    let _ = black_box(dec.decode_all(bytes));
+/// 5.1: rusty_aac matches split PCM but is ~1 s/iter — not a wall peer.
+fn mc_candidates() -> [Candidate; 3] {
+    [
+        syom_candidate(),
+        peers::oxideav_candidate(),
+        peers::symphonia_adts_candidate(),
+    ]
 }
 
-fn symphonia_all(bytes: &[u8], ext: &str) {
-    let src = Cursor::new(bytes.to_vec());
-    let mss = MediaSourceStream::new(Box::new(src), Default::default());
-    let mut hint = Hint::new();
-    hint.with_extension(ext);
-    let Ok(mut format) = symphonia::default::get_probe().probe(
-        &hint,
-        mss,
-        FormatOptions::default(),
-        MetadataOptions::default(),
-    ) else {
-        return;
+fn timed_collect(c: &mut Criterion, name: &'static str, bytes: &'static [u8], cands: &[Candidate]) {
+    let pf = run_preflight(name, bytes, Lane::PlanarSplit, cands);
+    eprint!("{}", pf.report());
+    let Some(timed) = pf.timed_ids() else {
+        panic!("preflight abort\n{}", pf.report());
     };
-    let Some(track) = format.default_track(TrackType::Audio) else {
-        return;
-    };
-    let Some(CodecParameters::Audio(params)) = track.codec_params.clone() else {
-        return;
-    };
-    let Ok(mut decoder) = symphonia::default::get_codecs()
-        .make_audio_decoder(&params, &AudioDecoderOptions::default())
-    else {
-        return;
-    };
-    while let Ok(Some(pkt)) = format.next_packet() {
-        let _ = decoder.decode(&pkt);
-    }
-}
-
-fn group(c: &mut Criterion, name: &str, bytes: &[u8], ext: &str, rusty: bool, oxideav: bool) {
     let mut g = c.benchmark_group(name);
     g.throughput(Throughput::Bytes(bytes.len() as u64));
-    g.bench_function("syom", |b| b.iter(|| syom_ok(bytes)));
-    if rusty {
-        g.bench_function("rusty_aac", |b| b.iter(|| rusty_adts(bytes)));
+    for cand in cands {
+        if !timed.contains(&cand.id) {
+            continue;
+        }
+        let collect = cand.collect;
+        g.bench_function(cand.id, move |b| {
+            b.iter(|| black_box(collect(bytes, Lane::PlanarSplit)))
+        });
     }
-    if oxideav {
-        g.bench_function("oxideav", |b| b.iter(|| oxideav_adts(bytes)));
+    g.finish();
+}
+
+fn timed_speech(c: &mut Criterion, bytes: &'static [u8]) {
+    let cands = [syom_candidate()];
+    let pf = run_preflight("lc_adts_speech", bytes, Lane::SpeechDownmix, &cands);
+    eprint!("{}", pf.report());
+    if pf.timed_ids().is_none() {
+        panic!("preflight abort\n{}", pf.report());
     }
-    g.bench_function("symphonia", |b| b.iter(|| symphonia_all(bytes, ext)));
+    let mut g = c.benchmark_group("lc_adts_speech");
+    g.throughput(Throughput::Bytes(bytes.len() as u64));
+    g.bench_function("syom", |b| {
+        b.iter(|| black_box(syom::decode_cmp::syom_collect(bytes, Lane::SpeechDownmix)))
+    });
+    g.finish();
+}
+
+fn timed_discard(c: &mut Criterion, bytes: &'static [u8]) {
+    let cands = adts_candidates();
+    let pf = run_preflight("lc_adts_discard", bytes, Lane::DiscardOutput, &cands);
+    eprint!("{}", pf.report());
+    let Some(timed) = pf.timed_ids() else {
+        panic!("preflight abort\n{}", pf.report());
+    };
+    let mut g = c.benchmark_group("lc_adts_discard");
+    g.throughput(Throughput::Bytes(bytes.len() as u64));
+    if timed.contains(&"syom") {
+        g.bench_function("syom", |b| b.iter(|| black_box(syom_discard(bytes))));
+    }
+    if timed.contains(&"rusty_aac") {
+        g.bench_function("rusty_aac", |b| {
+            b.iter(|| black_box(peers::rusty_discard(bytes)))
+        });
+    }
+    if timed.contains(&"oxideav-aac") {
+        g.bench_function("oxideav-aac", |b| {
+            b.iter(|| black_box(peers::oxideav_discard(bytes)))
+        });
+    }
+    if timed.contains(&"symphonia") {
+        g.bench_function("symphonia", |b| {
+            b.iter(|| black_box(peers::symphonia_adts_discard(bytes)))
+        });
+    }
     g.finish();
 }
 
@@ -150,14 +173,16 @@ fn enc_group(c: &mut Criterion, name: &str, pcm: &[Vec<f32>], rate: u32) {
 }
 
 fn benches(c: &mut Criterion) {
-    group(c, "lc_adts", LC_ADTS, "aac", true, true);
-    group(c, "lc_m4a", LC_M4A, "m4a", false, false);
-    group(c, "he_adts", HE_ADTS, "aac", true, true);
-    group(c, "he_m4a", HE_M4A, "m4a", false, false);
-    group(c, "ps_adts", PS_ADTS, "aac", true, true);
-    // 5.1 LC: rusty_aac decodes it but at ~seconds/iter it is not a
-    // meaningful wall peer; sample parity is checked in mem.rs.
-    group(c, "mc_adts", MC_ADTS, "aac", false, true);
+    let adts = adts_candidates();
+    let m4a = m4a_candidates();
+    timed_collect(c, "lc_adts", LC_ADTS, &adts);
+    timed_collect(c, "lc_m4a", LC_M4A, &m4a);
+    timed_collect(c, "he_adts", HE_ADTS, &adts);
+    timed_collect(c, "he_m4a", HE_M4A, &m4a);
+    timed_collect(c, "ps_adts", PS_ADTS, &adts);
+    timed_collect(c, "mc_adts", MC_ADTS, &mc_candidates());
+    timed_speech(c, LC_ADTS);
+    timed_discard(c, LC_ADTS);
     let (mono, mono_rate) = enc_mono_input();
     enc_group(c, "enc_lc_mono", &mono, mono_rate);
     let (stereo, stereo_rate) = enc_stereo_input();

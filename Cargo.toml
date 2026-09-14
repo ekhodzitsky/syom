@@ -12,6 +12,7 @@ homepage = "https://github.com/ekhodzitsky/syom"
 documentation = "https://docs.rs/syom"
 keywords = ["aac", "adts", "m4a", "he-aac", "decoder"]
 categories = ["multimedia::audio"]
+autobenches = false
 
 [lints.clippy]
 unwrap_used = "deny"

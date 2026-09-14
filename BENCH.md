@@ -1,6 +1,17 @@
 # syom benches
 
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
+Decode groups now run an untimed equivalent-PCM preflight
+(`syom::decode_cmp::run_preflight`) before Criterion: matching native
+rate, channel count, finite samples and consumed length. A failed
+candidate aborts the group (no timed result). HE/core-only and
+mismatched lengths are **non-comparable** and must not be read as
+throughput. Primary lane is planar split (`DecodeOptions::unbounded()`);
+`lc_adts_speech` and `lc_adts_discard` are separately named equal-work
+lanes. Historical decode wall/sample-count rows below used unequal
+workloads (speech mix vs discarded/core-only output) and stay labeled
+**historical** until a matched-output baseline replaces them.
+
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).
 Encode section added 2026-09-06; rev 2 same day after block
@@ -51,7 +62,12 @@ run last in the process, so there is no fair peak-RSS cell):
   committed lavc goldens (`src/goldens/enc48{,m}.*`) match ffmpeg's
   decode within 1 LSB s16 / ~80 dB.
 
-## Decode
+## Decode (historical — unequal work; not a matched-output leaderboard)
+
+The sample-count and wall tables in this section were collected before
+the equivalent-PCM preflight. They mix speech-mono syom output with
+peer interleaved/multichannel/core-only/discarded PCM. Do not use them
+to rank implementations. Replace with a preflight-gated run.
 
 oxideav-aac 0.1.7 is a real decode peer: the published tarball ships
 SBR + PS (its crates.io "parser" description is stale). ADTS only — no

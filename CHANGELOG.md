@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+### Changed
+
+- Decoder Criterion benches (`benches/aac.rs`) run an untimed equivalent-PCM
+  preflight (`syom::decode_cmp::run_preflight`) before timing: native rate,
+  channel count, finite samples and consumed length must match. A failed
+  candidate aborts the group. Unavailable profiles and mismatched lengths
+  (HE vs core-only) are non-comparable and produce no throughput number.
+  The primary lane is planar split at native rate; speech downmix and
+  discard-output are separately named. Historical BENCH.md decode rows
+  stay labeled until a matched-output baseline replaces them. Product
+  `decode` / `speech()` defaults are unchanged.
+
 ## [0.6.0] - 2026-09-06
 
 ### Added
