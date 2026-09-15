@@ -13,3 +13,6 @@ lcov.info
 *.mp4
 *.pcm
 !src/goldens/*.m4a
+
+# Local code intelligence state
+/.serena/
