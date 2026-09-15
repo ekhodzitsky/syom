@@ -15,86 +15,13 @@ use super::enc_psy::Psy;
 use super::enc_quant::{self, MAX_FLAT_SHORT, MAX_GROUPS, QuantShort};
 use super::enc_section::{emit_ics_info, plan_books_into};
 use super::enc_tns::EncTns;
-use super::filterbank::window_left;
 use super::ics::WindowSequence;
-use super::mdct::mdct_into_f32;
 use super::section::has_spectral;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 
-/// Block offset of the first short window (`(2048 − 256) / 4`) and the hop
-/// between short windows — mirrors the decoder's `short_windowed`.
-const SHORT_START: usize = (2 * LONG_WINDOW_LEN - 2 * SHORT_WINDOW_LEN) / 4;
-const SHORT_HOP: usize = SHORT_WINDOW_LEN;
-
-/// The encoder's analysis windows, pre-scaled by 32768 like the long
-/// `LcEncoder::window` and matching the decoder's synthesis shapes exactly
-/// (`filterbank::apply_long_window` / `short_windowed`).
-pub struct ShortWindows {
-    /// Long-start: long KBD left, flat 1.0, short KBD right, zeros.
-    pub start: Box<[f32; 2 * LONG_WINDOW_LEN]>,
-    /// Long-stop: zeros, short KBD left, flat 1.0, long KBD right.
-    pub stop: Box<[f32; 2 * LONG_WINDOW_LEN]>,
-    /// One 256-tap short KBD window.
-    pub short: Box<[f32; 2 * SHORT_WINDOW_LEN]>,
-}
-
-impl ShortWindows {
-    pub fn new() -> Self {
-        let long = window_left(2 * LONG_WINDOW_LEN, super::ics::WindowShape::Kbd);
-        let short = window_left(2 * SHORT_WINDOW_LEN, super::ics::WindowShape::Kbd);
-        let mut start = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
-        let mut stop = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
-        for i in 0..LONG_WINDOW_LEN {
-            start[i] = long[i] * 32768.0;
-            stop[LONG_WINDOW_LEN + i] = long[LONG_WINDOW_LEN - 1 - i] * 32768.0;
-        }
-        let flat = SHORT_START; // 448 samples of flat 1.0 on each side
-        for i in 0..flat {
-            start[LONG_WINDOW_LEN + i] = 32768.0;
-            stop[SHORT_START + SHORT_WINDOW_LEN + i] = 32768.0;
-        }
-        for m in 0..SHORT_WINDOW_LEN {
-            // Descending short right half at 1472..1600 of the start window.
-            start[LONG_WINDOW_LEN + flat + m] = short[SHORT_WINDOW_LEN - 1 - m] * 32768.0;
-            // Ascending short left half at 448..576 of the stop window.
-            stop[SHORT_START + m] = short[m] * 32768.0;
-        }
-        let mut sw = Box::new([0.0f32; 2 * SHORT_WINDOW_LEN]);
-        for i in 0..SHORT_WINDOW_LEN {
-            sw[i] = short[i] * 32768.0;
-            sw[2 * SHORT_WINDOW_LEN - 1 - i] = short[i] * 32768.0;
-        }
-        Self {
-            start,
-            stop,
-            short: sw,
-        }
-    }
-}
-
-/// Window-major short spectrum of one 2048-sample block: eight 256→128
-/// MDCTs at offsets 448 + 128·w (mirrors the decoder's short IMDCT grid).
-pub fn spectra(
-    block: &[f32; 2 * LONG_WINDOW_LEN],
-    windows: &ShortWindows,
-    spec: &mut [f32; LONG_WINDOW_LEN],
-) {
-    let mut seg = [0.0f32; 2 * SHORT_WINDOW_LEN];
-    for w in 0..MAX_GROUPS {
-        let base = SHORT_START + w * SHORT_HOP;
-        for (s, (&x, &win)) in seg.iter_mut().zip(
-            block[base..base + 2 * SHORT_WINDOW_LEN]
-                .iter()
-                .zip(windows.short.iter()),
-        ) {
-            *s = x * win;
-        }
-        mdct_into_f32(
-            &seg,
-            &mut spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN],
-        );
-    }
-}
+#[path = "enc_short_win.rs"]
+mod win;
+pub use win::{ShortWindows, spectra};
 
 /// Quantize + plan one short channel at `offset`; returns its body bits.
 /// Psy scores each window; [`Grouping`] then folds windows into groups.
@@ -115,21 +42,29 @@ pub fn channel_build(
     let n_sfb = q.n_sfb;
     let mut win_coded = [false; MAX_FLAT_SHORT];
     let mut win_tq = [0.0f32; MAX_FLAT_SHORT];
+    let mut win_forced = [false; MAX_FLAT_SHORT];
+    // Per-window energy / allowed noise / Σ√|x| for the noise targets.
+    let mut win_e = [0.0f32; MAX_FLAT_SHORT];
+    let mut win_n = [0.0f32; MAX_FLAT_SHORT];
+    let mut win_s = [0.0f32; MAX_FLAT_SHORT];
     for w in 0..MAX_GROUPS {
+        let (lo, hi) = (w * n_sfb, (w + 1) * n_sfb);
         psy.analyze(
             &spec[w * SHORT_WINDOW_LEN..(w + 1) * SHORT_WINDOW_LEN],
             offsets,
             crate::engine::enc_frame::TARGET_Q,
-            &mut win_coded[w * n_sfb..(w + 1) * n_sfb],
-            &mut win_tq[w * n_sfb..(w + 1) * n_sfb],
+            &mut win_coded[lo..hi],
+            &mut win_tq[lo..hi],
         );
+        let (e, n, s) = psy.bands();
+        win_e[lo..hi].copy_from_slice(&e[..n_sfb]);
+        win_n[lo..hi].copy_from_slice(&n[..n_sfb]);
+        win_s[lo..hi].copy_from_slice(&s[..n_sfb]);
         if tns.short().window_on(w) {
-            let hi = n_sfb.min(14);
-            for b in 0..hi {
-                if !win_coded[w * n_sfb + b] {
-                    win_coded[w * n_sfb + b] = true;
-                    win_tq[w * n_sfb + b] = crate::engine::enc_frame::TARGET_Q;
-                }
+            for b in 0..n_sfb.min(14) {
+                win_forced[lo + b] = !win_coded[lo + b];
+                win_coded[lo + b] = true;
+                win_tq[lo + b] = crate::engine::enc_frame::TARGET_Q;
             }
         }
     }
@@ -147,7 +82,49 @@ pub fn channel_build(
         tq,
         &mut gpeaks,
     );
-    enc_quant::raw_scalefactors_short(&gpeaks, tq, offset, q);
+    // Fold energy / noise / Σ√|x| (sums) and the TNS forcing (any) per group.
+    let n = q.n_groups * n_sfb;
+    let (mut ge, mut gn, mut gs) = (
+        [0.0f32; MAX_FLAT_SHORT],
+        [0.0f32; MAX_FLAT_SHORT],
+        [0.0f32; MAX_FLAT_SHORT],
+    );
+    let mut gw = [0.0f32; MAX_FLAT_SHORT];
+    let mut gforced = [false; MAX_FLAT_SHORT];
+    let mut wbase = 0usize;
+    for g in 0..q.n_groups {
+        for k in 0..q.group_len[g] as usize {
+            for b in 0..n_sfb {
+                let (o, i) = (g * n_sfb + b, (wbase + k) * n_sfb + b);
+                ge[o] += win_e[i];
+                gn[o] += win_n[i];
+                gs[o] += win_s[i];
+                gw[o] += f32::from(offsets[b + 1] - offsets[b]);
+                gforced[o] |= win_forced[i];
+            }
+        }
+        wbase += q.group_len[g] as usize;
+    }
+    let cap = *tq;
+    crate::engine::enc_alloc::noise_targets(
+        &gpeaks,
+        &ge,
+        &gs,
+        &gn,
+        &gw,
+        &cap,
+        offset,
+        n,
+        &mut q.coded,
+        tq,
+    );
+    for o in 0..n {
+        if gforced[o] && !q.coded[o] && gpeaks[o] > 0.0 {
+            q.coded[o] = true;
+            tq[o] = 1.0;
+        }
+    }
+    enc_quant::raw_scalefactors_short(&gpeaks, tq, 0, q);
     *gain = enc_quant::normalize_sf_short(q);
     enc_quant::quantize_short(spec, offsets, q);
     *books = plan_books_short(q);
@@ -261,10 +238,22 @@ fn section_header_bits_short(len: usize) -> usize {
 /// result is flattened `g * n_sfb + b`.
 pub fn plan_books_short(q: &QuantShort) -> [u8; MAX_FLAT_SHORT] {
     let mut sfb_cb = [0u8; MAX_FLAT_SHORT];
+    let n = q.n_groups * q.n_sfb;
+    // ZERO_HCB for all-zero (group, band)s when the flat sf chain stays
+    // DPCM-valid (TASK-113), as `plan_books` does for long frames.
+    let mut eff = q.coded;
+    for (e, &z) in eff.iter_mut().zip(q.zero.iter()).take(n) {
+        *e &= !z;
+    }
+    let coded = if super::enc_quant::dpcm_ok(&q.sf, &eff, n) {
+        eff
+    } else {
+        q.coded
+    };
     for g in 0..q.n_groups {
         let lo = g * q.n_sfb;
         plan_books_into(
-            &q.coded[lo..lo + q.n_sfb],
+            &coded[lo..lo + q.n_sfb],
             &q.bits[lo..lo + q.n_sfb],
             q.n_sfb,
             &mut sfb_cb[lo..lo + q.n_sfb],

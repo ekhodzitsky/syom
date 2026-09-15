@@ -3,7 +3,7 @@
 //! `impl` below keeps using the encoder's private fields; no new
 //! abstraction boundary.
 
-use super::{LcEncoder, MAX_BITS_PER_CHANNEL, MAX_PAYLOAD_BYTES, TARGET_Q};
+use super::{LcEncoder, MAX_BITS_PER_CHANNEL, MAX_PAYLOAD_BYTES};
 use crate::engine::enc_quant::{self, MAX_BANDS};
 use crate::engine::enc_section;
 use crate::engine::enc_short;
@@ -25,38 +25,14 @@ pub fn max_bitrate_bps(sample_rate: u32, channels: usize) -> u32 {
     bits.min(u64::from(u32::MAX)) as u32
 }
 
-/// Rate-loop search bounds for the global scalefactor offset. Lower offset
-/// = larger quantized values = finer quantization = more bits; the floor
-/// stays clear of the escape-saturation plateau.
-const OFFSET_LO: i32 = -8;
-const OFFSET_HI: i32 = 80;
+/// Rate-loop search bounds for the allowed-noise offset (1.5 dB steps,
+/// [`crate::engine::enc_alloc::noise_targets`]): negative refines every
+/// band uniformly, positive raises the water level over the quietest
+/// band; bits fall monotonically with the offset.
+const OFFSET_LO: i32 = -60;
+const OFFSET_HI: i32 = 240;
 
 impl LcEncoder {
-    pub(crate) fn with_short_tns(mut self, on: bool) -> Self {
-        self.short_tns = on;
-        self
-    }
-
-    pub(crate) fn with_short_group(mut self, on: bool) -> Self {
-        self.short_group = on;
-        self
-    }
-
-    pub(crate) fn with_band_refine(mut self, on: bool) -> Self {
-        self.band_refine = on;
-        self
-    }
-
-    pub(crate) fn with_pns(mut self, on: bool) -> Self {
-        self.pns = on;
-        self
-    }
-
-    pub(crate) fn with_intensity(mut self, on: bool) -> Self {
-        self.intensity = on;
-        self
-    }
-
     /// Per-band M/S (and optional IS skip) once per frame before the rate loop.
     pub(super) fn decide_stereo(
         &mut self,
@@ -132,20 +108,19 @@ impl LcEncoder {
     pub(super) fn search_offset(
         &mut self,
         specs: &[[f32; LONG_WINDOW_LEN]; 2],
-        psy_specs: &[[f32; LONG_WINDOW_LEN]; 2],
         spend: usize,
     ) -> i32 {
         let budget = spend.saturating_sub(32);
-        if self.build(specs, psy_specs, OFFSET_LO) <= budget {
+        if self.build(specs, OFFSET_LO) <= budget {
             return OFFSET_LO; // maximum quality fits
         }
-        if self.build(specs, psy_specs, OFFSET_HI) > budget {
+        if self.build(specs, OFFSET_HI) > budget {
             return OFFSET_HI; // over budget even at ceiling: cap logic takes over
         }
         let (mut lo, mut hi) = (OFFSET_LO, OFFSET_HI);
         while hi - lo > 1 {
             let mid = lo + (hi - lo) / 2;
-            if self.build(specs, psy_specs, mid) <= budget {
+            if self.build(specs, mid) <= budget {
                 hi = mid;
             } else {
                 lo = mid;
@@ -155,15 +130,9 @@ impl LcEncoder {
     }
 
     /// Quantize + plan both channels at `offset`; returns total frame bits.
-    /// Long windows: psy thresholds come from `psy_specs` (the pre-TNS
-    /// snapshot, M/S-transformed) while `specs` (the coded, TNS-filtered
-    /// spectra) feed peaks and quantization.
-    pub(super) fn build(
-        &mut self,
-        specs: &[[f32; LONG_WINDOW_LEN]; 2],
-        psy_specs: &[[f32; LONG_WINDOW_LEN]; 2],
-        offset: i32,
-    ) -> usize {
+    /// Long windows draw their targets from the per-frame allocation cache
+    /// (`enc_frame_alloc.rs`); `specs` are the coded, TNS-filtered spectra.
+    pub(super) fn build(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], offset: i32) -> usize {
         let standalone = self.channels == 1;
         let mut total = 3 + 4 + 3 + self.fill_bits(); // id + tag + FIL + END
         if self.seq.is_eight_short() {
@@ -191,21 +160,34 @@ impl LcEncoder {
             // common_window + ics_info + ms_mask
             total += 1 + 11 + self.ms.overhead_bits();
         }
-        for ch in 0..self.channels {
+        for (ch, spec) in specs.iter().enumerate().take(self.channels) {
             let q = &mut self.chans[ch];
             q.pns[..q.n_bands].fill(false);
             q.intensity[..q.n_bands].fill(false);
             let tq = &mut self.target_q[ch];
-            self.psy
-                .analyze(&psy_specs[ch], self.offsets, TARGET_Q, &mut q.coded, tq);
+            let a = &self.alloc[ch];
+            q.coded = a.coded;
+            let peaks = a.peaks;
+            crate::engine::enc_alloc::noise_targets(
+                &a.peaks,
+                &a.energy,
+                &a.sum_sqrt,
+                &a.noise,
+                &a.width,
+                &a.cap,
+                offset,
+                q.n_bands,
+                &mut q.coded,
+                tq,
+            );
             // TNS whitens its span flat: every band in it carries residual
             // energy the decoder's recursion needs — force them coded.
             if let Some((tns_lo, tns_hi)) = self.tns[ch].band_range() {
                 let span = tq.iter_mut().enumerate().take(tns_hi.min(q.n_bands));
                 for (b, tq_b) in span.skip(tns_lo) {
-                    if !q.coded[b] {
+                    if !q.coded[b] && peaks[b] > 0.0 {
                         q.coded[b] = true;
-                        *tq_b = TARGET_Q;
+                        *tq_b = 1.0;
                     }
                 }
             }
@@ -213,10 +195,10 @@ impl LcEncoder {
                 self.offsets,
                 q,
                 tq,
-                &specs[ch],
+                spec,
                 &mut self.books[ch],
                 &mut self.gains[ch],
-                offset,
+                0,
             );
         }
         if self.pns {

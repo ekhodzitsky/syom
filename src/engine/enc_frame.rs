@@ -7,22 +7,11 @@
 //! Block switching: OnlyLong → LongStart → EightShort → LongStop; CPE
 //! `common_window = 1` ORs both detectors. TNS is long-only unless
 //! `with_short_tns`. Grouping/refine/PNS/IS off unless opted in.
-//!
-//! Known causal weakness, and the opt-in fix: the LongStart window stays
-//! flat for the first 1024 + 448 taps, so an attack landing in the first
-//! ~448 NEW samples of a frame is still coded by the flat-region long
-//! transform — reduced, not eliminated, pre-echo. With one-frame lookahead
-//! on (`crate::EncodeOptions::with_lookahead`; entry points `push_frame` /
-//! `flush` in the `lookahead` child module), the attack detectors run one
-//! frame ahead of the encode: frame N's sequence is decided by
-//! attack(N) || attack(N+1), so an attack anywhere in frame N+1 makes
-//! frame N a LongStart — its start-window slope covers the pre-attack
-//! tail — and frame N+1 an EightShort, coding early attacks entirely on
-//! short windows. Mid-stream the attack(N) half of the OR is unreachable
-//! (attack(N) already made frame N−1 a LongStart, which forces N short);
-//! it matters only for frame 0 and for the final frame flushed without a
-//! successor. Cost: one frame (1024 samples) of latency; `flush` emits the
-//! held frame at end of input.
+//! Causal block switching codes an attack in the first ~448 new samples
+//! of a frame on the LongStart's flat region (reduced, not eliminated,
+//! pre-echo); the opt-in one-frame lookahead (`lookahead` child module,
+//! `crate::EncodeOptions::with_lookahead`) decides frame N from
+//! attack(N) || attack(N+1) at one frame of latency.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::enc_ms::MsBands;
@@ -96,6 +85,8 @@ pub struct LcEncoder {
     /// HE: `extension_payload` bytes of the SBR FIL written before `END`
     /// (empty = LC only). Set per frame by the HE encoder (TASK-89).
     fill: Vec<u8>,
+    /// Long-frame allocation inputs, once per frame (TASK-113).
+    alloc: Box<[super::enc_alloc::AllocCache; 2]>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -175,6 +166,10 @@ impl LcEncoder {
             held: None,
             payload: Vec::with_capacity(MAX_PAYLOAD_BYTES),
             fill: Vec::new(),
+            alloc: Box::new([
+                super::enc_alloc::AllocCache::new(),
+                super::enc_alloc::AllocCache::new(),
+            ]),
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
                 QuantShort::new(short_offsets.len() - 1),
@@ -330,10 +325,9 @@ impl LcEncoder {
         let mut coded = [[false; MAX_BANDS]; 2];
         if long {
             psy_specs = specs;
-            for ch in 0..self.channels {
-                let mut tq = [0.0f32; MAX_BANDS];
-                self.psy
-                    .analyze(&specs[ch], self.offsets, TARGET_Q, &mut coded[ch], &mut tq);
+            self.prepare_alloc(&specs);
+            for (c, a) in coded.iter_mut().zip(self.alloc.iter()) {
+                *c = a.coded;
             }
         }
         #[cfg(test)]
@@ -347,10 +341,13 @@ impl LcEncoder {
             super::enc_group::Grouping::ungrouped()
         };
         self.decide_stereo(&mut specs, &mut psy_specs, long);
+        if long {
+            self.finish_alloc(&specs, &psy_specs);
+        }
         let budget = self.budget_bits();
         let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
-        let offset = self.search_offset(&specs, &psy_specs, spend);
-        self.build(&specs, &psy_specs, offset);
+        let offset = self.search_offset(&specs, spend);
+        self.build(&specs, offset);
         self.refine_bands(&specs, spend);
         let mut payload = std::mem::take(&mut self.payload);
         let coded = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)), &mut payload);
@@ -373,13 +370,18 @@ pub use rate::max_bitrate_bps;
 #[path = "enc_refine.rs"]
 mod refine;
 
-/// One-frame attack lookahead (`enc_frame_lookahead.rs`): `push_frame` /
-/// `flush`, split out for the line cap. A child module, like `rate`.
+/// One-frame attack lookahead (`enc_frame_lookahead.rs`), a child like `rate`.
 #[path = "enc_frame_lookahead.rs"]
 mod lookahead;
 
 #[path = "enc_frame_reset.rs"]
 mod reset;
+
+#[path = "enc_frame_opts.rs"]
+mod opts;
+
+#[path = "enc_frame_alloc.rs"]
+mod alloc;
 
 /// HE hooks (`enc_frame_he.rs`): SBR fill bytes + core cutoff (TASK-89).
 #[path = "enc_frame_he.rs"]

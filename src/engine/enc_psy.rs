@@ -34,6 +34,13 @@ pub struct Psy {
     /// Bands starting at or above this bin are never coded (0 = off);
     /// the HE core stops at the SBR crossover (TASK-89).
     cutoff_bin: usize,
+    /// Allowed quantization noise per band from the last `analyze`
+    /// (masked threshold with the −60 dB / ATH floors): the rate loop's
+    /// water-filling input (TASK-113).
+    noise: [f32; MAX_BANDS],
+    /// `Σ √|x|` per band from the last `analyze` (the `|x|^0.75`
+    /// quantizer's noise is proportional to it).
+    sum_sqrt: [f32; MAX_BANDS],
 }
 
 /// Approximate Bark scale of `f` Hz. The `atan`s go through
@@ -108,6 +115,11 @@ impl Psy {
         self.tonality = on;
     }
 
+    /// Per-band energy, allowed noise and `Σ √|x|` of the last `analyze`.
+    pub fn bands(&self) -> (&[f32; MAX_BANDS], &[f32; MAX_BANDS], &[f32; MAX_BANDS]) {
+        (&self.energy, &self.noise, &self.sum_sqrt)
+    }
+
     /// Leave every band whose first bin is ≥ `bin` uncoded (0 = off).
     #[cfg_attr(not(test), allow(dead_code))]
     pub fn set_cutoff_bin(&mut self, bin: usize) {
@@ -148,6 +160,8 @@ impl Psy {
             ath: false,
             tonality: false,
             cutoff_bin: 0,
+            noise: [0.0; MAX_BANDS],
+            sum_sqrt: [0.0; MAX_BANDS],
         }
     }
 
@@ -165,8 +179,11 @@ impl Psy {
     /// Analyze one channel's MDCT spectrum: a band is coded when its energy
     /// clears the masked threshold (18 dB SMR after spreading) and a −60 dB
     /// relative-to-loudest floor. With ATH on, also the Terhardt floor at
-    /// the band center. Coded bands get `max_q`, or Johnston-scaled `target_q`
-    /// when tonality is on (noise-like bands 0.25·`max_q`; mask unchanged).
+    /// the band center. `target_q` is the precision **cap** per coded band
+    /// (`max_q`); the actual precision comes from the allowed noise via
+    /// [`super::enc_alloc::noise_targets`] (TASK-113), see [`Self::bands`].
+    /// Tonality on raises the allowed noise of noise-like bands (Johnston
+    /// SFM: up to 4×, +6 dB).
     pub fn analyze(
         &mut self,
         spec: &[f32],
@@ -196,16 +213,15 @@ impl Psy {
             };
             let below_cutoff = self.cutoff_bin == 0 || usize::from(offsets[b]) < self.cutoff_bin;
             coded[b] = self.energy[b] > floor && below_cutoff;
-            target_q[b] = if !coded[b] {
-                0.0
-            } else if self.tonality {
-                let lo = usize::from(offsets[b]);
-                let hi = usize::from(offsets[b + 1]);
-                let a = band_tonality(&spec[lo..hi]);
-                (max_q * (0.25 + 0.75 * a)).max(1.0)
+            let lo = usize::from(offsets[b]);
+            let hi = usize::from(offsets[b + 1]);
+            self.sum_sqrt[b] = spec[lo..hi].iter().map(|&x| x.abs().sqrt()).sum();
+            self.noise[b] = if self.tonality && coded[b] {
+                floor / (0.25 + 0.75 * band_tonality(&spec[lo..hi]))
             } else {
-                max_q
+                floor
             };
+            target_q[b] = if coded[b] { max_q } else { 0.0 };
         }
     }
 }

@@ -15,6 +15,19 @@ pub const BOOKS: usize = 12;
 pub const MAX_BANDS: usize = 51;
 /// `bits` sentinel: book cannot represent the band.
 pub const UNREPRESENTABLE: u32 = u32::MAX;
+/// ISO/IEC 14496-3 §4.6.2 quantizer rounding constant: `floor(v + 0.4054)`
+/// rounds toward zero more than `round`, so coarsely quantized noise-like
+/// bands do not gain energy (TASK-113).
+pub const QUANT_ROUND: f32 = 0.4054;
+/// Finest scalefactor floor: the band peak quantizes to at most this, so
+/// the rounded `sf_for_peak` never lands on the `QUANT_MAX` clip plateau.
+pub const QUANT_SAFE: f32 = 7600.0;
+
+#[inline]
+fn quant_mag(x: f32, gain: f32) -> i32 {
+    let mag = (det_math::pow_three_quarter(x) * gain + QUANT_ROUND).floor() as i32;
+    mag.min(QUANT_MAX)
+}
 
 /// One quantized long-window channel.
 #[derive(Clone)]
@@ -27,6 +40,9 @@ pub struct QuantChannel {
     pub sf: [i32; MAX_BANDS],
     /// Bands with signal worth coding (the rest get ZERO_HCB).
     pub coded: [bool; MAX_BANDS],
+    /// Coded bands whose quantized values all came out zero (TASK-113):
+    /// `plan_books` gives them ZERO_HCB when the sf chain allows.
+    pub zero: [bool; MAX_BANDS],
     /// PNS substitution (TASK-75). `plan_books` stamps `NOISE_HCB`.
     pub pns: [bool; MAX_BANDS],
     /// Absolute `noise_nrg` for PNS bands (independent of `sf` DPCM).
@@ -47,6 +63,7 @@ impl QuantChannel {
             bits: [[UNREPRESENTABLE; BOOKS]; MAX_BANDS],
             sf: [0; MAX_BANDS],
             coded: [false; MAX_BANDS],
+            zero: [false; MAX_BANDS],
             pns: [false; MAX_BANDS],
             noise_nrg: [0; MAX_BANDS],
             intensity: [false; MAX_BANDS],
@@ -76,6 +93,8 @@ pub struct QuantShort {
     pub sf: [i32; MAX_FLAT_SHORT],
     /// Bands with signal worth coding (the rest get ZERO_HCB).
     pub coded: [bool; MAX_FLAT_SHORT],
+    /// All-zero coded (group, band)s (TASK-113), as in `QuantChannel`.
+    pub zero: [bool; MAX_FLAT_SHORT],
     /// Scalefactor bands per group (the rate's short-table size).
     pub n_sfb: usize,
     pub n_groups: usize,
@@ -89,6 +108,7 @@ impl QuantShort {
             bits: [[UNREPRESENTABLE; BOOKS]; MAX_FLAT_SHORT],
             sf: [0; MAX_FLAT_SHORT],
             coded: [false; MAX_FLAT_SHORT],
+            zero: [false; MAX_FLAT_SHORT],
             n_sfb,
             n_groups: MAX_GROUPS,
             group_len: [1; 8],
@@ -150,7 +170,7 @@ pub fn raw_scalefactors(
         .take(out.n_bands);
     for (((&peak, &tq), &coded), sf) in bands {
         *sf = if coded && tq >= 1.0 {
-            sf_for_peak(peak, tq) + global_offset
+            (sf_for_peak(peak, tq) + global_offset).max(sf_for_peak(peak, QUANT_SAFE))
         } else {
             0
         };
@@ -191,11 +211,12 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
         .coded
         .iter()
         .zip(out.sf.iter())
-        .zip(out.bits.iter_mut())
+        .zip(out.bits.iter_mut().zip(out.zero.iter_mut()))
         .zip(offsets.windows(2))
         .take(n_bands);
-    for (((&coded, &sf), bits), w) in bands {
+    for (((&coded, &sf), (bits, zero)), w) in bands {
         let (lo, hi) = (usize::from(w[0]), usize::from(w[1]));
+        *zero = false;
         if !coded {
             *bits = [UNREPRESENTABLE; BOOKS];
             continue;
@@ -204,10 +225,10 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
         // bit-identical across platforms and would drift the encoded bytes.
         let gain = det_math::exp2(-0.1875f32 * (sf - SF_OFFSET) as f32);
         for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-            let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
-            let mag = mag.min(QUANT_MAX);
+            let mag = quant_mag(x, gain);
             *q = if x < 0.0 { -mag } else { mag };
         }
+        *zero = out.quant[lo..hi].iter().all(|&v| v == 0);
         fill_bits(bits, &out.quant[lo..hi]);
     }
 }
@@ -221,10 +242,10 @@ pub fn requant_band(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel,
     let hi = usize::from(offsets[b + 1]);
     let gain = det_math::exp2(-0.1875f32 * (out.sf[b] - SF_OFFSET) as f32);
     for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-        let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
-        let mag = mag.min(QUANT_MAX);
+        let mag = quant_mag(x, gain);
         *q = if x < 0.0 { -mag } else { mag };
     }
+    out.zero[b] = out.quant[lo..hi].iter().all(|&v| v == 0);
     fill_bits(&mut out.bits[b], &out.quant[lo..hi]);
 }
 
@@ -303,7 +324,7 @@ pub fn raw_scalefactors_short(
         .take(n);
     for (((&peak, &tq), &coded), sf) in bands {
         *sf = if coded && tq >= 1.0 {
-            sf_for_peak(peak, tq) + global_offset
+            (sf_for_peak(peak, tq) + global_offset).max(sf_for_peak(peak, QUANT_SAFE))
         } else {
             0
         };
@@ -348,6 +369,7 @@ pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut 
             let idx = g * out.n_sfb + b;
             let start = usize::from(offsets[b]);
             let end = usize::from(offsets[b + 1]);
+            out.zero[idx] = false;
             if !out.coded[idx] {
                 out.bits[idx] = [UNREPRESENTABLE; BOOKS];
                 continue;
@@ -360,13 +382,13 @@ pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut 
                 let lo = w * SHORT_WINDOW_LEN + start;
                 let hi = w * SHORT_WINDOW_LEN + end;
                 for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-                    let mag = (det_math::pow_three_quarter(x) * gain).round() as i32;
-                    let mag = mag.min(QUANT_MAX);
+                    let mag = quant_mag(x, gain);
                     *q = if x < 0.0 { -mag } else { mag };
                 }
                 tmp[n..n + (hi - lo)].copy_from_slice(&out.quant[lo..hi]);
                 n += hi - lo;
             }
+            out.zero[idx] = tmp[..n].iter().all(|&v| v == 0);
             fill_bits(&mut out.bits[idx], &tmp[..n]);
         }
         wbase += glen;

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- LC quantization and rate control (TASK-113): scalefactors now come
+  from the masked threshold (noise-to-mask targets per band, computed
+  once per frame) and the rate loop moves an allowed-noise offset —
+  uniform refinement with spare bits, a per-coefficient water level
+  under shortage (quiet noise-like bands go first; band limiting falls
+  out of it) — instead of peak-normalized precision with one global
+  shift. M/S bands use the smaller of the L/R thresholds; TNS scales the
+  residual's allowed noise; tonality (opt-in) raises noise-like bands'
+  allowed noise instead of lowering their precision cap. All-zero bands
+  are ZERO_HCB; the quantizer rounds with the ISO 0.4054 offset. Tone +
+  white noise at 64 kbps stereo: SNR 2.0 → 15.5 dB (tone region 18 dB);
+  ≤ 48 kbps stereo no longer decodes to silence; noise-like level
+  inflation +3 → +0.5 dB. LC encode CPU −3 % at 128 kbps. Encoder
+  goldens re-minted (`enc48{,m,t,l}`, `he48e{,m}`) with ffmpeg 7.0.2 and
+  registered in the corpus/oracle manifests; decoded output changes.
+
 ### Added
 
 - Opt-in HE-AAC v1 encode (TASK-90; new output format → minor bump):

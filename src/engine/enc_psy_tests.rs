@@ -195,7 +195,10 @@ fn tonality_silence_still_codes_nothing() {
 }
 
 #[test]
-fn tonality_keeps_tone_full_q_and_lowers_noise_q() {
+fn tonality_keeps_tone_noise_floor_and_raises_noise_like_bands() {
+    // TASK-113: `target_q` is the precision cap (2048 either way); the
+    // Johnston factor now scales the allowed noise — a pure tone keeps
+    // its masked threshold, noise-like bands may carry up to 4× more.
     let (offsets, n_bands) = offsets_48k();
     let mut tone = [0.0f32; LONG_WINDOW_LEN];
     tone[100] = 1e6;
@@ -204,32 +207,33 @@ fn tonality_keeps_tone_full_q_and_lowers_noise_q() {
     for (i, v) in noise.iter_mut().enumerate() {
         *v = if i % 2 == 0 { 1e4 } else { -1e4 };
     }
-    let mut psy = Psy::new(offsets, 48_000);
-    psy.enable_tonality(true);
-    let mut coded = [false; MAX_BANDS];
-    let mut tq = [0.0f32; MAX_BANDS];
-    psy.analyze(&tone, offsets, 2048.0, &mut coded, &mut tq);
     let tone_band = offsets.iter().position(|&o| o > 100).expect("band") - 1;
+    let run = |tonality: bool, spec: &[f32; LONG_WINDOW_LEN]| {
+        let mut psy = Psy::new(offsets, 48_000);
+        psy.enable_tonality(tonality);
+        let mut coded = [false; MAX_BANDS];
+        let mut tq = [0.0f32; MAX_BANDS];
+        psy.analyze(spec, offsets, 2048.0, &mut coded, &mut tq);
+        (coded, tq, *psy.bands().1)
+    };
+    let (coded, tq, noise_off) = run(false, &tone);
+    let (_, tq_on, noise_on) = run(true, &tone);
     assert!(coded[tone_band]);
+    assert_eq!(tq[tone_band], 2048.0);
+    assert_eq!(tq_on[tone_band], 2048.0, "cap is not tonality-scaled");
+    let ratio = noise_on[tone_band] / noise_off[tone_band];
     assert!(
-        (tq[tone_band] - 2048.0).abs() < 50.0,
-        "tone target_q {}",
-        tq[tone_band]
+        (0.9..1.5).contains(&ratio),
+        "tone allowed noise ratio {ratio}"
     );
-    let mut nc = [false; MAX_BANDS];
-    let mut nq = [0.0f32; MAX_BANDS];
-    psy.analyze(&noise, offsets, 2048.0, &mut nc, &mut nq);
-    let n_coded = nc[..n_bands].iter().filter(|c| **c).count().max(1);
-    let mean_q: f32 = nq[..n_bands]
-        .iter()
-        .zip(nc[..n_bands].iter())
-        .filter(|(_, c)| **c)
-        .map(|(q, _)| *q)
-        .sum::<f32>()
-        / n_coded as f32;
+    let (nc, _, n_off) = run(false, &noise);
+    let (_, _, n_on) = run(true, &noise);
+    let bands: Vec<usize> = (0..n_bands).filter(|&b| nc[b]).collect();
+    assert!(!bands.is_empty());
+    let mean = bands.iter().map(|&b| n_on[b] / n_off[b]).sum::<f32>() / bands.len() as f32;
     assert!(
-        mean_q < 2048.0 * 0.6,
-        "flat noise should get reduced target_q, got {mean_q}"
+        mean > 2.0,
+        "noise-like bands allowed-noise ratio {mean} should approach 4"
     );
 }
 

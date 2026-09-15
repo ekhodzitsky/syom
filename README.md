@@ -117,8 +117,10 @@ off — `encode` stays LC).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD
-analysis, a Bark-spreading psy model with flat 18 dB SMR, **per-band**
-M/S, long-frame TNS, and a CBR-ish rate loop. Optional
+analysis, a Bark-spreading psy model (18 dB SMR) whose masked thresholds
+set every band's quantizer step (noise-to-mask allocation; under a bit
+shortage a water level drops the quietest noise-like bands first),
+**per-band** M/S, long-frame TNS, and an ABR rate loop. Optional
 `with_lookahead(true)` is off by default. Committed lavc goldens
 (`src/goldens/enc48{,m,t,l}.*`) show ffmpeg decodes the output within
 ≤ 2 LSB s16 / ≥ 55 dB (typically 1 LSB / ~80 dB). Tests never spawn
