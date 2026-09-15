@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- DCT-IV factorization of SBR QMF analysis/synthesis modulation
+  (TASK-81): ISO GEMV kept as the test reference. Isolated QMF kernel
+  **−43%** vs GEMV; whole HE **−30%** median (940 µs vs 1.35 ms,
+  isolated process, thin LTO). LC isolated median unchanged. Goldens
+  unchanged (`lab/baseline/QMF.md`).
 - Reused PS hybrid/decorr/output workspace (TASK-80): fit hybrid rows,
   stack H-slot and QMF planes, mix-to-QMF without hybrid L/R matrices.
   PS borrowed decode after 2-frame warmup **24.75 allocs/frame** (−90%

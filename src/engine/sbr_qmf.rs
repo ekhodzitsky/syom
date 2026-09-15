@@ -24,10 +24,19 @@
 //! Every constant and loop bound below comes from the §4.6.18.4 text
 //! and the Figure 4.42 / 4.43 / 4.44 flowcharts of the staged spec.
 //! No part of this implementation is derived from any external decoder.
+//! The analysis/synthesis modulation matrices are evaluated via a
+//! DCT-IV factorization (`sbr_qmf_dct.rs`); the dense GEMV is kept as
+//! a test reference. Encoder reuse of this path must use `det_math`
+//! twiddles and FMA-free butterflies.
 
 use crate::engine::{Error, Result};
+#[cfg(test)]
 use std::sync::OnceLock;
 
+#[path = "sbr_qmf_dct.rs"]
+mod qmf_dct;
+
+#[cfg(test)]
 fn analysis_m() -> &'static [Complex] {
     static M: OnceLock<Vec<Complex>> = OnceLock::new();
     M.get_or_init(|| {
@@ -43,6 +52,7 @@ fn analysis_m() -> &'static [Complex] {
     .as_slice()
 }
 
+#[cfg(test)]
 fn synthesis_n_mat() -> &'static [Complex] {
     static N: OnceLock<Vec<Complex>> = OnceLock::new();
     N.get_or_init(|| {
@@ -314,10 +324,6 @@ pub const QMF_WINDOW: [f64; 640] = [
 pub struct AnalysisQmf {
     /// The Figure 4.42 input history; a higher index is an older sample.
     x: Vec<f64>,
-    /// Precomputed modulation matrix
-    /// `2·exp(i·π/64·(k + 0.5)·(2n − 0.5))`, row-major `[k][n]`.
-    /// Interned spec table (not session workspace).
-    m: &'static [Complex],
 }
 
 impl Default for AnalysisQmf {
@@ -330,10 +336,7 @@ impl AnalysisQmf {
     /// A fresh analysis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        AnalysisQmf {
-            x: vec![0.0; 320],
-            m: analysis_m(),
-        }
+        AnalysisQmf { x: vec![0.0; 320] }
     }
 
     /// Run one Figure 4.42 loop: shift in 32 new time samples (oldest
@@ -361,17 +364,8 @@ impl AnalysisQmf {
             }
             *un = acc;
         }
-        // W[k] = Σ_n u[n] · 2·exp(i·π/64·(k + 0.5)(2n − 0.5)).
-        let mut w = [Complex::default(); 32];
-        for (k, wk) in w.iter_mut().enumerate() {
-            let row = &self.m[k * 64..(k + 1) * 64];
-            let mut acc = Complex::default();
-            for (n, cell) in row.iter().enumerate() {
-                acc += *cell * u[n];
-            }
-            *wk = acc;
-        }
-        Ok(w)
+        // W[k] via DCT-IV factorization of the Figure 4.42 kernel.
+        Ok(qmf_dct::analysis_modulate(&u))
     }
 }
 
@@ -381,10 +375,6 @@ impl AnalysisQmf {
 pub struct SynthesisQmf {
     /// The Figure 4.43 synthesis history `v`.
     v: Vec<f64>,
-    /// Precomputed `exp(i·π/128·(k + 0.5)·(2n − 255)) / 64`, row-major
-    /// `[n][k]` (transposed for the inner sum over `k`).
-    /// Interned spec table (not session workspace).
-    n_mat: &'static [Complex],
 }
 
 impl Default for SynthesisQmf {
@@ -397,10 +387,7 @@ impl SynthesisQmf {
     /// A fresh synthesis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        SynthesisQmf {
-            v: vec![0.0; 1280],
-            n_mat: synthesis_n_mat(),
-        }
+        SynthesisQmf { v: vec![0.0; 1280] }
     }
 
     /// Run one Figure 4.43 loop: consume the 64 complex subband samples
@@ -411,16 +398,9 @@ impl SynthesisQmf {
         }
         // Shift v by 128 (discard the oldest 128 samples).
         self.v.copy_within(0..1152, 128);
-        // v[n] = Σ_k Real(X[k]/64 · exp(i·π/128·(k + 0.5)(2n − 255))).
-        for n in 0..128 {
-            let row = &self.n_mat[n * 64..(n + 1) * 64];
-            let mut acc = 0.0;
-            for (k, cell) in row.iter().enumerate() {
-                let x = bands[k];
-                acc += x.re * cell.re - x.im * cell.im;
-            }
-            self.v[n] = acc;
-        }
+        // v[n] via DCT-IV factorization of the Figure 4.43 kernel.
+        let v = qmf_dct::synthesis_modulate(bands);
+        self.v[..128].copy_from_slice(&v);
         // Extract g from v, window by c, and sum the ten taps.
         let mut out = [0.0f64; 64];
         for (k, o) in out.iter_mut().enumerate() {
@@ -676,5 +656,145 @@ mod tests {
                 assert!(d.norm_sqr() < 1e-18);
             }
         }
+    }
+
+    fn named_u(kind: &str) -> [f64; 64] {
+        let mut u = [0.0f64; 64];
+        match kind {
+            "silence" => {}
+            "impulse" => u[0] = 1.0,
+            "tonal" => {
+                for (n, slot) in u.iter_mut().enumerate() {
+                    *slot = (0.17 * n as f64).sin();
+                }
+            }
+            "random" => {
+                let mut s = 0x9e3779b9u32;
+                for slot in &mut u {
+                    s = s.wrapping_mul(1664525).wrapping_add(1013904223);
+                    *slot = (s as f64 / f64::from(u32::MAX)) * 2.0 - 1.0;
+                }
+            }
+            _ => unreachable!(),
+        }
+        u
+    }
+
+    /// DCT-IV analysis matches the ISO GEMV on silence, impulse, tonal and
+    /// random stacked windows.
+    #[test]
+    fn analysis_dct_matches_scalar_reference() {
+        let m = analysis_m();
+        for kind in ["silence", "impulse", "tonal", "random"] {
+            let u = named_u(kind);
+            let fast = qmf_dct::analysis_modulate(&u);
+            let slow = qmf_dct::analysis_modulate_ref(&u, m);
+            for k in 0..32 {
+                let d = fast[k] - slow[k];
+                assert!(
+                    d.norm_sqr() < 1e-20,
+                    "{kind} k={k} err={}",
+                    d.norm_sqr().sqrt()
+                );
+            }
+        }
+    }
+
+    /// DCT-IV synthesis matches the ISO GEMV on the same named spectra,
+    /// including a long 256-slot state walk.
+    #[test]
+    fn synthesis_dct_matches_scalar_reference() {
+        let n_mat = synthesis_n_mat();
+        for kind in ["silence", "impulse", "tonal", "random"] {
+            let u = named_u(kind);
+            let mut bands = [Complex::default(); 64];
+            for k in 0..32 {
+                bands[k] = Complex::new(u[k], u[32 + k]);
+            }
+            let fast = qmf_dct::synthesis_modulate(&bands);
+            let slow = qmf_dct::synthesis_modulate_ref(&bands, n_mat);
+            for n in 0..128 {
+                let e = (fast[n] - slow[n]).abs();
+                assert!(e < 1e-12, "{kind} n={n} err={e}");
+            }
+        }
+        let m = analysis_m();
+        let mut hist = vec![0.0f64; 320];
+        for slot in 0..256 {
+            let mut input = [0.0f64; 32];
+            for (n, v) in input.iter_mut().enumerate() {
+                let t = (slot * 32 + n) as f64;
+                *v = (0.03 * t).sin() + 0.2 * (0.11 * t).cos();
+            }
+            hist.copy_within(0..288, 32);
+            for (n, s) in input.iter().enumerate() {
+                hist[31 - n] = *s;
+            }
+            let mut u = [0.0f64; 64];
+            for (n, un) in u.iter_mut().enumerate() {
+                let mut acc = 0.0;
+                for j in 0..5 {
+                    let idx = n + j * 64;
+                    acc += hist[idx] * QMF_WINDOW[2 * idx];
+                }
+                *un = acc;
+            }
+            let fast = qmf_dct::analysis_modulate(&u);
+            let slow = qmf_dct::analysis_modulate_ref(&u, m);
+            for k in 0..32 {
+                assert!((fast[k] - slow[k]).norm_sqr() < 1e-20, "slot={slot} k={k}");
+            }
+            let mut bands = [Complex::default(); 64];
+            bands[..32].copy_from_slice(&fast);
+            let vf = qmf_dct::synthesis_modulate(&bands);
+            let vs = qmf_dct::synthesis_modulate_ref(&bands, n_mat);
+            for n in 0..128 {
+                assert!((vf[n] - vs[n]).abs() < 1e-12, "slot={slot} n={n}");
+            }
+        }
+    }
+
+    /// Isolated QMF kernel wall: GEMV reference vs DCT-IV, 4096 slots.
+    /// Run: `cargo test --release --lib qmf_cpu_probe -- --ignored --nocapture`
+    #[test]
+    #[ignore = "manual TASK-81 QMF CPU probe"]
+    fn qmf_cpu_probe() {
+        let m = analysis_m();
+        let n_mat = synthesis_n_mat();
+        let mut u = named_u("random");
+        let mut bands = [Complex::default(); 64];
+        for k in 0..32 {
+            bands[k] = Complex::new(u[k], u[32 + k]);
+        }
+        for k in 32..64 {
+            bands[k] = Complex::new(u[k % 32] * 0.1, u[(k + 3) % 32] * 0.1);
+        }
+        const SLOTS: usize = 4096;
+        for _ in 0..8 {
+            std::hint::black_box(qmf_dct::analysis_modulate(&u));
+            std::hint::black_box(qmf_dct::synthesis_modulate(&bands));
+        }
+        let t0 = std::time::Instant::now();
+        for _ in 0..SLOTS {
+            std::hint::black_box(qmf_dct::analysis_modulate_ref(&u, m));
+            std::hint::black_box(qmf_dct::synthesis_modulate_ref(&bands, n_mat));
+            u[0] += 1e-12;
+        }
+        let gemv_ns = t0.elapsed().as_nanos();
+        let t1 = std::time::Instant::now();
+        for _ in 0..SLOTS {
+            std::hint::black_box(qmf_dct::analysis_modulate(&u));
+            std::hint::black_box(qmf_dct::synthesis_modulate(&bands));
+            u[0] += 1e-12;
+        }
+        let dct_ns = t1.elapsed().as_nanos();
+        println!(
+            "qmf_cpu_probe slots={SLOTS} gemv_ns={gemv_ns} dct_ns={dct_ns} ratio={}",
+            dct_ns as f64 / gemv_ns as f64
+        );
+        assert!(
+            dct_ns < gemv_ns,
+            "DCT-IV QMF should not be slower than GEMV"
+        );
     }
 }
