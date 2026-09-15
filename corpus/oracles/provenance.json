@@ -110,6 +110,40 @@
       "sha256": "72b7108fd470e91083523576bdd413f48b5d1f2734694389d44e282c9505c14a"
     },
     {
+      "id": "enc48lt.lavc.s16",
+      "path": "src/goldens/enc48lt.lavc.s16",
+      "role": "lavc-pcm-oracle",
+      "engine": "ffmpeg libavcodec 7.0.2-static (offline mint)",
+      "command": "ffmpeg -y -i src/goldens/enc48lt.latm -f s16le src/goldens/enc48lt.lavc.s16",
+      "settings": "LC LOAS/LATM (aac_latm); s16le interleaved stereo 48 kHz",
+      "pcm_precision": "s16le",
+      "channel_order": "L R",
+      "priming_samples": 1024,
+      "comparison": "deterministic",
+      "provenance_gap": "ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+      "engine_build": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "sha256": "3cc1ea5e78a56c50ae4c4b1f9698657214f994c024fb30b7c07f080d85962fbb"
+    },
+    {
+      "id": "he48elt.lavc.s16",
+      "path": "src/goldens/he48elt.lavc.s16",
+      "role": "lavc-pcm-oracle",
+      "engine": "ffmpeg libavcodec 7.0.2-static (offline mint)",
+      "command": "ffmpeg -y -i src/goldens/he48elt.latm -f s16le src/goldens/he48elt.lavc.s16",
+      "settings": "HE-AAC v1 LOAS/LATM (aac_latm, explicit ASC); s16le interleaved stereo 48 kHz",
+      "pcm_precision": "s16le",
+      "channel_order": "L R",
+      "priming_samples": 3018,
+      "comparison": "deterministic",
+      "provenance_gap": "ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+      "engine_build": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "sha256": "c09d6f1fe9670911050c016bb980e539a2b2c6dc8bf1e4187ed85bc0cc2d2926"
+    },
+    {
       "id": "pns48.s16",
       "path": "src/goldens/pns48.s16",
       "role": "lavc-pcm-oracle",
@@ -210,6 +244,23 @@
       "command": null,
       "settings": null,
       "sha256": "5570d652e9db0072407e78467e73bf1e145601494a34cb26f5bf88eaf4bb18ce"
+    },
+    {
+      "id": "enc48lt.latm",
+      "path": "src/goldens/enc48lt.latm",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "c7b0ee3891cdcbb30a2ddf007e2cd1d48cf9a571881e986596ec454c52346821"
     },
     {
       "id": "enc48m.m4a",
@@ -346,6 +397,23 @@
       "command": null,
       "settings": null,
       "sha256": "640eb434534bcb4617b50fe69040d2969a06c20a27aec533f4c1eb7a8e133bf1"
+    },
+    {
+      "id": "he48elt.latm",
+      "path": "src/goldens/he48elt.latm",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "4ce8d07f399aa2dcbc43466da9e3eae99c3168863dc24f2d332abdde3ff08b12"
     },
     {
       "id": "he48em.m4a",

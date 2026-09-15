@@ -81,9 +81,14 @@ pub struct Encoder {
     enc: Core,
     sample_rate: u32,
     channels: usize,
-    wrap_adts: bool,
-    /// LC `AudioSpecificConfig` (2 bytes). Not sized by input duration.
+    /// ADTS, LATM/LOAS or raw framing of each delivered unit.
+    framing: EncodeContainer,
+    /// `AudioSpecificConfig` (2-byte LC / 4-byte HE) and its bit count.
     asc: Vec<u8>,
+    asc_bits: u32,
+    /// Raw access unit the callback's `payload` borrows when the frame
+    /// bytes are not a byte-aligned superset of it (LATM).
+    au_scratch: Vec<u8>,
     /// Samples buffered across feeds, one plane per channel.
     pending: [Vec<f32>; 2],
     pending_len: usize,
@@ -141,7 +146,7 @@ impl Encoder {
                 crate::UnsupportedFeature::EncodeM4aStreaming,
             ));
         }
-        let wrap_adts = opts.container != EncodeContainer::Raw;
+        let framing = opts.container;
         let (enc, asc) = if opts.he {
             let he = crate::encode::new_he(sample_rate, channels, opts)?;
             let out_idx = ADTS_SAMPLE_RATES_HZ
@@ -155,12 +160,15 @@ impl Encoder {
             let asc = crate::engine::asc::write_lc(lc.fs_index(), channels as u8);
             (Core::Lc(Box::new(lc)), asc)
         };
+        let asc_bits = crate::engine::latm_write::asc_bit_len(&asc)?;
         Ok(Self {
             enc,
             sample_rate,
             channels,
-            wrap_adts,
+            framing,
             asc,
+            asc_bits,
+            au_scratch: Vec::new(),
             pending: [Vec::new(), Vec::new()],
             pending_len: 0,
             scratch: Vec::new(),

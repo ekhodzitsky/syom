@@ -84,6 +84,14 @@ fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Resul
     })?;
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&aus, enc.fs_index(), channels)),
+        EncodeContainer::Latm => {
+            let asc = crate::engine::asc::write_he(
+                enc.fs_index(),
+                fs_index(sample_rate)?,
+                channels as u8,
+            );
+            mux::wrap_latm(&aus, &asc)
+        }
         EncodeContainer::M4a => m4a_write::mux_aac_he(
             &aus,
             enc.fs_index(),
@@ -142,6 +150,10 @@ pub fn encode_with<P: AsRef<[f32]>>(
     payloads.extend(enc.drain_overlap()?);
     match opts.container {
         EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),
+        EncodeContainer::Latm => {
+            let asc = crate::engine::asc::write_lc(enc.fs_index(), channels as u8);
+            mux::wrap_latm(&payloads, &asc)
+        }
         EncodeContainer::M4a => m4a_write::mux_aac_lc(
             &payloads,
             enc.fs_index(),
@@ -158,7 +170,9 @@ pub fn encode_with<P: AsRef<[f32]>>(
 
 #[path = "encode_mux.rs"]
 mod mux;
-pub use mux::{encode_write, encode_write_m4a, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au};
+pub use mux::{
+    encode_write, encode_write_m4a, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au, wrap_loas_au,
+};
 
 fn fs_index(sample_rate: u32) -> Result<u8> {
     ADTS_SAMPLE_RATES_HZ

@@ -217,3 +217,36 @@ pub fn encode_write_m4a<W: Write + Seek, P: AsRef<[f32]>>(
     sink.write_all(&moov).map_err(AacError::Io)?;
     Ok(info)
 }
+
+/// LOAS frames for every raw access unit under one config (one-shot LATM).
+pub(crate) fn wrap_latm(payloads: &[Vec<u8>], asc: &[u8]) -> Result<Vec<u8>> {
+    let bits = crate::engine::latm_write::asc_bit_len(asc)?;
+    let mut out = Vec::with_capacity(payloads.iter().map(|p| p.len() + 8).sum());
+    for au in payloads {
+        crate::engine::latm_write::loas_frame_into(asc, bits, au, &mut out)?;
+    }
+    Ok(out)
+}
+
+/// Wrap one raw access unit in a LOAS `AudioSyncStream` frame whose
+/// `StreamMuxConfig` carries `asc` ([`crate::Encoder::asc`]: 2-byte LC or
+/// 4-byte HE). Every frame is a sync point. An `AudioMuxElement` above
+/// 8191 bytes is an error (LC and HE v1 frames never reach it).
+///
+/// ```
+/// use syom::{EncodeOptions, Encoder, wrap_loas_au};
+/// let pcm = vec![0.1f32; 2048];
+/// let mut enc = Encoder::new(48_000, 1, &EncodeOptions::raw())?;
+/// let asc = enc.asc().to_vec();
+/// let mut loas = Vec::new();
+/// enc.feed(&[&pcm], |f| { loas.extend_from_slice(&wrap_loas_au(f.payload, &asc)?); Ok(()) })?;
+/// enc.finish(|f| { loas.extend_from_slice(&wrap_loas_au(f.payload, &asc)?); Ok(()) })?;
+/// assert!(syom::sniff_is_latm(&loas));
+/// # Ok::<(), syom::AacError>(())
+/// ```
+pub fn wrap_loas_au(payload: &[u8], asc: &[u8]) -> Result<Vec<u8>> {
+    let bits = crate::engine::latm_write::asc_bit_len(asc)?;
+    let mut out = Vec::with_capacity(payload.len() + 8);
+    crate::engine::latm_write::loas_frame_into(asc, bits, payload, &mut out)?;
+    Ok(out)
+}

@@ -19,11 +19,17 @@ const AOT_PS: u8 = 29;
 #[must_use]
 pub fn write_lc(fs_index: u8, channel_configuration: u8) -> Vec<u8> {
     let mut w = BitWriter::new();
+    push_lc(&mut w, fs_index, channel_configuration);
+    w.finish()
+}
+
+/// The 16 LC ASC bits into an open writer (LATM `StreamMuxConfig` embeds
+/// the config unaligned).
+pub fn push_lc(w: &mut BitWriter, fs_index: u8, channel_configuration: u8) {
     w.write(u32::from(AOT_LC), 5);
     w.write(u32::from(fs_index), 4);
     w.write(u32::from(channel_configuration), 4);
     w.write(0, 3);
-    w.finish()
 }
 
 /// Explicit two-rate HE-AAC v1 `AudioSpecificConfig` (ISO 14496-3 Amd 2,
@@ -32,13 +38,18 @@ pub fn write_lc(fs_index: u8, channel_configuration: u8) -> Vec<u8> {
 /// GA flags 0. 24 kHz core / 48 kHz output mono is `2b 09 88 00`.
 pub fn write_he(core_fs_index: u8, out_fs_index: u8, channel_configuration: u8) -> Vec<u8> {
     let mut w = BitWriter::new();
+    push_he(&mut w, core_fs_index, out_fs_index, channel_configuration);
+    w.finish()
+}
+
+/// The 25 explicit two-rate HE ASC bits into an open writer.
+pub fn push_he(w: &mut BitWriter, core_fs_index: u8, out_fs_index: u8, channel_configuration: u8) {
     w.write(5, 5);
     w.write(u32::from(core_fs_index), 4);
     w.write(u32::from(channel_configuration), 4);
     w.write(u32::from(out_fs_index), 4);
     w.write(u32::from(AOT_LC), 5);
     w.write(0, 3);
-    w.finish()
 }
 
 /// Parsed `AudioSpecificConfig` (LC core, optional SBR/PS).

@@ -98,7 +98,8 @@ mono/stereo, 128 kbps); planes are `&[Vec<f32>]`, `&[&[f32]]` or any
 `ID_END`; silence may undershoot) with
 `adts_buffer_fullness = 0x7FF` (no CBR reservoir). `encode_with` takes
 `EncodeOptions`:
-`EncodeContainer::Adts` (default) or `M4a`, `with_bitrate_bps`,
+`EncodeContainer::Adts` (default), `Latm` (LOAS, config in every frame)
+or `M4a`, `with_bitrate_bps`,
 `with_lookahead` (one-frame attack lookahead: better pre-echo suppression
 on early-in-frame onsets, one extra frame of latency, default off), and
 `with_ath` (Terhardt absolute-threshold floor, default off; TASK-68

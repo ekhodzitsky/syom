@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- LATM/LOAS output (TASK-94; new output format → minor bump):
+  `EncodeContainer::Latm` for `encode_with`, the push `Encoder` and
+  `encode_write` (LC and HE v1), plus `wrap_loas_au(payload, asc)` for
+  raw access units. One `AudioSyncStream` frame per access unit with
+  `StreamMuxConfig` in every frame (any frame is a sync point / config
+  refresh), `audioMuxVersion 0`, `frameLengthType 0`, no CRC; ≈ 11 bytes
+  of framing per frame (ADTS: 7). Goldens `enc48lt.latm` / `he48elt.latm` decode in
+  libavcodec within the LC tolerance; LATM, ADTS and raw carry identical
+  access units.
 - `encode_write_m4a(sink, planes, rate, opts)` (TASK-60): incremental M4A
   on any `Write + Seek` sink — `ftyp` + `mdat` header first, access units
   as produced, `mdat` size patched and `moov` appended at finish (exact
