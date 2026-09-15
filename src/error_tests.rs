@@ -47,6 +47,7 @@ fn engine_error_display_covers_variants() {
         Error::AdtsFrameLengthTooSmall,
         Error::UnsupportedAot(5),
         Error::UnsupportedFrameLength,
+        Error::UnsupportedChannelConfiguration(12),
         Error::UnsupportedSampleRateIndex(15),
         Error::IcsInfoInvalid,
         Error::SectionDataOverrun,
@@ -92,6 +93,10 @@ fn engine_errors_map_to_public_classes() {
     assert!(matches!(
         AacError::from(Error::UnsupportedFrameLength),
         AacError::Unsupported(UnsupportedFeature::FrameLength960)
+    ));
+    assert!(matches!(
+        AacError::from(Error::UnsupportedChannelConfiguration(12)),
+        AacError::Unsupported(UnsupportedFeature::ChannelConfiguration(12))
     ));
     assert!(matches!(
         AacError::from(Error::AdtsCrcMismatch),

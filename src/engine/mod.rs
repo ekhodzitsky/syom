@@ -101,6 +101,10 @@ mod tools_tests;
 mod channel_map_tests;
 
 #[cfg(test)]
+#[path = "channel_map_71_tests.rs"]
+mod channel_map_71_tests;
+
+#[cfg(test)]
 #[path = "skip_tests.rs"]
 mod skip_tests;
 

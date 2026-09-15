@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- AAC-LC 7.1 decode (TASK-62): `channel_configuration` 7 maps to the
+  libavcodec order FL FR FC LFE BL BR SL SR with `Layout::Mpeg(7)` labels
+  (`mpeg_channels(7)`), PCE streams may declare up to eight planes (a second
+  front CPE is the side pair), speech mono keeps the non-LFE mean; lavc
+  goldens `mc71` (config 7) and `mc71p` (ffmpeg `7.1(wide)` PCE).
+  `channel_configuration` 8–15 now fails with
+  `UnsupportedFeature::ChannelConfiguration` instead of a label-less
+  element-order fallback.
+
 ### Changed
 
 - LC quantization and rate control (TASK-113): scalefactors now come

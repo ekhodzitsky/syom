@@ -131,3 +131,19 @@ fn mc51_impulse_lfe_is_the_quietest_non_lfe_neighbor() {
     .unwrap();
     assert_eq!(n, 6);
 }
+
+#[test]
+fn mpeg_layout_covers_1_to_7_only() {
+    use crate::layout::mpeg_layout;
+    assert_eq!(mpeg_layout(7), Layout::Mpeg(7));
+    assert_eq!(mpeg_channels(7).len(), 8);
+    assert_eq!(mpeg_channels(7)[3], Channel::Lfe);
+    assert_eq!(
+        &mpeg_channels(7)[6..],
+        &[Channel::SideLeft, Channel::SideRight]
+    );
+    for cfg in [0u8, 8, 12, 15] {
+        assert_eq!(mpeg_layout(cfg), Layout::Unspecified, "cfg {cfg}");
+        assert!(mpeg_channels(cfg).is_empty());
+    }
+}

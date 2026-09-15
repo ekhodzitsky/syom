@@ -25,6 +25,8 @@ pub enum Error {
     UnsupportedAot(u8),
     /// `frameLengthFlag == 1` (960-line) is out of v1.
     UnsupportedFrameLength,
+    /// `channel_configuration` 8–15 (6.1 / 7.1-back / 7.1-top / reserved).
+    UnsupportedChannelConfiguration(u8),
     /// `samplingFrequencyIndex` has no SWB table.
     UnsupportedSampleRateIndex(u8),
     /// Malformed `ics_info` / grouping / `max_sfb`.
@@ -86,6 +88,9 @@ impl fmt::Display for Error {
             Self::AdtsCrcMismatch => write!(f, "aac: ADTS CRC mismatch"),
             Self::UnsupportedAot(a) => write!(f, "aac: unsupported audioObjectType {a}"),
             Self::UnsupportedFrameLength => write!(f, "aac: 960-line frames are Media"),
+            Self::UnsupportedChannelConfiguration(c) => {
+                write!(f, "aac: unsupported channel_configuration {c}")
+            }
             Self::UnsupportedSampleRateIndex(i) => {
                 write!(f, "aac: no SWB table for samplingFrequencyIndex {i}")
             }

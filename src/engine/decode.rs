@@ -5,7 +5,7 @@ use super::adts::AdtsHeader;
 use super::bits::BitReader;
 use super::cce::{PendingChan, parse_cce};
 use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes_into, mono_mix, reorder};
-use super::error::{Error, Result};
+use super::error::Result;
 use super::fb_pool::{FbPool, reject_dup};
 use super::filterbank::Filterbank;
 use super::ics_body::parse_ics_into;
@@ -173,9 +173,7 @@ impl StreamDecoder {
         channel_configuration: u8,
         payload: &[u8],
     ) -> Result<u32> {
-        if aot != 2 && aot != 5 && aot != 29 {
-            return Err(Error::UnsupportedAot(aot));
-        }
+        meta::check_config(aot, channel_configuration)?;
         self.refill_spec_bufs();
         let core_aot = 2;
         let mut br = BitReader::new(payload);

@@ -55,7 +55,7 @@ pub(super) fn write_sce(w: &mut BitWriter, tag: u8, line_sfb: u8) {
     write_ics_line(w, line_sfb);
 }
 
-fn write_lfe(w: &mut BitWriter, tag: u8, line_sfb: u8) {
+pub(super) fn write_lfe(w: &mut BitWriter, tag: u8, line_sfb: u8) {
     w.write(3, 3); // ID_LFE
     w.write(u32::from(tag), 4);
     write_ics_line(w, line_sfb);
@@ -431,11 +431,12 @@ fn pce_mismatch_is_format_not_silence() {
         map_planes(&s0, Some(&pce_lc(vec![(true, 0)])), 0, 3),
         "PCE missing channel element",
     );
-    let seven: Vec<_> = (0..7).map(|t| el(ElemKind::Sce, t, t as usize)).collect();
-    let front: Vec<_> = (0..7).map(|t| (false, t)).collect();
+    // Eight planes are 7.1 (TASK-62); nine are over the plane ceiling.
+    let nine: Vec<_> = (0..9).map(|t| el(ElemKind::Sce, t, t as usize)).collect();
+    let front: Vec<_> = (0..9).map(|t| (false, t)).collect();
     assert_fmt(
-        map_planes(&seven, Some(&pce_lc(front)), 0, 3),
-        "PCE layout exceeds 5.1",
+        map_planes(&nine, Some(&pce_lc(front)), 0, 3),
+        "PCE layout exceeds 7.1",
     );
 }
 

@@ -10,7 +10,7 @@ use crate::engine::error::Error as EngineError;
 use crate::engine::latm::{LOAS_SYNC, MuxCfg};
 use crate::error::{AacError, Result, UnsupportedFeature};
 use crate::isomp4::{convert_units, find_moov_slice, parse_aac_meta, sniff_is_isobmff};
-use crate::layout::{Channel, FrameMeta, Layout, mpeg_channels};
+use crate::layout::{self, Channel, FrameMeta, Layout, mpeg_channels};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
 
 /// Advertised transport the probe locked onto.
@@ -132,11 +132,7 @@ fn probe_adts(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
         mem.check_channels(labels.len() as u32)?;
     }
     let rate = hdr.sample_rate();
-    let layout = if (1..=6).contains(&cfg) {
-        Layout::Mpeg(cfg)
-    } else {
-        Layout::Unspecified
-    };
+    let layout = layout::mpeg_layout(cfg);
     Ok(Probe {
         container: ProbeContainer::Adts,
         profile: ProbeProfile::Lc,
@@ -250,12 +246,12 @@ fn from_asc(
         (Layout::Mpeg(2), mpeg_channels(2))
     } else {
         let cfg = asc.channel_configuration;
-        let layout = if (1..=6).contains(&cfg) {
-            Layout::Mpeg(cfg)
-        } else {
-            Layout::Unspecified
-        };
-        (layout, mpeg_channels(cfg))
+        if cfg > 7 {
+            return Err(AacError::Unsupported(
+                UnsupportedFeature::ChannelConfiguration(cfg),
+            ));
+        }
+        (layout::mpeg_layout(cfg), mpeg_channels(cfg))
     };
     if !labels.is_empty() {
         mem.check_channels(labels.len() as u32)?;

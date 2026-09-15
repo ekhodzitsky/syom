@@ -174,6 +174,50 @@ def main() -> int:
             provenance_gap=None,
         ),
     ]
+    # TASK-62 7.1 fixtures: minted 2026-09-15 with ffmpeg 7.0.2-static from a
+    # scratch 8-tone WAV (FL 440, FR 880, FC 330, LFE 100, BL 550, BR 660,
+    # SL 770, SR 220; 0.16 FS, 0.3 s, 48 kHz), `-guess_layout_max 0`.
+    mc71_src = "python3 sine WAV (see src/decode_mc_tests.rs), 8 ch 48 kHz 0.3 s"
+    for stem, layout, cfg in (
+        ("mc71", "7.1", "channel_configuration 7 (SCE C, CPE FL/FR, CPE SL/SR, CPE BL/BR, LFE)"),
+        ("mc71p", "7.1(wide)", "channel_configuration 0 + in-band PCE (front CPE0 SCE0, side SCE1, back CPE1 CPE2, no LFE)"),
+    ):
+        enc = (
+            f"ffmpeg -guess_layout_max 0 -i mc71_src.wav -af aformat=channel_layouts={layout} "
+            f"-c:a aac -b:a 256000 {stem}.m4a && ffmpeg -i {stem}.m4a -c:a copy -f adts {stem}.adts"
+        )
+        for ext in (".adts", ".m4a"):
+            if not (g / f"{stem}{ext}").is_file():
+                continue
+            records.append(
+                rec(
+                    id=f"{stem}{ext}",
+                    path=f"src/goldens/{stem}{ext}",
+                    role="committed-fixture",
+                    engine="ffmpeg libavcodec native aac encoder 7.0.2-static (offline mint)",
+                    command=enc,
+                    settings=f"{cfg}; source {mc71_src}",
+                    pcm_precision="bitstream",
+                    comparison="deterministic",
+                    priming_samples=1024,
+                    provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+                )
+            )
+        records.append(
+            rec(
+                id=f"{stem}.s16",
+                path=f"src/goldens/{stem}.s16",
+                role="lavc-pcm-oracle",
+                engine="ffmpeg libavcodec 7.0.2-static (offline mint)",
+                command=f"ffmpeg -i {stem}.adts -f s16le -acodec pcm_s16le {stem}.s16",
+                settings=f"{cfg}; s16le interleaved 8 ch 48 kHz, untrimmed (ADTS)",
+                pcm_precision="s16le",
+                channel_order="FL FR FC LFE BL BR SL SR (lavc; mc71p: PCE declaration order, same tones)",
+                priming_samples=1024,
+                comparison="deterministic",
+                provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+            )
+        )
     # Remaining committed files: inventory with gap, no invented backend version.
     known = {r["path"] for r in records}
     for folder, prefix in ((g, "src/goldens"), (e, "src/engine/goldens")):

@@ -72,6 +72,19 @@ fn default_slots_into(out: &mut Vec<PlaneMap>, config: u8, elems: &[Element], us
             (Cpe, 1, L),
             (Cpe, 1, R),
         ],
+        // 7.1: SCE(C) CPE(front) CPE(outside front) CPE(back) LFE ->
+        // FL FR FC LFE BL BR SL SR (lavc order; the outside-front pair
+        // is the side pair).
+        7 => &[
+            (Cpe, 0, L),
+            (Cpe, 0, R),
+            (Sce, 0, L),
+            (Lfe, 0, L),
+            (Cpe, 2, L),
+            (Cpe, 2, R),
+            (Cpe, 1, L),
+            (Cpe, 1, R),
+        ],
         _ => {
             identity_into(out, elems, used);
             return;

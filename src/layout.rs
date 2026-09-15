@@ -28,7 +28,7 @@ pub enum Channel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum Layout {
-    /// ISO Table 4.1 `channel_configuration` 1–6.
+    /// ISO Table 4.1 `channel_configuration` 1–7.
     Mpeg(u8),
     /// PCE declaration order (front, side, back, LFE).
     Pce,
@@ -101,8 +101,7 @@ impl FrameMeta {
     }
 }
 
-/// MPEG default-layout labels (lavc / Table 4.1 order). Empty if `cfg` is
-/// not 1–6.
+/// Per-frame metadata from the decode-side facts.
 #[must_use]
 pub(crate) fn frame_meta(
     speech: bool,
@@ -115,21 +114,31 @@ pub(crate) fn frame_meta(
     if speech {
         return FrameMeta::speech_mono(core_rate, output_rate);
     }
-    let layout = if pce {
-        Layout::Pce
-    } else if (1..=6).contains(&cfg) {
-        Layout::Mpeg(cfg)
-    } else {
-        Layout::Unspecified
-    };
+    let layout = if pce { Layout::Pce } else { mpeg_layout(cfg) };
     FrameMeta::from_labels(layout, core_rate, output_rate, labels)
 }
 
+/// [`Layout::Mpeg`] for the default configurations 1–7, else
+/// [`Layout::Unspecified`].
+#[must_use]
+pub(crate) fn mpeg_layout(cfg: u8) -> Layout {
+    if (1..=7).contains(&cfg) {
+        Layout::Mpeg(cfg)
+    } else {
+        Layout::Unspecified
+    }
+}
+
 /// MPEG default-layout labels (lavc / Table 4.1 order). Empty if `cfg` is
-/// not 1–6.
+/// not 1–7. Config 7 (7.1) is FL FR FC LFE BL BR SL SR: ISO calls the
+/// third CPE "left/right outside front"; lavc presents it as the side
+/// pair, and so does syom.
 #[must_use]
 pub fn mpeg_channels(cfg: u8) -> &'static [Channel] {
-    use Channel::{BackCenter, BackLeft, BackRight, FrontCenter, FrontLeft, FrontRight, Lfe};
+    use Channel::{
+        BackCenter, BackLeft, BackRight, FrontCenter, FrontLeft, FrontRight, Lfe, SideLeft,
+        SideRight,
+    };
     match cfg {
         1 => &[FrontCenter],
         2 => &[FrontLeft, FrontRight],
@@ -137,6 +146,16 @@ pub fn mpeg_channels(cfg: u8) -> &'static [Channel] {
         4 => &[FrontLeft, FrontRight, FrontCenter, BackCenter],
         5 => &[FrontLeft, FrontRight, FrontCenter, BackLeft, BackRight],
         6 => &[FrontLeft, FrontRight, FrontCenter, Lfe, BackLeft, BackRight],
+        7 => &[
+            FrontLeft,
+            FrontRight,
+            FrontCenter,
+            Lfe,
+            BackLeft,
+            BackRight,
+            SideLeft,
+            SideRight,
+        ],
         _ => &[],
     }
 }

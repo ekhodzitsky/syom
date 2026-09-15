@@ -120,3 +120,155 @@ fn mc51_speech_mono_is_mean_of_non_lfe_planes() -> Result<(), AacError> {
     }
     Ok(())
 }
+
+// ---- 7.1 (TASK-62) -------------------------------------------------------
+//
+// `mc71`: channel_configuration 7 from ffmpeg (`channel_layouts=7.1`, 0.3 s,
+// 256 kbps, same recipe as mc51): elements SCE C, CPE FL/FR, CPE SL/SR,
+// CPE BL/BR, LFE; tones FL 440, FR 880, FC 330, LFE 100, BL 550, BR 660,
+// SL 770, SR 220. lavc and syom present FL FR FC LFE BL BR SL SR.
+// `mc71p`: the same source as ffmpeg's `7.1(wide)` PCE stream (cfg 0):
+// front CPE0 + SCE0, side SCE1 (the 100 Hz plane is an SCE, not an LFE
+// element), back CPE1 + CPE2 — an "alternative 7.1" that decodes in PCE
+// declaration order with no LFE (nothing is guessed from the plane count).
+
+const MC71_TONES: [u32; 8] = [440, 880, 330, 100, 550, 660, 770, 220];
+
+/// Strongest of the fixture tones over the last 4096 samples (Goertzel).
+fn dominant_tone(plane: &[f32]) -> u32 {
+    let tail = &plane[plane.len().saturating_sub(4096)..];
+    let mag = |f: u32| {
+        let w = 2.0 * std::f64::consts::PI * f64::from(f) / 48_000.0;
+        let (mut re, mut im) = (0.0f64, 0.0f64);
+        for (i, &v) in tail.iter().enumerate() {
+            let ph = w * i as f64;
+            re += f64::from(v) * ph.cos();
+            im += f64::from(v) * ph.sin();
+        }
+        re.hypot(im)
+    };
+    MC71_TONES
+        .iter()
+        .copied()
+        .max_by(|&a, &b| mag(a).total_cmp(&mag(b)))
+        .unwrap()
+}
+
+#[test]
+fn mc71_adts_native_matches_lavc_golden() -> Result<(), AacError> {
+    assert_native_matches_lavc_with(
+        include_bytes!("goldens/mc71.adts"),
+        include_bytes!("goldens/mc71.s16"),
+        48_000,
+        "mc71-adts",
+        &DecodeOptions::unbounded(),
+    )
+}
+
+#[test]
+fn mc71_pce_adts_native_matches_lavc_golden() -> Result<(), AacError> {
+    assert_native_matches_lavc_with(
+        include_bytes!("goldens/mc71p.adts"),
+        include_bytes!("goldens/mc71p.s16"),
+        48_000,
+        "mc71p-adts",
+        &DecodeOptions::unbounded(),
+    )
+}
+
+#[test]
+fn mc71_planes_carry_the_standard_identities_and_speech_mono_skips_lfe() -> Result<(), AacError> {
+    use crate::{Channel, Layout, mpeg_channels};
+    let adts = &include_bytes!("goldens/mc71.adts")[..];
+    let m4a = &include_bytes!("goldens/mc71.m4a")[..];
+    let split = crate::decode_with(adts, &DecodeOptions::unbounded())?;
+    assert_eq!(split.layout, Layout::Mpeg(7));
+    assert_eq!(split.channels.len(), 8);
+    let tones: Vec<u32> = split.channels.iter().map(|p| dominant_tone(p)).collect();
+    assert_eq!(tones, MC71_TONES, "FL FR FC LFE BL BR SL SR by tone");
+    for input in [adts, m4a] {
+        let probe = crate::probe(input)?;
+        assert_eq!(probe.meta.layout, Layout::Mpeg(7));
+        assert_eq!(probe.meta.labels().collect::<Vec<_>>(), mpeg_channels(7));
+        assert_eq!(probe.meta.lfe_index(), Some(3));
+        let mut labels = Vec::new();
+        crate::decode_streaming(input, &DecodeOptions::unbounded(), |f| {
+            assert_eq!(f.meta.layout, Layout::Mpeg(7));
+            assert_eq!(f.planar.len(), 8);
+            labels = f.meta.labels().collect();
+            Ok(())
+        })?;
+        assert_eq!(labels, mpeg_channels(7));
+        assert_eq!(labels[6], Channel::SideLeft);
+        let mono = crate::decode_with(input, &DecodeOptions::speech())?;
+        assert_eq!(mono.channels.len(), 1);
+        if input.len() == adts.len() {
+            let m = &mono.channels[0];
+            assert_eq!(m.len(), split.channels[0].len());
+            let non_lfe = [0usize, 1, 2, 4, 5, 6, 7];
+            for (i, &mv) in m.iter().enumerate() {
+                let mean = non_lfe.iter().map(|&c| split.channels[c][i]).sum::<f32>() / 7.0;
+                assert!((mv - mean).abs() <= 1e-6, "sample {i}: {mv} vs {mean}");
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn mc71_pce_stream_is_declaration_order_without_lfe_guessing() -> Result<(), AacError> {
+    use crate::{Channel, Layout};
+    let adts = &include_bytes!("goldens/mc71p.adts")[..];
+    let split = crate::decode_with(adts, &DecodeOptions::unbounded())?;
+    assert_eq!(split.layout, Layout::Pce);
+    assert_eq!(split.channels.len(), 8);
+    let tones: Vec<u32> = split.channels.iter().map(|p| dominant_tone(p)).collect();
+    assert_eq!(
+        tones, MC71_TONES,
+        "declaration order equals the lavc order here"
+    );
+    let mut labels = Vec::new();
+    crate::decode_streaming(adts, &DecodeOptions::unbounded(), |f| {
+        labels = f.meta.labels().collect();
+        assert_eq!(f.meta.lfe_index(), None, "100 Hz plane is an SCE, not LFE");
+        Ok(())
+    })?;
+    assert_eq!(
+        labels,
+        vec![
+            Channel::FrontLeft,
+            Channel::FrontRight,
+            Channel::FrontCenter,
+            Channel::Other,
+            Channel::BackLeft,
+            Channel::BackRight,
+            Channel::Other,
+            Channel::Other,
+        ]
+    );
+    let mono = crate::decode_with(adts, &DecodeOptions::speech())?;
+    let m = &mono.channels[0];
+    for (i, &mv) in m.iter().enumerate() {
+        let mean = split.channels.iter().map(|c| c[i]).sum::<f32>() / 8.0;
+        assert!((mv - mean).abs() <= 1e-6, "mean of all 8 planes at {i}");
+    }
+    Ok(())
+}
+
+#[test]
+fn channel_configuration_8_to_15_is_a_typed_unsupported_error() {
+    use crate::{AacError, UnsupportedFeature};
+    let au =
+        crate::encode_with(&[vec![0.0f32; 4096]], 48_000, &crate::EncodeOptions::adts()).unwrap();
+    let payload = &au[7..]; // first ADTS frame body is enough to reach the check
+    for cfg in [8u8, 11, 12, 14, 15] {
+        let asc = crate::engine::asc::write_lc(3, cfg);
+        let loas = crate::wrap_loas_au(payload, &asc).unwrap();
+        let want = |e: AacError| matches!(e, AacError::Unsupported(UnsupportedFeature::ChannelConfiguration(c)) if c == cfg);
+        assert!(want(crate::probe(&loas).unwrap_err()), "probe cfg {cfg}");
+        assert!(
+            want(crate::decode_with(&loas, &DecodeOptions::unbounded()).unwrap_err()),
+            "decode cfg {cfg}"
+        );
+    }
+}

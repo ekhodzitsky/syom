@@ -15,8 +15,8 @@ use crate::stream::{
 /// Decoded AAC at native sample rate (planar f32, mono-mixed or split).
 ///
 /// Split channel order: mono/stereo as-is; multichannel AAC-LC
-/// (`channel_configuration` 3–6) follows the libavcodec layout order
-/// (5.1 = FL FR FC LFE BL BR); PCE streams follow PCE declaration order
+/// (`channel_configuration` 3–7) follows the libavcodec layout order
+/// (5.1 = FL FR FC LFE BL BR, 7.1 adds SL SR); PCE streams follow PCE declaration order
 /// (front, side, back, LFE). Speech mono is the mean of the non-LFE planes.
 /// PCM is presentation-valid: M4A honours `elst`; ADTS has no trim, so
 /// decoded length includes codec delay. Channel labels and decode-side

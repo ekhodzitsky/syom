@@ -1,8 +1,21 @@
 //! TASK-61: last-frame Copy metadata on [`super::StreamDecoder`].
 
 use super::super::channel_map::PlaneMap;
+use super::super::error::{Error, Result};
 use super::StreamDecoder;
 use crate::layout::{self, Channel, FrameMeta};
+
+/// LC / SBR / PS object types; `channel_configuration` 0–7 (8–15 are the
+/// 6.1 / 7.1-back / 7.1-top / reserved arrangements, TASK-62).
+pub(super) fn check_config(aot: u8, cfg: u8) -> Result<()> {
+    if aot != 2 && aot != 5 && aot != 29 {
+        return Err(Error::UnsupportedAot(aot));
+    }
+    if cfg > 7 {
+        return Err(Error::UnsupportedChannelConfiguration(cfg));
+    }
+    Ok(())
+}
 
 impl StreamDecoder {
     #[must_use]

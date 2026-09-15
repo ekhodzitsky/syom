@@ -161,15 +161,17 @@ sizes), `finish` encodes the zero-padded tail and yields `EncodeInfo`.
 The same open / failed / finished / `reset` contract applies; counters
 include a frame already handed to a callback that then returned an error.
 
-Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1
-(`channel_configuration` 3–6) plus in-band PCE streams. Split mode emits one
-plane per channel in the libavcodec layout order — 5.1 is FL FR FC LFE BL BR —
-or PCE declaration order (front, side, back, LFE) for PCE streams. Speech
-mono is the arithmetic mean of the non-LFE planes (stereo reduces to
+Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1 / 7.1
+(`channel_configuration` 3–7) plus in-band PCE streams. Split mode emits one
+plane per channel in the libavcodec layout order — 5.1 is FL FR FC LFE BL BR,
+7.1 is FL FR FC LFE BL BR SL SR (the ISO "outside front" pair is the side
+pair) — or PCE declaration order (front, side, back, LFE) for PCE streams.
+Configurations 8–15 (6.1, 7.1 back/top) are a typed `Unsupported` error.
+Speech mono is the arithmetic mean of the non-LFE planes (stereo reduces to
 `0.5·(L+R)`).
 
 Correctness vs FFmpeg libavcodec native s16: max abs ≤ 1 LSB, SNR ≥ 70 dB
-on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, LC 3.0–5.1,
+on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, LC 3.0–7.1,
 HE ADTS / M4A, LATM; plus encoder output decoded by lavc). Runtime does
 not spawn ffmpeg.
 

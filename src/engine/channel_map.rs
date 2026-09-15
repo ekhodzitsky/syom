@@ -195,8 +195,8 @@ pub(super) fn pce_map(
     if used[..n].iter().any(|&u| !u) {
         return Err(Error::Format("PCE extra channel element"));
     }
-    if out.len() > 6 {
-        return Err(Error::Format("PCE layout exceeds 5.1"));
+    if out.len() > crate::layout::MAX_PLANES {
+        return Err(Error::Format("PCE layout exceeds 7.1"));
     }
     Ok(out)
 }
@@ -216,17 +216,24 @@ fn pce_list(
     where_: List,
 ) -> Result<()> {
     let mut sce = 0usize;
+    let mut cpe = 0usize;
     for &(is_cpe, tag) in list {
         let kind = if is_cpe { ElemKind::Cpe } else { ElemKind::Sce };
-        let labels: &[Channel] = match (where_, is_cpe, sce) {
-            (List::Front, true, _) => &[Channel::FrontLeft, Channel::FrontRight],
+        // Second front CPE = ISO "outside front" pair, the config-7 side
+        // pair (see `layout::mpeg_channels`).
+        let labels: &[Channel] = match (where_, is_cpe, if is_cpe { cpe } else { sce }) {
+            (List::Front, true, 0) => &[Channel::FrontLeft, Channel::FrontRight],
+            (List::Front, true, 1) | (List::Side, true, _) => {
+                &[Channel::SideLeft, Channel::SideRight]
+            }
             (List::Front, false, 0) => &[Channel::FrontCenter],
-            (List::Side, true, _) => &[Channel::SideLeft, Channel::SideRight],
-            (List::Back, true, _) => &[Channel::BackLeft, Channel::BackRight],
+            (List::Back, true, 0) => &[Channel::BackLeft, Channel::BackRight],
             (List::Back, false, 0) => &[Channel::BackCenter],
             _ => &[Channel::Other],
         };
-        if !is_cpe {
+        if is_cpe {
+            cpe += 1;
+        } else {
             sce += 1;
         }
         push_tagged(out, elems, used, kind, tag, labels)?;

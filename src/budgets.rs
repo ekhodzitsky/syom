@@ -23,8 +23,8 @@ use crate::options::DEFAULT_MAX_INPUT_BYTES;
 /// split does not fit (F07). Same default as ryf `max_output_bytes`.
 pub const DEFAULT_MAX_OUTPUT_BYTES: u64 = 1 << 32;
 
-/// Output / PCE plane ceiling. Product layouts today are 1–6; 8 leaves
-/// room for 7.1 (TASK-62) without allowing a huge PCE as a memory bomb.
+/// Output / PCE plane ceiling: product layouts are 1–8 (7.1 since TASK-62);
+/// a PCE beyond eight planes is a Format error, not a memory bomb.
 pub const DEFAULT_MAX_CHANNELS: u32 = 8;
 
 /// M4A table / box-payload bytes (`stsz`/`stts`/`stsc`/`stco` plus names).

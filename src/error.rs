@@ -16,6 +16,8 @@ pub enum UnsupportedFeature {
     AudioObjectType(u8),
     /// `frameLengthFlag == 1` (960-line).
     FrameLength960,
+    /// `channel_configuration` 8–15 (6.1, 7.1 back/top, reserved); 1–7 and PCE decode.
+    ChannelConfiguration(u8),
     /// No SWB table / reserved ADTS rate index.
     SampleRateIndex(u8),
     /// LATM `audioMuxVersionA == 1`.
@@ -208,6 +210,9 @@ impl fmt::Display for UnsupportedFeature {
         match self {
             Self::AudioObjectType(a) => write!(f, "aac: unsupported audioObjectType {a}"),
             Self::FrameLength960 => write!(f, "aac: 960-line frames are Media"),
+            Self::ChannelConfiguration(c) => {
+                write!(f, "aac: unsupported channel_configuration {c}")
+            }
             Self::SampleRateIndex(i) => {
                 write!(f, "aac: no SWB table for samplingFrequencyIndex {i}")
             }
@@ -347,50 +352,45 @@ impl From<BudgetExceeded> for AacError {
 
 impl From<EngineError> for AacError {
     fn from(value: EngineError) -> Self {
+        use MalformedKind as M;
+        use UnsupportedFeature as U;
         match value {
             EngineError::UnexpectedEnd => Self::Truncated { at: None },
-            EngineError::AdtsSyncNotFound => Self::Malformed(MalformedKind::AdtsSync),
-            EngineError::AdtsLayerNonZero => Self::Malformed(MalformedKind::AdtsLayer),
-            EngineError::AdtsReservedSampleRateIndex => {
-                Self::Unsupported(UnsupportedFeature::SampleRateIndex(0xFF))
+            EngineError::AdtsSyncNotFound => Self::Malformed(M::AdtsSync),
+            EngineError::AdtsLayerNonZero => Self::Malformed(M::AdtsLayer),
+            EngineError::AdtsReservedSampleRateIndex => Self::Unsupported(U::SampleRateIndex(0xFF)),
+            EngineError::AdtsFrameLengthTooSmall => Self::Malformed(M::AdtsFrameLength),
+            EngineError::AdtsCrcMismatch => Self::Malformed(M::AdtsCrc),
+            EngineError::UnsupportedAot(a) => Self::Unsupported(U::AudioObjectType(a)),
+            EngineError::UnsupportedFrameLength => Self::Unsupported(U::FrameLength960),
+            EngineError::UnsupportedChannelConfiguration(c) => {
+                Self::Unsupported(U::ChannelConfiguration(c))
             }
-            EngineError::AdtsFrameLengthTooSmall => Self::Malformed(MalformedKind::AdtsFrameLength),
-            EngineError::AdtsCrcMismatch => Self::Malformed(MalformedKind::AdtsCrc),
-            EngineError::UnsupportedAot(a) => {
-                Self::Unsupported(UnsupportedFeature::AudioObjectType(a))
-            }
-            EngineError::UnsupportedFrameLength => {
-                Self::Unsupported(UnsupportedFeature::FrameLength960)
-            }
-            EngineError::UnsupportedSampleRateIndex(i) => {
-                Self::Unsupported(UnsupportedFeature::SampleRateIndex(i))
-            }
-            EngineError::IcsInfoInvalid => Self::Malformed(MalformedKind::Ics),
-            EngineError::SectionDataOverrun => Self::Malformed(MalformedKind::Section),
-            EngineError::InvalidCodebook(_) => Self::Malformed(MalformedKind::Codebook),
-            EngineError::HuffmanInvalid => Self::Malformed(MalformedKind::Huffman),
-            EngineError::SpectrumInvalid => Self::Malformed(MalformedKind::Spectrum),
-            EngineError::FilterbankInvalid => Self::Malformed(MalformedKind::Filterbank),
-            EngineError::LoasSyncInvalid => Self::Malformed(MalformedKind::LatmMux),
-            EngineError::LatmAudioMuxVersionAReserved => {
-                Self::Unsupported(UnsupportedFeature::LatmVersionA)
-            }
-            EngineError::LatmConfigOutOfRange => Self::Malformed(MalformedKind::LatmConfig),
-            EngineError::LatmCrcMismatch => Self::Malformed(MalformedKind::LatmCrc),
-            EngineError::LatmNoPreviousMuxConfig => Self::Malformed(MalformedKind::LatmMux),
+            EngineError::UnsupportedSampleRateIndex(i) => Self::Unsupported(U::SampleRateIndex(i)),
+            EngineError::IcsInfoInvalid => Self::Malformed(M::Ics),
+            EngineError::SectionDataOverrun => Self::Malformed(M::Section),
+            EngineError::InvalidCodebook(_) => Self::Malformed(M::Codebook),
+            EngineError::HuffmanInvalid => Self::Malformed(M::Huffman),
+            EngineError::SpectrumInvalid => Self::Malformed(M::Spectrum),
+            EngineError::FilterbankInvalid => Self::Malformed(M::Filterbank),
+            EngineError::LoasSyncInvalid => Self::Malformed(M::LatmMux),
+            EngineError::LatmAudioMuxVersionAReserved => Self::Unsupported(U::LatmVersionA),
+            EngineError::LatmConfigOutOfRange => Self::Malformed(M::LatmConfig),
+            EngineError::LatmCrcMismatch => Self::Malformed(M::LatmCrc),
+            EngineError::LatmNoPreviousMuxConfig => Self::Malformed(M::LatmMux),
             EngineError::LatmUnsupportedFrameLengthType => {
-                Self::Unsupported(UnsupportedFeature::LatmFrameLengthType)
+                Self::Unsupported(U::LatmFrameLengthType)
             }
             EngineError::SbrQmfInvalid
             | EngineError::SbrFreqBandInvalid
             | EngineError::SbrGridInvalid
             | EngineError::SbrHuffInvalid
-            | EngineError::ExtensionPayloadInvalid => Self::Malformed(MalformedKind::Sbr),
-            EngineError::PsDataInvalid => Self::Malformed(MalformedKind::Ps),
+            | EngineError::ExtensionPayloadInvalid => Self::Malformed(M::Sbr),
+            EngineError::PsDataInvalid => Self::Malformed(M::Ps),
             EngineError::UnsupportedExtensionSbr(t) | EngineError::UnsupportedExtensionType(t) => {
-                Self::Unsupported(UnsupportedFeature::Extension(t))
+                Self::Unsupported(U::Extension(t))
             }
-            EngineError::UnsupportedCce => Self::Unsupported(UnsupportedFeature::Extension(0)),
+            EngineError::UnsupportedCce => Self::Unsupported(U::Extension(0)),
             EngineError::Format(msg) => Self::Decode(format!("aac: {msg}")),
         }
     }
