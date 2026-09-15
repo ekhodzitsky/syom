@@ -120,7 +120,7 @@ fn error_paths_are_encode_errors() {
     let pcm = vec![sine(48_000, 0.05, 440.0, 0.5)];
     let cases: Vec<AacError> = vec![
         encode(&pcm, 47_000).unwrap_err(),
-        encode(&[], 48_000).unwrap_err(),
+        encode::<Vec<f32>>(&[], 48_000).unwrap_err(),
         encode(&[vec![], vec![]], 48_000).unwrap_err(),
         encode(&[pcm[0].clone(), pcm[0].clone(), pcm[0].clone()], 48_000).unwrap_err(),
         encode(&[vec![f32::NAN; 2048]], 48_000).unwrap_err(),

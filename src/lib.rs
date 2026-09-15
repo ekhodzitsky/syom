@@ -110,6 +110,9 @@ mod footprint_tests;
 mod mem_iso_tests;
 
 #[cfg(test)]
+#[path = "encode_borrow_tests.rs"]
+mod encode_borrow_tests;
+#[cfg(test)]
 #[path = "encode_he_tests.rs"]
 mod encode_he_tests;
 #[cfg(test)]

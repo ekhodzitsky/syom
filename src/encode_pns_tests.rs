@@ -239,7 +239,7 @@ fn pns_sine_snr_guard() {
 fn pns_harmonic_snr_guard() {
     // Speech-like tonal stack: must not collapse when PNS is on.
     let n = RATE as usize / 2;
-    let pcm = vec![
+    let pcm: Vec<Vec<f32>> = vec![
         (0..n)
             .map(|i| {
                 let t = i as f32 / RATE as f32;

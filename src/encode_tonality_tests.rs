@@ -77,7 +77,7 @@ fn tonality_silence_stays_silent() {
 fn tonality_changes_bytes_on_tone_plus_noise() {
     let n = 4096;
     let nse = noise(n, 0.2);
-    let pcm = vec![
+    let pcm: Vec<Vec<f32>> = vec![
         (0..n)
             .map(|i| {
                 let t = i as f32 / RATE as f32;
@@ -119,7 +119,7 @@ fn tonality_keeps_midband_sine_roundtrip() {
 fn tonality_is_not_the_ath_path() {
     let n = 4096;
     let nse = noise(n, 0.2);
-    let pcm = vec![
+    let pcm: Vec<Vec<f32>> = vec![
         (0..n)
             .map(|i| {
                 let t = i as f32 / RATE as f32;

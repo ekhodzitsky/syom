@@ -71,7 +71,7 @@ fn ath_silence_stays_silent() {
 #[test]
 fn ath_changes_bytes_on_quiet_hf() {
     let n = 4096;
-    let pcm = vec![
+    let pcm: Vec<Vec<f32>> = vec![
         (0..n)
             .map(|i| {
                 let t = i as f32 / RATE as f32;

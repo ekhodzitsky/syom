@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One-shot `encode` / `encode_with` / `write` / `write_with` take any
+  `&[P] where P: AsRef<[f32]>` (TASK-55): borrowed `&[&[f32]]`, arrays or
+  boxed slices encode without a copy; `&[Vec<f32>]` calls are unchanged.
+  Migration note: a plane built by an unannotated `.collect()` now needs
+  its type (`Vec<f32>`), since the parameter no longer fixes it.
 - Quality VBR (TASK-67): `EncodeOptions::with_quality(0..=10)` codes every
   LC frame at one fixed allowed-noise offset (level 5 = the psy target,
   6 dB per level; no target rate, no padding; the 6144 bits/channel cap is

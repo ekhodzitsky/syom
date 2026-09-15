@@ -35,13 +35,16 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
 ///
+/// Planes are anything `AsRef<[f32]>`: `&[Vec<f32>]`, `&[&[f32]]`, arrays —
+/// no copy is made to satisfy the type (TASK-55).
+///
 /// One plane per channel (mono or stereo), all planes the same length; the
 /// last content block is zero-padded to 1024 samples, then one extra zero
 /// MDCT drains the overlap so the last source samples reconstruct. The
 /// stream carries 1024-sample codec priming. Decoded ADTS length is
 /// `(ceil(N/1024)+1)*1024`; valid duration is N after skipping priming.
 #[inline]
-pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
+pub fn encode<P: AsRef<[f32]>>(pcm: &[P], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
 }
 
@@ -67,12 +70,11 @@ pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
 
 /// HE v1 one-shot: every access unit, then ADTS (implicit SBR, core rate
 /// in the header) or M4A (explicit two-rate ASC, output-rate timeline).
-fn encode_he(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
-    let channels = pcm.len();
+fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
+    let channels = planes.len();
     let mut enc = new_he(sample_rate, channels, opts)?;
-    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
     let mut aus: Vec<Vec<u8>> = Vec::new();
-    enc.push(&planes, |au| {
+    enc.push(planes, |au| {
         aus.push(au.to_vec());
         Ok(())
     })?;
@@ -104,7 +106,13 @@ fn encode_he(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at
 /// one extra frame of internal latency; drain still emits one silent
 /// successor so the last source samples reconstruct.
-pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
+pub fn encode_with<P: AsRef<[f32]>>(
+    pcm: &[P],
+    sample_rate: u32,
+    opts: &EncodeOptions,
+) -> Result<Vec<u8>> {
+    let pcm: Vec<&[f32]> = pcm.iter().map(AsRef::as_ref).collect();
+    let pcm = pcm.as_slice();
     validate(pcm, sample_rate, opts)?;
     if opts.he {
         return encode_he(pcm, sample_rate, opts);
@@ -244,14 +252,18 @@ fn fs_index(sample_rate: u32) -> Result<u8> {
 }
 
 /// Encode to ADTS and write the file.
-pub fn write(path: impl AsRef<std::path::Path>, pcm: &[Vec<f32>], sample_rate: u32) -> Result<()> {
+pub fn write<P: AsRef<[f32]>>(
+    path: impl AsRef<std::path::Path>,
+    pcm: &[P],
+    sample_rate: u32,
+) -> Result<()> {
     write_with(path, pcm, sample_rate, &EncodeOptions::default())
 }
 
 /// Encode under `opts` and write the file.
-pub fn write_with(
+pub fn write_with<P: AsRef<[f32]>>(
     path: impl AsRef<std::path::Path>,
-    pcm: &[Vec<f32>],
+    pcm: &[P],
     sample_rate: u32,
     opts: &EncodeOptions,
 ) -> Result<()> {
@@ -278,7 +290,7 @@ pub(crate) fn check_mode(opts: &EncodeOptions) -> Result<()> {
     Ok(())
 }
 
-fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<()> {
+fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()> {
     check_mode(opts)?;
     if !ADTS_SAMPLE_RATES_HZ.contains(&sample_rate) {
         return Err(AacError::encode(format!(
@@ -308,7 +320,7 @@ fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<
     if pcm.iter().any(|p| p.len() != n) {
         return Err(AacError::InvalidPcm(crate::PcmReject::PlaneLength));
     }
-    check_pcm_samples(pcm.iter().map(Vec::as_slice))?;
+    check_pcm_samples(pcm.iter().copied())?;
     Ok(())
 }
 

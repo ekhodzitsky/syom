@@ -92,7 +92,8 @@ Streaming `Frame::meta` (`Copy`) names planes (5.1 = FL FR FC LFE BL BR)
 and core vs output rate; ADTS priming stays `None`.
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
-mono/stereo, 128 kbps). `bitrate_bps` is an ABR target (payload/valid
+mono/stereo, 128 kbps); planes are `&[Vec<f32>]`, `&[&[f32]]` or any
+`AsRef<[f32]>` (no copy). `bitrate_bps` is an ABR target (payload/valid
 ±3% on ≥10 s non-silent tracks; leftover budget is unused bytes after
 `ID_END`; silence may undershoot) with
 `adts_buffer_fullness = 0x7FF` (no CBR reservoir). `encode_with` takes
