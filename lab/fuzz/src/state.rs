@@ -17,19 +17,21 @@ fn load(rel: &str) -> Vec<u8> {
     std::fs::read(repo_root().join(rel)).unwrap_or_else(|_| panic!("{rel}"))
 }
 
-fn parse_args() -> (Duration, u64) {
+fn parse_args() -> (Duration, u64, u32) {
     let mut seconds = 30u64;
     let mut iters = 50_000u64;
+    let mut seed = 0x49F4_9F49u32;
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
             "--seconds" => seconds = args.next().expect("s").parse().expect("u64"),
             "--iters" => iters = args.next().expect("n").parse().expect("u64"),
+            "--seed" => seed = args.next().expect("seed").parse().expect("u32"),
             "--replay" => continue,
             other => panic!("unknown arg {other}"),
         }
     }
-    (Duration::from_secs(seconds), iters)
+    (Duration::from_secs(seconds), iters, seed)
 }
 
 fn drop_frame(_: syom::Frame<'_>) -> syom::Result<()> {
@@ -109,9 +111,9 @@ fn main() {
     let he = load("src/goldens/he48.adts");
     let latm = load("src/goldens/latm48.latm");
     let seeds = [sine.as_slice(), he.as_slice(), latm.as_slice()];
-    let (limit, max_iters) = parse_args();
+    let (limit, max_iters, seed) = parse_args();
     let start = Instant::now();
-    let mut rng = 0x49F49F49u32;
+    let mut rng = seed;
     let mut n = 0u64;
     let mut panics = 0u64;
     let mut dec = syom::Decoder::new(syom::DecodeOptions::speech());
@@ -130,7 +132,8 @@ fn main() {
         }
         n += 1;
     }
-    println!("syom-lab-fuzz-state TASK-49");
+    println!("syom-lab-fuzz-state TASK-103");
+    println!("seed {seed}");
     println!("iters {n}");
     println!("wall_ms {}", start.elapsed().as_millis());
     println!("panics {panics}");

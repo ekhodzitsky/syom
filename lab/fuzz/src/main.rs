@@ -66,6 +66,14 @@ fn load_seeds(root: &Path) -> Vec<(String, Vec<u8>)> {
         "src/goldens/latm48.latm",
         "src/goldens/sine441.m4a",
         "src/goldens/he48.adts",
+        "src/goldens/ps48.adts",
+        "src/goldens/mc51.adts",
+        "src/goldens/enc48.adts",
+        "src/goldens/tns48.adts",
+        "src/goldens/pns48.adts",
+        "src/goldens/lecture.m4a",
+        "src/goldens/he48.latm",
+        "src/goldens/ps48.m4a",
     ];
     for rel in goldens {
         let p = root.join(rel);
@@ -82,26 +90,36 @@ fn load_seeds(root: &Path) -> Vec<(String, Vec<u8>)> {
     out
 }
 
-fn parse_args() -> (Duration, u64) {
+fn parse_args() -> (Duration, u64, u32, Option<PathBuf>) {
     let mut seconds = 30u64;
     let mut iters = 100_000u64;
+    let mut seed = 0xC0FF_EE42u32;
+    let mut crash_dir = None;
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
         match a.as_str() {
             "--seconds" => seconds = args.next().expect("--seconds").parse().expect("u64"),
             "--iters" => iters = args.next().expect("--iters").parse().expect("u64"),
+            "--seed" => {
+                let s = args.next().expect("--seed");
+                seed = s.parse().unwrap_or(0xC0FF_EE42);
+            }
+            "--crash-dir" => crash_dir = Some(PathBuf::from(args.next().expect("--crash-dir"))),
             other => panic!("unknown arg {other}"),
         }
     }
-    (Duration::from_secs(seconds), iters)
+    (Duration::from_secs(seconds), iters, seed, crash_dir)
 }
 
 fn main() {
     let root = repo_root();
     let seeds = load_seeds(&root);
-    let (limit, max_iters) = parse_args();
+    let (limit, max_iters, seed, crash_dir) = parse_args();
+    if let Some(d) = &crash_dir {
+        let _ = std::fs::create_dir_all(d);
+    }
     let start = Instant::now();
-    let mut rng = 0xC0FF_EE42u32;
+    let mut rng = seed;
     let mut n = 0u64;
     let mut panics = 0u64;
     let mut last_panic: Option<(u64, String)> = None;
@@ -112,10 +130,16 @@ fn main() {
         if panicked {
             panics += 1;
             last_panic = Some((n, seeds[idx].0.clone()));
+            if let Some(d) = &crash_dir {
+                let p = d.join(format!("p-{seed}-{n}.bin"));
+                let _ = std::fs::write(&p, &buf);
+                eprintln!("crash {}", p.display());
+            }
         }
         n += 1;
     }
-    println!("syom-lab-fuzz TASK-48");
+    println!("syom-lab-fuzz TASK-103");
+    println!("seed {seed}");
     println!("seeds {}", seeds.len());
     for (name, b) in &seeds {
         println!("  {name} {} B", b.len());

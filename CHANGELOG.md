@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Recorded conformance/hostile-input campaign (TASK-103): 24 CPU-h
+  parser+stateful fuzz (400 M iters, 0 panics); advertised-row matrix;
+  **93.6%** library line coverage (tests excluded). ISO 14496-26 still
+  not obtained (`lab/baseline/CAMPAIGN.md`, `COVERAGE.md`).
 - Native CI matrix and encoder byte-determinism (TASK-98): Linux/macOS/
   Windows × x86_64/aarch64, toolchain 1.97.1. Encoder goldens (causal,
   lookahead, M4A, transient) stay byte-exact vs scalar and vs SSE2-only
