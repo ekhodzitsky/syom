@@ -196,6 +196,11 @@ pub enum EncodeContainer {
     Adts,
     /// M4A / ISOBMFF (`ftyp` + `mdat` + `moov`).
     M4a,
+    /// Raw `raw_data_block` access units (push [`crate::Encoder`] only).
+    /// One-shot [`crate::encode_with`] rejects this: muxers need per-AU
+    /// sizes. Pair with [`crate::Encoder::asc`] and
+    /// [`crate::wrap_adts_au`] / [`crate::mux_raw_lc_m4a`].
+    Raw,
 }
 
 /// Options for `encode_with` / `write_with`.
@@ -270,6 +275,15 @@ impl EncodeOptions {
     pub fn m4a() -> Self {
         Self {
             container: EncodeContainer::M4a,
+            ..Self::default()
+        }
+    }
+
+    /// Raw access units at 128 kbps (push [`crate::Encoder`] only).
+    #[inline]
+    pub fn raw() -> Self {
+        Self {
+            container: EncodeContainer::Raw,
             ..Self::default()
         }
     }

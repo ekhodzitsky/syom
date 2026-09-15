@@ -1,8 +1,9 @@
 //! Streaming encode: a resumable push [`Encoder`] for planar f32 PCM →
-//! AAC-LC in ADTS.
+//! AAC-LC in ADTS or raw access units ([`EncodeContainer::Raw`]).
 //!
 //! Feed PCM in chunks of any size; the callback fires once per completed
-//! AAC frame (1024 samples per channel) with the ADTS-wrapped access unit.
+//! AAC frame (1024 samples per channel). ADTS wraps the unit; Raw emits
+//! the `raw_data_block` plus a stable [`Encoder::asc`].
 //! Leftover samples are buffered across feeds; [`Encoder::finish`] encodes
 //! the zero-padded tail frame, exactly like one-shot [`crate::encode_with`]
 //! — same frame sequence, same bytes. M4A is rejected at construction
@@ -43,6 +44,9 @@
 //! assert_eq!(dec.channels[0].len(), 4 * 1024);
 //! # Ok::<(), syom::AacError>(())
 //! ```
+//!
+//! Raw AUs for an external muxer: [`EncodeOptions::raw`], [`Encoder::asc`],
+//! [`crate::wrap_adts_au`].
 
 use crate::engine::adts::ADTS_SAMPLE_RATES_HZ;
 use crate::engine::enc_frame::LcEncoder;
@@ -50,7 +54,7 @@ use crate::engine::swb::LONG_WINDOW_LEN as FRAME;
 use crate::error::{AacError, Result};
 use crate::options::{EncodeContainer, EncodeOptions};
 
-/// One encoded AAC frame: an ADTS-wrapped access unit.
+/// One encoded AAC frame.
 ///
 /// The bytes borrow encoder scratch and are valid **only for the duration
 /// of the callback** — copy them out to keep them.
@@ -60,8 +64,11 @@ pub struct EncodedFrame<'a> {
     /// remainder at [`Encoder::finish`] (that frame is zero-padded to 1024
     /// in the bitstream, like one-shot encode).
     pub samples: usize,
-    /// One ADTS frame (7-byte header + `raw_data_block`).
+    /// Container bytes: ADTS frame, or the raw `raw_data_block` when the
+    /// encoder was built with [`EncodeContainer::Raw`].
     pub au: &'a [u8],
+    /// Elementary `raw_data_block` (no ADTS header). Same lifetime as `au`.
+    pub payload: &'a [u8],
 }
 
 /// Tallies from a finished streaming encode.
@@ -104,6 +111,9 @@ pub struct Encoder {
     enc: LcEncoder,
     sample_rate: u32,
     channels: usize,
+    wrap_adts: bool,
+    /// LC `AudioSpecificConfig` (2 bytes). Not sized by input duration.
+    asc: Vec<u8>,
     /// Samples buffered across feeds, one plane per channel.
     pending: [Vec<f32>; 2],
     pending_len: usize,
@@ -149,15 +159,20 @@ impl Encoder {
                 opts.bitrate_bps
             )));
         }
-        if opts.container != EncodeContainer::Adts {
+        if opts.container == EncodeContainer::M4a {
             return Err(AacError::Unsupported(
                 crate::UnsupportedFeature::EncodeM4aStreaming,
             ));
         }
+        let wrap_adts = opts.container != EncodeContainer::Raw;
+        let enc = crate::encode::new_lc(sample_rate, channels, opts)?;
+        let asc = crate::engine::asc::write_lc(enc.fs_index(), channels as u8);
         Ok(Self {
-            enc: crate::encode::new_lc(sample_rate, channels, opts)?,
+            enc,
             sample_rate,
             channels,
+            wrap_adts,
+            asc,
             pending: [Vec::new(), Vec::new()],
             pending_len: 0,
             scratch: Vec::new(),
@@ -166,6 +181,12 @@ impl Encoder {
             bytes: 0,
             life: Life::Open,
         })
+    }
+
+    /// LC `AudioSpecificConfig` for this encoder (stable; not input-sized).
+    #[must_use]
+    pub fn asc(&self) -> &[u8] {
+        &self.asc
     }
 
     fn ensure_open(&self) -> Result<()> {

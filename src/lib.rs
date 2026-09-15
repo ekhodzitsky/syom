@@ -34,7 +34,7 @@ pub use decode::{
     decode_with, read, read_with,
 };
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
-pub use encode::{encode, encode_with, write, write_with};
+pub use encode::{encode, encode_with, mux_raw_lc_m4a, wrap_adts_au, write, write_with};
 pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
 pub use isomp4::sniff_is_isobmff;
 pub use layout::{Channel, FrameMeta, Layout, MAX_PLANES, mpeg_channels};
@@ -116,6 +116,10 @@ mod encode_prime_tests;
 #[cfg(test)]
 #[path = "encode_pcm_tests.rs"]
 mod encode_pcm_tests;
+
+#[cfg(test)]
+#[path = "enc_muxer_tests.rs"]
+mod enc_muxer_tests;
 
 #[cfg(test)]
 #[path = "encode_cmp_tests.rs"]

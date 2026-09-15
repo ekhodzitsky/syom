@@ -28,12 +28,21 @@ impl Encoder {
         self.enc.encode_into(planes)?;
         let fs = self.enc.fs_index();
         scratch.clear();
-        crate::encode::adts_frame_into(self.enc.payload(), fs, self.channels, scratch);
+        if self.wrap_adts {
+            crate::encode::adts_frame_into(self.enc.payload(), fs, self.channels, scratch);
+        } else {
+            scratch.extend_from_slice(self.enc.payload());
+        }
         self.aac_frames += 1;
         self.bytes += scratch.len() as u64;
+        let hdr = crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC;
+        let payload_off = if self.wrap_adts { hdr } else { 0 };
+        let au: &[u8] = scratch;
+        let payload = &au[payload_off..];
         cb(EncodedFrame {
             samples,
-            au: scratch,
+            au,
+            payload,
         })
     }
 
@@ -48,12 +57,21 @@ impl Encoder {
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
         scratch.clear();
-        crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
+        let hdr = crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC;
+        if self.wrap_adts {
+            crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
+        } else {
+            scratch.extend_from_slice(au);
+        }
         self.aac_frames += 1;
         self.bytes += scratch.len() as u64;
+        let payload_off = if self.wrap_adts { hdr } else { 0 };
+        let au: &[u8] = scratch;
+        let payload = &au[payload_off..];
         cb(EncodedFrame {
             samples,
-            au: scratch,
+            au,
+            payload,
         })
     }
 }

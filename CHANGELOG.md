@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Raw LC access units for external muxers (TASK-53):
+  `EncodeOptions::raw()`, `EncodedFrame::payload`, `Encoder::asc`,
+  `wrap_adts_au`, `mux_raw_lc_m4a`. Rewrap matches one-shot ADTS/M4A
+  (causal and lookahead). One-shot raw is rejected.
 - Recorded conformance/hostile-input campaign (TASK-103): 24 CPU-h
   parser+stateful fuzz (400 M iters, 0 panics); advertised-row matrix;
   **93.6%** library line coverage (tests excluded). ISO 14496-26 still

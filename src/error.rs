@@ -28,6 +28,8 @@ pub enum UnsupportedFeature {
     M4aPush,
     /// Push [`crate::Encoder`] cannot write M4A (`stco` needs finish).
     EncodeM4aStreaming,
+    /// One-shot encode cannot emit raw AUs (no per-AU sizes); use [`crate::Encoder`].
+    EncodeRawOneShot,
     /// `decode_au` needs [`crate::Decoder::from_asc`]; `feed` is ADTS/LATM.
     RawAccessUnit,
     /// Mid-stream AudioSpecificConfig change (call [`crate::Decoder::reset`]).
@@ -214,6 +216,12 @@ impl fmt::Display for UnsupportedFeature {
                 write!(
                     f,
                     "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with"
+                )
+            }
+            Self::EncodeRawOneShot => {
+                write!(
+                    f,
+                    "encode: raw access units need the push Encoder (per-AU sizes)"
                 )
             }
             Self::RawAccessUnit => {
