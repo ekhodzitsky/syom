@@ -70,7 +70,6 @@ impl FrameClass {
     }
 
     /// The 2-bit `bs_frame_class` wire value.
-    #[cfg(test)]
     pub fn to_bits(self) -> u32 {
         match self {
             FrameClass::FixFix => 0,
@@ -123,7 +122,7 @@ pub struct SbrGrid {
 /// `ptr_bits = ceil(log2(num_env + 1))` (Table 4.69 Note 2: a true
 /// float division / log, not a truncated one). For `num_env + 1` a
 /// power of two this is exactly `log2`; otherwise it rounds up.
-fn ptr_bits(num_env: usize) -> u32 {
+pub(crate) fn ptr_bits(num_env: usize) -> u32 {
     let n = (num_env + 1) as u32;
     // ceil(log2(n)): the position of the highest set bit, plus one if n
     // is not itself a power of two.

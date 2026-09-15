@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HE v1 SBR bitstream writer (TASK-88): crate-internal
+  `enc_sbr_bits` — `sbr_header`, all four `sbr_grid` classes, dtdf,
+  invf, Huffman envelope/noise rows (inverse ISO tables), SCE and
+  uncoupled CPE `sbr_data`, `sbr_extension_data` with header transmit
+  or reuse, the `EXT_SBR_DATA` `extension_payload` bytes with zero fill,
+  and the `fill_element` count/escape wrapper. Hand-authored bit
+  vectors, exact bit accounting (writer bits = estimator `est_bits`),
+  unrepresentable parameters are errors; no CRC variant. Not wired
+  into `encode` (still LC). Evidence in `lab/quality/SBR_BITS.md`.
 - HE v1 SBR parameter estimation (TASK-87): crate-internal
   `SbrEstimator` — fixed 3.0 dB header per rate (pinned band tables),
   FIXFIX 1/2/4-envelope grid from an HF energy surge, envelope and

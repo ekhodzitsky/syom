@@ -310,7 +310,6 @@ impl BitWriter {
     }
 
     /// Bits written so far (before the final byte-align pad).
-    #[cfg(test)]
     #[must_use]
     pub fn bit_len(&self) -> u64 {
         (self.buf.len() as u64) * 8 + u64::from(self.bits)
