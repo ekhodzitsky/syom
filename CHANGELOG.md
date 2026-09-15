@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HE v1 SBR parameter estimation (TASK-87): crate-internal
+  `SbrEstimator` — fixed 3.0 dB header per rate (pinned band tables),
+  FIXFIX 1/2/4-envelope grid from an HF energy surge, envelope and
+  noise-floor scalefactors on the decoder's dequantisation scale,
+  inverse-filter modes from a tonality gap, cheapest valid delta
+  direction with a Huffman bit estimate (~61 bits/frame mono). Decoding
+  the parameters with the in-tree SBR decoder over the ideal core
+  matches interior HF envelope bands within 0.3 dB mean; not wired
+  into `encode` (still LC). Evidence in `lab/quality/SBR_EST.md`.
 - HE v1 core-rate preparation (TASK-86): crate-internal `SbrPrep`
   (17-tap halfband 2:1 downsample, delay 4 core samples) and a `det_math`
   64-band analysis QMF on full-rate PCM (the decoder's `X` grid), incremental/resettable with
