@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `encode_write_m4a(sink, planes, rate, opts)` (TASK-60): incremental M4A
+  on any `Write + Seek` sink — `ftyp` + `mdat` header first, access units
+  as produced, `mdat` size patched and `moov` appended at finish (exact
+  `elst` priming / presentation duration, LC and HE). Retained memory is
+  one frame plus 4 bytes per access unit (2^20 cap); a version-0 offset
+  ceiling is checked before every write; write/seek failures are
+  `AacError::Io` leaving an unplayable prefix (valid only after `Ok`).
+  Bytes identical to one-shot M4A.
 - `encode_write(sink, planes, rate, opts)` (TASK-59): encode borrowed
   planes incrementally into any `std::io::Write` (ADTS, or raw AUs);
   bytes identical to `encode_with`, one-frame workspace, no collected

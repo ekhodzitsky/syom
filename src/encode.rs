@@ -158,7 +158,7 @@ pub fn encode_with<P: AsRef<[f32]>>(
 
 #[path = "encode_mux.rs"]
 mod mux;
-pub use mux::{encode_write, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au};
+pub use mux::{encode_write, encode_write_m4a, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au};
 
 fn fs_index(sample_rate: u32) -> Result<u8> {
     ADTS_SAMPLE_RATES_HZ

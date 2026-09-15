@@ -31,7 +31,7 @@ const STREAM_TYPE_AUDIO: u8 = 0x15;
 /// Version-0 box / `stco` ceiling. Larger files need `co64` (TASK-60).
 pub(crate) const MAX_M4A_V0_BYTES: u64 = u32::MAX as u64;
 
-fn u32_field(v: u64, what: &str) -> Result<u32> {
+pub(crate) fn u32_field(v: u64, what: &str) -> Result<u32> {
     u32::try_from(v).map_err(|_| AacError::encode(format!("m4a: {what} exceeds u32")))
 }
 
@@ -128,41 +128,64 @@ fn mux_aac(
     priming: u64,
     frame_len: u32,
 ) -> Result<Vec<u8>> {
-    if payloads.is_empty() {
-        return Err(AacError::encode("m4a: no access units"));
-    }
-    if sample_rate == 0 {
-        return Err(AacError::encode("m4a: sample rate is 0"));
-    }
-    let n_frames = u32_field(payloads.len() as u64, "frame count")?;
-    let coded = u64::from(n_frames)
-        .checked_mul(u64::from(frame_len))
-        .ok_or_else(|| AacError::encode("m4a: coded duration overflow"))?;
-    let play_end = priming
-        .checked_add(valid_samples)
-        .ok_or_else(|| AacError::encode("m4a: priming + valid overflow"))?;
-    if play_end > coded {
-        return Err(AacError::encode(
-            "m4a: valid samples exceed coded duration after priming",
-        ));
-    }
-    let presentation = u32_field(valid_samples, "presentation duration")?;
-    let media_duration = u32_field(coded, "media duration")?;
-    let media_time = u32_field(priming, "priming")?;
-    let mut sample_sizes = Vec::with_capacity(payloads.len());
+    let mut sizes = Vec::with_capacity(payloads.len());
     let mut payload_bytes = 0u64;
     for p in payloads {
         let n = u32_field(p.len() as u64, "sample size")?;
         payload_bytes = payload_bytes
             .checked_add(u64::from(n))
             .ok_or_else(|| AacError::encode("m4a: payload length overflow"))?;
-        sample_sizes.push(n);
+        sizes.push(n);
     }
-    let stsz_bytes = u64::from(n_frames)
-        .checked_mul(4)
-        .ok_or_else(|| AacError::encode("m4a: stsz table overflow"))?;
-    let planned = payload_bytes
-        .checked_add(stsz_bytes)
+    let mut out = ftyp_bytes();
+    let media_offset = u32_field(out.len() as u64 + 8, "mdat offset")?;
+    preflight(media_offset, payload_bytes, sizes.len())?;
+    // mdat: payloads contiguous; the single stco entry points here.
+    let mdat = start_box(&mut out, b"mdat");
+    for p in payloads {
+        out.extend_from_slice(p);
+    }
+    end_box(&mut out, mdat)?;
+    let plan = MoovPlan {
+        asc,
+        channels,
+        sample_rate,
+        valid_samples,
+        priming,
+        frame_len,
+    };
+    out.extend_from_slice(&moov_bytes(&plan, &sizes, media_offset)?);
+    u32_field(out.len() as u64, "file size")?;
+    Ok(out)
+}
+
+/// `ftyp M4A ` (the fixed 32-byte prefix).
+pub(crate) fn ftyp_bytes() -> Vec<u8> {
+    let mut out = Vec::with_capacity(32);
+    let ftyp = start_box(&mut out, b"ftyp");
+    out.extend_from_slice(b"M4A ");
+    be32(&mut out, 0); // minor version
+    out.extend_from_slice(b"M4A mp42isom");
+    let _ = end_box(&mut out, ftyp); // 32 bytes: never overflows
+    out
+}
+
+/// Access units the sample tables may index (4 bytes of `stsz` each,
+/// 8 B with the frame count): the retained index of a streamed M4A.
+pub(crate) const MAX_M4A_AUS: usize = 1 << 20;
+
+/// Version-0 ceiling check before anything is committed: every `stco`
+/// offset, the `mdat` size and the file size must fit `u32`, and the
+/// sample index stays under [`MAX_M4A_AUS`]. No field ever wraps.
+pub(crate) fn preflight(media_offset: u32, payload_bytes: u64, n_aus: usize) -> Result<()> {
+    if n_aus > MAX_M4A_AUS {
+        return Err(AacError::encode(
+            "m4a: access units exceed the 2^20 index budget",
+        ));
+    }
+    let planned = u64::from(media_offset)
+        .checked_add(payload_bytes)
+        .and_then(|v| v.checked_add(n_aus as u64 * 4))
         .and_then(|v| v.checked_add(1024))
         .ok_or_else(|| AacError::encode("m4a: file size overflow"))?;
     if planned > MAX_M4A_V0_BYTES {
@@ -170,38 +193,62 @@ fn mux_aac(
             "m4a: file exceeds 32-bit box/stco ceiling",
         ));
     }
+    Ok(())
+}
+
+/// What `moov` needs besides the sample sizes and the media offset.
+pub(crate) struct MoovPlan<'a> {
+    pub asc: &'a [u8],
+    pub channels: usize,
+    pub sample_rate: u32,
+    pub valid_samples: u64,
+    pub priming: u64,
+    pub frame_len: u32,
+}
+
+/// The complete `moov` box: movie timescale = sample rate so `elst`
+/// duration is N exactly; one chunk at `media_offset`.
+pub(crate) fn moov_bytes(plan: &MoovPlan<'_>, sizes: &[u32], media_offset: u32) -> Result<Vec<u8>> {
+    if sizes.is_empty() {
+        return Err(AacError::encode("m4a: no access units"));
+    }
+    if plan.sample_rate == 0 {
+        return Err(AacError::encode("m4a: sample rate is 0"));
+    }
+    let n_frames = u32_field(sizes.len() as u64, "frame count")?;
+    let coded = u64::from(n_frames)
+        .checked_mul(u64::from(plan.frame_len))
+        .ok_or_else(|| AacError::encode("m4a: coded duration overflow"))?;
+    let play_end = plan
+        .priming
+        .checked_add(plan.valid_samples)
+        .ok_or_else(|| AacError::encode("m4a: priming + valid overflow"))?;
+    if play_end > coded {
+        return Err(AacError::encode(
+            "m4a: valid samples exceed coded duration after priming",
+        ));
+    }
+    let presentation = u32_field(plan.valid_samples, "presentation duration")?;
+    let media_duration = u32_field(coded, "media duration")?;
+    let media_time = u32_field(plan.priming, "priming")?;
+    let payload_bytes: u64 = sizes.iter().map(|&n| u64::from(n)).sum();
     let bitrate = payload_bytes
         .checked_mul(8)
-        .and_then(|b| b.checked_mul(u64::from(sample_rate)))
+        .and_then(|b| b.checked_mul(u64::from(plan.sample_rate)))
         .and_then(|b| b.checked_div(coded))
         .and_then(|b| u32::try_from(b).ok())
         .unwrap_or(u32::MAX);
-    let ch8 =
-        u8::try_from(channels).map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
-    let rate_fixed = rate_16_16(sample_rate)?;
-
+    let ch8 = u8::try_from(plan.channels)
+        .map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
+    let rate_fixed = rate_16_16(plan.sample_rate)?;
     let mut out = Vec::new();
-    // ftyp
-    let ftyp = start_box(&mut out, b"ftyp");
-    out.extend_from_slice(b"M4A ");
-    be32(&mut out, 0); // minor version
-    out.extend_from_slice(b"M4A mp42isom");
-    end_box(&mut out, ftyp)?;
-    // mdat: payloads contiguous; the single stco entry points here.
-    let mdat = start_box(&mut out, b"mdat");
-    let media_offset = u32_field(out.len() as u64, "mdat offset")?;
-    for p in payloads {
-        out.extend_from_slice(p);
-    }
-    end_box(&mut out, mdat)?;
-    // moov: movie timescale = sample rate so elst duration is N exactly.
     let moov = start_box(&mut out, b"moov");
-    write_mvhd(&mut out, sample_rate, presentation)?;
+    write_mvhd(&mut out, plan.sample_rate, presentation)?;
     let trak = start_box(&mut out, b"trak");
     write_tkhd(&mut out, presentation)?;
     write_edts(&mut out, presentation, media_time)?;
     let mdia = start_box(&mut out, b"mdia");
-    write_mdhd(&mut out, sample_rate, media_duration)?;
+    write_mdhd(&mut out, plan.sample_rate, media_duration)?;
     write_hdlr(&mut out)?;
     let minf = start_box(&mut out, b"minf");
     let smhd = start_box(&mut out, b"smhd");
@@ -211,10 +258,10 @@ fn mux_aac(
     end_box(&mut out, smhd)?;
     write_dinf(&mut out)?;
     let stbl = start_box(&mut out, b"stbl");
-    write_stsd(&mut out, asc, u16::from(ch8), rate_fixed, bitrate)?;
-    write_stts(&mut out, n_frames, frame_len)?;
+    write_stsd(&mut out, plan.asc, u16::from(ch8), rate_fixed, bitrate)?;
+    write_stts(&mut out, n_frames, plan.frame_len)?;
     write_stsc(&mut out, n_frames)?;
-    write_stsz(&mut out, n_frames, &sample_sizes)?;
+    write_stsz(&mut out, n_frames, sizes)?;
     let stco = start_box(&mut out, b"stco");
     be32(&mut out, 0);
     be32(&mut out, 1);
@@ -225,7 +272,6 @@ fn mux_aac(
     end_box(&mut out, mdia)?;
     end_box(&mut out, trak)?;
     end_box(&mut out, moov)?;
-    u32_field(out.len() as u64, "file size")?;
     Ok(out)
 }
 

@@ -3,8 +3,9 @@
 
 use super::{FRAME, adts_frame_into, fs_index};
 use crate::error::{AacError, Result};
-use crate::m4a_write;
-use crate::options::EncodeOptions;
+use crate::m4a_write::{self, MoovPlan};
+use crate::options::{EncodeContainer, EncodeOptions};
+use std::io::{Seek, SeekFrom, Write};
 
 /// Encode planar PCM incrementally into any [`std::io::Write`] sink (TASK-59):
 /// ADTS frames (or raw access units with [`EncodeContainer::Raw`]) are
@@ -127,4 +128,92 @@ pub fn mux_raw_lc_m4a(
         valid_samples,
         FRAME as u64,
     )
+}
+
+/// Encode planar PCM into an M4A written incrementally to a `Write + Seek`
+/// sink (TASK-60): `ftyp` and an `mdat` header go out first, every access
+/// unit is written as it is produced, and `finish` seeks back to patch the
+/// `mdat` size and appends `moov` (sample tables, `elst` priming, exact
+/// presentation duration). Retained memory is one frame of codec state
+/// plus 4 bytes per access unit (the `stsz` index, at most
+/// 2^20 units); compressed media is never accumulated. `opts.container`
+/// is ignored — the output is always M4A. Bytes are identical to
+/// [`encode_with`] with [`EncodeContainer::M4a`]; offsets are relative
+/// to the sink position at entry, so the M4A must start at that position.
+///
+/// Lifecycle: the output is a valid M4A **only after `Ok`**. A write or
+/// seek error ends the encode with [`AacError::Io`]; the sink then holds
+/// `ftyp` plus an `mdat` prefix without its size or `moov` (not playable,
+/// nothing written twice). A version-0 ceiling (offsets, `mdat` and file
+/// size in `u32`) is checked before every write; exceeding it is
+/// [`AacError::Encode`] with no wrapped field.
+///
+/// ```
+/// use syom::{EncodeOptions, encode_write_m4a};
+/// let pcm = vec![0.0f32; 3000];
+/// let mut file = std::io::Cursor::new(Vec::new());
+/// let info = encode_write_m4a(&mut file, &[&pcm[..]], 48_000, &EncodeOptions::default())?;
+/// let bytes = file.into_inner();
+/// assert!(syom::sniff_is_isobmff(&bytes));
+/// assert_eq!(syom::decode_with(&bytes, &syom::DecodeOptions::audio())?.channels[0].len(), 3000);
+/// assert_eq!(info.priming, 1024);
+/// # Ok::<(), syom::AacError>(())
+/// ```
+pub fn encode_write_m4a<W: Write + Seek, P: AsRef<[f32]>>(
+    mut sink: W,
+    pcm: &[P],
+    sample_rate: u32,
+    opts: &EncodeOptions,
+) -> Result<crate::EncodeInfo> {
+    let planes: Vec<&[f32]> = pcm.iter().map(AsRef::as_ref).collect();
+    let raw = opts.clone().with_container(EncodeContainer::Raw);
+    super::validate(&planes, sample_rate, &raw)?;
+    let mut enc = crate::Encoder::new(sample_rate, planes.len(), &raw)?;
+    let base = sink.stream_position().map_err(AacError::Io)?;
+    let ftyp = m4a_write::ftyp_bytes();
+    let media_offset = m4a_write::u32_field(ftyp.len() as u64 + 8, "mdat offset")?;
+    sink.write_all(&ftyp).map_err(AacError::Io)?;
+    sink.write_all(&[0, 0, 0, 0, b'm', b'd', b'a', b't'])
+        .map_err(AacError::Io)?;
+    let mut sizes: Vec<u32> = Vec::new();
+    let mut payload_bytes = 0u64;
+    let mut emit = |au: &[u8], sink: &mut W| -> Result<()> {
+        let n = m4a_write::u32_field(au.len() as u64, "sample size")?;
+        m4a_write::preflight(media_offset, payload_bytes + u64::from(n), sizes.len() + 1)?;
+        sink.write_all(au).map_err(AacError::Io)?;
+        sizes.push(n);
+        payload_bytes += u64::from(n);
+        Ok(())
+    };
+    let n = planes.first().map_or(0, |p| p.len());
+    let mut at = 0usize;
+    while at < n {
+        let end = (at + 4096).min(n);
+        let chunk: Vec<&[f32]> = planes.iter().map(|p| &p[at..end]).collect();
+        enc.feed(&chunk, |f| emit(f.payload, &mut sink))?;
+        at = end;
+    }
+    let info = enc.finish(|f| emit(f.payload, &mut sink))?;
+    let mdat_size = m4a_write::u32_field(payload_bytes + 8, "mdat size")?;
+    let mdat_at = base + ftyp.len() as u64;
+    sink.seek(SeekFrom::Start(mdat_at)).map_err(AacError::Io)?;
+    sink.write_all(&mdat_size.to_be_bytes())
+        .map_err(AacError::Io)?;
+    sink.seek(SeekFrom::Start(mdat_at + u64::from(mdat_size)))
+        .map_err(AacError::Io)?;
+    let plan = MoovPlan {
+        asc: enc.asc(),
+        channels: planes.len(),
+        sample_rate,
+        valid_samples: info.samples,
+        priming: info.priming,
+        frame_len: if opts.he { 2048 } else { FRAME as u32 },
+    };
+    let moov = m4a_write::moov_bytes(&plan, &sizes, media_offset)?;
+    m4a_write::u32_field(
+        u64::from(media_offset) + payload_bytes + moov.len() as u64,
+        "file size",
+    )?;
+    sink.write_all(&moov).map_err(AacError::Io)?;
+    Ok(info)
 }
