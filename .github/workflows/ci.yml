@@ -5,22 +5,60 @@ on:
   push:
     branches: [main]
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   check:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.host }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            host: linux-x64
+          - os: ubuntu-24.04-arm
+            host: linux-arm64
+          - os: macos-latest
+            host: macos-arm64
+          - os: macos-13
+            host: macos-x64
+          - os: windows-latest
+            host: windows-x64
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: 1.97.1
           components: rustfmt, clippy
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.host }}
+      - name: record host
+        shell: bash
+        run: |
+          {
+            echo "host=${{ matrix.host }}"
+            echo "runner=${{ matrix.os }}"
+            rustc -vV
+            cargo -vV
+            python --version
+          } | tee host.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-${{ matrix.host }}
+          path: host.txt
       - name: fmt
         run: cargo fmt --check
       - name: file size
-        run: python3 scripts/check-file-size.py
+        run: python scripts/check-file-size.py
       - name: changelog
-        run: python3 scripts/check-changelog.py
+        run: python scripts/check-changelog.py
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: tests

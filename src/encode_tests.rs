@@ -290,7 +290,7 @@ fn decorrelated_stereo_stays_lr() {
 /// if this signal is, too. The tremolo's intra-frame envelope movement is
 /// what exercises TNS (steady tones/sweeps barely whiten, so TNS stays off
 /// there — matching lavc's behavior on pure tones).
-fn lavc_fixture() -> Vec<Vec<f32>> {
+pub(crate) fn lavc_fixture() -> Vec<Vec<f32>> {
     let n = 28_800usize;
     let mut l = vec![0.0f32; n];
     let mut r = vec![0.0f32; n];

@@ -4,6 +4,13 @@
 //! in `imdct_tests.rs`.
 
 use std::sync::LazyLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Test-only: skip 4/8-wide butterflies (scalar IEEE path).
+static FORCE_SCALAR: AtomicBool = AtomicBool::new(false);
+/// Test-only: skip AVX so the x86 SSE2 4-wide path is the one that runs.
+#[allow(dead_code)] // read only on x86_64
+static FORCE_NO_AVX: AtomicBool = AtomicBool::new(false);
 
 #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
 #[path = "imdct_simd.rs"]
@@ -75,7 +82,51 @@ pub(crate) fn ifft_soa(
     tw_re: &[f32],
     tw_im: &[f32],
 ) {
-    ifft_soa_ex(re, im, bitrev, tw_re, tw_im, true);
+    let wide = !FORCE_SCALAR.load(Ordering::Relaxed);
+    ifft_soa_ex(re, im, bitrev, tw_re, tw_im, wide);
+}
+
+/// Holds process-wide FFT mode for encoder scalar/SSE2 identity tests.
+#[cfg(test)]
+pub(crate) struct FftModeGuard {
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+#[cfg(test)]
+static FFT_MODE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(test)]
+fn take_fft_mode() -> FftModeGuard {
+    let lock = FFT_MODE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    FftModeGuard { _lock: lock }
+}
+
+#[cfg(test)]
+impl Drop for FftModeGuard {
+    fn drop(&mut self) {
+        FORCE_SCALAR.store(false, Ordering::SeqCst);
+        FORCE_NO_AVX.store(false, Ordering::SeqCst);
+    }
+}
+
+/// Force the scalar FFT until the guard drops.
+#[cfg(test)]
+pub(crate) fn fft_scalar() -> FftModeGuard {
+    let g = take_fft_mode();
+    FORCE_NO_AVX.store(false, Ordering::SeqCst);
+    FORCE_SCALAR.store(true, Ordering::SeqCst);
+    g
+}
+
+/// Force SSE2 (no AVX) until the guard drops. On aarch64 this is NEON 4-wide.
+#[cfg(test)]
+pub(crate) fn fft_sse2_only() -> FftModeGuard {
+    let g = take_fft_mode();
+    FORCE_SCALAR.store(false, Ordering::SeqCst);
+    FORCE_NO_AVX.store(true, Ordering::SeqCst);
+    g
 }
 
 /// Scalar-only FFT (tests and the `-sse2` fallback).
@@ -107,7 +158,7 @@ fn ifft_soa_ex(
         }
     }
     #[cfg(target_arch = "x86_64")]
-    let avx = wide && kernels::avx_ok();
+    let avx = wide && kernels::avx_ok() && !FORCE_NO_AVX.load(Ordering::Relaxed);
     #[cfg(target_arch = "x86_64")]
     let wide = wide && kernels::sse2_ok();
     #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]

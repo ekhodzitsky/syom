@@ -216,3 +216,7 @@ mod fuzz_parse_tests;
 #[cfg(test)]
 #[path = "fuzz_stream_tests.rs"]
 mod fuzz_stream_tests;
+
+#[cfg(test)]
+#[path = "platform_tests.rs"]
+mod platform_tests;

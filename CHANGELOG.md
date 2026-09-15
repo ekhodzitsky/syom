@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Native CI matrix and encoder byte-determinism (TASK-98): Linux/macOS/
+  Windows × x86_64/aarch64, toolchain 1.97.1. Encoder goldens (causal,
+  lookahead, M4A, transient) stay byte-exact vs scalar and vs SSE2-only
+  FFT. i686/wasm/mobile unqualified (`lab/baseline/PLATFORM.md`).
 - x86 SIMD FFT butterflies for IMDCT/MDCT (TASK-82): SSE2 4-wide and
   AVX 8-wide, runtime-probed, separate mul/add (no FMA). Bit-identical
   to scalar; encoder goldens unchanged. Isolated 512-point FFT **−24%**

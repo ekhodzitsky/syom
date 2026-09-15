@@ -10,7 +10,7 @@ use crate::{EncodeOptions, encode, encode_with};
 /// `encode_tests::lavc_fixture`) with three castanet clicks (32-sample LCG
 /// bursts with a deterministic `det_math::exp2` decay) at different
 /// sub-block positions. Stereo 48 kHz, 0.6 s.
-fn transient_fixture() -> Vec<Vec<f32>> {
+pub(crate) fn transient_fixture() -> Vec<Vec<f32>> {
     let n = 28_800usize;
     let mut l = vec![0.0f32; n];
     let mut r = vec![0.0f32; n];
