@@ -1,10 +1,11 @@
-//! TASK-86: downsample + analysis QMF — delay, alias, chunk identity.
+//! TASK-86: downsample + 64-band analysis QMF — delay, alias, decoder
+//! grid/scale agreement, chunk identity.
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use super::{CORE_FRAME, FIR_DELAY, OUT_FRAME, QMF_SLOT, SbrPrep, he_core_rate};
-use crate::engine::enc_sbr_qmf::EncAnalysisQmf;
-use crate::engine::sbr_qmf::AnalysisQmf;
+use super::{CORE_FRAME, FIR_DELAY, OUT_FRAME, QMF_DRAIN, QMF_SLOT, SbrPrep, he_core_rate};
+use crate::engine::enc_sbr_qmf::{BANDS, EncAnalysisQmf};
+use crate::engine::sbr_qmf::{AnalysisQmf, QMF_WINDOW};
 use crate::{EncodeOptions, ProbeProfile, encode_with, probe};
 use std::time::Instant;
 
@@ -63,7 +64,7 @@ fn impulse_core_delay_is_four_samples() {
         p.finish(&mut Vec::new(), |_| {}).unwrap();
         p.counts()
     });
-    assert_eq!(c.source, OUT_FRAME as u64 + FIR_DELAY as u64 + 320);
+    assert_eq!(c.source, (OUT_FRAME + FIR_DELAY + QMF_DRAIN) as u64);
     let peak = core
         .iter()
         .enumerate()
@@ -109,15 +110,15 @@ fn qmf_puts_1k_in_low_bands_and_16k_in_high() {
     let mut hi_high = 0.0f32;
     prep_lo
         .push(&tone(1_000.0, n, sr), &mut core, |s| {
-            lo_low += s.band_energy(0, 6);
-            lo_high += s.band_energy(20, 32);
+            lo_low += s.band_energy(0, 12);
+            lo_high += s.band_energy(40, 64);
         })
         .unwrap();
     core.clear();
     prep_hi
         .push(&tone(16_000.0, n, sr), &mut core, |s| {
-            hi_low += s.band_energy(0, 6);
-            hi_high += s.band_energy(20, 32);
+            hi_low += s.band_energy(0, 12);
+            hi_high += s.band_energy(40, 64);
         })
         .unwrap();
     assert!(
@@ -130,27 +131,115 @@ fn qmf_puts_1k_in_low_bands_and_16k_in_high() {
     );
 }
 
+/// Direct O(N²) f64 evaluation of the 64-band kernel on the same
+/// history: `W[k] = Σ_n u[n]·exp(iπ/128·(k+½)(2n−½))`.
+fn reference_slots(pcm: &[f32]) -> Vec<[(f64, f64); BANDS]> {
+    let mut x = [0.0f64; 640];
+    let mut out = Vec::new();
+    for chunk in pcm.chunks_exact(QMF_SLOT) {
+        x.copy_within(0..640 - 64, 64);
+        for (n, s) in chunk.iter().enumerate() {
+            x[63 - n] = f64::from(*s);
+        }
+        let mut u = [0.0f64; 128];
+        for (n, un) in u.iter_mut().enumerate() {
+            *un = (0..5)
+                .map(|j| x[n + 128 * j] * QMF_WINDOW[n + 128 * j])
+                .sum();
+        }
+        let mut w = [(0.0f64, 0.0f64); BANDS];
+        for (k, wk) in w.iter_mut().enumerate() {
+            for (n, un) in u.iter().enumerate() {
+                let a = std::f64::consts::PI / 128.0 * (k as f64 + 0.5) * (2.0 * n as f64 - 0.5);
+                wk.0 += un * a.cos();
+                wk.1 += un * a.sin();
+            }
+        }
+        out.push(w);
+    }
+    out
+}
+
 #[test]
-fn encoder_qmf_matches_decoder_bank_on_tone() {
-    let pcm = tone(2_000.0, 32 * 12, 48_000.0);
+fn fft_modulation_matches_direct_kernel() {
+    let sr = 48_000f32;
+    let mut pcm = tone(2_000.0, QMF_SLOT * 24, sr);
+    for (i, v) in pcm.iter_mut().enumerate() {
+        *v += 0.3 * (2.0 * std::f32::consts::PI * 17_300.0 * i as f32 / sr).sin();
+    }
+    let reference = reference_slots(&pcm);
     let mut enc = EncAnalysisQmf::new();
-    let mut dec = AnalysisQmf::new();
-    let mut num = 0.0f64;
-    let mut den = 0.0f64;
-    for chunk in pcm.chunks_exact(32) {
-        let es = enc.push_slot(chunk).unwrap();
-        let ds = dec
-            .push_slot(&chunk.iter().map(|&x| f64::from(x)).collect::<Vec<_>>())
-            .unwrap();
-        for (k, d) in ds.iter().enumerate() {
-            let ee = f64::from(es.energy(k));
-            let de = d.norm_sqr();
-            num += (ee - de).abs();
-            den += de.max(ee);
+    let mut max_abs = 0.0f64;
+    let mut max_mag = 0.0f64;
+    for (chunk, r) in pcm.chunks_exact(QMF_SLOT).zip(reference.iter()) {
+        let s = enc.push_slot(chunk).unwrap();
+        for (k, rk) in r.iter().enumerate() {
+            max_abs = max_abs
+                .max((f64::from(s.re[k]) - rk.0).abs())
+                .max((f64::from(s.im[k]) - rk.1).abs());
+            max_mag = max_mag.max(rk.0.hypot(rk.1));
         }
     }
-    let rel = num / den.max(1e-20);
-    assert!(rel < 5e-3, "enc vs dec QMF energy rel={rel}");
+    assert!(max_mag > 1.0, "reference carries signal: {max_mag}");
+    assert!(
+        max_abs < 2e-5 * max_mag,
+        "fft vs direct kernel: max |Δ| {max_abs} of {max_mag}"
+    );
+}
+
+/// The encoder's 64-band `|W|²` on full-rate PCM sits on the decoder's
+/// `XLow` grid and scale: the halfband core through the decoder's
+/// 32-band bank lands in the same band index with the same energy.
+#[test]
+fn encoder_bank_matches_decoder_core_bank_grid_and_scale() {
+    let sr = 48_000f32;
+    for f in [2_000.0f32, 5_000.0, 8_000.0] {
+        let pcm = tone(f, OUT_FRAME * 3, sr);
+        let mut prep = SbrPrep::new();
+        let mut core = Vec::new();
+        let mut enc_e = [0.0f64; BANDS];
+        let mut n_slots = 0usize;
+        prep.push(&pcm, &mut core, |s| {
+            n_slots += 1;
+            if n_slots > 16 {
+                for (k, e) in enc_e.iter_mut().enumerate() {
+                    *e += f64::from(s.energy(k));
+                }
+            }
+        })
+        .unwrap();
+        let mut dec = AnalysisQmf::new();
+        let mut dec_e = [0.0f64; 32];
+        let mut n_dec = 0usize;
+        for chunk in core.chunks_exact(32) {
+            let s = dec
+                .push_slot(&chunk.iter().map(|&x| f64::from(x)).collect::<Vec<_>>())
+                .unwrap();
+            n_dec += 1;
+            if n_dec > 16 {
+                for (k, e) in dec_e.iter_mut().enumerate() {
+                    *e += s[k].norm_sqr();
+                }
+            }
+        }
+        let peak = |e: &[f64]| {
+            e.iter()
+                .enumerate()
+                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap())
+                .unwrap()
+                .0
+        };
+        let (pe, pd) = (peak(&enc_e), peak(&dec_e));
+        assert_eq!(pe, pd, "{f} Hz peak band enc {pe} dec {pd}");
+        assert_eq!(pe, (f / (sr / 128.0)) as usize);
+        let ratio = enc_e[pe] / (n_slots - 16) as f64 / (dec_e[pd] / (n_dec - 16) as f64);
+        // Above 1.0 is the halfband's passband droop on the decoder
+        // side (−0.27 dB at 8 kHz, SBR_PREP.md), not a kernel-scale gap.
+        assert!(
+            (0.97..1.08).contains(&ratio),
+            "{f} Hz enc/dec energy ratio {ratio}"
+        );
+    }
 }
 
 #[test]
@@ -237,12 +326,12 @@ fn workspace_is_bounded_and_prep_is_within_he_cpu_budget() {
 }
 
 #[test]
-fn qmf_slot_is_32_and_frame_is_64_slots() {
-    assert_eq!(QMF_SLOT, 32);
-    assert_eq!(OUT_FRAME / QMF_SLOT, 64);
+fn qmf_slot_is_64_and_frame_is_32_slots() {
+    assert_eq!(QMF_SLOT, 64);
+    assert_eq!(OUT_FRAME / QMF_SLOT, 32);
     let pcm = vec![0.1f32; OUT_FRAME];
     let mut n = 0u64;
     let mut prep = SbrPrep::new();
     prep.push(&pcm, &mut Vec::new(), |_| n += 1).unwrap();
-    assert_eq!(n, 64);
+    assert_eq!(n, 32);
 }

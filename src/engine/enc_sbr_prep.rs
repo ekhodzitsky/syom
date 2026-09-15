@@ -1,4 +1,4 @@
-//! HE v1 core-rate preparation: 2:1 halfband downsample + analysis QMF.
+//! HE v1 core-rate preparation: 2:1 halfband downsample + 64-band analysis QMF.
 //!
 //! Crate-internal (TASK-86). Does not change [`crate::encode`].
 
@@ -10,11 +10,12 @@ use super::error::{Error, Result};
 pub(crate) const OUT_FRAME: usize = 2048;
 /// Core samples per frame.
 pub(crate) const CORE_FRAME: usize = 1024;
-/// Analysis QMF slot length (Figure 4.42).
-pub(crate) const QMF_SLOT: usize = 32;
+/// Analysis QMF slot length (64 bands → 64 output-rate samples; 32
+/// slots per frame, the decoder's `X` grid).
+pub(crate) const QMF_SLOT: usize = 64;
 /// QMF history in samples; drain this many zero samples after the last
-/// real sample so the 320-sample delay appears in the slots.
-pub(crate) const QMF_DRAIN: usize = 320;
+/// real sample so the prototype delay appears in the slots.
+pub(crate) const QMF_DRAIN: usize = 640;
 /// FIR delay at the output rate (centre of [`HALF_BAND`]).
 pub(crate) const FIR_DELAY: usize = 8;
 
@@ -128,7 +129,7 @@ impl SbrPrep {
     }
 
     /// Consume output-rate PCM. Core samples append to `core`; each
-    /// complete 32-sample slot is delivered to `on_slot`.
+    /// complete 64-sample slot is delivered to `on_slot`.
     pub(crate) fn push<F>(&mut self, pcm: &[f32], core: &mut Vec<f32>, mut on_slot: F) -> Result<()>
     where
         F: FnMut(&EncSlot),
@@ -158,7 +159,7 @@ impl SbrPrep {
         F: FnMut(&EncSlot),
     {
         let pad = FIR_DELAY + QMF_DRAIN;
-        let zeros = [0.0f32; 32];
+        let zeros = [0.0f32; 64];
         let mut left = pad;
         while left > 0 {
             let n = left.min(zeros.len());

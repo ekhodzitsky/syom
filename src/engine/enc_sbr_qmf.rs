@@ -1,20 +1,30 @@
-//! Encoder 32-band analysis QMF — ISO Figure 4.42 windowing, DCT-IV via
-//! [`super::det_math`] (decision path uses det_math sincos, not platform sin).
+//! Encoder 64-band analysis QMF on full-rate PCM — the decoder's `X`
+//! grid (64 subbands × 32 slots per 2048-sample frame; `fTableHigh`
+//! borders index this grid). ISO Figure 4.42 windowing generalised to
+//! `M = 64` (all 640 prototype taps, `u[n] = Σ_j x[n+128j]·c[n+128j]`),
+//! modulation `W[k] = Σ_n u[n]·exp(iπ/128·(k+½)(2n−½))` folded into one
+//! 128-point complex FFT with [`super::det_math`] twiddles (no libm,
+//! FMA-free butterflies). Kernel gain 1 (the decoder's 32-band bank on
+//! the core uses 2× over half the taps), so `|W|²` matches the
+//! decoder's `XLow` energy scale — asserted in the tests.
 
 use super::det_math;
 use super::error::{Error, Result};
 use super::sbr_qmf::QMF_WINDOW;
 use std::sync::OnceLock;
 
-const N: usize = 32;
-const N2: usize = 64;
-const HIST: usize = 320;
+/// Subbands per slot.
+pub(crate) const BANDS: usize = 64;
+/// FFT length (`2·BANDS`).
+const N2: usize = 128;
+/// Prototype history in samples.
+const HIST: usize = 640;
 
-/// One analysis slot: 32 complex subband samples `W[k]`.
+/// One analysis slot: 64 complex subband samples `W[k]`.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct EncSlot {
-    pub re: [f32; N],
-    pub im: [f32; N],
+    pub re: [f32; BANDS],
+    pub im: [f32; BANDS],
 }
 
 impl EncSlot {
@@ -23,7 +33,7 @@ impl EncSlot {
     }
 
     pub(crate) fn band_energy(&self, lo: usize, hi: usize) -> f32 {
-        (lo..hi.min(N)).map(|k| self.energy(k)).sum()
+        (lo..hi.min(BANDS)).map(|k| self.energy(k)).sum()
     }
 }
 
@@ -31,12 +41,12 @@ struct Plan {
     bitrev: [u16; N2],
     tw_re: Vec<f32>,
     tw_im: Vec<f32>,
-    pre_c: [f32; N],
-    pre_s: [f32; N],
-    post_c: [f32; N],
-    post_s: [f32; N],
-    phi_c: [f32; N],
-    phi_s: [f32; N],
+    /// `exp(iπ n / 128)`.
+    pre_c: [f32; N2],
+    pre_s: [f32; N2],
+    /// `exp(−iπ (2k+1) / 512)`.
+    post_c: [f32; BANDS],
+    post_s: [f32; BANDS],
 }
 
 fn plan() -> &'static Plan {
@@ -53,41 +63,21 @@ fn plan() -> &'static Plan {
             }
             j += bit;
         }
-        let mut tw_re = Vec::new();
-        let mut tw_im = Vec::new();
-        let mut len = 2usize;
-        while len <= N2 {
-            let half = len / 2;
-            let ang = -2.0 * core::f32::consts::PI / len as f32;
-            for k in 0..half {
-                let mut a = ang * k as f32;
-                let tau = core::f32::consts::TAU;
-                a %= tau;
-                if a < 0.0 {
-                    a += tau;
-                }
-                let (s, c) = det_math::sincos(a);
-                tw_re.push(c);
-                tw_im.push(s);
-            }
-            len *= 2;
+        let (tw_re, tw_im) = det_math::twiddle_table(N2);
+        let mut pre_c = [0.0f32; N2];
+        let mut pre_s = [0.0f32; N2];
+        for n in 0..N2 {
+            let (s, c) = det_math::sincos(core::f32::consts::PI * n as f32 / N2 as f32);
+            pre_c[n] = c;
+            pre_s[n] = s;
         }
-        let mut pre_c = [0.0f32; N];
-        let mut pre_s = [0.0f32; N];
-        let mut post_c = [0.0f32; N];
-        let mut post_s = [0.0f32; N];
-        let mut phi_c = [0.0f32; N];
-        let mut phi_s = [0.0f32; N];
-        for i in 0..N {
-            let (s, c) = det_math::sincos(core::f32::consts::PI * i as f32 / N2 as f32);
-            pre_c[i] = c;
-            pre_s[i] = -s;
-            let (s, c) = det_math::sincos(core::f32::consts::PI * (i as f32 + 0.5) / N2 as f32);
-            post_c[i] = c;
-            post_s[i] = s;
-            let (s, c) = det_math::sincos(3.0 * core::f32::consts::PI / 128.0 * (i as f32 + 0.5));
-            phi_c[i] = c;
-            phi_s[i] = s;
+        let mut post_c = [0.0f32; BANDS];
+        let mut post_s = [0.0f32; BANDS];
+        for k in 0..BANDS {
+            let (s, c) =
+                det_math::sincos(core::f32::consts::PI * (2 * k + 1) as f32 / (8 * BANDS) as f32);
+            post_c[k] = c;
+            post_s[k] = -s;
         }
         Plan {
             bitrev,
@@ -97,13 +87,13 @@ fn plan() -> &'static Plan {
             pre_s,
             post_c,
             post_s,
-            phi_c,
-            phi_s,
         }
     })
 }
 
-fn fft64(re: &mut [f32; N2], im: &mut [f32; N2], p: &Plan) {
+/// In-place radix-2 FFT with `e^{+i2πkn/N}` twiddles (product written
+/// as separate mul/add so no FMA contraction can change rounding).
+fn fft128(re: &mut [f32; N2], im: &mut [f32; N2], p: &Plan) {
     for (i, &rev) in p.bitrev.iter().enumerate() {
         let j = rev as usize;
         if i < j {
@@ -139,64 +129,31 @@ fn fft64(re: &mut [f32; N2], im: &mut [f32; N2], p: &Plan) {
     }
 }
 
-fn dct4(x: &[f32; N], out: &mut [f32; N], p: &Plan) {
-    let mut re = [0.0f32; N2];
-    let mut im = [0.0f32; N2];
-    for i in 0..N {
-        re[i] = x[i] * p.pre_c[i];
-        im[i] = x[i] * p.pre_s[i];
-    }
-    fft64(&mut re, &mut im, p);
-    for k in 0..N {
-        let a = re[k] * p.post_c[k];
-        let b = im[k] * p.post_s[k];
-        out[k] = a + b;
-    }
-}
-
-fn dst4(x: &[f32; N], out: &mut [f32; N], p: &Plan) {
-    let mut y = [0.0f32; N];
-    let mut t = [0.0f32; N];
-    for (i, &v) in x.iter().enumerate() {
-        y[i] = if i % 2 == 0 { v } else { -v };
-    }
-    dct4(&y, &mut t, p);
-    for k in 0..N {
-        out[k] = t[N - 1 - k];
-    }
-}
-
 fn modulate(u: &[f32; N2]) -> EncSlot {
     let p = plan();
-    let mut u0 = [0.0f32; N];
-    let mut u1 = [0.0f32; N];
-    u0.copy_from_slice(&u[..N]);
-    u1.copy_from_slice(&u[N..]);
-    let mut c0 = [0.0f32; N];
-    let mut s0 = [0.0f32; N];
-    let mut c1 = [0.0f32; N];
-    let mut s1 = [0.0f32; N];
-    dct4(&u0, &mut c0, p);
-    dst4(&u0, &mut s0, p);
-    dct4(&u1, &mut c1, p);
-    dst4(&u1, &mut s1, p);
+    let mut re = [0.0f32; N2];
+    let mut im = [0.0f32; N2];
+    for n in 0..N2 {
+        re[n] = u[n] * p.pre_c[n];
+        im[n] = u[n] * p.pre_s[n];
+    }
+    fft128(&mut re, &mut im, p);
     let mut slot = EncSlot {
-        re: [0.0; N],
-        im: [0.0; N],
+        re: [0.0; BANDS],
+        im: [0.0; BANDS],
     };
-    for k in 0..N {
-        let sign = if k % 2 == 0 { 1.0 } else { -1.0 };
-        let c = c0[k] - sign * s1[k];
-        let s = s0[k] + sign * c1[k];
-        let cp = p.phi_c[k];
-        let sp = p.phi_s[k];
-        slot.re[k] = 2.0 * (cp * c + sp * s);
-        slot.im[k] = 2.0 * (cp * s - sp * c);
+    for k in 0..BANDS {
+        let a = re[k] * p.post_c[k];
+        let b = im[k] * p.post_s[k];
+        slot.re[k] = a - b;
+        let c = re[k] * p.post_s[k];
+        let d = im[k] * p.post_c[k];
+        slot.im[k] = c + d;
     }
     slot
 }
 
-/// Figure 4.42 analysis bank (encoder path, f32 + det_math).
+/// 64-band analysis bank (encoder path, f32 + det_math).
 pub(crate) struct EncAnalysisQmf {
     x: [f32; HIST],
 }
@@ -210,20 +167,21 @@ impl EncAnalysisQmf {
         self.x = [0.0; HIST];
     }
 
+    /// Push 64 output-rate samples; the newest lands at `x[0]`.
     pub(crate) fn push_slot(&mut self, samples: &[f32]) -> Result<EncSlot> {
-        if samples.len() != N {
+        if samples.len() != BANDS {
             return Err(Error::SbrQmfInvalid);
         }
-        self.x.copy_within(0..288, 32);
+        self.x.copy_within(0..HIST - BANDS, BANDS);
         for (n, s) in samples.iter().enumerate() {
-            self.x[31 - n] = *s;
+            self.x[BANDS - 1 - n] = *s;
         }
         let mut u = [0.0f32; N2];
         for (n, un) in u.iter_mut().enumerate() {
             let mut acc = 0.0f32;
             for j in 0..5 {
-                let idx = n + j * 64;
-                acc += self.x[idx] * (QMF_WINDOW[2 * idx] as f32);
+                let idx = n + j * N2;
+                acc += self.x[idx] * (QMF_WINDOW[idx] as f32);
             }
             *un = acc;
         }

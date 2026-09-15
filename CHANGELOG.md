@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - HE v1 core-rate preparation (TASK-86): crate-internal `SbrPrep`
   (17-tap halfband 2:1 downsample, delay 4 core samples) and a `det_math`
-  32-band analysis QMF on full-rate PCM, incremental/resettable with
+  64-band analysis QMF on full-rate PCM (the decoder's `X` grid), incremental/resettable with
   exact counts, chunk-invariant. Not wired into `encode` (still LC);
   evidence in `lab/quality/SBR_PREP.md`.
 - HE-AAC v1 encode architecture (TASK-85): **go** for a staged original

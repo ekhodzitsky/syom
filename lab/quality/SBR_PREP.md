@@ -10,13 +10,19 @@ Recorded 2026-09-15. Host: Linux x86_64, rustc 1.97.1, HEAD `bfe2684`
 - **2:1 downsample**: 17-tap Hann-windowed sinc halfband (cutoff π/2,
   DC gain 1), one core sample per two output samples, group delay 8
   output = **4 core** samples. Pair-mean was rejected (18 kHz |H| ≈ 0.38).
-- **32-band analysis QMF** on the full-rate PCM: ISO Figure 4.42
-  windowing (`QMF_WINDOW` Table 4.A.89, in-tree) + the same DCT-IV /
-  DST-IV factorization as the decoder bank (`sbr_qmf_dct.rs`), rebuilt
-  in `f32` with `det_math::sincos` twiddles; butterflies are written
-  as separate mul/add (no FMA contraction), no libm on the path.
+- **64-band analysis QMF** on the full-rate PCM — the decoder's `X`
+  grid (64 subbands × 32 slots per 2048-sample frame; `fTableHigh`
+  borders index this grid, so a 32-band full-rate bank cannot express
+  odd borders). ISO Figure 4.42 windowing generalised to `M = 64` with
+  all 640 `QMF_WINDOW` taps (Table 4.A.89, in-tree); modulation
+  `W[k] = Σ_n u[n]·exp(iπ/128·(k+½)(2n−½))` folded into one 128-point
+  complex FFT (pre/post twiddles) built from `det_math::sincos` /
+  `det_math::twiddle_table`; butterflies are separate mul/add (no FMA
+  contraction), no libm on the path. Kernel gain 1 so `|W|²` sits on
+  the decoder's `XLow` energy scale (its 32-band core bank uses 2× over
+  half the taps).
 - **Incremental**: `push` any chunk size; `finish` pads `FIR_DELAY +
-  QMF_DRAIN` (8 + 320) zeros so the delayed tail appears; `reset` keeps
+  QMF_DRAIN` (8 + 640) zeros so the delayed tail appears; `reset` keeps
   storage. Exact `source` / `core` / `slots` counters.
 
 ## Measurements (release, `cargo test --release`, one-off scratch test)
@@ -43,33 +49,40 @@ Impulse at output index 100 → core peak index 54 = (100 + 8) / 2, value
 0.4992 (centre tap). White noise RMS core / source = −3.48 dB
 (ideal halfband −3.01 dB; the rest is the 10–13 kHz transition).
 
-Encoder QMF vs decoder `AnalysisQmf` (f64, libm tables), tone slots:
+Encoder 64-band bank vs a direct O(N²) f64 evaluation of the kernel on
+the same history (2 kHz + 17.3 kHz mix): max |Δ| < 2e-5 of the peak
+magnitude (`fft_modulation_matches_direct_kernel`).
 
-| tone | peak band | Σ|ΔE| / Σmax(E) | max |Δre/Δim| |
-|---:|---:|---:|---:|
-| 2 kHz | 2 | 2.4e-7 | 6.1e-6 |
-| 9 kHz | 11 (band edge 12) | 1.7e-7 | 5.5e-6 |
-| 16 kHz | 21 | 1.5e-7 | 8.5e-6 |
-| 23 kHz | 30 | 1.8e-7 | 8.3e-6 |
+Encoder 64-band bank on full-rate PCM vs the decoder's 32-band
+`AnalysisQmf` (f64, libm tables) on the halfband core — same band index
+and same energy scale (`encoder_bank_matches_decoder_core_bank_grid_and_scale`):
 
-White-noise band-energy spread across the 32 bands: 1.39 dB max/min
-(no band dropout or alias pile-up).
+| tone | band (fs/128) | enc/dec energy ratio |
+|---:|---:|---:|
+| 2 kHz | 5 | 1.00 |
+| 5 kHz | 13 | 1.00 |
+| 8 kHz | 21 | 1.06 (halfband droop −0.27 dB on the decoder side) |
+
+Tone selectivity of the 64-band bank (share of total energy in the
+nominal band, steady state): 2 kHz → band 5, 0.976; 16 kHz → band 42,
+0.976; 23 kHz → band 61, 0.977; 9 kHz sits exactly on the 23/24 border
+and splits 0.50. White-noise band-energy spread across the 64 bands:
+1.77 dB max/min (no band dropout or alias pile-up).
 
 CPU / workspace (mono, 10 × 2048 output samples, best of 20 after warmup):
 
 | cell | value |
 |---|---:|
-| `SbrPrep` push + finish | 792 µs |
-| LC `encode_with` 48 kHz mono, same PCM | 474 µs |
-| ratio | **1.67×** |
-| `size_of::<SbrPrep>()` | 1512 B (no heap; QMF plan is a shared `OnceLock`) |
+| `SbrPrep` push + finish | 340 µs |
+| LC `encode_with` 48 kHz mono, same PCM | 467 µs |
+| ratio | **0.73×** |
+| `size_of::<SbrPrep>()` | 2920 B (no heap; QMF plan is a shared `OnceLock`) |
 
-HE_ENC.md budget is **whole HE encode ≤ 4× LC**. Prep alone is 1.67×;
-the core LC then runs at half the frame count (≈ 0.5×), leaving ≈ 1.8×
+HE_ENC.md budget is **whole HE encode ≤ 4× LC**. Prep alone is 0.73×;
+the core LC then runs at half the frame count (≈ 0.5×), leaving ≈ 2.8×
 for envelope/noise/writer (TASK-87–89). The debug-mode unit test asserts
-the 4× bound only; it is not a benchmark. A cheaper modulation
-(N/2-point complex FFT per DCT-IV instead of the 2N-point one shared with
-the decoder) is a follow-up if TASK-89 misses the budget.
+the 4× bound only; it is not a benchmark. (A first cut with a 32-band
+bank and four DCT-IVs per slot measured 1.67×; superseded.)
 
 ## Determinism
 
@@ -87,3 +100,5 @@ encoder goldens, and SBR output only reaches a golden at TASK-90.
 - No aarch64 run in this session (the CI matrix will cover it once a
   golden exists).
 - 44.1/22.05 kHz families reuse the same taps (cutoff is relative).
+- Slot phase convention is the decoder's Figure 4.42 form; only `|W|²`
+  is asserted against the decoder bank (envelopes need energies).
