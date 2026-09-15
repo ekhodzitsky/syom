@@ -440,3 +440,16 @@ fn test_drm_sample_entry_rejected() {
     };
     assert!(format!("{err:?}").contains("no AAC audio track"), "{err:?}");
 }
+
+#[test]
+fn probe_skips_huge_stsz_index() {
+    let mut data = ftyp();
+    data.extend_from_slice(&bx(b"moov", &aac_trak(u32::MAX, 1, 8)));
+    assert!(parse_aac_track(&data).is_err(), "stsz index must fence");
+    let meta = parse_aac_meta(&data, &mem()).expect("meta walk skips stsz");
+    assert_eq!(meta.asc, ASC);
+    let p = crate::probe(&data).expect("public probe");
+    assert_eq!(p.container, crate::ProbeContainer::M4a);
+    assert_eq!(p.profile, crate::ProbeProfile::Lc);
+    assert_eq!(p.meta.core_rate, 44_100);
+}

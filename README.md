@@ -47,6 +47,10 @@ Requires **Rust 1.97**, edition 2024.
 fn main() -> syom::Result<()> {
     assert!(syom::decode(&[]).is_err());
     assert!(!syom::sniff_aac(b"ID3"));
+    assert!(matches!(
+        syom::probe(&[]).unwrap_err(),
+        syom::AacError::NeedMore { .. }
+    ));
     let speech = syom::DecodeOptions::speech();
     assert_eq!(speech.channel_mode, syom::ChannelMode::Mono);
     let audio = syom::DecodeOptions::audio();
@@ -65,6 +69,7 @@ fn kind(e: syom::AacError) -> &'static str {
         syom::AacError::NotAac => "not-aac",
         syom::AacError::Unsupported(_) => "unsupported",
         syom::AacError::Truncated { .. } => "truncated",
+        syom::AacError::NeedMore { .. } => "need-more",
         syom::AacError::Malformed(_) => "malformed",
         syom::AacError::Limit { .. } | syom::AacError::TooLong { .. } => "limit",
         syom::AacError::InvalidPcm(_) | syom::AacError::InvalidLimits(_) => "invalid",
@@ -74,6 +79,10 @@ fn kind(e: syom::AacError) -> &'static str {
 }
 assert_eq!(kind(syom::decode(&[]).unwrap_err()), "not-aac");
 ```
+
+`probe` / `probe_with` inspect container, profile, rates, and layout
+without decoding PCM. ADTS/LATM duration is unknown (VBR); M4A `elst`
+is exact. Then `decode` as usual.
 
 From a path: `syom::read("clip.m4a")?` (speech-mono, 2 h). Keep coded
 layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.

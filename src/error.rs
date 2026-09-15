@@ -89,6 +89,7 @@ pub enum PcmReject {
 ///         syom::AacError::NotAac => "not-aac",
 ///         syom::AacError::Unsupported(_) => "unsupported",
 ///         syom::AacError::Truncated { .. } => "truncated",
+///         syom::AacError::NeedMore { .. } => "need-more",
 ///         syom::AacError::Malformed(_) => "malformed",
 ///         syom::AacError::Limit { .. } | syom::AacError::TooLong { .. } => "limit",
 ///         syom::AacError::InvalidPcm(_) | syom::AacError::InvalidLimits(_) => "invalid",
@@ -121,6 +122,9 @@ pub enum AacError {
     Unsupported(UnsupportedFeature),
     /// Input ended mid-header or mid-payload. `at` is a byte offset when known.
     Truncated { at: Option<u64> },
+    /// Prefix is too short to finish a header or config. `need` is a lower
+    /// bound on the total size from the start of the slice; retry with more.
+    NeedMore { have: u64, need: u64 },
     /// CRC / Huffman / length / ICS syntax.
     Malformed(MalformedKind),
     /// `feed` / `finish` after a failed or finished streaming instance.
@@ -287,6 +291,9 @@ impl fmt::Display for AacError {
                 Some(n) => write!(f, "aac: unexpected end of bitstream at byte {n}"),
                 None => write!(f, "aac: unexpected end of bitstream"),
             },
+            Self::NeedMore { have, need } => {
+                write!(f, "aac: need more bytes ({have} of {need})")
+            }
             Self::Malformed(kind) => write!(f, "{kind}"),
             Self::Lifecycle { state } => match state {
                 LifecycleState::Failed => write!(f, "stream failed; call reset()"),

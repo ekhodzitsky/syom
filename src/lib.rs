@@ -17,6 +17,7 @@ mod m4a_write;
 #[doc(hidden)]
 pub mod mem_iso;
 mod options;
+mod probe;
 mod sniff;
 mod stream;
 
@@ -43,6 +44,7 @@ pub use options::{
     DEFAULT_MAX_INPUT_BYTES, DEFAULT_MAX_SAMPLE_RATE, DecodeOptions, EncodeContainer,
     EncodeOptions,
 };
+pub use probe::{Probe, ProbeContainer, ProbeDuration, ProbeProfile, ProbeTrim, probe, probe_with};
 pub use sniff::{sniff_aac, sniff_is_adts, sniff_is_latm};
 pub use stream::{
     Decoder, Frame, M4aSeek, StreamInfo, decode_read_streaming, decode_seek_streaming,
@@ -120,6 +122,10 @@ mod encode_pcm_tests;
 #[cfg(test)]
 #[path = "enc_muxer_tests.rs"]
 mod enc_muxer_tests;
+
+#[cfg(test)]
+#[path = "probe_tests.rs"]
+mod probe_tests;
 
 #[cfg(test)]
 #[path = "encode_cmp_tests.rs"]

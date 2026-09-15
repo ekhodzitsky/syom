@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bounded metadata probe (TASK-54): `probe` / `probe_with` report
+  container, LC/HE/PS profile, core/output rate, layout, and whether
+  duration/trim are exact, estimated, or unknown. Partial prefixes
+  return `NeedMore`; VBR ADTS/LATM duration stays unknown; M4A `elst`
+  is exact. No PCM decode and no allocation from `stsz` counts.
 - Raw LC access units for external muxers (TASK-53):
   `EncodeOptions::raw()`, `EncodedFrame::payload`, `Encoder::asc`,
   `wrap_adts_au`, `mux_raw_lc_m4a`. Rewrap matches one-shot ADTS/M4A

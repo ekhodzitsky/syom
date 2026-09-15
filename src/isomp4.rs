@@ -30,7 +30,7 @@
 //! input before indexing: untrusted input must produce errors, never panics
 //! and never out-of-bounds reads.
 
-use crate::budgets::MemoryBudgets;
+use crate::budgets::{BudgetKind, MemoryBudgets, check_planned};
 use crate::error::{AacError, Result};
 
 fn fence_entries(mem: &MemoryBudgets, count: u64, bytes_per: u64) -> Result<()> {
@@ -130,6 +130,18 @@ impl AacTrack {
             .checked_sub(self.edit_start)?
             .checked_sub(valid)
     }
+}
+
+/// ASC + container timing without a sample-table index (TASK-54 probe).
+#[derive(Debug)]
+pub(crate) struct AacMeta {
+    pub asc: Vec<u8>,
+    pub edit_start: u64,
+    pub edit_duration: u64,
+    pub movie_timescale: u32,
+    pub media_timescale: u32,
+    pub media_duration: u64,
+    pub has_elst: bool,
 }
 
 /// 4-byte box type.
@@ -421,7 +433,7 @@ fn read_u64(data: &[u8], pos: usize) -> Result<u64> {
     Ok((hi << 32) | lo)
 }
 
-fn convert_exact(value: u64, dst_ts: u32, src_ts: u32, what: &str) -> Result<usize> {
+pub(crate) fn convert_units(value: u64, dst_ts: u32, src_ts: u32, what: &str) -> Result<u64> {
     if src_ts == 0 || dst_ts == 0 {
         return Err(AacError::format(format!("isomp4: {what} timescale is 0")));
     }
@@ -433,7 +445,11 @@ fn convert_exact(value: u64, dst_ts: u32, src_ts: u32, what: &str) -> Result<usi
             "isomp4: {what} is not an integer number of samples"
         )));
     }
-    usize::try_from(prod / u64::from(src_ts))
+    Ok(prod / u64::from(src_ts))
+}
+
+fn convert_exact(value: u64, dst_ts: u32, src_ts: u32, what: &str) -> Result<usize> {
+    usize::try_from(convert_units(value, dst_ts, src_ts, what)?)
         .map_err(|_| AacError::format(format!("isomp4: {what} exceeds usize")))
 }
 
@@ -566,61 +582,7 @@ fn parse_stbl(
         let (hdr, typ) = child?;
         let body = &data[hdr.content_start..hdr.content_end];
         match &typ {
-            b"stsd" => {
-                // version/flags(4) + entry_count(4), then sample entries as boxes.
-                let entries = read_u32(body, 4)? as usize;
-                if entries == 0 {
-                    return Err(AacError::format("isomp4: stsd with no sample entries"));
-                }
-                let (ehdr, etyp) = read_box(body, 8)?
-                    .ok_or_else(|| AacError::format("isomp4: truncated stsd entry"))?;
-                match &etyp {
-                    b"mp4a" => {}
-                    b"enca" => {
-                        return Err(AacError::format(
-                            "isomp4: encrypted (DRM) audio is not supported",
-                        ));
-                    }
-                    other => {
-                        return Err(AacError::format(format!(
-                            "isomp4: unsupported audio sample entry '{}'",
-                            String::from_utf8_lossy(other)
-                        )));
-                    }
-                }
-                // AudioSampleEntry fixed fields: 6 reserved + 2 data-ref +
-                // 2 version + 2 revision + 4 vendor + 2 channels + 2 sample
-                // size + 2 compression id + 2 packet size + 4 rate = 28 bytes
-                // past the entry box header; version 1 adds 16, version 2
-                // adds 36 more before the child boxes.
-                let body_start = ehdr.content_start;
-                let version = u16::from_be_bytes([
-                    *body
-                        .get(body_start + 8)
-                        .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
-                    *body
-                        .get(body_start + 9)
-                        .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
-                ]);
-                let fixed = match version {
-                    0 => 28usize,
-                    1 => 28 + 16,
-                    2 => 28 + 36,
-                    v => {
-                        return Err(AacError::format(format!(
-                            "isomp4: unsupported sound sample entry version {v}"
-                        )));
-                    }
-                };
-                let children = BoxHdr {
-                    content_start: body_start
-                        .checked_add(fixed)
-                        .filter(|&e| e <= ehdr.content_end)
-                        .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
-                    content_end: ehdr.content_end,
-                };
-                asc = Some(extract_asc(body, children)?);
-            }
+            b"stsd" => asc = Some(parse_stsd_asc(body)?),
             b"stts" => stts_total = Some(parse_stts(body, mem)?),
             b"stsz" => sizes = Some(parse_stsz(body, file_len, mem)?),
             b"stsc" => stsc = Some(parse_stsc(body, mem)?),
@@ -639,6 +601,68 @@ fn parse_stbl(
         total_samples: stts_total.ok_or_else(|| AacError::format("isomp4: missing stts"))?,
     };
     Ok((asc, table))
+}
+
+fn parse_stsd_asc(body: &[u8]) -> Result<Vec<u8>> {
+    let entries = read_u32(body, 4)? as usize;
+    if entries == 0 {
+        return Err(AacError::format("isomp4: stsd with no sample entries"));
+    }
+    let (ehdr, etyp) =
+        read_box(body, 8)?.ok_or_else(|| AacError::format("isomp4: truncated stsd entry"))?;
+    match &etyp {
+        b"mp4a" => {}
+        b"enca" => {
+            return Err(AacError::format(
+                "isomp4: encrypted (DRM) audio is not supported",
+            ));
+        }
+        other => {
+            return Err(AacError::format(format!(
+                "isomp4: unsupported audio sample entry '{}'",
+                String::from_utf8_lossy(other)
+            )));
+        }
+    }
+    let body_start = ehdr.content_start;
+    let version = u16::from_be_bytes([
+        *body
+            .get(body_start + 8)
+            .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
+        *body
+            .get(body_start + 9)
+            .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
+    ]);
+    let fixed = match version {
+        0 => 28usize,
+        1 => 28 + 16,
+        2 => 28 + 36,
+        v => {
+            return Err(AacError::format(format!(
+                "isomp4: unsupported sound sample entry version {v}"
+            )));
+        }
+    };
+    let children = BoxHdr {
+        content_start: body_start
+            .checked_add(fixed)
+            .filter(|&e| e <= ehdr.content_end)
+            .ok_or_else(|| AacError::format("isomp4: truncated mp4a entry"))?,
+        content_end: ehdr.content_end,
+    };
+    extract_asc(body, children)
+}
+
+fn parse_stbl_asc(data: &[u8], stbl: BoxHdr) -> Result<Vec<u8>> {
+    for child in BoxIter::new(data, stbl.content_start, stbl.content_end) {
+        let (hdr, typ) = child?;
+        if &typ == b"stsd" {
+            return parse_stsd_asc(&data[hdr.content_start..hdr.content_end]);
+        }
+    }
+    Err(AacError::format(
+        "isomp4: no AAC sample description (stsd/mp4a)",
+    ))
 }
 
 /// Supported `elst`: no entries, or exactly one playable entry
@@ -768,6 +792,50 @@ fn parse_mdia(
             timescale,
             duration: media_duration,
         }))
+    } else {
+        Ok(None)
+    }
+}
+
+fn parse_mdia_meta(
+    data: &[u8],
+    mdia: BoxHdr,
+    mem: &MemoryBudgets,
+) -> Result<Option<(Vec<u8>, u32, u64)>> {
+    fence_depth(mem, 3)?;
+    let mut is_sound = false;
+    let mut asc = None;
+    let mut timescale = 0u32;
+    let mut media_duration = 0u64;
+    for child in BoxIter::new(data, mdia.content_start, mdia.content_end) {
+        let (hdr, typ) = child?;
+        match &typ {
+            b"hdlr" => {
+                let handler = data
+                    .get(hdr.content_start + 8..hdr.content_start + 12)
+                    .ok_or_else(|| AacError::format("isomp4: truncated hdlr"))?;
+                is_sound = handler == b"soun";
+            }
+            b"mdhd" => {
+                let body = &data[hdr.content_start..hdr.content_end];
+                timescale = parse_mdhd_timescale(body)?;
+                media_duration = parse_mdhd_duration(body).unwrap_or(0);
+            }
+            b"minf" => {
+                for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
+                    let (shdr, styp) = sub?;
+                    if &styp == b"stbl" {
+                        fence_depth(mem, 4)?;
+                        asc = Some(parse_stbl_asc(data, shdr)?);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    if is_sound {
+        let asc = asc.ok_or_else(|| AacError::format("isomp4: sound track without stbl"))?;
+        Ok(Some((asc, timescale, media_duration)))
     } else {
         Ok(None)
     }
@@ -940,6 +1008,152 @@ pub(crate) fn parse_aac_track_with_len(
         media_duration,
         has_elst,
     })
+}
+
+/// ASC + `mdhd`/`elst` timing. Does not allocate `stsz`/`stco`/`stts`.
+pub(crate) fn parse_aac_meta(data: &[u8], mem: &MemoryBudgets) -> Result<AacMeta> {
+    fence_depth(mem, 0)?;
+    let mut moov = None;
+    for top in BoxIter::new(data, 0, data.len()) {
+        let (hdr, typ) = top?;
+        if typ == BOX_MOOV {
+            moov = Some(hdr);
+        } else if typ == BOX_MOOF || typ == BOX_MVEX {
+            return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
+        }
+    }
+    let moov = moov.ok_or_else(|| AacError::format("isomp4: no moov box"))?;
+    fence_depth(mem, 1)?;
+    let mut track = None;
+    let mut movie_timescale = 0u32;
+    for child in BoxIter::new(data, moov.content_start, moov.content_end) {
+        let (hdr, typ) = child?;
+        if typ == BOX_MVEX {
+            return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
+        } else if &typ == b"mvhd" {
+            movie_timescale = parse_mvhd_timescale(&data[hdr.content_start..hdr.content_end])?;
+        } else if typ == BOX_TRAK {
+            if track.is_some() {
+                continue;
+            }
+            fence_depth(mem, 2)?;
+            let mut edit_start = 0u64;
+            let mut edit_duration = 0u64;
+            let mut has_elst = false;
+            let mut mdia_track = None;
+            for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
+                let (shdr, styp) = sub?;
+                match &styp {
+                    b"edts" => {
+                        fence_depth(mem, 3)?;
+                        for ed in BoxIter::new(data, shdr.content_start, shdr.content_end) {
+                            let (ehdr, etyp) = ed?;
+                            if &etyp == b"elst" {
+                                fence_depth(mem, 4)?;
+                                if let Some((start, dur)) =
+                                    parse_elst(&data[ehdr.content_start..ehdr.content_end], mem)?
+                                {
+                                    edit_start = start;
+                                    edit_duration = dur;
+                                    has_elst = true;
+                                }
+                            }
+                        }
+                    }
+                    b"mdia" => match parse_mdia_meta(data, shdr, mem) {
+                        Ok(Some(t)) => mdia_track = Some(t),
+                        Ok(None) => {}
+                        Err(e @ AacError::Limit { .. }) => return Err(e),
+                        Err(_) => {}
+                    },
+                    _ => {}
+                }
+            }
+            if let Some((asc, media_timescale, media_duration)) = mdia_track {
+                track = Some((
+                    asc,
+                    media_timescale,
+                    edit_start,
+                    edit_duration,
+                    media_duration,
+                    has_elst,
+                ));
+            }
+        }
+    }
+    let (asc, media_timescale, edit_start, edit_duration, media_duration, has_elst) =
+        track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
+    Ok(AacMeta {
+        asc,
+        edit_start,
+        edit_duration,
+        movie_timescale,
+        media_timescale,
+        media_duration,
+        has_elst,
+    })
+}
+
+/// Locate a complete `moov` in a slice. Skips `mdat` by declared size so a
+/// prefix that does not contain media still probes. Incomplete headers and
+/// a missing `moov` are [`AacError::NeedMore`].
+pub(crate) fn find_moov_slice<'a>(data: &'a [u8], mem: &MemoryBudgets) -> Result<&'a [u8]> {
+    let mut pos = 0usize;
+    let n = data.len() as u64;
+    loop {
+        if (pos as u64).saturating_add(8) > n {
+            return Err(AacError::NeedMore {
+                have: n,
+                need: (pos as u64).saturating_add(8),
+            });
+        }
+        let mut size_bytes = [0u8; 4];
+        size_bytes.copy_from_slice(&data[pos..pos + 4]);
+        let size32 = u32::from_be_bytes(size_bytes) as u64;
+        let typ: FourCc = [data[pos + 4], data[pos + 5], data[pos + 6], data[pos + 7]];
+        let (size, head) = match size32 {
+            1 => {
+                if (pos as u64).saturating_add(16) > n {
+                    return Err(AacError::NeedMore {
+                        have: n,
+                        need: (pos as u64).saturating_add(16),
+                    });
+                }
+                let mut ext = [0u8; 8];
+                ext.copy_from_slice(&data[pos + 8..pos + 16]);
+                (u64::from_be_bytes(ext), 16u64)
+            }
+            0 => (n.saturating_sub(pos as u64), 8u64),
+            s => (s, 8u64),
+        };
+        if size < head {
+            return Err(AacError::format(format!(
+                "isomp4: box size {size} smaller than its header"
+            )));
+        }
+        let end = (pos as u64)
+            .checked_add(size)
+            .ok_or_else(|| AacError::format("isomp4: box size overflow"))?;
+        if typ == BOX_MOOF || typ == BOX_MVEX {
+            return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
+        }
+        if typ == BOX_MOOV {
+            check_planned(BudgetKind::Metadata, size, mem.max_metadata_bytes)?;
+            if end > n {
+                return Err(AacError::NeedMore { have: n, need: end });
+            }
+            let end_us =
+                usize::try_from(end).map_err(|_| AacError::format("isomp4: moov exceeds usize"))?;
+            return Ok(&data[pos..end_us]);
+        }
+        if size32 == 0 {
+            return Err(AacError::format("isomp4: no moov box"));
+        }
+        if end > n {
+            return Err(AacError::NeedMore { have: n, need: end });
+        }
+        pos = usize::try_from(end).map_err(|_| AacError::format("isomp4: box exceeds usize"))?;
+    }
 }
 
 /// True when `data` opens with a plausible ISOBMFF `ftyp` box.

@@ -3,8 +3,8 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use crate::{
-    AacError, DecodeOptions, Decoder, EncodeOptions, Encoder, UnsupportedFeature,
-    encode_with, mux_raw_lc_m4a, wrap_adts_au,
+    AacError, DecodeOptions, Decoder, EncodeOptions, Encoder, UnsupportedFeature, encode_with,
+    mux_raw_lc_m4a, wrap_adts_au,
 };
 
 fn fixture(n: usize) -> Vec<Vec<f32>> {
