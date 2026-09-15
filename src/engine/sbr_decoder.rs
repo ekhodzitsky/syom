@@ -595,16 +595,23 @@ fn emit_ps_from(
     for l in LF..LF + LOOKAHEAD {
         x_input[l][..5].copy_from_slice(&x_low[l + T_HF_ADJ][..5]);
     }
-    let Some((lq, rq)) = ps.dec.process(payload, &x_input, kx_plus_m)? else {
+    if !ps.dec.process_prepared(payload, &x_input, kx_plus_m)? {
         return Ok(false);
-    };
+    }
+    let mut l_qmf = [[Complex::default(); 64]; LF];
+    let mut r_qmf = [[Complex::default(); 64]; LF];
+    ps.dec.mix_qmf(&mut l_qmf, &mut r_qmf)?;
     ch.pcm.clear();
     ps.pcm_r.clear();
     for l in 0..LF {
         ch.pcm
-            .extend(ch.synthesis.push_slot(&lq[l])?.iter().map(|&s| s as f32));
-        ps.pcm_r
-            .extend(ps.synthesis_r.push_slot(&rq[l])?.iter().map(|&s| s as f32));
+            .extend(ch.synthesis.push_slot(&l_qmf[l])?.iter().map(|&s| s as f32));
+        ps.pcm_r.extend(
+            ps.synthesis_r
+                .push_slot(&r_qmf[l])?
+                .iter()
+                .map(|&s| s as f32),
+        );
     }
     Ok(true)
 }

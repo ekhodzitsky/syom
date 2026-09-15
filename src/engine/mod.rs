@@ -116,6 +116,10 @@ mod sbr_lifecycle_tests;
 mod sbr_workspace_tests;
 
 #[cfg(test)]
+#[path = "ps_workspace_tests.rs"]
+mod ps_workspace_tests;
+
+#[cfg(test)]
 #[path = "fb_pool_tests.rs"]
 mod fb_pool_tests;
 

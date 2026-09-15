@@ -29,11 +29,12 @@ use crate::engine::bits::BitReader;
 use crate::engine::Result;
 use crate::engine::ps_data::{PsConfig, PsData, PsIndexState};
 use crate::engine::ps_decorr::PsDecorr;
-use crate::engine::ps_hybrid::{HybridConfig, PsHybrid, synthesize};
+use crate::engine::ps_hybrid::{HybridConfig, NUM_QMF_SLOTS, PsHybrid, fit_hybrid_rows};
 use crate::engine::ps_stereo::PsStereo;
 use crate::engine::sbr_qmf::Complex;
 
 /// A stereo pair of 64-band QMF matrices (`NUM_QMF_SLOTS` slots).
+#[cfg(test)]
 pub type QmfPair = (Vec<[Complex; 64]>, Vec<[Complex; 64]>);
 
 /// The Annex 8.A PS decoder: one instance per SBR channel element.
@@ -51,6 +52,11 @@ pub struct PsDecoder {
     prev_frame_had_ps: bool,
     /// Whether a decodable (header-carrying) `ps_data()` has arrived.
     active: bool,
+    hybrid_s: Vec<Vec<Complex>>,
+    decorr_d: Vec<Vec<Complex>>,
+    frame_ps: Option<PsData>,
+    frame_idx: crate::engine::ps_data::PsIndices,
+    frame_hcfg: HybridConfig,
 }
 
 impl Default for PsDecoder {
@@ -72,6 +78,11 @@ impl PsDecoder {
             stereo: PsStereo::new(20),
             prev_frame_had_ps: false,
             active: false,
+            hybrid_s: Vec::new(),
+            decorr_d: Vec::new(),
+            frame_ps: None,
+            frame_idx: crate::engine::ps_data::PsIndices::default(),
+            frame_hcfg: HybridConfig::Bands1020,
         }
     }
 
@@ -91,12 +102,30 @@ impl PsDecoder {
     /// Returns `Ok(None)` while inactive (§8.6.5.1 — the caller
     /// duplicates the mono synthesis), otherwise the left/right QMF
     /// matrices for two independent §4.6.18.4.2 synthesis banks.
+    #[cfg(test)]
     pub fn process(
         &mut self,
         payload: Option<&[u8]>,
         x_input: &[[Complex; 64]],
         kx_plus_m: usize,
     ) -> Result<Option<QmfPair>> {
+        if !self.process_prepared(payload, x_input, kx_plus_m)? {
+            return Ok(None);
+        }
+        let mut l = vec![[Complex::default(); 64]; NUM_QMF_SLOTS];
+        let mut r = vec![[Complex::default(); 64]; NUM_QMF_SLOTS];
+        self.mix_qmf(&mut l, &mut r)?;
+        Ok(Some((l, r)))
+    }
+
+    /// Like [`Self::process`] but writes into reused QMF planes.
+    /// Returns `Ok(false)` while inactive.
+    pub fn process_prepared(
+        &mut self,
+        payload: Option<&[u8]>,
+        x_input: &[[Complex; 64]],
+        kx_plus_m: usize,
+    ) -> Result<bool> {
         // Parse (and activate on the first header'd element).
         let parsed: Option<PsData> = match payload {
             Some(bytes) => {
@@ -112,11 +141,11 @@ impl PsDecoder {
         let Some(config) = self.config else {
             // Not yet decodable: mono until a header arrives.
             self.prev_frame_had_ps = payload.is_some();
-            return Ok(None);
+            return Ok(false);
         };
         if !self.active {
             self.prev_frame_had_ps = payload.is_some();
-            return Ok(None);
+            return Ok(false);
         }
 
         // Table 8.44: 34 stereo bands iff either parameter kind runs
@@ -146,20 +175,49 @@ impl PsDecoder {
             self.decorr.reset_bands(kmax);
         }
 
-        // The hold element for a frame with no (new) parameters.
+        self.run_tools(parsed, config, hcfg, x_input, payload.is_some())?;
+        Ok(true)
+    }
+
+    fn run_tools(
+        &mut self,
+        parsed: Option<PsData>,
+        config: PsConfig,
+        hcfg: HybridConfig,
+        x_input: &[[Complex; 64]],
+        had_payload: bool,
+    ) -> Result<()> {
         let ps = parsed.unwrap_or_else(|| hold_element(config));
-        let idx = ps.resolve(&mut self.idx_state)?;
+        self.frame_idx = ps.resolve(&mut self.idx_state)?;
+        self.frame_ps = Some(ps);
+        self.frame_hcfg = hcfg;
+        let nb = hcfg.nr_bands();
+        fit_hybrid_rows(&mut self.hybrid_s, NUM_QMF_SLOTS, nb);
+        fit_hybrid_rows(&mut self.decorr_d, NUM_QMF_SLOTS, nb);
+        self.hybrid.analyze_into(x_input, &mut self.hybrid_s)?;
+        self.decorr
+            .process_into(&self.hybrid_s, &mut self.decorr_d)?;
+        self.prev_frame_had_ps = had_payload;
+        Ok(())
+    }
 
-        // Hybrid analysis → de-correlation → stereo mixing →
-        // hybrid synthesis.
-        let s = self.hybrid.analyze(x_input)?;
-        let d = self.decorr.process(&s)?;
-        let (l, r) = self.stereo.process(&ps, &idx, hcfg, &s, &d)?;
-        let l_qmf = synthesize(hcfg, &l);
-        let r_qmf = synthesize(hcfg, &r);
-
-        self.prev_frame_had_ps = payload.is_some();
-        Ok(Some((l_qmf, r_qmf)))
+    pub(crate) fn mix_qmf(
+        &mut self,
+        l_qmf: &mut [[Complex; 64]],
+        r_qmf: &mut [[Complex; 64]],
+    ) -> Result<()> {
+        let Some(ps) = self.frame_ps.as_ref() else {
+            return Ok(());
+        };
+        self.stereo.mix_to_qmf(
+            ps,
+            &self.frame_idx,
+            self.frame_hcfg,
+            &self.hybrid_s,
+            &self.decorr_d,
+            l_qmf,
+            r_qmf,
+        )
     }
 }
 

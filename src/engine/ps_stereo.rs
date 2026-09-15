@@ -65,6 +65,7 @@ const ICC_RHO: [f64; 8] = [1.0, 0.937, 0.84118, 0.60092, 0.36764, 0.0, -0.589, -
 type H4 = [Complex; 4]; // h11, h12, h21, h22
 
 /// A stereo pair of hybrid-domain frames.
+#[cfg(test)]
 pub type HybridPair = (Vec<Vec<Complex>>, Vec<Vec<Complex>>);
 
 /// §8.6.4.6 stereo processor: per-band coefficient state across
@@ -80,6 +81,8 @@ pub struct PsStereo {
     /// (radians), per stereo band.
     ipd_hist: [Vec<f64>; 2],
     opd_hist: [Vec<f64>; 2],
+    h_from: Vec<H4>,
+    h_to: Vec<H4>,
 }
 
 impl PsStereo {
@@ -91,7 +94,130 @@ impl PsStereo {
             h_prev: vec![[Complex::default(); 4]; n_bands],
             ipd_hist: [vec![0.0; n_bands], vec![0.0; n_bands]],
             opd_hist: [vec![0.0; n_bands], vec![0.0; n_bands]],
+            h_from: Vec::new(),
+            h_to: Vec::new(),
         }
+    }
+
+    fn fit_h_tmp(&mut self) {
+        let nb = self.n_bands;
+        if self.h_from.len() != nb {
+            self.h_from.clear();
+            self.h_from.resize(nb, [Complex::default(); 4]);
+        }
+        if self.h_to.len() != nb {
+            self.h_to.clear();
+            self.h_to.resize(nb, [Complex::default(); 4]);
+        }
+    }
+
+    #[allow(clippy::needless_range_loop)]
+    fn fill_h_slots(
+        &mut self,
+        ps: &PsData,
+        idx: &PsIndices,
+        h_slots: &mut [[H4; 34]; NUM_QMF_SLOTS],
+    ) -> Result<()> {
+        self.fit_h_tmp();
+        let nb = self.n_bands;
+        if ps.num_env == 0 {
+            for slot in h_slots.iter_mut() {
+                slot[..nb].copy_from_slice(&self.h_prev);
+            }
+            return Ok(());
+        }
+        let mut borders = [0usize; 8];
+        let n_env = ps.num_env.min(8);
+        if ps.frame_class {
+            for (i, &b) in ps.border_position.iter().take(n_env).enumerate() {
+                borders[i] = usize::from(b).min(NUM_QMF_SLOTS - 1);
+            }
+        } else {
+            for e in 0..n_env {
+                borders[e] = NUM_QMF_SLOTS * (e + 1) / ps.num_env - 1;
+            }
+        }
+        self.h_from.clone_from(&self.h_prev);
+        let mut n_from: isize = -1;
+        for e in 0..n_env {
+            let n_e = borders[e];
+            self.fill_envelope_h(ps, idx, e)?;
+            let (den, base) = if e == 0 {
+                ((n_e + 1).max(1) as f64, -1isize)
+            } else {
+                (((n_e as isize - n_from).max(1)) as f64, n_from)
+            };
+            let lo = ((n_from + 1).max(0)) as usize;
+            let hi = n_e.min(NUM_QMF_SLOTS - 1);
+            for n in lo..=hi {
+                let t = (n as isize - base) as f64 / den;
+                let slot = &mut h_slots[n];
+                for b in 0..nb {
+                    for c in 0..4 {
+                        slot[b][c] = self.h_from[b][c] + (self.h_to[b][c] - self.h_from[b][c]) * t;
+                    }
+                }
+            }
+            self.h_from.clone_from(&self.h_to);
+            n_from = n_e as isize;
+        }
+        let lo = ((n_from + 1).max(0)) as usize;
+        for slot in h_slots.iter_mut().skip(lo) {
+            slot[..nb].copy_from_slice(&self.h_from);
+        }
+        self.h_prev.clone_from(&self.h_from);
+        Ok(())
+    }
+
+    /// Mix hybrid `s`/`d` into reused QMF output (no hybrid L/R matrices).
+    #[allow(clippy::too_many_arguments)]
+    pub fn mix_to_qmf(
+        &mut self,
+        ps: &PsData,
+        idx: &PsIndices,
+        config: HybridConfig,
+        s: &[Vec<Complex>],
+        d: &[Vec<Complex>],
+        l_qmf: &mut [[Complex; 64]],
+        r_qmf: &mut [[Complex; 64]],
+    ) -> Result<()> {
+        let nb = self.n_bands;
+        let expected = match config {
+            HybridConfig::Bands1020 => 20,
+            HybridConfig::Bands34 => 34,
+        };
+        if expected != nb || s.len() != NUM_QMF_SLOTS || d.len() != NUM_QMF_SLOTS {
+            return Err(Error::PsDataInvalid);
+        }
+        let b_k = parameter_map(config);
+        let conj_k = conjugate_flags(config);
+        let nr_hyb = config.nr_bands();
+        if s.iter().chain(d.iter()).any(|row| row.len() != nr_hyb)
+            || l_qmf.len() < NUM_QMF_SLOTS
+            || r_qmf.len() < NUM_QMF_SLOTS
+        {
+            return Err(Error::PsDataInvalid);
+        }
+        let mut h_slots = [[[Complex::default(); 4]; 34]; NUM_QMF_SLOTS];
+        self.fill_h_slots(ps, idx, &mut h_slots)?;
+        let mut lrow = [Complex::default(); 91];
+        let mut rrow = [Complex::default(); 91];
+        for n in 0..NUM_QMF_SLOTS {
+            for k in 0..nr_hyb {
+                let b = usize::from(b_k[k]);
+                let mut h = h_slots[n][b];
+                if conj_k.contains(&k) {
+                    for c in h.iter_mut() {
+                        *c = c.conj();
+                    }
+                }
+                lrow[k] = h[0] * s[n][k] + h[2] * d[n][k];
+                rrow[k] = h[1] * s[n][k] + h[3] * d[n][k];
+            }
+            crate::engine::ps_hybrid::synthesize_slot(config, &lrow[..nr_hyb], &mut l_qmf[n]);
+            crate::engine::ps_hybrid::synthesize_slot(config, &rrow[..nr_hyb], &mut r_qmf[n]);
+        }
+        Ok(())
     }
 
     /// Table 8.47 — switch the stereo band count, re-mapping the
@@ -127,6 +253,7 @@ impl PsStereo {
     /// Process one stereo frame: mix `s` (mono hybrid) and `d`
     /// (de-correlated hybrid) into `(l, r)` hybrid signals per the
     /// resolved parameters. `config` must agree with `n_bands`.
+    #[cfg(test)]
     pub fn process(
         &mut self,
         ps: &PsData,
@@ -150,60 +277,8 @@ impl PsStereo {
             return Err(Error::PsDataInvalid);
         }
 
-        // Per-slot H matrices, per stereo band.
-        let mut h_slots = vec![vec![[Complex::default(); 4]; nb]; NUM_QMF_SLOTS];
-
-        if ps.num_env == 0 {
-            // §8.6.4.6.5: hold the previous coefficients all frame.
-            for slot in h_slots.iter_mut() {
-                slot.copy_from_slice(&self.h_prev);
-            }
-        } else {
-            // Envelope borders n_e.
-            let borders: Vec<usize> = if ps.frame_class {
-                ps.border_position
-                    .iter()
-                    .map(|&b| usize::from(b).min(NUM_QMF_SLOTS - 1))
-                    .collect()
-            } else {
-                (0..ps.num_env)
-                    .map(|e| NUM_QMF_SLOTS * (e + 1) / ps.num_env - 1)
-                    .collect()
-            };
-
-            let mut h_from = self.h_prev.clone();
-            let mut n_from: isize = -1; // "border" behind slot 0
-            for (e, &n_e) in borders.iter().enumerate() {
-                let h_to = self.envelope_h(ps, idx, e)?;
-                // §8.6.4.6.4: H(n) = H(n_{e−1}) + (n − n_{e−1}) /
-                // (n_e − n_{e−1}) · (H(n_e) − H(n_{e−1})), n ∈
-                // (n_{e−1}, n_e]; the first region starts at n_{−1} = −1
-                // (the previous frame's final coefficients).
-                let (den, base) = if e == 0 {
-                    ((n_e + 1).max(1) as f64, -1isize)
-                } else {
-                    (((n_e as isize - n_from).max(1)) as f64, n_from)
-                };
-                let lo = ((n_from + 1).max(0)) as usize;
-                let hi = n_e.min(NUM_QMF_SLOTS - 1);
-                for (n, slot) in h_slots.iter_mut().enumerate().take(hi + 1).skip(lo) {
-                    let t = (n as isize - base) as f64 / den;
-                    for (b, cell) in slot.iter_mut().enumerate() {
-                        for c in 0..4 {
-                            cell[c] = h_from[b][c] + (h_to[b][c] - h_from[b][c]) * t;
-                        }
-                    }
-                }
-                h_from = h_to;
-                n_from = n_e as isize;
-            }
-            // Region after the last border: hold.
-            let lo = ((n_from + 1).max(0)) as usize;
-            for slot in h_slots.iter_mut().skip(lo) {
-                slot.copy_from_slice(&h_from);
-            }
-            self.h_prev = h_from;
-        }
+        let mut h_slots = [[[Complex::default(); 4]; 34]; NUM_QMF_SLOTS];
+        self.fill_h_slots(ps, idx, &mut h_slots)?;
 
         // Mix.
         let mut l = vec![vec![Complex::default(); nr_hyb]; NUM_QMF_SLOTS];
@@ -226,8 +301,12 @@ impl PsStereo {
 
     /// Derive `h11..h22` per stereo band for envelope `e`
     /// (§8.6.4.6.2 + §8.6.4.6.3), advancing the phase history.
-    fn envelope_h(&mut self, ps: &PsData, idx: &PsIndices, e: usize) -> Result<Vec<H4>> {
+    fn fill_envelope_h(&mut self, ps: &PsData, idx: &PsIndices, e: usize) -> Result<()> {
         let nb = self.n_bands;
+        if self.h_to.len() != nb {
+            self.h_to.clear();
+            self.h_to.resize(nb, [Complex::default(); 4]);
+        }
 
         // Map the parameter vectors to the stereo band count; a
         // disabled parameter kind is index 0 (§8.5.2 defaults).
@@ -246,7 +325,6 @@ impl PsStereo {
         let fine = ps.config.iid_quant_fine();
         let rb = ps.config.icc_mode >= 3;
 
-        let mut out = vec![[Complex::default(); 4]; nb];
         for b in 0..nb {
             let iid_db = if fine {
                 *IID_DB_FINE
@@ -261,7 +339,7 @@ impl PsStereo {
             let rho = *ICC_RHO.get(icc[b] as usize).ok_or(Error::PsDataInvalid)?;
 
             let (h11, h12, h21, h22) = if rb { mix_rb(c, rho) } else { mix_ra(c, rho) };
-            out[b] = [
+            self.h_to[b] = [
                 Complex::new(h11, 0.0),
                 Complex::new(h12, 0.0),
                 Complex::new(h21, 0.0),
@@ -308,10 +386,10 @@ impl PsStereo {
                 let (s2, c2) = phi2.sin_cos();
                 let r1 = Complex::new(c1, s1);
                 let r2 = Complex::new(c2, s2);
-                out[b][0] = out[b][0] * r1;
-                out[b][2] = out[b][2] * r1;
-                out[b][1] = out[b][1] * r2;
-                out[b][3] = out[b][3] * r2;
+                self.h_to[b][0] = self.h_to[b][0] * r1;
+                self.h_to[b][2] = self.h_to[b][2] * r1;
+                self.h_to[b][1] = self.h_to[b][1] * r2;
+                self.h_to[b][3] = self.h_to[b][3] * r2;
             }
             // Advance the history.
             self.ipd_hist[0] = core::mem::take(&mut self.ipd_hist[1]);
@@ -319,7 +397,7 @@ impl PsStereo {
             self.opd_hist[0] = core::mem::take(&mut self.opd_hist[1]);
             self.opd_hist[1] = opd_cur;
         }
-        Ok(out)
+        Ok(())
     }
 }
 

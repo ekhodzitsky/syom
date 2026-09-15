@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reused PS hybrid/decorr/output workspace (TASK-80): fit hybrid rows,
+  stack H-slot and QMF planes, mix-to-QMF without hybrid L/R matrices.
+  PS borrowed decode after 2-frame warmup **24.75 allocs/frame** (−90%
+  vs 259) and **−24% peak live heap** (430 KiB vs 568 KiB). Remaining
+  ~25/frame are `ps_data` parse/resolve. Goldens unchanged
+  (`lab/baseline/PS.md`).
 - Reused HE SBR conversion/reconstruction workspace (TASK-79): in-place
   f32 planes, recycled SBR parse box, stack XLow/XHigh/env-adjust maps,
   interned QMF modulation tables. HE borrowed decode after 2-frame

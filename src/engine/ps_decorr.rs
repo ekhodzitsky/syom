@@ -300,20 +300,31 @@ impl PsDecorr {
     /// De-correlate one stereo frame of hybrid slots (each
     /// `nr_bands()` wide). Returns `d_k(n)` with the transient
     /// attenuation applied; all state advances.
+    #[cfg(test)]
     pub fn process(&mut self, s: &[Vec<Complex>]) -> Result<Vec<Vec<Complex>>> {
+        let mut out = Vec::new();
+        crate::engine::ps_hybrid::fit_hybrid_rows(&mut out, s.len(), consts(self.config).nr_bands);
+        self.process_into(s, &mut out)?;
+        Ok(out)
+    }
+
+    /// De-correlate into `out` (reuses rows; stack transient vectors).
+    pub fn process_into(&mut self, s: &[Vec<Complex>], out: &mut [Vec<Complex>]) -> Result<()> {
         let c = consts(self.config);
         let b_k = parameter_map(self.config);
-        if s.iter().any(|row| row.len() != c.nr_bands) {
+        if s.len() != out.len()
+            || s.iter().any(|row| row.len() != c.nr_bands)
+            || out.iter().any(|row| row.len() != c.nr_bands)
+        {
             return Err(Error::PsDataInvalid);
         }
-        let mut out = vec![vec![Complex::default(); c.nr_bands]; s.len()];
         for (n, row) in s.iter().enumerate() {
             // §8.6.4.5.3 transient detection at this slot.
-            let mut p = vec![0.0f64; c.nr_par_bands];
+            let mut p = [0.0f64; 34];
             for (k, v) in row.iter().enumerate() {
                 p[usize::from(b_k[k])] += v.norm_sqr();
             }
-            let mut g_ratio = vec![1.0f64; c.nr_par_bands];
+            let mut g_ratio = [1.0f64; 34];
             for i in 0..c.nr_par_bands {
                 let peak = if PEAK_DECAY * self.peak_decay_nrg[i] < p[i] {
                     p[i]
@@ -363,7 +374,7 @@ impl PsDecorr {
                 out[n][k] = v * g_ratio[usize::from(b_k[k])];
             }
         }
-        Ok(out)
+        Ok(())
     }
 }
 

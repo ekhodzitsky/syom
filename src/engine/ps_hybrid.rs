@@ -238,13 +238,28 @@ impl PsHybrid {
     /// 6 slots only need bands `0..split_bands` populated). Returns
     /// `NUM_QMF_SLOTS` slots of `nr_bands()` hybrid channels, and
     /// advances the cross-frame history.
+    #[cfg(test)]
     pub fn analyze(&mut self, x: &[[Complex; 64]]) -> Result<Vec<Vec<Complex>>> {
+        let nb = self.config.nr_bands();
+        let mut out = Vec::new();
+        fit_hybrid_rows(&mut out, NUM_QMF_SLOTS, nb);
+        self.analyze_into(x, &mut out)?;
+        Ok(out)
+    }
+
+    /// Hybrid analysis into `out` (reuses inner row capacity).
+    pub fn analyze_into(&mut self, x: &[[Complex; 64]], out: &mut [Vec<Complex>]) -> Result<()> {
         if x.len() < NUM_QMF_SLOTS + LOOKAHEAD {
             return Err(Error::PsDataInvalid);
         }
         let nb = self.config.nr_bands();
         let split = self.config.split_bands();
-        let mut out = vec![vec![Complex::default(); nb]; NUM_QMF_SLOTS];
+        if out.len() != NUM_QMF_SLOTS || out.iter().any(|r| r.len() != nb) {
+            return Err(Error::PsDataInvalid);
+        }
+        for row in out.iter_mut() {
+            row.fill(Complex::default());
+        }
 
         for p in 0..split {
             // Extended buffer: 6 history slots + the frame + look-ahead.
@@ -295,7 +310,24 @@ impl PsHybrid {
                 row[hybrid_offset(&self.config) + k - split] = x[n][k];
             }
         }
-        Ok(out)
+        Ok(())
+    }
+}
+
+/// Ensure `v` has `n_slots` rows of `n_ch` hybrid channels (reuses
+/// inner capacity after the first call).
+pub fn fit_hybrid_rows(v: &mut Vec<Vec<Complex>>, n_slots: usize, n_ch: usize) {
+    if v.len() < n_slots {
+        v.resize(n_slots, Vec::new());
+    }
+    v.truncate(n_slots);
+    for row in v.iter_mut() {
+        if row.len() != n_ch {
+            row.clear();
+            row.resize(n_ch, Complex::default());
+        } else {
+            row.fill(Complex::default());
+        }
     }
 }
 
@@ -346,28 +378,39 @@ fn accumulate_channel(config: &HybridConfig, p: usize, q: usize, v: Complex, row
 /// back into the band; copy the unsplit region. `rows` are
 /// `nr_bands()`-wide hybrid slots; returns 64-band QMF slots.
 #[must_use]
+#[cfg(test)]
 pub fn synthesize(config: HybridConfig, rows: &[Vec<Complex>]) -> Vec<[Complex; 64]> {
+    let mut out = vec![[Complex::default(); 64]; rows.len()];
+    synthesize_into(config, rows, &mut out);
+    out
+}
+
+/// Write one hybrid row into a 64-band QMF slot.
+pub fn synthesize_slot(config: HybridConfig, row: &[Complex], slot: &mut [Complex; 64]) {
     let split = config.split_bands();
     let off = hybrid_offset(&config);
-    let mut out = Vec::with_capacity(rows.len());
-    for row in rows {
-        let mut slot = [Complex::default(); 64];
-        // Per-band sub-subband spans in the hybrid row.
-        let spans: &[(usize, usize)] = match config {
-            HybridConfig::Bands1020 => &[(0, 6), (6, 8), (8, 10)],
-            HybridConfig::Bands34 => &[(0, 12), (12, 20), (20, 24), (24, 28), (28, 32)],
-        };
-        for (p, &(lo, hi)) in spans.iter().enumerate() {
-            for v in &row[lo..hi] {
-                slot[p] += *v;
-            }
+    *slot = [Complex::default(); 64];
+    let spans: &[(usize, usize)] = match config {
+        HybridConfig::Bands1020 => &[(0, 6), (6, 8), (8, 10)],
+        HybridConfig::Bands34 => &[(0, 12), (12, 20), (20, 24), (24, 28), (28, 32)],
+    };
+    for (p, &(lo, hi)) in spans.iter().enumerate() {
+        for v in &row[lo..hi] {
+            slot[p] += *v;
         }
-        for k in split..64 {
-            slot[k] = row[off + k - split];
-        }
-        out.push(slot);
     }
-    out
+    for k in split..64 {
+        slot[k] = row[off + k - split];
+    }
+}
+
+/// Write hybrid rows into reused QMF columns.
+#[cfg(test)]
+pub fn synthesize_into(config: HybridConfig, rows: &[Vec<Complex>], out: &mut [[Complex; 64]]) {
+    let n = rows.len().min(out.len());
+    for i in 0..n {
+        synthesize_slot(config, &rows[i], &mut out[i]);
+    }
 }
 
 #[cfg(test)]
