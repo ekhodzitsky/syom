@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `encode_write(sink, planes, rate, opts)` (TASK-59): encode borrowed
+  planes incrementally into any `std::io::Write` (ADTS, or raw AUs);
+  bytes identical to `encode_with`, one-frame workspace, no collected
+  output. A sink error ends the encode with `AacError::Io` after the
+  frames already written (exact prefix, nothing repeated); M4A stays
+  `EncodeM4aStreaming`.
 - One-shot `encode` / `encode_with` / `write` / `write_with` take any
   `&[P] where P: AsRef<[f32]>` (TASK-55): borrowed `&[&[f32]]`, arrays or
   boxed slices encode without a copy; `&[Vec<f32>]` calls are unchanged.

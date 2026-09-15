@@ -156,88 +156,9 @@ pub fn encode_with<P: AsRef<[f32]>>(
     }
 }
 
-/// Wrap one `raw_data_block` in an ADTS frame (no CRC, fullness `0x7FF`).
-/// For HE v1 access units pass the **core** rate (half the input rate):
-/// ADTS signals SBR implicitly and the header carries the core rate.
-///
-/// ```
-/// use syom::{EncodeOptions, Encoder, wrap_adts_au};
-/// let pcm = vec![0.1f32; 2048];
-/// let mut enc = Encoder::new(48_000, 1, &EncodeOptions::raw())?;
-/// let mut aus = Vec::new();
-/// enc.feed(&[&pcm], |f| { aus.push(f.payload.to_vec()); Ok(()) })?;
-/// enc.finish(|f| { aus.push(f.payload.to_vec()); Ok(()) })?;
-/// let mut adts = Vec::new();
-/// for au in &aus {
-///     adts.extend_from_slice(&wrap_adts_au(au, 48_000, 1)?);
-/// }
-/// assert_eq!(adts[0], 0xff);
-/// # Ok::<(), syom::AacError>(())
-/// ```
-pub fn wrap_adts_au(payload: &[u8], sample_rate: u32, channels: usize) -> Result<Vec<u8>> {
-    let fs = fs_index(sample_rate)?;
-    if !(1..=2).contains(&channels) {
-        return Err(AacError::encode(format!(
-            "encode: channels must be 1 or 2, got {channels}"
-        )));
-    }
-    let mut out = Vec::with_capacity(crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC + payload.len());
-    adts_frame_into(payload, fs, channels, &mut out);
-    Ok(out)
-}
-
-/// Mux raw HE v1 access units (push [`crate::Encoder`] with
-/// [`EncodeOptions::with_he`] + [`EncodeContainer::Raw`]) into M4A:
-/// explicit two-rate ASC, output-rate timeline, `elst` priming as
-/// reported by [`crate::EncodeInfo::priming`].
-pub fn mux_raw_he_m4a(
-    payloads: &[&[u8]],
-    output_rate: u32,
-    channels: usize,
-    valid_samples: u64,
-) -> Result<Vec<u8>> {
-    let core = crate::engine::enc_sbr_prep::he_core_rate(output_rate)
-        .map_err(|_| AacError::Unsupported(crate::UnsupportedFeature::EncodeHeRate(output_rate)))?;
-    if !(1..=2).contains(&channels) {
-        return Err(AacError::encode(format!(
-            "encode: channels must be 1 or 2, got {channels}"
-        )));
-    }
-    let owned: Vec<Vec<u8>> = payloads.iter().map(|p| p.to_vec()).collect();
-    m4a_write::mux_aac_he(
-        &owned,
-        fs_index(core)?,
-        fs_index(output_rate)?,
-        channels,
-        output_rate,
-        valid_samples,
-        crate::engine::enc_he::HE_PRIMING_OUT,
-    )
-}
-
-/// Mux raw LC access units into M4A (`elst` priming 1024, presentation `valid_samples`).
-pub fn mux_raw_lc_m4a(
-    payloads: &[&[u8]],
-    sample_rate: u32,
-    channels: usize,
-    valid_samples: u64,
-) -> Result<Vec<u8>> {
-    let fs = fs_index(sample_rate)?;
-    if !(1..=2).contains(&channels) {
-        return Err(AacError::encode(format!(
-            "encode: channels must be 1 or 2, got {channels}"
-        )));
-    }
-    let owned: Vec<Vec<u8>> = payloads.iter().map(|p| p.to_vec()).collect();
-    m4a_write::mux_aac_lc(
-        &owned,
-        fs,
-        channels,
-        sample_rate,
-        valid_samples,
-        FRAME as u64,
-    )
-}
+#[path = "encode_mux.rs"]
+mod mux;
+pub use mux::{encode_write, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au};
 
 fn fs_index(sample_rate: u32) -> Result<u8> {
     ADTS_SAMPLE_RATES_HZ

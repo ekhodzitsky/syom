@@ -36,7 +36,8 @@ pub use decode::{
 };
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
 pub use encode::{
-    encode, encode_with, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au, write, write_with,
+    encode, encode_with, encode_write, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au, write,
+    write_with,
 };
 pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
 pub use isomp4::sniff_is_isobmff;
@@ -121,6 +122,9 @@ mod encode_tests;
 #[cfg(test)]
 #[path = "encode_vbr_tests.rs"]
 mod encode_vbr_tests;
+#[cfg(test)]
+#[path = "encode_write_tests.rs"]
+mod encode_write_tests;
 
 #[cfg(test)]
 #[path = "encode_prime_tests.rs"]
