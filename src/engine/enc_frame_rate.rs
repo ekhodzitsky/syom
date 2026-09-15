@@ -25,7 +25,7 @@ pub fn max_bitrate_bps(sample_rate: u32, channels: usize) -> u32 {
     bits.min(u64::from(u32::MAX)) as u32
 }
 
-/// Rate-loop search bounds for the allowed-noise offset (1.5 dB steps,
+/// Rate-loop search bounds for the allowed-noise offset (0.75 dB of energy per step,
 /// [`crate::engine::enc_alloc::noise_targets`]): negative refines every
 /// band uniformly, positive raises the water level over the quietest
 /// band; bits fall monotonically with the offset.
@@ -110,14 +110,24 @@ impl LcEncoder {
         specs: &[[f32; LONG_WINDOW_LEN]; 2],
         spend: usize,
     ) -> i32 {
+        self.search_offset_from(OFFSET_LO, specs, spend)
+    }
+
+    /// [`Self::search_offset`] over `[lo, OFFSET_HI]`.
+    pub(super) fn search_offset_from(
+        &mut self,
+        lo_bound: i32,
+        specs: &[[f32; LONG_WINDOW_LEN]; 2],
+        spend: usize,
+    ) -> i32 {
         let budget = spend.saturating_sub(32);
-        if self.build(specs, OFFSET_LO) <= budget {
-            return OFFSET_LO; // maximum quality fits
+        if self.build(specs, lo_bound) <= budget {
+            return lo_bound; // maximum quality fits
         }
         if self.build(specs, OFFSET_HI) > budget {
             return OFFSET_HI; // over budget even at ceiling: cap logic takes over
         }
-        let (mut lo, mut hi) = (OFFSET_LO, OFFSET_HI);
+        let (mut lo, mut hi) = (lo_bound, OFFSET_HI);
         while hi - lo > 1 {
             let mid = lo + (hi - lo) / 2;
             if self.build(specs, mid) <= budget {

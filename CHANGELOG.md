@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Quality VBR (TASK-67): `EncodeOptions::with_quality(0..=10)` codes every
+  LC frame at one fixed allowed-noise offset (level 5 = the psy target,
+  6 dB per level; no target rate, no padding; the 6144 bits/channel cap is
+  met by uniform coarsening). Bytes follow the content; monotonic in the
+  level on aggregate; one-shot / push byte-exact; LC only. Curves in
+  `lab/quality/CURVES.md`.
 - Encoder presets (TASK-108, decision-20): `EncodeOptions::high_quality()`
   (LC ADTS 192 kbps, causal) and `EncodeOptions::low_rate()` (HE v1 ADTS
   48 kbps) chosen from development curves (`lab/quality/CURVES.md`,

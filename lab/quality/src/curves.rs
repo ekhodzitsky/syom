@@ -77,8 +77,38 @@ fn main() -> ExitCode {
             }
         }
     }
+    quality_curves(repo);
     cpu_and_delay();
     ExitCode::SUCCESS
+}
+
+/// TASK-67 quality VBR: one fixed allowed-noise offset per level.
+fn quality_curves(repo: &Path) {
+    println!();
+    println!("## Quality VBR levels (TASK-67; `with_quality`, no target rate)");
+    println!();
+    println!("| clip | class | level | actual kbps | SNR dB | LF SNR dB | HF err dB |");
+    println!("|---|---|---:|---:|---:|---:|---:|");
+    for clip in clips(repo) {
+        for level in [0u8, 2, 4, 5, 6, 8, 10] {
+            let opts = EncodeOptions::adts().with_quality(level);
+            let secs = clip.pcm[0].len() as f64 / RATE as f64;
+            let Ok(stream) = encode_with(&clip.pcm, RATE, &opts) else { continue };
+            let Ok(dec) = decode_with(&stream, &DecodeOptions::unbounded()) else { continue };
+            let ch = clip.pcm.len();
+            let (mut snr, mut lf, mut hf) = (0.0, 0.0, 0.0);
+            for c in 0..ch.min(dec.channels.len()) {
+                let (s, l, h) = measures(&clip.pcm[c], &dec.channels[c], LC_PRIMING);
+                snr += s / ch as f64;
+                lf += l / ch as f64;
+                hf += h / ch as f64;
+            }
+            println!(
+                "| {} | {} | {} | {:.1} | {:.1} | {:.1} | {:.1} |",
+                clip.name, clip.class, level, stream.len() as f64 * 8.0 / secs / 1000.0, snr, lf, hf
+            );
+        }
+    }
 }
 
 fn row(clip: &Clip, mode: Mode, bps: u32) {
@@ -302,6 +332,15 @@ fn cpu_and_delay() {
     println!();
     println!("| mode | req kbps | encode ms / 10 s stereo | ×realtime | declared priming (output samples) | extra internal latency |");
     println!("|---|---:|---:|---:|---:|---|");
+    let q5 = EncodeOptions::adts().with_quality(5);
+    let _ = encode_with(&pcm, RATE, &q5);
+    let mut best = f64::MAX;
+    for _ in 0..3 {
+        let t = Instant::now();
+        let _ = encode_with(&pcm, RATE, &q5);
+        best = best.min(t.elapsed().as_secs_f64() * 1e3);
+    }
+    println!("| LC quality 5 | — | {best:.1} | {:.0}× | 1024 | none (causal; no rate loop) |", 10_000.0 / best);
     for (mode, bps, lat) in [
         (Mode::Lc, 128_000u32, "none (causal)"),
         (Mode::Lc, 48_000, "none (causal)"),

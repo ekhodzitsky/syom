@@ -23,6 +23,7 @@ use crate::options::{EncodeContainer, EncodeOptions};
 /// Build an LC encoder honoring lookahead, ATH, and tonality from `opts`.
 pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<LcEncoder> {
     Ok(LcEncoder::new(sample_rate, channels, opts.bitrate_bps)?
+        .with_quality(opts.quality)
         .with_lookahead(opts.lookahead)
         .with_psy(opts.ath, opts.tonality)
         .with_short_tns(opts.short_tns)
@@ -259,7 +260,26 @@ pub fn write_with(
     Ok(())
 }
 
+/// Mode combinations shared by one-shot and push encode: a quality level
+/// must be `0..=10` and is LC only.
+pub(crate) fn check_mode(opts: &EncodeOptions) -> Result<()> {
+    if let Some(q) = opts.quality {
+        if q > crate::engine::enc_frame::QUALITY_MAX {
+            return Err(AacError::encode(format!(
+                "encode: quality level {q} is above 10"
+            )));
+        }
+        if opts.he {
+            return Err(AacError::encode(
+                "encode: quality VBR is LC only (he must be off)",
+            ));
+        }
+    }
+    Ok(())
+}
+
 fn validate(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<()> {
+    check_mode(opts)?;
     if !ADTS_SAMPLE_RATES_HZ.contains(&sample_rate) {
         return Err(AacError::encode(format!(
             "encode: unsupported sample rate {sample_rate}Hz (not in the AAC table)"

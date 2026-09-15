@@ -27,7 +27,7 @@ The HE cells (HE_AU.md) exposed two LC defects that predate SBR:
 | quantizer (`enc_quant`) | `floor(v + 0.4054)` (ISO), `QUANT_SAFE` floor on `sf` keeps peaks under the 8191 clip |
 | psy (`enc_psy::analyze`) | outputs per-band allowed noise `T` (masked threshold with −60 dB / ATH floors), energy and `Σ√|x|`; `target_q` is only the precision cap; tonality (opt-in) divides `T` by the Johnston factor (noise-like bands up to 4× more noise) |
 | targets (`enc_alloc::noise_targets`) | `G² = 4·Σ√|x| / (27·T)`, `target_q = peak^0.75·G`; offset ≤ 0 scales `T` by `2^(offset/4)` (uniform refinement), offset > 0 raises a per-coefficient water level from the quietest coded band; a band whose allowed noise reaches its energy drops out |
-| rate loop (`enc_frame_rate`) | binary search of that offset in `[−60, 240]` (1.5 dB steps); bits fall monotonically |
+| rate loop (`enc_frame_rate`) | binary search of that offset in `[−60, 240]` (0.75 dB of energy per step); bits fall monotonically |
 | per-frame cache (`enc_frame_alloc.rs`) | psy once per frame on the pre-TNS L/R spectra; the cache is finished on the coded spectra: M/S bands take `min(T_L, T_R)`, a TNS channel scales `T` by residual/original energy; every `build` offset only re-derives targets |
 | short frames (`enc_short::channel_build`) | same targets per (group, band) with energy / noise / `Σ√|x|` / width folded over the group's windows |
 

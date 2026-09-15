@@ -115,6 +115,9 @@ mod encode_he_tests;
 #[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
+#[cfg(test)]
+#[path = "encode_vbr_tests.rs"]
+mod encode_vbr_tests;
 
 #[cfg(test)]
 #[path = "encode_prime_tests.rs"]

@@ -105,11 +105,79 @@ clips it measures leakage of a −60 dB floor and is not ranked.
 
 | mode | req kbps | encode ms / 10 s stereo | ×realtime | declared priming (output samples) | extra internal latency |
 |---|---:|---:|---:|---:|---|
-| LC | 128 | 179.0 | 56× | 1024 | none (causal) |
-| LC | 48 | 113.0 | 88× | 1024 | none (causal) |
-| LC+la | 128 | 178.6 | 56× | 1024 | +1024 samples (held frame) |
-| HE | 48 | 109.1 | 92× | 3018 | none beyond the SBR window |
-| HE | 24 | 77.6 | 129× | 3018 | none beyond the SBR window |
+| LC quality 5 | — | 59.9 | 167× | 1024 | none (causal; no rate loop) |
+| LC | 128 | 167.5 | 60× | 1024 | none (causal) |
+| LC | 48 | 104.5 | 96× | 1024 | none (causal) |
+| LC+la | 128 | 166.4 | 60× | 1024 | +1024 samples (held frame) |
+| HE | 48 | 88.6 | 113× | 3018 | none beyond the SBR window |
+| HE | 24 | 64.7 | 155× | 3018 | none beyond the SBR window |
+
+## Quality VBR levels (TASK-67; `with_quality`, no target rate)
+
+| clip | class | level | actual kbps | SNR dB | LF SNR dB | HF err dB |
+|---|---|---:|---:|---:|---:|---:|
+| sine440 | tonal | 0 | 7.8 | 18.1 | 20.7 | 42.1 |
+| sine440 | tonal | 2 | 8.3 | 18.1 | 20.6 | 42.1 |
+| sine440 | tonal | 4 | 9.4 | 18.1 | 20.6 | 42.0 |
+| sine440 | tonal | 5 | 9.7 | 18.1 | 20.6 | 42.1 |
+| sine440 | tonal | 6 | 10.6 | 22.7 | 24.4 | 42.6 |
+| sine440 | tonal | 8 | 12.9 | 36.5 | 38.7 | 42.6 |
+| sine440 | tonal | 10 | 15.7 | 47.6 | 49.4 | 42.6 |
+| noise | noise | 0 | 9.6 | 0.1 | 0.4 | 174.3 |
+| noise | noise | 2 | 90.5 | 6.9 | 10.5 | 0.9 |
+| noise | noise | 4 | 163.0 | 15.4 | 19.4 | 0.4 |
+| noise | noise | 5 | 167.1 | 15.7 | 20.1 | 0.4 |
+| noise | noise | 6 | 219.2 | 21.5 | 25.9 | 0.2 |
+| noise | noise | 8 | 286.3 | 27.5 | 31.8 | 0.1 |
+| noise | noise | 10 | 286.3 | 27.5 | 31.8 | 0.1 |
+| mix | tone+noise | 0 | 16.8 | 15.0 | 18.9 | 82.2 |
+| mix | tone+noise | 2 | 145.1 | 17.0 | 20.8 | 1.4 |
+| mix | tone+noise | 4 | 307.1 | 18.5 | 21.1 | 0.4 |
+| mix | tone+noise | 5 | 331.9 | 18.6 | 21.1 | 0.4 |
+| mix | tone+noise | 6 | 435.0 | 24.3 | 26.5 | 0.2 |
+| mix | tone+noise | 8 | 572.9 | 30.1 | 32.4 | 0.1 |
+| mix | tone+noise | 10 | 572.9 | 30.1 | 32.4 | 0.1 |
+| tremolo | stereo tonal | 0 | 19.7 | 13.7 | 15.2 | 34.8 |
+| tremolo | stereo tonal | 2 | 22.6 | 16.0 | 17.2 | 34.2 |
+| tremolo | stereo tonal | 4 | 25.2 | 16.2 | 17.3 | 34.2 |
+| tremolo | stereo tonal | 5 | 25.9 | 16.2 | 17.3 | 34.2 |
+| tremolo | stereo tonal | 6 | 30.6 | 23.5 | 26.1 | 34.0 |
+| tremolo | stereo tonal | 8 | 40.5 | 34.6 | 36.9 | 34.1 |
+| tremolo | stereo tonal | 10 | 52.8 | 46.1 | 47.7 | 34.1 |
+| click | transient | 0 | 18.0 | 13.3 | 2.4 | 99.1 |
+| click | transient | 2 | 98.8 | 16.0 | 10.5 | 0.9 |
+| click | transient | 4 | 166.4 | 17.2 | 19.3 | 0.4 |
+| click | transient | 5 | 169.5 | 17.2 | 19.5 | 0.4 |
+| click | transient | 6 | 221.6 | 22.2 | 25.9 | 0.2 |
+| click | transient | 8 | 286.9 | 27.0 | 31.5 | 0.1 |
+| click | transient | 10 | 286.9 | 27.0 | 31.5 | 0.1 |
+| voice-like | harmonic+HF | 0 | 157.2 | 5.6 | 11.9 | 4.9 |
+| voice-like | harmonic+HF | 2 | 258.4 | 10.5 | 16.1 | 2.6 |
+| voice-like | harmonic+HF | 4 | 330.3 | 15.1 | 19.3 | 1.0 |
+| voice-like | harmonic+HF | 5 | 336.9 | 15.2 | 19.4 | 0.9 |
+| voice-like | harmonic+HF | 6 | 439.8 | 19.7 | 23.7 | 0.5 |
+| voice-like | harmonic+HF | 8 | 574.7 | 24.6 | 28.4 | 0.2 |
+| voice-like | harmonic+HF | 10 | 574.7 | 24.6 | 28.4 | 0.2 |
+| lecture | speech (0.25 s) | 0 | 15.6 | 19.1 | 21.2 | 8.5 |
+| lecture | speech (0.25 s) | 2 | 16.8 | 19.2 | 21.2 | 8.5 |
+| lecture | speech (0.25 s) | 4 | 19.4 | 19.3 | 21.2 | 8.5 |
+| lecture | speech (0.25 s) | 5 | 20.6 | 19.3 | 21.2 | 8.5 |
+| lecture | speech (0.25 s) | 6 | 23.5 | 25.1 | 27.0 | 8.1 |
+| lecture | speech (0.25 s) | 8 | 32.1 | 37.2 | 37.0 | 7.8 |
+| lecture | speech (0.25 s) | 10 | 42.0 | 43.7 | 43.3 | 7.8 |
+
+Reading the quality levels (TASK-67): level 5 codes at the psy target
+(the same allowed noise the ABR loop starts from); each level above
+refines every band 6 dB, each level below raises the water level 6 dB.
+Sparse content stays small at every level (sine 8–16 kbps, lecture
+16–42 kbps) while dense content climbs to the 6144 bits/channel cap by
+level 8 (noise / mix / click: 286 / 573 kbps, then flat — the cap is met
+by uniform coarsening, never by dropping top bands). Aggregate bytes and
+SNR over the dev clips are monotonic in the level (`encode_vbr_tests`);
+per clip, SNR is flat below level 5 on tonal material because the water
+level only removes bands under the tone's threshold. Quality mode runs
+one `build` (two when the cap binds) instead of the ABR search: 10 s
+stereo noise at level 5 encodes in the time shown above.
 
 ## Reading the curves
 

@@ -87,6 +87,9 @@ pub struct LcEncoder {
     fill: Vec<u8>,
     /// Long-frame allocation inputs, once per frame (TASK-113).
     alloc: Box<[super::enc_alloc::AllocCache; 2]>,
+    /// Quality VBR (TASK-67): a fixed allowed-noise offset instead of the
+    /// ABR rate loop; `None` = ABR on `bitrate_bps`.
+    quality: Option<i32>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -170,6 +173,7 @@ impl LcEncoder {
                 super::enc_alloc::AllocCache::new(),
                 super::enc_alloc::AllocCache::new(),
             ]),
+            quality: None,
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
                 QuantShort::new(short_offsets.len() - 1),
@@ -344,18 +348,7 @@ impl LcEncoder {
         if long {
             self.finish_alloc(&specs, &psy_specs);
         }
-        let budget = self.budget_bits();
-        let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;
-        let offset = self.search_offset(&specs, spend);
-        self.build(&specs, offset);
-        self.refine_bands(&specs, spend);
-        let mut payload = std::mem::take(&mut self.payload);
-        let coded = self.fit_budget(spend.min(rate::max_frame_bits(self.channels)), &mut payload);
-        self.payload = payload;
-        if self.payload.len().saturating_mul(8) > rate::max_frame_bits(self.channels) {
-            return Err(Error::Format("LC encoder: frame exceeds 6144 bits/channel"));
-        }
-        self.credit = (self.credit + budget as i64 - coded as i64).clamp(0, budget as i64);
+        self.rate_control(&specs)?;
         self.prev_seq = self.seq;
         Ok(())
     }
@@ -365,6 +358,7 @@ impl LcEncoder {
 /// A child module, so the impl keeps using `LcEncoder`'s private fields.
 #[path = "enc_frame_rate.rs"]
 mod rate;
+pub use control::QUALITY_MAX;
 pub use rate::max_bitrate_bps;
 
 #[path = "enc_refine.rs"]
@@ -379,6 +373,10 @@ mod reset;
 
 #[path = "enc_frame_opts.rs"]
 mod opts;
+
+/// ABR rate loop vs quality VBR (`enc_frame_control.rs`), a child like `rate`.
+#[path = "enc_frame_control.rs"]
+mod control;
 
 #[path = "enc_frame_alloc.rs"]
 mod alloc;

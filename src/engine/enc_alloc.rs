@@ -6,7 +6,7 @@
 //! the linear noise of one coefficient is `≈ 4·√|x| / (27·G²)`, so a band
 //! needs `G² = 4·Σ√|x| / (27·T)` and `target_q = peak^0.75 · G`.
 //!
-//! The rate loop's `offset` moves the allowed noise (1.5 dB per step):
+//! The rate loop's `offset` moves the allowed noise (0.75 dB of energy per step):
 //! `offset ≤ 0` lowers every band's `T` uniformly (spare bits refine all
 //! bands, equal noise-to-mask); `offset > 0` raises a water level of
 //! allowed noise **per coefficient** from the quietest coded band —

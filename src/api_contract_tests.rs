@@ -119,6 +119,8 @@ fn stream_and_encode_signatures_hold() -> Result<()> {
     assert!(!EncodeOptions::default().band_refine);
     assert!(!EncodeOptions::default().pns);
     assert!(!EncodeOptions::default().intensity);
+    assert!(!EncodeOptions::default().he);
+    assert!(EncodeOptions::default().quality.is_none());
     assert_eq!(crate::mpeg_channels(6)[3], crate::Channel::Lfe);
     assert_eq!(EncodeOptions::default().bitrate_bps, 128_000);
     Ok(())

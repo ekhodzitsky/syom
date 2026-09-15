@@ -132,21 +132,9 @@ impl DecodeOptions {
 
 /// Output container for the encoder.
 ///
-/// `#[non_exhaustive]`: LATM/LOAS encode is a later transport (TASK-94).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[non_exhaustive]
-pub enum EncodeContainer {
-    /// ADTS elementary stream.
-    #[default]
-    Adts,
-    /// M4A / ISOBMFF (`ftyp` + `mdat` + `moov`).
-    M4a,
-    /// Raw `raw_data_block` access units (push [`crate::Encoder`] only).
-    /// One-shot [`crate::encode_with`] rejects this: muxers need per-AU
-    /// sizes. Pair with [`crate::Encoder::asc`] and
-    /// [`crate::wrap_adts_au`] / [`crate::mux_raw_lc_m4a`].
-    Raw,
-}
+#[path = "options_container.rs"]
+mod container;
+pub use container::EncodeContainer;
 
 /// Options for `encode_with` / `write_with`.
 ///
@@ -198,6 +186,17 @@ pub struct EncodeOptions {
     /// carries the core rate); M4A and [`crate::Encoder::asc`] carry the
     /// explicit two-rate AOT 5 config. Priming is 3018 output samples.
     pub he: bool,
+    /// Quality VBR level `0..=10` (TASK-67). `None` (default) = ABR on
+    /// `bitrate_bps`. With a level the LC encoder codes every frame at
+    /// one fixed allowed-noise offset — level 5 is the psy model's
+    /// noise-to-mask target, each level moves it 6 dB (up: finer; down: a
+    /// higher water level that drops quiet bands first) — with no target
+    /// rate, no padding and no bit credit; the AAC-LC 6144
+    /// bits/channel/frame cap is met by coarsening uniformly. Bytes then
+    /// follow the content
+    /// (silence and simple tones stay small) and `bitrate_bps` is ignored.
+    /// LC only (`he` must be off).
+    pub quality: Option<u8>,
 }
 
 impl Default for EncodeOptions {
@@ -214,6 +213,7 @@ impl Default for EncodeOptions {
             pns: false,
             intensity: false,
             he: false,
+            quality: None,
         }
     }
 }
@@ -252,6 +252,24 @@ impl EncodeOptions {
     #[inline]
     pub fn low_rate() -> Self {
         Self::default().with_bitrate_bps(48_000).with_he(true)
+    }
+
+    /// Quality VBR level `0..=10` instead of an ABR target (LC only). One-shot
+    /// and push encode honor it identically; bytes are monotonic in the
+    /// level on aggregate (`lab/quality/CURVES.md`).
+    ///
+    /// ```
+    /// use syom::{EncodeOptions, encode_with};
+    /// let tone: Vec<f32> = (0..48_000).map(|i| 0.3 * (i as f32 * 0.0576).sin()).collect();
+    /// let lo = encode_with(&[tone.clone()], 48_000, &EncodeOptions::adts().with_quality(2))?;
+    /// let hi = encode_with(&[tone], 48_000, &EncodeOptions::adts().with_quality(8))?;
+    /// assert!(lo.len() < hi.len());
+    /// # Ok::<(), syom::AacError>(())
+    /// ```
+    #[inline]
+    pub fn with_quality(mut self, level: u8) -> Self {
+        self.quality = Some(level);
+        self
     }
 
     /// Raw access units at 128 kbps (push [`crate::Encoder`] only).

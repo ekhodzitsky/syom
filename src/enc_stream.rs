@@ -115,6 +115,7 @@ impl Encoder {
     /// or zero bitrate. [`EncodeContainer::M4a`] is [`AacError::Unsupported`]
     /// (use [`crate::encode_with`]; M4A needs finish-time sizes).
     pub fn new(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<Self> {
+        crate::encode::check_mode(opts)?;
         if !ADTS_SAMPLE_RATES_HZ.contains(&sample_rate) {
             return Err(AacError::encode(format!(
                 "encode: unsupported sample rate {sample_rate}Hz (not in the AAC table)"
