@@ -34,7 +34,8 @@ native `aac`. Host CLI ffmpeg may be a different build (recorded in REPORT).
 - FAAC 1.31.1 / FDK 2.0.3: prefixes not installed on this host; TASK-9/7
   sine-only smokes used internally generated PCM, not these clips.
 - Apple AAC: no AudioToolbox host (TASK-10).
-- HE encode: none of the matrix engines emit SBR/PS here.
+- HE encode: none of the matrix engines emit SBR/PS here. TASK-85
+  architecture is go (`HE_ENC.md`); product `encode` stays LC.
 
 ## Corpus
 

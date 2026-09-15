@@ -176,6 +176,10 @@ mod encode_pns_tests;
 mod encode_is_tests;
 
 #[cfg(test)]
+#[path = "encode_he_arch_tests.rs"]
+mod encode_he_arch_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
 

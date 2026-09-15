@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HE-AAC v1 encode architecture (TASK-85): **go** for a staged original
+  2× dual-rate SBR path (mono/stereo, ADTS/M4A). **Not** a 0.x default
+  (`encode` stays LC). HE v2/PS encode stays gated. Tables: reuse
+  in-tree ISO QMF/Huffman/bands; do not copy FDK/oxideav encoders.
+  Targets and task split in `lab/quality/HE_ENC.md`.
 - Bounded metadata probe (TASK-54): `probe` / `probe_with` report
   container, LC/HE/PS profile, core/output rate, layout, and whether
   duration/trim are exact, estimated, or unknown. Partial prefixes
