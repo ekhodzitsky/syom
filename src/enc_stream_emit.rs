@@ -19,19 +19,21 @@ impl Encoder {
             slots[i] = &b[..];
         }
         let planes = &slots[..self.channels];
-        if self.enc.lookahead_enabled() {
-            if let Some(au) = self.enc.push_frame(planes)? {
+        if self.lc()?.lookahead_enabled() {
+            if let Some(au) = self.lc()?.push_frame(planes)? {
                 self.deliver(&au, samples, scratch, cb)?;
             }
             return Ok(());
         }
-        self.enc.encode_into(planes)?;
-        let fs = self.enc.fs_index();
+        let (channels, wrap_adts) = (self.channels, self.wrap_adts);
+        let enc = self.lc()?;
+        enc.encode_into(planes)?;
+        let fs = enc.fs_index();
         scratch.clear();
-        if self.wrap_adts {
-            crate::encode::adts_frame_into(self.enc.payload(), fs, self.channels, scratch);
+        if wrap_adts {
+            crate::encode::adts_frame_into(enc.payload(), fs, channels, scratch);
         } else {
-            scratch.extend_from_slice(self.enc.payload());
+            scratch.extend_from_slice(enc.payload());
         }
         self.aac_frames += 1;
         self.bytes += scratch.len() as u64;

@@ -35,7 +35,9 @@ pub use decode::{
     decode_with, read, read_with,
 };
 pub use enc_stream::{EncodeInfo, EncodedFrame, Encoder};
-pub use encode::{encode, encode_with, mux_raw_lc_m4a, wrap_adts_au, write, write_with};
+pub use encode::{
+    encode, encode_with, mux_raw_he_m4a, mux_raw_lc_m4a, wrap_adts_au, write, write_with,
+};
 pub use error::{AacError, LifecycleState, MalformedKind, PcmReject, Result, UnsupportedFeature};
 pub use isomp4::sniff_is_isobmff;
 pub use layout::{Channel, FrameMeta, Layout, MAX_PLANES, mpeg_channels};
@@ -107,6 +109,9 @@ mod footprint_tests;
 #[path = "mem_iso_tests.rs"]
 mod mem_iso_tests;
 
+#[cfg(test)]
+#[path = "encode_he_tests.rs"]
+mod encode_he_tests;
 #[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;

@@ -388,7 +388,7 @@ fn assert_decode_matches_lavc(stream: &[u8], lavc: &[u8]) {
     assert_decode_matches_lavc_n(stream, lavc, lavc.len() / 4);
 }
 
-fn assert_decode_matches_lavc_n(stream: &[u8], lavc: &[u8], n: usize) {
+pub(crate) fn assert_decode_matches_lavc_n(stream: &[u8], lavc: &[u8], n: usize) {
     let dec = decode_with(stream, &crate::DecodeOptions::unbounded()).expect("decode");
     assert_eq!(dec.channels.len(), 2);
     assert_eq!(dec.channels[0].len(), n, "frame count vs lavc");

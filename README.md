@@ -21,7 +21,8 @@ crate**: one call, LC + HE v1/v2, duration/rate caps, no extra dependencies.
 | | syom | rusty_aac 0.5 | symphonia 0.6 | oxideav-aac 0.1.7 |
 |---|---|---|---|---|
 | AAC-LC | yes | yes | yes | yes (ADTS) |
-| HE-AAC v1/v2 (SBR/PS) | yes | signalled | LC core only | ADTS SBR/PS |
+| HE-AAC v1/v2 (SBR/PS) decode | yes | signalled | LC core only | ADTS SBR/PS |
+| HE-AAC v1 encode | opt-in (`with_he`) | no | no | advertised |
 | ADTS / M4A / LATM | yes | ADTS + AU | via formats | ADTS only |
 | Default deps | **none** | none | several | oxideav-core |
 | Output | planar `f32`, native rate | interleaved f32 | packets | interleaved i16 |
@@ -108,7 +109,11 @@ scale, default off; TASK-69 no-go as 0.x default), `with_short_tns`
 refine, default off; TASK-74 no-go as 0.x default), and `with_pns`
 (perceptual noise substitution, default off; TASK-75 no-go as 0.x
 default), and `with_intensity` (intensity stereo, default off; TASK-76
-no-go as 0.x default).
+no-go as 0.x default), and `with_he` (HE-AAC v1: SBR on an LC core at
+half the input rate; 16–48 kHz input, mono/stereo, `bitrate_bps` is the
+whole-stream budget; ADTS signals SBR implicitly, M4A / `Encoder::asc`
+carry the explicit two-rate config; priming 3018 output samples; default
+off — `encode` stays LC).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD

@@ -49,7 +49,6 @@
 //! [`crate::wrap_adts_au`].
 
 use crate::engine::adts::ADTS_SAMPLE_RATES_HZ;
-use crate::engine::enc_frame::LcEncoder;
 use crate::engine::swb::LONG_WINDOW_LEN as FRAME;
 use crate::error::{AacError, Result};
 use crate::options::{EncodeContainer, EncodeOptions};
@@ -71,35 +70,6 @@ pub struct EncodedFrame<'a> {
     pub payload: &'a [u8],
 }
 
-/// Tallies from a finished streaming encode.
-///
-/// Input / bitstream tallies plus the AAC timeline (Apple QA1636-style).
-/// ADTS still cannot carry trim. M4A writes [`Self::priming`] as
-/// `elst.media_time`, [`Self::samples`] as `elst`/`mvhd` presentation
-/// duration, and [`Self::remainder`] as the unplayed `mdhd` tail.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[non_exhaustive]
-pub struct EncodeInfo {
-    /// Input sample rate.
-    pub sample_rate: u32,
-    /// Channels per frame (1 or 2).
-    pub channels: usize,
-    /// AAC frames emitted, including the overlap-drain frame of zeros.
-    pub aac_frames: u64,
-    /// Input samples per channel consumed (source length).
-    pub samples: u64,
-    /// Bytes handed to the callback (ADTS headers included).
-    pub bytes: u64,
-    /// Encoder delay (1024). Skip this many decoded samples for valid audio.
-    pub priming: u64,
-    /// Zero-pad in the last *content* block: `ceil(samples/1024)*1024 - samples`.
-    pub remainder: u64,
-    /// `aac_frames * 1024` (decoded ADTS length before container trim).
-    pub coded_samples: u64,
-    /// MPEG layout of the coded planes (`1` mono / `2` stereo).
-    pub layout: crate::Layout,
-}
-
 /// Resumable push encoder: planar f32 chunks in, ADTS frames out.
 ///
 /// Byte-exact with one-shot [`crate::encode_with`] on the same PCM, for any
@@ -108,7 +78,7 @@ pub struct EncodeInfo {
 /// 1–2 channels, finite samples in `[-1, 1]`, equal plane lengths.
 /// `|x| > 1` and non-finite samples are [`crate::AacError::InvalidPcm`] (no clip).
 pub struct Encoder {
-    enc: LcEncoder,
+    enc: Core,
     sample_rate: u32,
     channels: usize,
     wrap_adts: bool,
@@ -123,6 +93,12 @@ pub struct Encoder {
     aac_frames: u64,
     bytes: u64,
     life: Life,
+    /// HE: access units collected from the engine before delivery
+    /// (reused; `he_n` are live), and source samples already attributed
+    /// to delivered frames.
+    he_aus: Vec<Vec<u8>>,
+    he_n: usize,
+    attributed: u64,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -165,8 +141,19 @@ impl Encoder {
             ));
         }
         let wrap_adts = opts.container != EncodeContainer::Raw;
-        let enc = crate::encode::new_lc(sample_rate, channels, opts)?;
-        let asc = crate::engine::asc::write_lc(enc.fs_index(), channels as u8);
+        let (enc, asc) = if opts.he {
+            let he = crate::encode::new_he(sample_rate, channels, opts)?;
+            let out_idx = ADTS_SAMPLE_RATES_HZ
+                .iter()
+                .position(|&r| r == sample_rate)
+                .unwrap_or(0) as u8;
+            let asc = crate::engine::asc::write_he(he.fs_index(), out_idx, channels as u8);
+            (Core::He(Box::new(he)), asc)
+        } else {
+            let lc = crate::encode::new_lc(sample_rate, channels, opts)?;
+            let asc = crate::engine::asc::write_lc(lc.fs_index(), channels as u8);
+            (Core::Lc(Box::new(lc)), asc)
+        };
         Ok(Self {
             enc,
             sample_rate,
@@ -180,10 +167,14 @@ impl Encoder {
             aac_frames: 0,
             bytes: 0,
             life: Life::Open,
+            he_aus: Vec::new(),
+            he_n: 0,
+            attributed: 0,
         })
     }
 
-    /// LC `AudioSpecificConfig` for this encoder (stable; not input-sized).
+    /// `AudioSpecificConfig` for this encoder (stable; not input-sized):
+    /// 2-byte LC, or the 4-byte explicit two-rate HE v1 config.
     #[must_use]
     pub fn asc(&self) -> &[u8] {
         &self.asc
@@ -235,7 +226,12 @@ impl Encoder {
     /// windows, psy spreading, and vector capacity are kept. Rate, channels,
     /// and [`EncodeOptions`] are unchanged. No global cache.
     pub fn reset(&mut self) -> Result<()> {
-        self.enc.reset();
+        match &mut self.enc {
+            Core::Lc(e) => e.reset(),
+            Core::He(e) => e.reset(),
+        }
+        self.he_n = 0;
+        self.attributed = 0;
         for p in &mut self.pending {
             p.clear();
         }
@@ -264,6 +260,9 @@ impl Encoder {
         }
         if let Err(e) = crate::encode::check_pcm_samples(planes.iter().copied()) {
             return self.fail(e);
+        }
+        if matches!(self.enc, Core::He(_)) {
+            return self.feed_he(planes, on_frame);
         }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);
@@ -313,6 +312,9 @@ impl Encoder {
         if self.samples == 0 {
             return self.fail(AacError::InvalidPcm(crate::PcmReject::Empty));
         }
+        if matches!(self.enc, Core::He(_)) {
+            return self.finish_he(on_frame);
+        }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);
         let r = self.flush_end(&mut scratch, &mut cb);
@@ -347,23 +349,23 @@ impl Encoder {
             for (ch, buf) in bufs.iter_mut().enumerate().take(self.channels) {
                 buf[..tail].copy_from_slice(&self.pending[ch][..tail]);
             }
-            if self.enc.lookahead_enabled() {
+            if self.lc()?.lookahead_enabled() {
                 let planes: Vec<&[f32]> = bufs[..self.channels].iter().map(|b| &b[..]).collect();
-                if let Some(au) = self.enc.push_frame(&planes)? {
+                if let Some(au) = self.lc()?.push_frame(&planes)? {
                     self.deliver(&au, FRAME, scratch, cb)?;
                 }
-                if let Some(au) = self.enc.flush()? {
+                if let Some(au) = self.lc()?.flush()? {
                     self.deliver(&au, tail, scratch, cb)?;
                 }
             } else {
                 self.emit(&bufs, tail, scratch, cb)?;
             }
-        } else if self.enc.lookahead_enabled()
-            && let Some(au) = self.enc.flush()?
+        } else if self.lc()?.lookahead_enabled()
+            && let Some(au) = self.lc()?.flush()?
         {
             self.deliver(&au, FRAME, scratch, cb)?;
         }
-        for au in self.enc.drain_overlap()? {
+        for au in self.lc()?.drain_overlap()? {
             self.deliver(&au, 0, scratch, cb)?;
         }
         Ok(())
@@ -372,6 +374,14 @@ impl Encoder {
 
 #[path = "enc_stream_emit.rs"]
 mod emit;
+
+#[path = "enc_stream_he.rs"]
+mod he;
+use he::Core;
+
+#[path = "enc_stream_info.rs"]
+mod info;
+pub use info::EncodeInfo;
 
 #[cfg(test)]
 #[path = "enc_stream_tests.rs"]

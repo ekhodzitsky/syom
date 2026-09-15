@@ -26,6 +26,21 @@ pub fn write_lc(fs_index: u8, channel_configuration: u8) -> Vec<u8> {
     w.finish()
 }
 
+/// Explicit two-rate HE-AAC v1 `AudioSpecificConfig` (ISO 14496-3 Amd 2,
+/// Table 1.13): outer AOT 5, `samplingFrequencyIndex` = core rate,
+/// `extensionSamplingFrequencyIndex` = SBR output rate, inner AOT 2 LC,
+/// GA flags 0. 24 kHz core / 48 kHz output mono is `2b 09 88 00`.
+pub fn write_he(core_fs_index: u8, out_fs_index: u8, channel_configuration: u8) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    w.write(5, 5);
+    w.write(u32::from(core_fs_index), 4);
+    w.write(u32::from(channel_configuration), 4);
+    w.write(u32::from(out_fs_index), 4);
+    w.write(u32::from(AOT_LC), 5);
+    w.write(0, 3);
+    w.finish()
+}
+
 /// Parsed `AudioSpecificConfig` (LC core, optional SBR/PS).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AudioSpecificConfig {

@@ -12,6 +12,8 @@ use super::enc_sbr_prep::{CORE_FRAME, FIR_DELAY, OUT_FRAME, QMF_SLOT, SbrPrep, h
 use super::enc_sbr_qmf::{BANDS, EncSlot};
 use super::error::{Error, Result};
 
+/// Output-rate samples per access unit.
+pub(crate) const OUT_SAMPLES_PER_AU: u64 = OUT_FRAME as u64;
 /// Analysis slots the envelope grid of AU `n` starts before core frame
 /// `n − 1` (`tHFGen − tHFAdj`); AU `n` decodes core frame `n − 1` (LC
 /// priming).
@@ -107,6 +109,7 @@ impl HeEncoder {
     }
 
     /// `extension_payload` bytes of the most recently emitted AU.
+    #[cfg(test)]
     pub(crate) fn last_fill_len(&self) -> usize {
         self.last_fill_len
     }

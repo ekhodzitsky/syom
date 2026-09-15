@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in HE-AAC v1 encode (TASK-90; new output format → minor bump):
+  `EncodeOptions::with_he(true)` for `encode_with` / `write_with` and the
+  push `Encoder` (ADTS or raw AUs). Input 16 / 22.05 / 24 / 32 / 44.1 /
+  48 kHz (else `UnsupportedFeature::EncodeHeRate`), mono/stereo,
+  `bitrate_bps` = whole-stream budget (core + SBR). ADTS: LC header at
+  the core rate, SBR in FIL (implicit); M4A and `Encoder::asc`: explicit
+  two-rate AOT 5 config (`2b098800` for 24/48 kHz mono), output-rate
+  timeline with `elst` priming 3018; `mux_raw_he_m4a` for external
+  muxers; `EncodeInfo::priming/remainder/coded_samples` at the output
+  rate. Goldens `he48e.adts` / `he48em.m4a` decode in libavcodec as
+  HE-AAC 48 kHz stereo within the LC tolerance; `encode` default and LC
+  goldens unchanged.
 - HE v1 access units (TASK-89): crate-internal `HeEncoder` — output-rate
   PCM → halfband core + 64-band analysis → LC core at half rate,
   band-limited at the SBR crossover (which follows the core kbps per

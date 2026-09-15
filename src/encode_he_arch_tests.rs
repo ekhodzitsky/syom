@@ -158,13 +158,13 @@ fn permitted_iso_tables_are_in_tree_and_complete() {
 }
 
 #[test]
-fn product_encode_path_is_still_lc_only() {
+fn product_encode_default_is_still_lc_he_is_opt_in() {
     let encode = include_str!("encode.rs");
-    assert!(encode.contains("AAC-LC only"));
-    assert!(!encode.contains("SbrEncoder"));
+    assert!(encode.contains("AAC-LC (default)"));
+    assert!(encode.contains("with_he"));
     let opts = format!("{:?}", EncodeOptions::default());
-    assert!(!opts.to_ascii_lowercase().contains("sbr"));
-    assert!(!opts.to_ascii_lowercase().contains("he_aac"));
+    assert!(opts.contains("he: false"), "{opts}");
+    assert!(!EncodeOptions::default().he);
 }
 
 #[test]

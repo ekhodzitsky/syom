@@ -128,61 +128,6 @@ impl DecodeOptions {
         self.memory = memory;
         self
     }
-
-    /// Reject limits that would disable protection or are not a duration.
-    ///
-    /// [`f64::INFINITY`] is the explicit unlimited contract used by
-    /// [`Self::unbounded`]. NaN, negative infinity and negative durations
-    /// error. `max_sample_rate == 0` and a zero decode-rate cap with a
-    /// finite duration also error.
-    pub fn validate(&self) -> crate::Result<()> {
-        let d = self.max_duration_secs;
-        if d.is_nan() {
-            return Err(crate::AacError::invalid_limits("max_duration_secs is NaN"));
-        }
-        if d.is_infinite() && d < 0.0 {
-            return Err(crate::AacError::invalid_limits("max_duration_secs is -inf"));
-        }
-        if d.is_finite() && d < 0.0 {
-            return Err(crate::AacError::invalid_limits(
-                "max_duration_secs is negative",
-            ));
-        }
-        if self.max_sample_rate == 0 {
-            return Err(crate::AacError::invalid_limits("max_sample_rate is 0"));
-        }
-        if self.max_decode_sample_rate == 0 && d.is_finite() {
-            return Err(crate::AacError::invalid_limits(
-                "max_decode_sample_rate is 0",
-            ));
-        }
-        self.memory
-            .validate()
-            .map_err(|e| crate::AacError::invalid_limits(format!("{} budget is 0", e.kind)))?;
-        Ok(())
-    }
-
-    /// Maximum decoded frames allowed at `sample_rate` under these options.
-    ///
-    /// Call [`Self::validate`] before decoding. Invalid durations yield 0
-    /// here so a missed check cannot open an unlimited cap.
-    #[inline]
-    pub fn max_frames(&self, sample_rate: u32) -> usize {
-        let d = self.max_duration_secs;
-        if d.is_infinite() && d > 0.0 {
-            return usize::MAX;
-        }
-        if !d.is_finite() || d <= 0.0 {
-            return 0;
-        }
-        let cap = self.max_decode_sample_rate.max(1);
-        let rate = sample_rate.min(cap) as f64;
-        let frames = d * rate;
-        if !frames.is_finite() || frames >= usize::MAX as f64 {
-            return usize::MAX;
-        }
-        frames as usize
-    }
 }
 
 /// Output container for the encoder.
@@ -244,6 +189,15 @@ pub struct EncodeOptions {
     pub pns: bool,
     /// Intensity stereo (TASK-76). Default off.
     pub intensity: bool,
+    /// HE-AAC v1 (SBR) instead of AAC-LC (TASK-90). Default off — `encode`
+    /// stays LC. The LC core runs at half the input rate (16 / 22.05 /
+    /// 24 / 32 / 44.1 / 48 kHz input only, else
+    /// [`crate::UnsupportedFeature::EncodeHeRate`]), mono / stereo,
+    /// `bitrate_bps` is the whole-stream budget (core + SBR; ≤ 6144 bits
+    /// per channel per core frame). ADTS signals SBR implicitly (header
+    /// carries the core rate); M4A and [`crate::Encoder::asc`] carry the
+    /// explicit two-rate AOT 5 config. Priming is 3018 output samples.
+    pub he: bool,
 }
 
 impl Default for EncodeOptions {
@@ -259,6 +213,7 @@ impl Default for EncodeOptions {
             band_refine: false,
             pns: false,
             intensity: false,
+            he: false,
         }
     }
 }
@@ -375,7 +330,29 @@ impl EncodeOptions {
         self.intensity = on;
         self
     }
+
+    /// HE-AAC v1 (SBR on an LC core at half the input rate). Off by
+    /// default. One-shot and push encode honor it identically.
+    ///
+    /// ```
+    /// use syom::{DecodeOptions, EncodeOptions, decode_with, encode_with, probe};
+    /// let pcm = vec![vec![0.0f32; 48_000]; 2];
+    /// let opts = EncodeOptions::adts().with_bitrate_bps(48_000).with_he(true);
+    /// let adts = encode_with(&pcm, 48_000, &opts)?;
+    /// assert_eq!(probe(&adts)?.meta.core_rate, 24_000); // ADTS header: LC at the core rate
+    /// let dec = decode_with(&adts, &DecodeOptions::audio())?;
+    /// assert_eq!((dec.sample_rate, dec.core_rate), (48_000, 24_000));
+    /// # Ok::<(), syom::AacError>(())
+    /// ```
+    #[inline]
+    pub fn with_he(mut self, on: bool) -> Self {
+        self.he = on;
+        self
+    }
 }
+
+#[path = "options_validate.rs"]
+mod validate;
 
 #[cfg(test)]
 #[path = "options_tests.rs"]

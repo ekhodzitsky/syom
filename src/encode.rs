@@ -1,6 +1,7 @@
-//! One-shot encode: planar f32 → AAC-LC in ADTS or M4A.
+//! One-shot encode: planar f32 → AAC-LC (default) or HE-AAC v1
+//! ([`EncodeOptions::with_he`]) in ADTS or M4A.
 //!
-//! The encoder writes AAC-LC only (no SBR/PS), mono or stereo, with block
+//! The default encoder writes AAC-LC (no SBR/PS), mono or stereo, with block
 //! switching (long windows for steady content, short windows on detected
 //! attacks). CBR-ish via a per-frame global scalefactor offset search plus
 //! a bounded one-frame bit credit. Output is conformant enough that
@@ -13,6 +14,7 @@
 
 use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
 use crate::engine::enc_frame::LcEncoder;
+use crate::engine::enc_he::HeEncoder;
 use crate::engine::swb::LONG_WINDOW_LEN as FRAME;
 use crate::error::{AacError, Result};
 use crate::m4a_write;
@@ -42,8 +44,60 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
 }
 
+/// Build the HE v1 encoder: the output rate must halve to an ADTS rate and
+/// the whole-stream bitrate must fit the core's 6144 bits/channel/frame.
+pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<HeEncoder> {
+    let core = crate::engine::enc_sbr_prep::he_core_rate(sample_rate)
+        .map_err(|_| AacError::Unsupported(crate::UnsupportedFeature::EncodeHeRate(sample_rate)))?;
+    let max_bps = crate::engine::enc_frame::max_bitrate_bps(core, channels);
+    if opts.bitrate_bps > max_bps {
+        return Err(AacError::encode(format!(
+            "encode: HE bitrate {} bps exceeds 6144 bits/channel at the {core} Hz core (max {max_bps} bps)",
+            opts.bitrate_bps
+        )));
+    }
+    Ok(HeEncoder::new(
+        sample_rate,
+        channels,
+        opts.bitrate_bps,
+        opts.lookahead,
+    )?)
+}
+
+/// HE v1 one-shot: every access unit, then ADTS (implicit SBR, core rate
+/// in the header) or M4A (explicit two-rate ASC, output-rate timeline).
+fn encode_he(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
+    let channels = pcm.len();
+    let mut enc = new_he(sample_rate, channels, opts)?;
+    let planes: Vec<&[f32]> = pcm.iter().map(Vec::as_slice).collect();
+    let mut aus: Vec<Vec<u8>> = Vec::new();
+    enc.push(&planes, |au| {
+        aus.push(au.to_vec());
+        Ok(())
+    })?;
+    let info = enc.finish(|au| {
+        aus.push(au.to_vec());
+        Ok(())
+    })?;
+    match opts.container {
+        EncodeContainer::Adts => Ok(wrap_adts(&aus, enc.fs_index(), channels)),
+        EncodeContainer::M4a => m4a_write::mux_aac_he(
+            &aus,
+            enc.fs_index(),
+            fs_index(sample_rate)?,
+            channels,
+            sample_rate,
+            info.source,
+            info.priming_out,
+        ),
+        EncodeContainer::Raw => Err(AacError::Unsupported(
+            crate::UnsupportedFeature::EncodeRawOneShot,
+        )),
+    }
+}
+
 /// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
-/// optional ATH / tonality / short TNS / short grouping).
+/// optional ATH / tonality / short TNS / short grouping / HE v1).
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at
@@ -51,6 +105,9 @@ pub fn encode(pcm: &[Vec<f32>], sample_rate: u32) -> Result<Vec<u8>> {
 /// successor so the last source samples reconstruct.
 pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
     validate(pcm, sample_rate, opts)?;
+    if opts.he {
+        return encode_he(pcm, sample_rate, opts);
+    }
     let channels = pcm.len();
     let mut enc = new_lc(sample_rate, channels, opts)?;
     let n_samples = pcm[0].len();
@@ -91,6 +148,8 @@ pub fn encode_with(pcm: &[Vec<f32>], sample_rate: u32, opts: &EncodeOptions) -> 
 }
 
 /// Wrap one `raw_data_block` in an ADTS frame (no CRC, fullness `0x7FF`).
+/// For HE v1 access units pass the **core** rate (half the input rate):
+/// ADTS signals SBR implicitly and the header carries the core rate.
 ///
 /// ```
 /// use syom::{EncodeOptions, Encoder, wrap_adts_au};
@@ -116,6 +175,35 @@ pub fn wrap_adts_au(payload: &[u8], sample_rate: u32, channels: usize) -> Result
     let mut out = Vec::with_capacity(crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC + payload.len());
     adts_frame_into(payload, fs, channels, &mut out);
     Ok(out)
+}
+
+/// Mux raw HE v1 access units (push [`crate::Encoder`] with
+/// [`EncodeOptions::with_he`] + [`EncodeContainer::Raw`]) into M4A:
+/// explicit two-rate ASC, output-rate timeline, `elst` priming as
+/// reported by [`crate::EncodeInfo::priming`].
+pub fn mux_raw_he_m4a(
+    payloads: &[&[u8]],
+    output_rate: u32,
+    channels: usize,
+    valid_samples: u64,
+) -> Result<Vec<u8>> {
+    let core = crate::engine::enc_sbr_prep::he_core_rate(output_rate)
+        .map_err(|_| AacError::Unsupported(crate::UnsupportedFeature::EncodeHeRate(output_rate)))?;
+    if !(1..=2).contains(&channels) {
+        return Err(AacError::encode(format!(
+            "encode: channels must be 1 or 2, got {channels}"
+        )));
+    }
+    let owned: Vec<Vec<u8>> = payloads.iter().map(|p| p.to_vec()).collect();
+    m4a_write::mux_aac_he(
+        &owned,
+        fs_index(core)?,
+        fs_index(output_rate)?,
+        channels,
+        output_rate,
+        valid_samples,
+        crate::engine::enc_he::HE_PRIMING_OUT,
+    )
 }
 
 /// Mux raw LC access units into M4A (`elst` priming 1024, presentation `valid_samples`).

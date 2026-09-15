@@ -22,7 +22,6 @@ pub(crate) mod enc_pns;
 pub(crate) mod enc_psy;
 pub(crate) mod enc_quant;
 // HE v1 encode (TASK-86..89); public options/signalling are TASK-90.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod enc_he;
 pub(crate) mod enc_sbr_bits;
 pub(crate) mod enc_sbr_est;

@@ -30,6 +30,8 @@ pub enum UnsupportedFeature {
     EncodeM4aStreaming,
     /// One-shot encode cannot emit raw AUs (no per-AU sizes); use [`crate::Encoder`].
     EncodeRawOneShot,
+    /// HE-AAC v1 encode needs an output rate whose half is an ADTS rate.
+    EncodeHeRate(u32),
     /// `decode_au` needs [`crate::Decoder::from_asc`]; `feed` is ADTS/LATM.
     RawAccessUnit,
     /// Mid-stream AudioSpecificConfig change (call [`crate::Decoder::reset`]).
@@ -227,6 +229,9 @@ impl fmt::Display for UnsupportedFeature {
                     f,
                     "encode: raw access units need the push Encoder (per-AU sizes)"
                 )
+            }
+            Self::EncodeHeRate(r) => {
+                write!(f, "encode: HE-AAC needs 16-48 kHz (2x ADTS), got {r} Hz")
             }
             Self::RawAccessUnit => {
                 write!(f, "aac: decode_au is ASC+AU; feed is ADTS/LATM")

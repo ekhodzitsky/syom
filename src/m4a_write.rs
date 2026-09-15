@@ -17,8 +17,12 @@
 //! The reader side ([`crate::isomp4`]) is the structural oracle: its
 //! `parse_esds` walk defines exactly what this writer emits.
 
-use crate::engine::asc::write_lc;
+use crate::engine::asc::{write_he, write_lc};
 use crate::error::{AacError, Result};
+
+#[path = "m4a_write_boxes.rs"]
+mod boxes;
+use boxes::{rate_16_16, write_dinf, write_edts, write_hdlr, write_mdhd, write_mvhd, write_tkhd};
 
 /// AAC-LC `objectTypeIndication`.
 const OBJECT_TYPE_AAC: u8 = 0x40;
@@ -76,6 +80,54 @@ pub fn mux_aac_lc(
     valid_samples: u64,
     priming: u64,
 ) -> Result<Vec<u8>> {
+    let ch8 =
+        u8::try_from(channels).map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
+    mux_aac(
+        payloads,
+        &write_lc(fs_index, ch8),
+        channels,
+        sample_rate,
+        valid_samples,
+        priming,
+        1024,
+    )
+}
+
+/// HE-AAC v1: explicit two-rate AOT 5 `esds`, timeline at the SBR output
+/// rate (`stts` 2048 per access unit, `elst.media_time` = `priming`).
+pub fn mux_aac_he(
+    payloads: &[Vec<u8>],
+    core_fs_index: u8,
+    out_fs_index: u8,
+    channels: usize,
+    out_rate: u32,
+    valid_samples: u64,
+    priming: u64,
+) -> Result<Vec<u8>> {
+    let ch8 =
+        u8::try_from(channels).map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
+    let asc = write_he(core_fs_index, out_fs_index, ch8);
+    mux_aac(
+        payloads,
+        &asc,
+        channels,
+        out_rate,
+        valid_samples,
+        priming,
+        2048,
+    )
+}
+
+/// Shared writer: `frame_len` media units per access unit.
+fn mux_aac(
+    payloads: &[Vec<u8>],
+    asc: &[u8],
+    channels: usize,
+    sample_rate: u32,
+    valid_samples: u64,
+    priming: u64,
+    frame_len: u32,
+) -> Result<Vec<u8>> {
     if payloads.is_empty() {
         return Err(AacError::encode("m4a: no access units"));
     }
@@ -84,7 +136,7 @@ pub fn mux_aac_lc(
     }
     let n_frames = u32_field(payloads.len() as u64, "frame count")?;
     let coded = u64::from(n_frames)
-        .checked_mul(1024)
+        .checked_mul(u64::from(frame_len))
         .ok_or_else(|| AacError::encode("m4a: coded duration overflow"))?;
     let play_end = priming
         .checked_add(valid_samples)
@@ -127,7 +179,6 @@ pub fn mux_aac_lc(
     let ch8 =
         u8::try_from(channels).map_err(|_| AacError::encode("m4a: channel count exceeds u8"))?;
     let rate_fixed = rate_16_16(sample_rate)?;
-    let asc = write_lc(fs_index, ch8);
 
     let mut out = Vec::new();
     // ftyp
@@ -160,8 +211,8 @@ pub fn mux_aac_lc(
     end_box(&mut out, smhd)?;
     write_dinf(&mut out)?;
     let stbl = start_box(&mut out, b"stbl");
-    write_stsd(&mut out, &asc, u16::from(ch8), rate_fixed, bitrate)?;
-    write_stts(&mut out, n_frames)?;
+    write_stsd(&mut out, asc, u16::from(ch8), rate_fixed, bitrate)?;
+    write_stts(&mut out, n_frames, frame_len)?;
     write_stsc(&mut out, n_frames)?;
     write_stsz(&mut out, n_frames, &sample_sizes)?;
     let stco = start_box(&mut out, b"stco");
@@ -176,107 +227,6 @@ pub fn mux_aac_lc(
     end_box(&mut out, moov)?;
     u32_field(out.len() as u64, "file size")?;
     Ok(out)
-}
-
-fn rate_16_16(sample_rate: u32) -> Result<u32> {
-    u32::try_from(u64::from(sample_rate) << 16)
-        .map_err(|_| AacError::encode("m4a: sample rate exceeds stsd 16.16"))
-}
-
-/// 9 × u32 identity matrix (0x10000 / 0x40000000 fixed point).
-fn write_matrix(out: &mut Vec<u8>) {
-    for v in [0x0001_0000u32, 0, 0, 0, 0x0001_0000, 0, 0, 0, 0x4000_0000] {
-        be32(out, v);
-    }
-}
-
-fn write_mvhd(out: &mut Vec<u8>, timescale: u32, duration: u32) -> Result<()> {
-    let b = start_box(out, b"mvhd");
-    be32(out, 0); // version 0 + flags
-    be32(out, 0); // creation_time
-    be32(out, 0); // modification_time
-    be32(out, timescale);
-    be32(out, duration);
-    be32(out, 0x0001_0000); // rate 1.0
-    be16(out, 0x0100); // volume 1.0
-    be16(out, 0);
-    be64(out, 0);
-    write_matrix(out);
-    for _ in 0..6 {
-        be32(out, 0); // pre_defined
-    }
-    be32(out, 2); // next_track_id
-    end_box(out, b)
-}
-
-fn write_tkhd(out: &mut Vec<u8>, duration: u32) -> Result<()> {
-    let b = start_box(out, b"tkhd");
-    be32(out, 0x0000_0003); // version 0, flags: enabled | in_movie
-    be32(out, 0); // creation_time
-    be32(out, 0); // modification_time
-    be32(out, 1); // track_id
-    be32(out, 0);
-    be32(out, duration);
-    be64(out, 0);
-    be16(out, 0); // layer
-    be16(out, 0); // alternate_group
-    be16(out, 0x0100); // volume 1.0
-    be16(out, 0);
-    write_matrix(out);
-    be32(out, 0); // width
-    be32(out, 0); // height
-    end_box(out, b)
-}
-
-/// `edts`/`elst` v0: play `segment_duration` movie units from `media_time`.
-fn write_edts(out: &mut Vec<u8>, segment_duration: u32, media_time: u32) -> Result<()> {
-    let edts = start_box(out, b"edts");
-    let elst = start_box(out, b"elst");
-    be32(out, 0); // version 0 + flags
-    be32(out, 1); // entry_count
-    be32(out, segment_duration);
-    be32(out, media_time);
-    be16(out, 1); // media_rate_integer
-    be16(out, 0); // media_rate_fraction
-    end_box(out, elst)?;
-    end_box(out, edts)
-}
-
-fn write_mdhd(out: &mut Vec<u8>, sample_rate: u32, duration: u32) -> Result<()> {
-    let b = start_box(out, b"mdhd");
-    be32(out, 0); // version 0 + flags
-    be32(out, 0); // creation_time
-    be32(out, 0); // modification_time
-    be32(out, sample_rate); // timescale
-    be32(out, duration);
-    be16(out, 0x55C4); // language: und
-    be16(out, 0);
-    end_box(out, b)
-}
-
-fn write_hdlr(out: &mut Vec<u8>) -> Result<()> {
-    let b = start_box(out, b"hdlr");
-    be32(out, 0); // version/flags
-    be32(out, 0); // pre_defined
-    out.extend_from_slice(b"soun");
-    be32(out, 0);
-    be32(out, 0);
-    be32(out, 0); // reserved
-    out.push(0); // empty name
-    end_box(out, b)
-}
-
-/// `dinf` with a self-contained `url ` data reference.
-fn write_dinf(out: &mut Vec<u8>) -> Result<()> {
-    let dinf = start_box(out, b"dinf");
-    let dref = start_box(out, b"dref");
-    be32(out, 0); // version/flags
-    be32(out, 1); // entry_count
-    let url = start_box(out, b"url ");
-    be32(out, 1); // version 0, flags 1: media data is in this file
-    end_box(out, url)?;
-    end_box(out, dref)?;
-    end_box(out, dinf)
 }
 
 /// `stsd` with one `mp4a` AudioSampleEntry v0 carrying `esds`.
@@ -353,12 +303,12 @@ fn u8_desc(v: usize, what: &str) -> Result<u8> {
 }
 
 /// `stts` v0: every sample is 1024 media units.
-fn write_stts(out: &mut Vec<u8>, n_frames: u32) -> Result<()> {
+fn write_stts(out: &mut Vec<u8>, n_frames: u32, frame_len: u32) -> Result<()> {
     let b = start_box(out, b"stts");
     be32(out, 0);
     be32(out, 1); // entry_count
     be32(out, n_frames);
-    be32(out, 1024);
+    be32(out, frame_len);
     end_box(out, b)
 }
 
