@@ -267,3 +267,44 @@ fn lavc_decodes_our_he_adts_and_m4a() {
         pcm[0].len(),
     );
 }
+
+#[test]
+fn presets_are_explicit_settings_not_claims() {
+    let hq = EncodeOptions::high_quality();
+    assert_eq!(
+        (hq.bitrate_bps, hq.he, hq.lookahead, hq.container),
+        (192_000, false, false, EncodeContainer::Adts)
+    );
+    let lr = EncodeOptions::low_rate();
+    assert_eq!(
+        (lr.bitrate_bps, lr.he, lr.lookahead, lr.container),
+        (48_000, true, false, EncodeContainer::Adts)
+    );
+    let d = EncodeOptions::default();
+    assert_eq!((d.bitrate_bps, d.he, d.lookahead), (128_000, false, false));
+    let pcm = lavc_fixture();
+    let a = encode_with(&pcm, 48_000, &hq).unwrap();
+    let b = encode_with(&pcm, 48_000, &lr).unwrap();
+    let c = encode_with(&pcm, 48_000, &d).unwrap();
+    assert!(
+        a.len() > c.len() && c.len() > b.len(),
+        "{} {} {}",
+        a.len(),
+        c.len(),
+        b.len()
+    );
+    assert_eq!(
+        decode_with(&b, &DecodeOptions::audio())
+            .unwrap()
+            .sample_rate,
+        48_000
+    );
+    // Presets compose with the other builders.
+    let m4a = encode_with(
+        &pcm,
+        48_000,
+        &EncodeOptions::low_rate().with_container(EncodeContainer::M4a),
+    )
+    .unwrap();
+    assert_eq!(probe(&m4a).unwrap().profile, ProbeProfile::HeAac);
+}

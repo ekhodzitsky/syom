@@ -21,3 +21,7 @@ path = "src/ath.rs"
 [[bin]]
 name = "syom_tonality"
 path = "src/tonality.rs"
+
+[[bin]]
+name = "syom_curves"
+path = "src/curves.rs"

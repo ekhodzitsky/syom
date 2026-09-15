@@ -9,7 +9,8 @@ TNS is `encode_short_tns_tests` plus `SHORT_TNS.md`. TASK-71 grouping is
 `enc_section_tests` plus `SECTION.md`. TASK-74 band refine is
 `encode_refine_tests` plus `REFINE.md`. TASK-75 PNS is
 `encode_pns_tests` plus `PNS.md`. TASK-76 intensity stereo is
-`encode_is_tests` plus `IS.md`. Same isolation.
+`encode_is_tests` plus `IS.md`. TASK-108 curves are `syom_curves`
+(`CURVES.md`, presets in decision-20, freeze in `FREEZE.md`). Same isolation.
 
 ## Independent decoder
 

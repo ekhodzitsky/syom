@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Encoder presets (TASK-108, decision-20): `EncodeOptions::high_quality()`
+  (LC ADTS 192 kbps, causal) and `EncodeOptions::low_rate()` (HE v1 ADTS
+  48 kbps) chosen from development curves (`lab/quality/CURVES.md`,
+  `syom_curves`); the default stays LC 128 kbps causal. Lookahead, ATH and
+  tonality remain opt-in. Candidate frozen for qualification
+  (`lab/quality/FREEZE.md`). Names are settings, not quality claims.
 - Opt-in HE-AAC v1 encode (TASK-90; new output format → minor bump):
   `EncodeOptions::with_he(true)` for `encode_with` / `write_with` and the
   push `Encoder` (ADTS or raw AUs). Input 16 / 22.05 / 24 / 32 / 44.1 /

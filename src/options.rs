@@ -234,6 +234,26 @@ impl EncodeOptions {
         }
     }
 
+    /// Development-curve preset (TASK-108, `lab/quality/CURVES.md`): AAC-LC
+    /// ADTS at 192 kbps, causal (1024-sample priming, no lookahead). The
+    /// highest measured waveform SNR on every dev clip (noise 19 dB, click
+    /// 19 dB, tremolo 57 dB, tone 60 dB at 48 kHz); ≈ 1.5× the default's
+    /// bytes. Not a transparency claim.
+    #[inline]
+    pub fn high_quality() -> Self {
+        Self::default().with_bitrate_bps(192_000)
+    }
+
+    /// Development-curve preset (TASK-108): HE-AAC v1 ADTS at 48 kbps —
+    /// full-band content under 64 kbps (the LC core keeps the low band,
+    /// SBR carries the top octave; priming 3018 output samples). Below
+    /// ≈ 48 kbps on speech-only material LC at the same rate measured a
+    /// higher SNR; tonal content above 64 kbps belongs to LC.
+    #[inline]
+    pub fn low_rate() -> Self {
+        Self::default().with_bitrate_bps(48_000).with_he(true)
+    }
+
     /// Raw access units at 128 kbps (push [`crate::Encoder`] only).
     #[inline]
     pub fn raw() -> Self {

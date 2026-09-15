@@ -115,6 +115,9 @@ whole-stream budget; ADTS signals SBR implicitly, M4A / `Encoder::asc`
 carry the explicit two-rate config; priming 3018 output samples; default
 off — `encode` stays LC).
 `syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
+Presets (settings, not claims; `lab/quality/CURVES.md`):
+`EncodeOptions::default()` LC 128 kbps causal, `high_quality()` LC
+192 kbps, `low_rate()` HE-AAC v1 48 kbps for full-band content.
 The encoder is LC with block switching (an attack detector walks
 OnlyLong → LongStart → EightShort → LongStop on transients), KBD
 analysis, a Bark-spreading psy model (18 dB SMR) whose masked thresholds
