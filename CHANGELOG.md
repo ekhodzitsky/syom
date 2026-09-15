@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- x86 SIMD FFT butterflies for IMDCT/MDCT (TASK-82): SSE2 4-wide and
+  AVX 8-wide, runtime-probed, separate mul/add (no FMA). Bit-identical
+  to scalar; encoder goldens unchanged. Isolated 512-point FFT **−24%**
+  vs scalar; isolated LC decode **−7%**. Declared x86_64 minimum is
+  SSE2 (`lab/baseline/SIMD.md`).
 - DCT-IV factorization of SBR QMF analysis/synthesis modulation
   (TASK-81): ISO GEMV kept as the test reference. Isolated QMF kernel
   **−43%** vs GEMV; whole HE **−30%** median (940 µs vs 1.35 ms,

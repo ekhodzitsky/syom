@@ -5,6 +5,10 @@
 
 use std::sync::LazyLock;
 
+#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+#[path = "imdct_simd.rs"]
+mod kernels;
+
 #[derive(Clone, Copy)]
 struct C {
     re: f32,
@@ -63,13 +67,36 @@ pub(crate) fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
 
 /// Unnormalized inverse radix-2 FFT, SoA + precomputed twiddles. With the
 /// twiddle imaginary parts negated this is the forward FFT (the MDCT uses
-/// it that way).
+/// it that way). 4/8-wide SIMD (NEON / SSE2 / AVX) is bit-identical to scalar.
 pub(crate) fn ifft_soa(
     re: &mut [f32],
     im: &mut [f32],
     bitrev: &[u16],
     tw_re: &[f32],
     tw_im: &[f32],
+) {
+    ifft_soa_ex(re, im, bitrev, tw_re, tw_im, true);
+}
+
+/// Scalar-only FFT (tests and the `-sse2` fallback).
+#[cfg(test)]
+pub(crate) fn ifft_soa_scalar(
+    re: &mut [f32],
+    im: &mut [f32],
+    bitrev: &[u16],
+    tw_re: &[f32],
+    tw_im: &[f32],
+) {
+    ifft_soa_ex(re, im, bitrev, tw_re, tw_im, false);
+}
+
+fn ifft_soa_ex(
+    re: &mut [f32],
+    im: &mut [f32],
+    bitrev: &[u16],
+    tw_re: &[f32],
+    tw_im: &[f32],
+    wide: bool,
 ) {
     let n = re.len();
     for (i, &rev) in bitrev.iter().enumerate() {
@@ -79,18 +106,38 @@ pub(crate) fn ifft_soa(
             im.swap(i, j);
         }
     }
+    #[cfg(target_arch = "x86_64")]
+    let avx = wide && kernels::avx_ok();
+    #[cfg(target_arch = "x86_64")]
+    let wide = wide && kernels::sse2_ok();
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
+    let wide = {
+        let _ = wide;
+        false
+    };
     let mut len = 2usize;
     let mut off = 0usize;
     while len <= n {
         let half = len / 2;
         for i in (0..n).step_by(len) {
             let mut k = 0usize;
-            #[cfg(target_arch = "aarch64")]
-            {
-                // SAFETY: NEON is baseline on aarch64; slices are in-bounds by k+3 < half.
-                while k + 4 <= half {
+            #[cfg(target_arch = "x86_64")]
+            if avx {
+                while k + 8 <= half {
+                    // SAFETY: AVX probed; k+7 < half.
                     unsafe {
-                        ifft_butterfly4(re, im, i, k, half, off, tw_re, tw_im);
+                        kernels::butterfly8(re, im, i, k, half, off, tw_re, tw_im);
+                    }
+                    k += 8;
+                }
+            }
+            #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
+            if wide {
+                while k + 4 <= half {
+                    // SAFETY: 4-wide path is cfg'd to NEON (baseline aarch64)
+                    // or probed SSE2; k+3 < half keeps loads in-range.
+                    unsafe {
+                        kernels::butterfly4(re, im, i, k, half, off, tw_re, tw_im);
                     }
                     k += 4;
                 }
@@ -112,42 +159,6 @@ pub(crate) fn ifft_soa(
         }
         off += half;
         len *= 2;
-    }
-}
-
-#[cfg(target_arch = "aarch64")]
-#[target_feature(enable = "neon")]
-#[allow(clippy::too_many_arguments)]
-unsafe fn ifft_butterfly4(
-    re: &mut [f32],
-    im: &mut [f32],
-    i: usize,
-    k: usize,
-    half: usize,
-    off: usize,
-    tw_re: &[f32],
-    tw_im: &[f32],
-) {
-    use std::arch::aarch64::*;
-    let j = i + k + half;
-    unsafe {
-        // SAFETY: NEON (baseline aarch64); caller ensures k+3 < half and
-        // i+k+3, j+3 are in-range for `re`/`im`/`tw_*`.
-        let wr = vld1q_f32(tw_re.as_ptr().add(off + k));
-        let wi = vld1q_f32(tw_im.as_ptr().add(off + k));
-        let rj = vld1q_f32(re.as_ptr().add(j));
-        let ij = vld1q_f32(im.as_ptr().add(j));
-        // Separate multiply + add/sub, NOT vfmaq/vfmsq: fused rounding would
-        // differ from the scalar path by 1 ulp per butterfly, making the
-        // transform (and the encoder's MDCT output) platform-dependent.
-        let tr = vsubq_f32(vmulq_f32(wr, rj), vmulq_f32(wi, ij));
-        let ti = vaddq_f32(vmulq_f32(wr, ij), vmulq_f32(wi, rj));
-        let ur = vld1q_f32(re.as_ptr().add(i + k));
-        let ui = vld1q_f32(im.as_ptr().add(i + k));
-        vst1q_f32(re.as_mut_ptr().add(j), vsubq_f32(ur, tr));
-        vst1q_f32(im.as_mut_ptr().add(j), vsubq_f32(ui, ti));
-        vst1q_f32(re.as_mut_ptr().add(i + k), vaddq_f32(ur, tr));
-        vst1q_f32(im.as_mut_ptr().add(i + k), vaddq_f32(ui, ti));
     }
 }
 
