@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HE v1 access units (TASK-89): crate-internal `HeEncoder` — output-rate
+  PCM → halfband core + 64-band analysis → LC core at half rate,
+  band-limited at the SBR crossover (which follows the core kbps per
+  channel), with the SBR `EXT_SBR_DATA` FIL of the same AU before `END`
+  and counted in the whole-stream `bitrate_bps` budget. Chunk/reset/
+  lookahead byte-identical; exact finish accounting (priming 3018 output
+  samples at 48 kHz, content tail drained); libavcodec decodes the
+  committed `he48e.adts` golden as HE-AAC 48 kHz stereo within the LC
+  golden tolerance; encode CPU 0.69× LC at the same rate. `encode` and
+  the push `Encoder` still emit LC only; the opt-in surface is TASK-90.
 - HE v1 SBR bitstream writer (TASK-88): crate-internal
   `enc_sbr_bits` — `sbr_header`, all four `sbr_grid` classes, dtdf,
   invf, Huffman envelope/noise rows (inverse ISO tables), SCE and

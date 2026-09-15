@@ -1,11 +1,11 @@
-//! HE v1 SBR parameter estimation (TASK-87): a fixed header per rate,
-//! a FIXFIX time grid from an HF energy surge, envelope and noise-floor
+//! HE v1 SBR parameter estimation (TASK-87): header per rate and
+//! bitrate, FIXFIX grid from an HF energy surge, envelope / noise-floor
 //! scalefactors on the decoder's dequantisation scale, inverse-filter
-//! modes, and the delta-coding direction with a Huffman bit estimate.
-//! Crate-internal; bits are TASK-88, LC/SBR muxing TASK-89. Original
-//! work on in-tree ISO tables; no peer encoder source.
+//! modes, delta direction with a Huffman bit estimate. In-tree ISO
+//! tables only; no peer encoder source.
 
 use super::det_math;
+pub(crate) use super::enc_sbr_header::he_header;
 use super::enc_sbr_qmf::EncSlot;
 use super::error::{Error, Result};
 use super::sbr_envelope::{SbrEnvelopeData, SbrNoiseData};
@@ -37,44 +37,8 @@ const Q_MAX: i32 = 30;
 /// Tonality-gap thresholds for `bs_invf_mode` 1 / 2 / 3.
 const INVF_GAP: [f32; 3] = [0.15, 0.35, 0.6];
 
-/// v1 header per SBR rate: `(fs_sbr, bs_start_freq, bs_stop_freq)`
-/// giving k0 ≈ 3.5–6.75 kHz and k2 ≈ 7.5–15.4 kHz (pinned in tests).
-const HEADER_FREQ: [(u32, u8, u8); 6] = [
-    (16_000, 12, 11),
-    (22_050, 12, 9),
-    (24_000, 12, 9),
-    (32_000, 12, 9),
-    (44_100, 10, 8),
-    (48_000, 10, 8),
-];
-
-/// The fixed v1 header (3.0 dB, Table 4.63 defaults, no extras).
-pub(crate) fn he_header(fs_sbr: u32) -> Result<SbrHeader> {
-    let (_, start_freq, stop_freq) = HEADER_FREQ
-        .iter()
-        .copied()
-        .find(|&(fs, _, _)| fs == fs_sbr)
-        .ok_or(Error::UnsupportedSampleRateIndex(0xFF))?;
-    Ok(SbrHeader {
-        amp_res: true,
-        start_freq,
-        stop_freq,
-        xover_band: 0,
-        reserved: 0,
-        header_extra_1: false,
-        header_extra_2: false,
-        freq_scale: 2,
-        alter_scale: true,
-        noise_bands: 2,
-        limiter_bands: 2,
-        limiter_gains: 2,
-        interpol_freq: true,
-        smoothing_mode: true,
-    })
-}
-
 /// One channel-frame of SBR parameters: absolute scalefactors plus the
-/// raw wire deltas they were coded into.
+/// raw wire deltas.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct SbrFrameParams {
     pub grid: SbrGrid,
@@ -104,9 +68,8 @@ pub(crate) struct SbrEstimator {
     prev_noise: Vec<i32>,
 }
 
-/// `(prediction error, total)` energy of one subband over slots
-/// `[s0, s1)`: a one-tap complex least-squares predictor across slots
-/// fits a stationary tone exactly and noise not at all.
+/// `(prediction error, total)` energy of subband `k` over slots `[s0, s1)`:
+/// a one-tap complex predictor fits a stationary tone exactly, noise not.
 fn tonality(slots: &[EncSlot], k: usize, s0: usize, s1: usize) -> (f32, f32) {
     let mut total = 0.0f32;
     let mut den = 0.0f32;
@@ -144,9 +107,8 @@ fn direction_cost(cur: &[i32], refv: impl Fn(usize) -> i32, book: SbrHuffCodeboo
     })
 }
 
-/// Pick the cheaper valid delta direction for one envelope / floor:
-/// `(time direction, raw wire deltas, bits)`. The frequency direction is
-/// always valid (bands were clamped within the codebook's reach).
+/// Cheaper valid delta direction for one envelope / floor: `(time,
+/// raw deltas, bits)`; frequency is always valid (bands were clamped).
 fn choose_direction(
     cur: &[i32],
     refv: Option<&dyn Fn(usize) -> i32>,
@@ -170,8 +132,8 @@ fn choose_direction(
 }
 
 impl SbrEstimator {
-    pub(crate) fn new(fs_sbr: u32) -> Result<Self> {
-        let header = he_header(fs_sbr)?;
+    pub(crate) fn new(fs_sbr: u32, kbps_per_channel: u32) -> Result<Self> {
+        let header = he_header(fs_sbr, kbps_per_channel)?;
         let k0v = k0(fs_sbr, header.start_freq)?;
         let k2v = k2(fs_sbr, header.stop_freq, k0v)?;
         let f_master = master_table(k0v, k2v, header.freq_scale, header.alter_scale)?;

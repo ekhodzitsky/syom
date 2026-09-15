@@ -21,14 +21,13 @@ pub(crate) mod enc_ms;
 pub(crate) mod enc_pns;
 pub(crate) mod enc_psy;
 pub(crate) mod enc_quant;
-// HE v1 encode staging (TASK-86/87/88); wired into the AU path at TASK-89.
+// HE v1 encode (TASK-86..89); public options/signalling are TASK-90.
 #[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod enc_he;
 pub(crate) mod enc_sbr_bits;
-#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod enc_sbr_est;
-#[cfg_attr(not(test), allow(dead_code))]
+pub(crate) mod enc_sbr_header;
 pub(crate) mod enc_sbr_prep;
-#[cfg_attr(not(test), allow(dead_code))]
 pub(crate) mod enc_sbr_qmf;
 pub(crate) mod enc_section;
 pub(crate) mod enc_short;

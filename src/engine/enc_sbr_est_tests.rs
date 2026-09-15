@@ -95,7 +95,7 @@ pub(super) fn add(a: &mut [f32], b: &[f32]) {
 }
 
 pub(super) fn run(pcm: &[f32]) -> Vec<SbrFrameParams> {
-    let mut est = SbrEstimator::new(48_000).unwrap();
+    let mut est = SbrEstimator::new(48_000, 24).unwrap();
     frames(&analyse(pcm).1)
         .iter()
         .map(|f| est.estimate(f).unwrap())
@@ -104,10 +104,10 @@ pub(super) fn run(pcm: &[f32]) -> Vec<SbrFrameParams> {
 
 #[test]
 fn header_and_band_tables_are_pinned_per_rate() {
-    // (fs_sbr, k0, k2, n_high, n_low, n_q) — determinism tripwire for
-    // the libm-derived master table.
+    // (fs_sbr, k0, k2, n_high, n_low, n_q) at 24 kbps/channel —
+    // determinism tripwire for the libm-derived master table.
     let expect = [
-        (16_000u32, 28, 60, 10, 5, 2),
+        (16_000u32, 25, 60, 12, 6, 3),
         (22_050, 24, 52, 12, 6, 2),
         (24_000, 25, 52, 10, 5, 2),
         (32_000, 25, 52, 10, 5, 2),
@@ -117,21 +117,34 @@ fn header_and_band_tables_are_pinned_per_rate() {
     let got: Vec<_> = expect
         .iter()
         .map(|&(fs, ..)| {
-            let est = SbrEstimator::new(fs).unwrap();
+            let est = SbrEstimator::new(fs, 24).unwrap();
             let b = est.bands();
-            assert_eq!(est.header().start_freq, he_header(fs).unwrap().start_freq);
-            assert!(b.k_x <= 32, "{fs}: k_x {} must sit inside the core", b.k_x);
+            assert_eq!(
+                est.header().start_freq,
+                he_header(fs, 24).unwrap().start_freq
+            );
+            let lo = SbrEstimator::new(fs, 12).unwrap().bands().k_x;
+            let hi = SbrEstimator::new(fs, 48).unwrap().bands().k_x;
+            assert!(
+                lo <= b.k_x && b.k_x <= hi,
+                "{fs}: crossover order {lo} {} {hi}",
+                b.k_x
+            );
+            assert!(
+                fs < 32_000 || lo < hi,
+                "{fs}: crossover rises with rate {lo} {hi}"
+            );
             (fs, b.k_x, b.k_x + b.m, b.n_high(), b.n_low(), b.n_q())
         })
         .collect();
     assert_eq!(got, expect.to_vec());
-    assert!(he_header(64_000).is_err());
-    assert!(SbrEstimator::new(8_000).is_err());
+    assert!(he_header(64_000, 24).is_err());
+    assert!(SbrEstimator::new(8_000, 24).is_err());
 }
 
 #[test]
 fn silence_is_one_envelope_at_the_floor() {
-    let mut est = SbrEstimator::new(48_000).unwrap();
+    let mut est = SbrEstimator::new(48_000, 24).unwrap();
     let f = vec![zero_slot(); SLOTS];
     let p = est.estimate(&f).unwrap();
     assert_eq!(p.grid.num_env, 1);
@@ -152,7 +165,7 @@ fn hf_tone_over_lf_noise_is_tonal_floor_no_invf() {
     let p = &ps[4];
     assert_eq!(p.grid.num_env, 1, "stationary → one envelope");
     // 12 kHz = band 32 → the noise band holding it stays tonal.
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let nb = est
         .bands()
         .f_table_noise
@@ -246,7 +259,7 @@ fn deltas_round_trip_through_the_decoder_dpcm_and_time_direction_saves_bits() {
     let mut pcm = band_noise(n, 200.0, 5_500.0, 0.2, 21);
     add(&mut pcm, &band_noise(n, 7_000.0, 15_000.0, 0.1, 22));
     let ps = run(&pcm);
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let bands = est.bands();
     let mut prev: Option<EnvelopeScalefactors> = None;
     let mut prev_n: Option<NoiseScalefactors> = None;
@@ -303,7 +316,7 @@ fn reset_and_repeat_are_identical() {
     let mut pcm = band_noise(n, 200.0, 5_500.0, 0.2, 31);
     add(&mut pcm, &tone(11_000.0, n, 0.2));
     let fr = frames(&analyse(&pcm).1);
-    let mut est = SbrEstimator::new(48_000).unwrap();
+    let mut est = SbrEstimator::new(48_000, 24).unwrap();
     let a: Vec<_> = fr.iter().map(|f| est.estimate(f).unwrap()).collect();
     est.reset();
     let b: Vec<_> = fr.iter().map(|f| est.estimate(f).unwrap()).collect();

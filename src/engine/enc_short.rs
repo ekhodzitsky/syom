@@ -218,6 +218,7 @@ pub fn emit_frame(
     ms: &MsBands,
     tns: &[EncTns],
     channels: usize,
+    fill: &[u8],
     out: &mut Vec<u8>,
 ) {
     let mut w = BitWriter::from_vec(std::mem::take(out));
@@ -243,6 +244,9 @@ pub fn emit_frame(
                 &mut w, offsets, &books[ch], &chans[ch], gains[ch], false, &tns[ch],
             );
         }
+    }
+    if !fill.is_empty() {
+        let _ = super::enc_sbr_bits::write_fill_element(&mut w, fill); // HE FIL
     }
     w.write(7, 3); // END
     *out = w.finish();

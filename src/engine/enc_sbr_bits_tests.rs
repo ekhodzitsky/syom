@@ -92,7 +92,7 @@ fn minimal(n_high: usize, n_q: usize, env_start: i32, noise_start: i32) -> SbrFr
 fn v1_header_is_sixteen_bits_table_4_63() {
     // amp_res 1 | start 10 | stop 8 | xover 0 | reserved 0 | extra1 0 | extra2 0
     let mut w = BitWriter::new();
-    write_header(&mut w, &he_header(48_000).unwrap()).unwrap();
+    write_header(&mut w, &he_header(48_000, 24).unwrap()).unwrap();
     assert_eq!(w.bit_len(), 16);
     let bytes = w.finish();
     assert_eq!(bits(&bytes, 16), "1101010000000000");
@@ -113,13 +113,13 @@ fn header_extras_are_written_in_table_order() {
 
 #[test]
 fn header_with_non_default_values_and_clear_extra_flag_is_unrepresentable() {
-    let mut h = he_header(48_000).unwrap();
+    let mut h = he_header(48_000, 24).unwrap();
     h.noise_bands = 1; // extra_1 stays false
     assert!(write_header(&mut BitWriter::new(), &h).is_err());
-    let mut h = he_header(48_000).unwrap();
+    let mut h = he_header(48_000, 24).unwrap();
     h.limiter_gains = 0;
     assert!(write_header(&mut BitWriter::new(), &h).is_err());
-    let mut h = he_header(48_000).unwrap();
+    let mut h = he_header(48_000, 24).unwrap();
     h.start_freq = 16;
     assert!(write_header(&mut BitWriter::new(), &h).is_err());
 }
@@ -199,7 +199,7 @@ fn minimal_sce_matches_hand_authored_bits() {
     // 48 kHz v1 bands: NHigh 12, NQ 2. amp_res forced to 1.5 dB by the
     // single-envelope grid: 7-bit start, f_huffman_env_1_5dB(0) = "00";
     // noise: 5-bit start, f_huffman_env_3_0dB(0) = "0".
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let bands = est.bands();
     assert_eq!((bands.n_high(), bands.n_q()), (12, 2));
     let p = minimal(12, 2, 33, 10);
@@ -228,7 +228,7 @@ fn minimal_sce_matches_hand_authored_bits() {
 fn nonzero_deltas_use_the_transcribed_codes() {
     // 3.0 dB (two envelopes, low res, NLow 6): t_huffman_env_3_0dB:
     // −1 "10", 0 "0", +1 "110", +2 "11110"; f_huffman_env_3_0dB: −2 "1110".
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let bands = est.bands();
     let mut p = minimal(12, 2, 0, 0);
     p.grid = fixfix(2, false);
@@ -256,7 +256,7 @@ fn nonzero_deltas_use_the_transcribed_codes() {
 
 #[test]
 fn deltas_outside_the_codebook_are_errors() {
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let bands = est.bands();
     let mut p = minimal(12, 2, 33, 10);
     p.envelope.data[0][3] = 61; // LAV 60 at 1.5 dB
@@ -280,7 +280,7 @@ fn deltas_outside_the_codebook_are_errors() {
 
 #[test]
 fn uncoupled_cpe_round_trips_in_table_4_66_order() {
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let bands = est.bands();
     let a = minimal(12, 2, 40, 12);
     let mut b = minimal(12, 2, 35, 8);
@@ -304,7 +304,7 @@ fn uncoupled_cpe_round_trips_in_table_4_66_order() {
 
 #[test]
 fn extension_round_trips_with_header_and_with_reuse() {
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let (h, bands) = (est.header(), est.bands());
     let p = minimal(12, 2, 33, 10);
     let mut w = BitWriter::new();
@@ -355,7 +355,7 @@ fn extension_round_trips_with_header_and_with_reuse() {
 
 #[test]
 fn payload_is_type_nibble_plus_zero_fill_to_the_byte() {
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let (h, bands) = (est.header(), est.bands());
     let p = minimal(12, 2, 33, 10);
     let payload = sbr_extension_payload(h, true, bands, &[&p]).unwrap();
@@ -419,7 +419,7 @@ fn estimated_frames() -> (SbrEstimator, Vec<SbrFrameParams>) {
     let mut core = Vec::new();
     let mut slots: Vec<EncSlot> = Vec::new();
     prep.push(&pcm, &mut core, |s| slots.push(*s)).unwrap();
-    let mut est = SbrEstimator::new(48_000).unwrap();
+    let mut est = SbrEstimator::new(48_000, 24).unwrap();
     let frames = slots
         .chunks_exact(SLOTS)
         .map(|f| est.estimate(f).unwrap())

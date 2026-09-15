@@ -52,6 +52,7 @@ impl LcEncoder {
         self.grouping = Grouping::ungrouped();
         self.held = None;
         self.payload.clear();
+        self.fill.clear();
         let n_sfb = self.chans_s[0].n_sfb;
         self.chans_s[0] = QuantShort::new(n_sfb);
         self.chans_s[1] = QuantShort::new(n_sfb);

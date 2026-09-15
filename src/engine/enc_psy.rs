@@ -31,6 +31,9 @@ pub struct Psy {
     ath: bool,
     /// Johnston SFM tonality → per-band `target_q` (TASK-69). Default off.
     tonality: bool,
+    /// Bands starting at or above this bin are never coded (0 = off);
+    /// the HE core stops at the SBR crossover (TASK-89).
+    cutoff_bin: usize,
 }
 
 /// Approximate Bark scale of `f` Hz. The `atan`s go through
@@ -105,6 +108,12 @@ impl Psy {
         self.tonality = on;
     }
 
+    /// Leave every band whose first bin is ≥ `bin` uncoded (0 = off).
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub fn set_cutoff_bin(&mut self, bin: usize) {
+        self.cutoff_bin = bin;
+    }
+
     fn with_transform(offsets: &[u16], sample_rate: u32, transform: usize) -> Self {
         let n_bands = offsets.len() - 1;
         let bin_hz = sample_rate as f32 / transform as f32;
@@ -138,6 +147,7 @@ impl Psy {
             ath_energy,
             ath: false,
             tonality: false,
+            cutoff_bin: 0,
         }
     }
 
@@ -184,7 +194,8 @@ impl Psy {
             } else {
                 t.max(abs_floor)
             };
-            coded[b] = self.energy[b] > floor;
+            let below_cutoff = self.cutoff_bin == 0 || usize::from(offsets[b]) < self.cutoff_bin;
+            coded[b] = self.energy[b] > floor && below_cutoff;
             target_q[b] = if !coded[b] {
                 0.0
             } else if self.tonality {

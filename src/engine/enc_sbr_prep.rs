@@ -124,6 +124,7 @@ impl SbrPrep {
         self.counts = PrepCounts::default();
     }
 
+    #[cfg_attr(not(test), allow(dead_code))]
     pub(crate) fn counts(&self) -> PrepCounts {
         self.counts
     }

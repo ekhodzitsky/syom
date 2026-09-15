@@ -165,7 +165,7 @@ impl LcEncoder {
         offset: i32,
     ) -> usize {
         let standalone = self.channels == 1;
-        let mut total = 3 + 4 + 3; // element id + tag + END
+        let mut total = 3 + 4 + 3 + self.fill_bits(); // id + tag + FIL + END
         if self.seq.is_eight_short() {
             if self.channels == 2 {
                 total += 1 + 15 + self.ms.overhead_bits(); // cw + ics_info + ms_mask
@@ -327,6 +327,7 @@ impl LcEncoder {
                 &self.ms,
                 &self.tns,
                 self.channels,
+                &self.fill,
                 out,
             );
         } else {
@@ -339,6 +340,7 @@ impl LcEncoder {
                 &self.ms,
                 &self.tns,
                 self.channels,
+                &self.fill,
                 out,
             );
         }

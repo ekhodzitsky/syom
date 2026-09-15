@@ -18,7 +18,7 @@ use crate::engine::sbr_extension::SbrExtensionData;
 fn reconstruct(pcm: &[f32]) -> ([f64; BANDS], [f64; BANDS], Vec<f32>, Vec<f32>) {
     let (core, slots) = analyse(pcm);
     let fr = frames(&slots);
-    let mut est = SbrEstimator::new(48_000).unwrap();
+    let mut est = SbrEstimator::new(48_000, 24).unwrap();
     let mut dec = SbrDecoder::new(48_000, 1).unwrap();
     let mut out = Vec::new();
     for (n, f) in fr.iter().enumerate() {
@@ -90,7 +90,7 @@ fn db(a: f64, b: f64) -> f64 {
 #[test]
 fn reference_reconstruction_matches_hf_band_energies() {
     let n = OUT_FRAME * 12;
-    let est = SbrEstimator::new(48_000).unwrap();
+    let est = SbrEstimator::new(48_000, 24).unwrap();
     let (kx, k2) = (
         est.bands().k_x as usize,
         (est.bands().k_x + est.bands().m) as usize,

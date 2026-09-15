@@ -93,6 +93,9 @@ pub struct LcEncoder {
     held: Option<Box<lookahead::HeldFrame>>,
     /// Reused `raw_data_block` bytes (TASK-78).
     payload: Vec<u8>,
+    /// HE: `extension_payload` bytes of the SBR FIL written before `END`
+    /// (empty = LC only). Set per frame by the HE encoder (TASK-89).
+    fill: Vec<u8>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -171,6 +174,7 @@ impl LcEncoder {
             grouping: super::enc_group::Grouping::ungrouped(),
             held: None,
             payload: Vec::with_capacity(MAX_PAYLOAD_BYTES),
+            fill: Vec::new(),
             chans_s: Box::new([
                 QuantShort::new(short_offsets.len() - 1),
                 QuantShort::new(short_offsets.len() - 1),
@@ -376,6 +380,10 @@ mod lookahead;
 
 #[path = "enc_frame_reset.rs"]
 mod reset;
+
+/// HE hooks (`enc_frame_he.rs`): SBR fill bytes + core cutoff (TASK-89).
+#[path = "enc_frame_he.rs"]
+mod he;
 
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]

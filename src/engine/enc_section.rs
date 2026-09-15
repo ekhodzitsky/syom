@@ -355,8 +355,7 @@ pub fn emit_channel_body(
     emit_spectral(w, offsets, sfb_cb, q);
 }
 
-/// Emit a long-family (`OnlyLong` / `LongStart` / `LongStop`)
-/// `raw_data_block` from the built state.
+/// Emit a long-family (`OnlyLong` / `LongStart` / `LongStop`) `raw_data_block`.
 #[allow(clippy::too_many_arguments)]
 pub fn emit_frame(
     offsets: &[u16],
@@ -367,6 +366,7 @@ pub fn emit_frame(
     ms: &MsBands,
     tns: &[EncTns],
     channels: usize,
+    fill: &[u8],
     out: &mut Vec<u8>,
 ) {
     let mut w = BitWriter::from_vec(std::mem::take(out));
@@ -387,6 +387,9 @@ pub fn emit_frame(
                 &mut w, offsets, seq, &books[ch], &chans[ch], gains[ch], false, &tns[ch],
             );
         }
+    }
+    if !fill.is_empty() {
+        let _ = super::enc_sbr_bits::write_fill_element(&mut w, fill); // HE FIL
     }
     w.write(7, 3); // END
     *out = w.finish();
