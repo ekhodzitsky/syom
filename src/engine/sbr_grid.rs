@@ -146,15 +146,34 @@ impl SbrGrid {
     /// (only reachable for a corrupt VARVAR grid) yields
     /// [`Error::SbrGridInvalid`].
     pub fn parse(reader: &mut BitReader<'_>) -> Result<Self> {
+        let mut out = Self {
+            frame_class: FrameClass::FixFix,
+            num_env: 0,
+            num_noise: 0,
+            freq_res: Vec::new(),
+            var_bord_0: 0,
+            var_bord_1: 0,
+            rel_bord_0: Vec::new(),
+            rel_bord_1: Vec::new(),
+            pointer: 0,
+            amp_res_override: false,
+        };
+        out.parse_into(reader)?;
+        Ok(out)
+    }
+
+    /// Fill `self` from the reader (reuses border / freq-res capacity).
+    pub fn parse_into(&mut self, reader: &mut BitReader<'_>) -> Result<()> {
         let frame_class = FrameClass::from_bits(read(reader, 2)?);
         let mut var_bord_0 = 0u8;
         let mut var_bord_1 = 0u8;
-        let mut rel_bord_0: Vec<u8> = Vec::new();
-        let mut rel_bord_1: Vec<u8> = Vec::new();
+        self.rel_bord_0.clear();
+        self.rel_bord_1.clear();
+        self.freq_res.clear();
         let mut pointer = 0u32;
         let mut amp_res_override = false;
 
-        let (num_env, freq_res) = match frame_class {
+        let num_env = match frame_class {
             FrameClass::FixFix => {
                 let raw = read(reader, 2)?;
                 let num_env = 1usize << raw; // bs_num_env = 2^tmp.
@@ -163,9 +182,11 @@ impl SbrGrid {
                     amp_res_override = true; // bs_amp_res = 0.
                 }
                 let fr0 = read_flag(reader)?;
-                // All envelopes share bs_freq_res[ch][0].
-                let freq_res = vec![fr0; num_env];
-                (num_env, freq_res)
+                self.freq_res.resize(num_env, fr0);
+                for f in &mut self.freq_res {
+                    *f = fr0;
+                }
+                num_env
             }
             FrameClass::FixVar => {
                 var_bord_1 = read(reader, 2)? as u8;
@@ -173,16 +194,14 @@ impl SbrGrid {
                 let num_env = num_rel_1 + 1;
                 check_num_env(num_env)?;
                 for _ in 0..num_env - 1 {
-                    rel_bord_1.push(read(reader, 2)? as u8);
+                    self.rel_bord_1.push(read(reader, 2)? as u8);
                 }
                 pointer = read(reader, ptr_bits(num_env))?;
-                // Frequency-resolution flags transmitted in reverse:
-                // bs_freq_res[ch][num_env - 1 - env].
-                let mut freq_res = vec![false; num_env];
+                self.freq_res.resize(num_env, false);
                 for env in 0..num_env {
-                    freq_res[num_env - 1 - env] = read_flag(reader)?;
+                    self.freq_res[num_env - 1 - env] = read_flag(reader)?;
                 }
-                (num_env, freq_res)
+                num_env
             }
             FrameClass::VarFix => {
                 var_bord_0 = read(reader, 2)? as u8;
@@ -190,15 +209,13 @@ impl SbrGrid {
                 let num_env = num_rel_0 + 1;
                 check_num_env(num_env)?;
                 for _ in 0..num_env - 1 {
-                    rel_bord_0.push(read(reader, 2)? as u8);
+                    self.rel_bord_0.push(read(reader, 2)? as u8);
                 }
                 pointer = read(reader, ptr_bits(num_env))?;
-                // Forward order.
-                let mut freq_res = Vec::with_capacity(num_env);
                 for _ in 0..num_env {
-                    freq_res.push(read_flag(reader)?);
+                    self.freq_res.push(read_flag(reader)?);
                 }
-                (num_env, freq_res)
+                num_env
             }
             FrameClass::VarVar => {
                 var_bord_0 = read(reader, 2)? as u8;
@@ -208,34 +225,28 @@ impl SbrGrid {
                 let num_env = num_rel_0 + num_rel_1 + 1;
                 check_num_env(num_env)?;
                 for _ in 0..num_rel_0 {
-                    rel_bord_0.push(read(reader, 2)? as u8);
+                    self.rel_bord_0.push(read(reader, 2)? as u8);
                 }
                 for _ in 0..num_rel_1 {
-                    rel_bord_1.push(read(reader, 2)? as u8);
+                    self.rel_bord_1.push(read(reader, 2)? as u8);
                 }
                 pointer = read(reader, ptr_bits(num_env))?;
-                let mut freq_res = Vec::with_capacity(num_env);
                 for _ in 0..num_env {
-                    freq_res.push(read_flag(reader)?);
+                    self.freq_res.push(read_flag(reader)?);
                 }
-                (num_env, freq_res)
+                num_env
             }
         };
 
         let num_noise = if num_env > 1 { 2 } else { 1 };
-
-        Ok(SbrGrid {
-            frame_class,
-            num_env,
-            num_noise,
-            freq_res,
-            var_bord_0,
-            var_bord_1,
-            rel_bord_0,
-            rel_bord_1,
-            pointer,
-            amp_res_override,
-        })
+        self.frame_class = frame_class;
+        self.num_env = num_env;
+        self.num_noise = num_noise;
+        self.var_bord_0 = var_bord_0;
+        self.var_bord_1 = var_bord_1;
+        self.pointer = pointer;
+        self.amp_res_override = amp_res_override;
+        Ok(())
     }
 }
 
@@ -264,6 +275,23 @@ impl SbrDtdf {
         }
         Ok(SbrDtdf { df_env, df_noise })
     }
+
+    pub fn parse_into(
+        &mut self,
+        reader: &mut BitReader<'_>,
+        num_env: usize,
+        num_noise: usize,
+    ) -> Result<()> {
+        self.df_env.clear();
+        self.df_noise.clear();
+        for _ in 0..num_env {
+            self.df_env.push(read_flag(reader)?);
+        }
+        for _ in 0..num_noise {
+            self.df_noise.push(read_flag(reader)?);
+        }
+        Ok(())
+    }
 }
 
 /// `sbr_invf()` (Table 4.71) — the 2-bit inverse-filtering mode per
@@ -284,6 +312,14 @@ impl SbrInvf {
             invf_mode.push(read(reader, 2)? as u8);
         }
         Ok(SbrInvf { invf_mode })
+    }
+
+    pub fn parse_into(&mut self, reader: &mut BitReader<'_>, num_noise_bands: usize) -> Result<()> {
+        self.invf_mode.clear();
+        for _ in 0..num_noise_bands {
+            self.invf_mode.push(read(reader, 2)? as u8);
+        }
+        Ok(())
     }
 }
 

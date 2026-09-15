@@ -60,38 +60,53 @@ pub struct DequantizedSbr {
 
 /// §4.6.18.3.5 single-channel dequantization:
 /// `EOrig = 64·2^(E/a)`, `QOrig = 2^(NOISE_FLOOR_OFFSET − Q)`.
+#[cfg(test)]
 #[must_use]
 pub fn dequant_single(
     env: &EnvelopeScalefactors,
     noise: &NoiseScalefactors,
     amp_res: bool,
 ) -> DequantizedSbr {
+    let mut out = DequantizedSbr {
+        e_orig: Vec::new(),
+        q_orig: Vec::new(),
+    };
+    dequant_single_into(env, noise, amp_res, &mut out);
+    out
+}
+
+/// Fill `out` in place (reuses inner row capacity).
+pub fn dequant_single_into(
+    env: &EnvelopeScalefactors,
+    noise: &NoiseScalefactors,
+    amp_res: bool,
+    out: &mut DequantizedSbr,
+) {
     let a = amp_divisor(amp_res);
-    let e_orig = env
-        .eq
-        .iter()
-        .map(|l| {
-            l.iter()
-                .map(|&e| 64.0 * (f64::from(e) / a).exp2())
-                .collect()
-        })
-        .collect();
-    let q_orig = noise
-        .q
-        .iter()
-        .map(|l| {
-            l.iter()
-                .map(|&q| (NOISE_FLOOR_OFFSET - f64::from(q)).exp2())
-                .collect()
-        })
-        .collect();
-    DequantizedSbr { e_orig, q_orig }
+    fill_exp_rows(&mut out.e_orig, &env.eq, |e| {
+        64.0 * (f64::from(e) / a).exp2()
+    });
+    fill_exp_rows(&mut out.q_orig, &noise.q, |q| {
+        (NOISE_FLOOR_OFFSET - f64::from(q)).exp2()
+    });
+}
+
+fn fill_exp_rows(dst: &mut Vec<Vec<f64>>, src: &[Vec<i32>], f: impl Fn(i32) -> f64) {
+    if dst.len() < src.len() {
+        dst.resize(src.len(), Vec::new());
+    }
+    dst.truncate(src.len());
+    for (d, s) in dst.iter_mut().zip(src.iter()) {
+        d.clear();
+        d.extend(s.iter().copied().map(&f));
+    }
 }
 
 /// §4.6.18.3.5 coupled-pair dequantization.
 ///
 /// `ch0` carries the level average (`E0` / `Q0`), `ch1` the pan ratio
 /// (`E1` / `Q1`). Returns the `(left, right)` linear energies.
+#[cfg(test)]
 #[must_use]
 pub fn dequant_coupled(
     env0: &EnvelopeScalefactors,
@@ -100,54 +115,84 @@ pub fn dequant_coupled(
     noise1: &NoiseScalefactors,
     amp_res: bool,
 ) -> (DequantizedSbr, DequantizedSbr) {
+    let mut left = DequantizedSbr {
+        e_orig: Vec::new(),
+        q_orig: Vec::new(),
+    };
+    let mut right = DequantizedSbr {
+        e_orig: Vec::new(),
+        q_orig: Vec::new(),
+    };
+    dequant_coupled_into(env0, noise0, env1, noise1, amp_res, &mut left, &mut right);
+    (left, right)
+}
+
+/// Fill coupled left/right energies in place.
+pub fn dequant_coupled_into(
+    env0: &EnvelopeScalefactors,
+    noise0: &NoiseScalefactors,
+    env1: &EnvelopeScalefactors,
+    noise1: &NoiseScalefactors,
+    amp_res: bool,
+    left: &mut DequantizedSbr,
+    right: &mut DequantizedSbr,
+) {
     let a = amp_divisor(amp_res);
     let pan = pan_offset(amp_res);
-
-    let mut left_e = Vec::with_capacity(env0.eq.len());
-    let mut right_e = Vec::with_capacity(env0.eq.len());
-    for (l0, l1) in env0.eq.iter().zip(env1.eq.iter()) {
-        let mut le = Vec::with_capacity(l0.len());
-        let mut re = Vec::with_capacity(l0.len());
-        for (&e0, &e1) in l0.iter().zip(l1.iter()) {
-            // 64·2^(E0/a + 1) split by the pan ratio.
+    fill_coupled_rows(
+        &mut left.e_orig,
+        &mut right.e_orig,
+        &env0.eq,
+        &env1.eq,
+        |e0, e1| {
             let avg2 = 64.0 * (f64::from(e0) / a + 1.0).exp2();
             let ratio = ((pan - f64::from(e1)) / a).exp2();
-            le.push(avg2 / (1.0 + ratio));
-            re.push(avg2 / (1.0 + 1.0 / ratio));
-        }
-        left_e.push(le);
-        right_e.push(re);
-    }
+            (avg2 / (1.0 + ratio), avg2 / (1.0 + 1.0 / ratio))
+        },
+    );
 
     // Noise floors always use panOffset(1) = 12 (§4.6.18.3.5: the
     // noise formulas are written with panOffset(1) regardless of
     // bs_amp_res).
     let noise_pan = pan_offset(true);
-    let mut left_q = Vec::with_capacity(noise0.q.len());
-    let mut right_q = Vec::with_capacity(noise0.q.len());
-    for (l0, l1) in noise0.q.iter().zip(noise1.q.iter()) {
-        let mut lq = Vec::with_capacity(l0.len());
-        let mut rq = Vec::with_capacity(l0.len());
-        for (&q0, &q1) in l0.iter().zip(l1.iter()) {
+    fill_coupled_rows(
+        &mut left.q_orig,
+        &mut right.q_orig,
+        &noise0.q,
+        &noise1.q,
+        |q0, q1| {
             let avg2 = (NOISE_FLOOR_OFFSET - f64::from(q0) + 1.0).exp2();
             let ratio = (noise_pan - f64::from(q1)).exp2();
-            lq.push(avg2 / (1.0 + ratio));
-            rq.push(avg2 / (1.0 + 1.0 / ratio));
-        }
-        left_q.push(lq);
-        right_q.push(rq);
-    }
+            (avg2 / (1.0 + ratio), avg2 / (1.0 + 1.0 / ratio))
+        },
+    );
+}
 
-    (
-        DequantizedSbr {
-            e_orig: left_e,
-            q_orig: left_q,
-        },
-        DequantizedSbr {
-            e_orig: right_e,
-            q_orig: right_q,
-        },
-    )
+fn fill_coupled_rows(
+    left: &mut Vec<Vec<f64>>,
+    right: &mut Vec<Vec<f64>>,
+    a: &[Vec<i32>],
+    b: &[Vec<i32>],
+    f: impl Fn(i32, i32) -> (f64, f64),
+) {
+    let n = a.len().min(b.len());
+    if left.len() < n {
+        left.resize(n, Vec::new());
+    }
+    if right.len() < n {
+        right.resize(n, Vec::new());
+    }
+    left.truncate(n);
+    right.truncate(n);
+    for i in 0..n {
+        left[i].clear();
+        right[i].clear();
+        for (&x0, &x1) in a[i].iter().zip(b[i].iter()) {
+            let (l, r) = f(x0, x1);
+            left[i].push(l);
+            right[i].push(r);
+        }
+    }
 }
 
 #[cfg(test)]

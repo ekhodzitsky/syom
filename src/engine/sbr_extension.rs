@@ -68,7 +68,7 @@ use crate::engine::{Error, Result};
 pub const SBR_CRC_BITS: u32 = 10;
 
 /// A fully-parsed `sbr_extension_data()` payload (Table 4.62).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SbrExtensionData {
     /// `bs_sbr_crc_bits` (10-bit) when `crc_flag` was set (the
     /// `EXT_SBR_DATA_CRC` extension type); `None` for the plain
@@ -112,6 +112,7 @@ impl SbrExtensionData {
     /// * `prev_header` — the most recent transmitted header for the reuse
     ///   path; `None` on the stream's first SBR payload. A clear
     ///   `bs_header_flag` with `prev_header == None` is ill-formed.
+    #[cfg(test)]
     pub fn parse(
         reader: &mut BitReader<'_>,
         id_aac: IdSynEle,
@@ -174,6 +175,53 @@ impl SbrExtensionData {
             element,
             num_sbr_bits,
         })
+    }
+
+    /// Fill `self` from the reader (reuses element/channel capacity).
+    pub fn parse_into(
+        &mut self,
+        reader: &mut BitReader<'_>,
+        id_aac: IdSynEle,
+        crc_flag: bool,
+        fs_sbr: u32,
+        cnt: Option<u32>,
+        prev_header: Option<SbrHeader>,
+    ) -> Result<()> {
+        let start = reader.bit_position();
+        self.crc = if crc_flag {
+            Some(read(reader, SBR_CRC_BITS)? as u16)
+        } else {
+            None
+        };
+        self.header_present = read_flag(reader)?;
+        self.header = if self.header_present {
+            SbrHeader::parse(reader)?
+        } else {
+            prev_header.ok_or(Error::SbrFreqBandInvalid)?
+        };
+        let bands = self.header.derive_bands(fs_sbr)?;
+        match id_aac {
+            IdSynEle::Sce => self
+                .element
+                .parse_single_into(reader, &bands, self.header.amp_res)?,
+            IdSynEle::Cpe => {
+                self.element = SbrElement::parse_pair(reader, &bands, self.header.amp_res)?;
+            }
+            _ => return Err(Error::SbrFreqBandInvalid),
+        }
+        self.num_sbr_bits = reader.bit_position() - start;
+        if let Some(cnt) = cnt {
+            let total = u64::from(cnt) * 8;
+            let consumed = self.num_sbr_bits + 4;
+            if total < consumed {
+                return Err(Error::SbrFreqBandInvalid);
+            }
+            let align = (total - consumed) % 8;
+            if align > 0 {
+                read(reader, align as u32)?;
+            }
+        }
+        Ok(())
     }
 }
 

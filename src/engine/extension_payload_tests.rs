@@ -76,7 +76,7 @@ fn parse_with_sbr_fill_is_payload() -> Result<(), Error> {
     w.write(0, 4);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    match ExtensionPayload::parse_with_sbr(&mut br, 1, IdSynEle::Sce, 48_000, None)? {
+    match ExtensionPayload::parse_with_sbr(&mut br, 1, IdSynEle::Sce, 48_000, None, &mut None)? {
         ExtensionPayloadOrSbr::Payload(ExtensionPayload::Fill { cnt: 1, .. }) => {}
         other => panic!("{other:?}"),
     }
@@ -214,8 +214,15 @@ fn from_bits_errors_and_byte_length() -> Result<(), Error> {
         Err(Error::UnsupportedExtensionType(2))
     ));
     assert!(
-        ExtensionPayload::parse_with_sbr(&mut BitReader::new(&[0]), 0, IdSynEle::Sce, 48_000, None)
-            .is_err()
+        ExtensionPayload::parse_with_sbr(
+            &mut BitReader::new(&[0]),
+            0,
+            IdSynEle::Sce,
+            48_000,
+            None,
+            &mut None,
+        )
+        .is_err()
     );
 
     let fill = ExtensionPayload::Fill {
@@ -235,7 +242,7 @@ fn parse_with_sbr_fill_data_and_drc() -> Result<(), Error> {
     w.write(u32::from(FILL_DATA_NIBBLE), 4);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    match ExtensionPayload::parse_with_sbr(&mut br, 1, IdSynEle::Sce, 48_000, None)? {
+    match ExtensionPayload::parse_with_sbr(&mut br, 1, IdSynEle::Sce, 48_000, None, &mut None)? {
         ExtensionPayloadOrSbr::Payload(ExtensionPayload::FillData { cnt: 1 }) => {}
         other => panic!("{other:?}"),
     }
@@ -250,7 +257,7 @@ fn parse_with_sbr_fill_data_and_drc() -> Result<(), Error> {
     w.write(0, 7);
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    match ExtensionPayload::parse_with_sbr(&mut br, 2, IdSynEle::Sce, 48_000, None)? {
+    match ExtensionPayload::parse_with_sbr(&mut br, 2, IdSynEle::Sce, 48_000, None, &mut None)? {
         ExtensionPayloadOrSbr::Payload(ExtensionPayload::DynamicRange(drc)) => {
             assert_eq!(drc.num_bands(), 1);
         }
@@ -410,6 +417,7 @@ fn ps48_adts_frames_signal_extension_id_ps() -> Result<(), Error> {
                         last_syn,
                         fs_sbr,
                         prev_header,
+                        &mut None,
                     ) {
                         prev_header = Some(ext.header);
                         if ext

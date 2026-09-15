@@ -57,7 +57,7 @@ pub const DEFAULT_SMOOTHING_MODE: bool = true;
 /// reproduce the exact bit layout, but the underlying parameters are
 /// already resolved to their effective values (the Table 4.63 Note 3
 /// defaults are filled in when an extra flag is clear).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SbrHeader {
     /// `bs_amp_res` — envelope amplitude resolution (false = 1.5 dB,
     /// true = 3.0 dB). May be forced to false by a single-envelope

@@ -66,6 +66,10 @@ pub struct StreamDecoder {
     /// Independent-CCE IMDCT scratch (TASK-78).
     pub(crate) cce_pcm: Vec<f32>,
     pub(crate) pns_shared: Vec<f32>,
+    pending_sbrs: Vec<(
+        (super::channel_map::ElemKind, u8),
+        Box<super::sbr_extension::SbrExtensionData>,
+    )>,
 }
 
 impl StreamDecoder {
@@ -187,8 +191,8 @@ impl StreamDecoder {
         self.cces.clear();
         self.fb_pool.begin_frame();
         self.sbr_pool.begin_frame();
+        self.pending_sbrs.clear();
         let mut last_elem = None;
-        let mut pending_sbrs = Vec::new();
         loop {
             if br.bits_remaining() < 3 {
                 break;
@@ -246,15 +250,15 @@ impl StreamDecoder {
                         cnt,
                         last_elem,
                         fs_sbr,
-                        &self.sbr_pool,
-                        &mut pending_sbrs,
+                        &mut self.sbr_pool,
+                        &mut self.pending_sbrs,
                     )?;
                 }
             }
         }
         br.byte_align()?;
         self.last_rdb_bytes = (br.bit_position() / 8) as usize;
-        let he = self.sbr_active || !pending_sbrs.is_empty();
+        let he = self.sbr_active || !self.pending_sbrs.is_empty();
         let was_fast = self.fast_mono;
         if he {
             self.fast_mono = false;
@@ -266,7 +270,13 @@ impl StreamDecoder {
             self.store_meta(channel_configuration, sample_rate, sample_rate, None, 1);
             return Ok(sample_rate);
         }
-        self.frame_ch.truncate(self.n_ch);
+        if he {
+            for p in self.frame_ch.iter_mut().skip(self.n_ch) {
+                p.clear();
+            }
+        } else {
+            self.frame_ch.truncate(self.n_ch);
+        }
         let mut order_buf = [super::channel_map::PlaneMap::default(); 8];
         let mut n_order = 0usize;
         let has_order = self.pce.is_some() || (multichannel && !self.frame_ch.is_empty());
@@ -305,19 +315,17 @@ impl StreamDecoder {
             return Ok(sample_rate);
         }
         let core = sample_rate;
-        let planar = std::mem::take(&mut self.frame_ch);
-        let (planar, out_rate) = super::sbr_attach::apply_and_layout(
+        let out_rate = super::sbr_attach::apply_and_layout(
             &mut self.sbr_pool,
             &self.elems,
-            planar,
+            &mut self.frame_ch,
             sample_rate,
             self.sbr_out_rate,
-            &mut pending_sbrs,
+            &mut self.pending_sbrs,
             &mut self.sbr_active,
             self.mix_down_mono,
             order,
         )?;
-        self.frame_ch = planar;
         self.fb_pool.retain_seen();
         self.sbr_pool.retain_seen();
         self.fast_mono = was_fast;

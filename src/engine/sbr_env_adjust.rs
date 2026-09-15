@@ -97,8 +97,9 @@ pub struct EnvParams<'a> {
     pub reset: bool,
 }
 
-/// Cross-frame envelope-adjuster state for one channel.
-#[derive(Debug, Clone, Default)]
+/// Cross-frame envelope-adjuster state for one channel, plus reused
+/// per-frame mapping/gain scratch (TASK-79).
+#[derive(Debug, Default)]
 pub struct EnvAdjustState {
     /// Previous frame's last-envelope `SIndexMapped` (per SBR subband,
     /// `kx`-relative) plus its `kx`, for the `δStep` gate.
@@ -130,11 +131,23 @@ impl EnvAdjustState {
 /// columns, i.e. spec index `i + tHFAdj` is a direct column index).
 /// Returns `Y` in the same layout, filled for the SBR range and the
 /// frame's envelope span; other cells are zero.
+#[cfg(test)]
 pub fn adjust(
     x_high: &[[Complex; 64]],
     p: &EnvParams<'_>,
     st: &mut EnvAdjustState,
 ) -> Result<Vec<[Complex; 64]>> {
+    let mut y = x_high.to_vec();
+    adjust_into(&mut y, p, st)?;
+    Ok(y)
+}
+
+/// Write `Y` into `x_high` in place (ECurr is computed first).
+pub fn adjust_into(
+    x_high: &mut [[Complex; 64]],
+    p: &EnvParams<'_>,
+    st: &mut EnvAdjustState,
+) -> Result<()> {
     let m_cnt = usize::try_from(p.bands.m).map_err(|_| Error::SbrFreqBandInvalid)?;
     let k_x = p.bands.k_x;
     let l_e = p
@@ -182,6 +195,28 @@ pub fn adjust(
     };
 
     // ---- §4.6.18.7.2 mapping -------------------------------------
+    let h_sl: usize = if p.smoothing_mode { 0 } else { 4 };
+    if l_e > 8 || m_cnt > 64 || n_cols + h_sl > 48 {
+        return Err(Error::SbrFreqBandInvalid);
+    }
+    let mut e_map = [0.0f64; 8 * 64];
+    let mut q_map = [0.0f64; 8 * 64];
+    let mut s_index = [false; 8 * 64];
+    let mut s_map = [false; 8 * 64];
+    let mut e_curr = [0.0f64; 8 * 64];
+    let mut g_lim_boost = [0.0f64; 8 * 64];
+    let mut q_m_lim_boost = [0.0f64; 8 * 64];
+    let mut s_m_boost = [0.0f64; 8 * 64];
+    let mut q_m = [0.0f64; 64];
+    let mut s_m = [0.0f64; 64];
+    let mut g = [0.0f64; 64];
+    let mut g_max = [0.0f64; 64];
+    let mut q_m_lim = [0.0f64; 64];
+    let mut g_lim = [0.0f64; 64];
+    let mut g_temp = [0.0f64; 48 * 64];
+    let mut q_temp = [0.0f64; 48 * 64];
+    let ix = |l: usize, m: usize| l * m_cnt + m;
+
     // Envelope band table per resolution.
     let f_of = |high: bool| -> &Vec<i32> {
         if high {
@@ -199,11 +234,6 @@ pub fn adjust(
         }
         Err(Error::SbrFreqBandInvalid)
     };
-
-    let mut e_map = vec![vec![0.0f64; m_cnt]; l_e]; // EOrigMapped[l][m]
-    let mut q_map = vec![vec![0.0f64; m_cnt]; l_e]; // QMapped[l][m]
-    let mut s_index = vec![vec![false; m_cnt]; l_e]; // SIndexMapped[l][m]
-    let mut s_map = vec![vec![false; m_cnt]; l_e]; // SMapped[l][m]
 
     let n_high = p.bands.n_high();
     for l in 0..l_e {
@@ -225,8 +255,8 @@ pub fn adjust(
         }
         for m in 0..m_cnt {
             let k = k_x + i32::try_from(m).map_err(|_| Error::SbrFreqBandInvalid)?;
-            e_map[l][m] = p.e_orig[l][band_of(f, k)?];
-            q_map[l][m] = p.q_orig[kq][band_of(&p.bands.f_table_noise, k)?];
+            e_map[ix(l, m)] = p.e_orig[l][band_of(f, k)?];
+            q_map[ix(l, m)] = p.q_orig[kq][band_of(&p.bands.f_table_noise, k)?];
         }
 
         // SIndexMapped: sinusoid in the middle subband of each
@@ -256,18 +286,18 @@ pub fn adjust(
                             .unwrap_or(false)
                 };
                 if (l as i32) >= p.l_a || prev_on {
-                    s_index[l][m_rel as usize] = true;
+                    s_index[ix(l, m_rel as usize)] = true;
                 }
             }
         }
         // SMapped: any sinusoid within the envelope band.
         for i in 0..f.len() - 1 {
             let any = ((f[i] - k_x).max(0)..(f[i + 1] - k_x).max(0))
-                .any(|j| (j as usize) < m_cnt && s_index[l][j as usize]);
+                .any(|j| (j as usize) < m_cnt && s_index[ix(l, j as usize)]);
             if any {
                 for j in (f[i] - k_x).max(0)..(f[i + 1] - k_x).max(0) {
                     if (j as usize) < m_cnt {
-                        s_map[l][j as usize] = true;
+                        s_map[ix(l, j as usize)] = true;
                     }
                 }
             }
@@ -275,16 +305,15 @@ pub fn adjust(
     }
 
     // ---- §4.6.18.7.3 current envelope ----------------------------
-    let mut e_curr = vec![vec![0.0f64; m_cnt]; l_e];
-    for (l, e_curr_l) in e_curr.iter_mut().enumerate() {
+    for l in 0..l_e {
         let lo = (rate * p.t_e[l] + T_HF_ADJ as i32) as usize;
         let hi = (rate * p.t_e[l + 1] + T_HF_ADJ as i32) as usize;
         let width = (hi - lo) as f64;
         if p.interpol_freq {
-            for (m, e) in e_curr_l.iter_mut().enumerate() {
+            for m in 0..m_cnt {
                 let k = (k_x as usize) + m;
                 let sum: f64 = x_high[lo..hi].iter().map(|col| col[k].norm_sqr()).sum();
-                *e = sum / width;
+                e_curr[ix(l, m)] = sum / width;
             }
         } else {
             let f = f_of(p.freq_res[l]);
@@ -302,7 +331,7 @@ pub fn adjust(
                 for j in kl..=kh {
                     let m_rel = j - k_x;
                     if m_rel >= 0 && (m_rel as usize) < m_cnt {
-                        e_curr_l[m_rel as usize] = avg;
+                        e_curr[ix(l, m_rel as usize)] = avg;
                     }
                 }
             }
@@ -313,10 +342,6 @@ pub fn adjust(
     let lim_gain = LIM_GAIN[usize::from(p.limiter_gains)];
     let n_l = p.f_table_lim.len() - 1;
 
-    let mut g_lim_boost = vec![vec![0.0f64; m_cnt]; l_e];
-    let mut q_m_lim_boost = vec![vec![0.0f64; m_cnt]; l_e];
-    let mut s_m_boost = vec![vec![0.0f64; m_cnt]; l_e];
-
     for l in 0..l_e {
         let li = l as i32;
         let delta_l = if li == p.l_a || li == l_a_prev {
@@ -325,42 +350,33 @@ pub fn adjust(
             1.0
         };
 
-        // QM / SM (amplitude domain).
-        let mut q_m = vec![0.0f64; m_cnt];
-        let mut s_m = vec![0.0f64; m_cnt];
-        let mut g = vec![0.0f64; m_cnt];
         for m in 0..m_cnt {
-            let e_o = e_map[l][m];
-            let q = q_map[l][m];
+            let e_o = e_map[ix(l, m)];
+            let q = q_map[ix(l, m)];
             q_m[m] = (e_o * q / (1.0 + q)).sqrt();
-            s_m[m] = if s_index[l][m] {
+            s_m[m] = if s_index[ix(l, m)] {
                 (e_o / (1.0 + q)).sqrt()
             } else {
                 0.0
             };
-            g[m] = if s_map[l][m] {
-                ((e_o / (EPS + e_curr[l][m])) * (q / (1.0 + q))).sqrt()
+            g[m] = if s_map[ix(l, m)] {
+                ((e_o / (EPS + e_curr[ix(l, m)])) * (q / (1.0 + q))).sqrt()
             } else {
-                (e_o / ((EPS + e_curr[l][m]) * (1.0 + delta_l * q))).sqrt()
+                (e_o / ((EPS + e_curr[ix(l, m)]) * (1.0 + delta_l * q))).sqrt()
             };
         }
 
-        // Limiter-band maxima.
-        let mut g_max = vec![0.0f64; m_cnt];
         for k in 0..n_l {
             let lo = (p.f_table_lim[k] - k_x).max(0) as usize;
             let hi = ((p.f_table_lim[k + 1] - k_x).max(0) as usize).min(m_cnt);
-            let num: f64 = EPS0 + e_map[l][lo..hi].iter().sum::<f64>();
-            let den: f64 = EPS0 + e_curr[l][lo..hi].iter().sum::<f64>();
+            let num: f64 = EPS0 + e_map[ix(l, lo)..ix(l, hi)].iter().sum::<f64>();
+            let den: f64 = EPS0 + e_curr[ix(l, lo)..ix(l, hi)].iter().sum::<f64>();
             let gmax = ((num / den).sqrt() * lim_gain).min(G_MAX_CAP);
             for gm in &mut g_max[lo..hi] {
                 *gm = gmax;
             }
         }
 
-        // QM_Lim / GLim.
-        let mut q_m_lim = vec![0.0f64; m_cnt];
-        let mut g_lim = vec![0.0f64; m_cnt];
         for m in 0..m_cnt {
             q_m_lim[m] = if g[m] > 0.0 {
                 q_m[m].min(q_m[m] * g_max[m] / g[m])
@@ -370,49 +386,42 @@ pub fn adjust(
             g_lim[m] = g[m].min(g_max[m]);
         }
 
-        // Boost per limiter band.
         for k in 0..n_l {
             let lo = (p.f_table_lim[k] - k_x).max(0) as usize;
             let hi = ((p.f_table_lim[k + 1] - k_x).max(0) as usize).min(m_cnt);
             let mut num = EPS0;
             let mut den = EPS0;
             for i in lo..hi {
-                num += e_map[l][i];
+                num += e_map[ix(l, i)];
                 let delta_s = if s_m[i] != 0.0 || li == p.l_a || li == l_a_prev {
                     0.0
                 } else {
                     1.0
                 };
-                den += e_curr[l][i] * g_lim[i] * g_lim[i]
+                den += e_curr[ix(l, i)] * g_lim[i] * g_lim[i]
                     + s_m[i] * s_m[i]
                     + delta_s * q_m_lim[i] * q_m_lim[i];
             }
             let boost = (num / den).sqrt().min(MAX_BOOST);
             for i in lo..hi {
-                g_lim_boost[l][i] = g_lim[i] * boost;
-                q_m_lim_boost[l][i] = q_m_lim[i] * boost;
-                s_m_boost[l][i] = s_m[i] * boost;
+                g_lim_boost[ix(l, i)] = g_lim[i] * boost;
+                q_m_lim_boost[ix(l, i)] = q_m_lim[i] * boost;
+                s_m_boost[ix(l, i)] = s_m[i] * boost;
             }
         }
     }
 
     // ---- §4.6.18.7.6 assembly ------------------------------------
-    let h_sl: usize = if p.smoothing_mode { 0 } else { 4 };
-
-    // GTemp / QTemp with the hSL-column prefix.
-    let mut g_temp = vec![vec![0.0f64; m_cnt]; n_cols + h_sl];
-    let mut q_temp = vec![vec![0.0f64; m_cnt]; n_cols + h_sl];
     for j in 0..h_sl {
+        let dst_g = j * m_cnt;
         if st.g_temp_tail.len() == h_sl && st.g_temp_tail[j].len() == m_cnt {
-            g_temp[j].clone_from(&st.g_temp_tail[j]);
-            q_temp[j].clone_from(&st.q_temp_tail[j]);
+            g_temp[dst_g..dst_g + m_cnt].copy_from_slice(&st.g_temp_tail[j]);
+            q_temp[dst_g..dst_g + m_cnt].copy_from_slice(&st.q_temp_tail[j]);
         } else {
-            // Reset (or first frame): prefix = first column values.
-            g_temp[j].clone_from(&g_lim_boost[0]);
-            q_temp[j].clone_from(&q_m_lim_boost[0]);
+            g_temp[dst_g..dst_g + m_cnt].copy_from_slice(&g_lim_boost[..m_cnt]);
+            q_temp[dst_g..dst_g + m_cnt].copy_from_slice(&q_m_lim_boost[..m_cnt]);
         }
     }
-    // Envelope of column i (spec index space i0..i_end).
     let env_of = |i: i32| -> usize {
         let mut l = l_e - 1;
         for e in 0..l_e {
@@ -425,11 +434,12 @@ pub fn adjust(
     };
     for c in 0..n_cols {
         let l = env_of(i0 + c as i32);
-        g_temp[c + h_sl].clone_from(&g_lim_boost[l]);
-        q_temp[c + h_sl].clone_from(&q_m_lim_boost[l]);
+        let dst = (c + h_sl) * m_cnt;
+        let src = l * m_cnt;
+        g_temp[dst..dst + m_cnt].copy_from_slice(&g_lim_boost[src..src + m_cnt]);
+        q_temp[dst..dst + m_cnt].copy_from_slice(&q_m_lim_boost[src..src + m_cnt]);
     }
 
-    let mut y = vec![[Complex::default(); 64]; x_high.len()];
     let mut f_index_noise = 0usize;
     let mut f_index_sine = 0usize;
     for c in 0..n_cols {
@@ -442,36 +452,30 @@ pub fn adjust(
         let (sin_re, sin_im) = PHI_SIN[f_index_sine];
         for m in 0..m_cnt {
             let k = (k_x as usize) + m;
-            // GFilt.
             let g_filt = if smooth_gain {
                 (0..=h_sl)
-                    .map(|j| g_temp[c + h_sl - j][m] * H_SMOOTH[j])
+                    .map(|j| g_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j])
                     .sum::<f64>()
             } else {
-                g_temp[c + h_sl][m]
+                g_temp[(c + h_sl) * m_cnt + m]
             };
-            // QFilt: zero on transient envelopes and sinusoid bands.
-            let q_filt = if li == p.l_a || li == l_a_prev || s_m_boost[l][m] != 0.0 {
+            let q_filt = if li == p.l_a || li == l_a_prev || s_m_boost[ix(l, m)] != 0.0 {
                 0.0
             } else if h_sl != 0 {
                 (0..=h_sl)
-                    .map(|j| q_temp[c + h_sl - j][m] * H_SMOOTH[j])
+                    .map(|j| q_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j])
                     .sum::<f64>()
             } else {
-                q_temp[c + h_sl][m]
+                q_temp[(c + h_sl) * m_cnt + m]
             };
 
-            // W1 = GFilt · XHigh.
             let w1 = x_high[col][k] * g_filt;
-
-            // W2 = W1 + QFilt · V(fIndexNoise).
             f_index_noise = (st.index_noise + c * m_cnt + m + 1) % 512;
             let (v_re, v_im) = NOISE_TABLE[f_index_noise];
             let mut out = Complex::new(w1.re + q_filt * v_re, w1.im + q_filt * v_im);
 
-            // Y = W2 + ψ (sinusoids).
-            if s_index[l][m] {
-                let s = s_m_boost[l][m];
+            if s_index[ix(l, m)] {
+                let s = s_m_boost[ix(l, m)];
                 let alt = if (m + k_x as usize) % 2 == 1 {
                     -1.0
                 } else {
@@ -480,7 +484,23 @@ pub fn adjust(
                 out.re += s * sin_re;
                 out.im += s * alt * sin_im;
             }
-            y[col][k] = out;
+            x_high[col][k] = out;
+        }
+    }
+
+    let written_lo = (i0 + T_HF_ADJ as i32) as usize;
+    let written_hi = (i_end + T_HF_ADJ as i32) as usize;
+    let kx_u = k_x.max(0) as usize;
+    for (i, col) in x_high.iter_mut().enumerate() {
+        if i < written_lo || i >= written_hi {
+            *col = [Complex::default(); 64];
+            continue;
+        }
+        for cell in col.iter_mut().take(kx_u) {
+            *cell = Complex::default();
+        }
+        for cell in col.iter_mut().skip(kx_u + m_cnt) {
+            *cell = Complex::default();
         }
     }
 
@@ -495,14 +515,27 @@ pub fn adjust(
     } else {
         st.index_sine
     };
-    st.g_temp_tail = g_temp[n_cols..].to_vec();
-    st.q_temp_tail = q_temp[n_cols..].to_vec();
-    st.s_index_prev = s_index[l_e - 1].clone();
+    if st.g_temp_tail.len() < h_sl {
+        st.g_temp_tail.resize(h_sl, Vec::new());
+        st.q_temp_tail.resize(h_sl, Vec::new());
+    }
+    st.g_temp_tail.truncate(h_sl);
+    st.q_temp_tail.truncate(h_sl);
+    for j in 0..h_sl {
+        let src = (n_cols + j) * m_cnt;
+        st.g_temp_tail[j].clear();
+        st.g_temp_tail[j].extend_from_slice(&g_temp[src..src + m_cnt]);
+        st.q_temp_tail[j].clear();
+        st.q_temp_tail[j].extend_from_slice(&q_temp[src..src + m_cnt]);
+    }
+    st.s_index_prev.clear();
+    st.s_index_prev
+        .extend_from_slice(&s_index[ix(l_e - 1, 0)..ix(l_e - 1, 0) + m_cnt]);
     st.k_x_prev = k_x;
     st.l_a_prev_frame = p.l_a;
     st.l_e_prev = l_e as i32;
 
-    Ok(y)
+    Ok(())
 }
 
 #[cfg(test)]

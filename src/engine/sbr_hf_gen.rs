@@ -186,23 +186,29 @@ pub fn new_bw(prev_mode: u8, cur_mode: u8) -> f64 {
 /// §4.6.18.6.2 chirp-factor update: one `bwArray` entry per noise
 /// band. `prev_invf` / `prev_bw` are the previous SBR frame's values
 /// (all zero for the first frame).
+#[cfg(test)]
 #[must_use]
 pub fn chirp_factors(cur_invf: &[u8], prev_invf: &[u8], prev_bw: &[f64]) -> Vec<f64> {
-    cur_invf
-        .iter()
-        .enumerate()
-        .map(|(i, &cur)| {
-            let prev_mode = prev_invf.get(i).copied().unwrap_or(0);
-            let bw_prev = prev_bw.get(i).copied().unwrap_or(0.0);
-            let nb = new_bw(prev_mode, cur);
-            let temp = if nb < bw_prev {
-                0.75 * nb + 0.25 * bw_prev
-            } else {
-                0.90625 * nb + 0.09375 * bw_prev
-            };
-            if temp < 0.015625 { 0.0 } else { temp }
-        })
-        .collect()
+    let mut out = Vec::with_capacity(cur_invf.len());
+    chirp_factors_into(cur_invf, prev_invf, prev_bw, &mut out);
+    out
+}
+
+/// Fill `out` with the §4.6.18.6.2 chirp factors (clears first; reuses
+/// capacity).
+pub fn chirp_factors_into(cur_invf: &[u8], prev_invf: &[u8], prev_bw: &[f64], out: &mut Vec<f64>) {
+    out.clear();
+    for (i, &cur) in cur_invf.iter().enumerate() {
+        let prev_mode = prev_invf.get(i).copied().unwrap_or(0);
+        let bw_prev = prev_bw.get(i).copied().unwrap_or(0.0);
+        let nb = new_bw(prev_mode, cur);
+        let temp = if nb < bw_prev {
+            0.75 * nb + 0.25 * bw_prev
+        } else {
+            0.90625 * nb + 0.09375 * bw_prev
+        };
+        out.push(if temp < 0.015625 { 0.0 } else { temp });
+    }
 }
 
 /// §4.6.18.6.2 covariance-method prediction coefficients
@@ -272,6 +278,7 @@ pub fn prediction_coefficients(
 ///
 /// Returns `XHigh` with the same slot-major layout and column count as
 /// `x_low` (bands outside the patched range stay zero).
+#[cfg(test)]
 pub fn generate_hf(
     x_low: &[[Complex; 32]],
     patches: &Patches,
@@ -280,8 +287,37 @@ pub fn generate_hf(
     l_range: core::ops::Range<i32>,
     n_slots_frame: usize,
 ) -> Result<Vec<[Complex; 64]>> {
-    let k_x = bands.k_x;
     let mut x_high = vec![[Complex::default(); 64]; x_low.len()];
+    generate_hf_into(
+        x_low,
+        patches,
+        bw_array,
+        bands,
+        l_range,
+        n_slots_frame,
+        &mut x_high,
+    )?;
+    Ok(x_high)
+}
+
+/// Write `XHigh` into `x_high` (zeros the used columns first). `x_high`
+/// must be at least as long as `x_low`.
+pub fn generate_hf_into(
+    x_low: &[[Complex; 32]],
+    patches: &Patches,
+    bw_array: &[f64],
+    bands: &HiLoTables,
+    l_range: core::ops::Range<i32>,
+    n_slots_frame: usize,
+    x_high: &mut [[Complex; 64]],
+) -> Result<()> {
+    if x_high.len() < x_low.len() {
+        return Err(Error::SbrFreqBandInvalid);
+    }
+    for col in x_high.iter_mut().take(x_low.len()) {
+        *col = [Complex::default(); 64];
+    }
+    let k_x = bands.k_x;
 
     // α cache per source subband (a subband may feed several patches).
     let mut alphas: [Option<(Complex, Complex)>; 32] = [None; 32];
@@ -329,7 +365,7 @@ pub fn generate_hf(
         }
         k_off += p_num;
     }
-    Ok(x_high)
+    Ok(())
 }
 
 #[cfg(test)]

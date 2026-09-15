@@ -87,14 +87,29 @@ impl SbrEnvelopeData {
         ch: bool,
         amp_res: bool,
     ) -> Result<Self> {
+        let mut out = Self { data: Vec::new() };
+        out.parse_into(reader, grid, dtdf, bands, coupling, ch, amp_res)?;
+        Ok(out)
+    }
+
+    /// Fill `self` (reuses row capacity).
+    #[allow(clippy::too_many_arguments)]
+    pub fn parse_into(
+        &mut self,
+        reader: &mut BitReader<'_>,
+        grid: &SbrGrid,
+        dtdf: &SbrDtdf,
+        bands: &crate::engine::sbr_freq_bands::HiLoTables,
+        coupling: bool,
+        ch: bool,
+        amp_res: bool,
+    ) -> Result<()> {
         let ctx = SbrHuffContext {
             coupling,
             ch,
             amp_res,
         };
         let ((t_huff, t_lav), (f_huff, f_lav)) = env_tables(ctx);
-
-        // Start-value width per Table 4.72.
         let start_bits = if coupling && ch {
             if amp_res { 5 } else { 6 }
         } else if amp_res {
@@ -102,28 +117,27 @@ impl SbrEnvelopeData {
         } else {
             7
         };
-
-        let mut data = Vec::with_capacity(grid.num_env);
+        if self.data.len() < grid.num_env {
+            self.data.resize(grid.num_env, Vec::new());
+        }
+        self.data.truncate(grid.num_env);
         for env in 0..grid.num_env {
             let n = num_env_bands(bands, grid.freq_res[env]);
-            let mut row = Vec::with_capacity(n);
+            let row = &mut self.data[env];
+            row.clear();
             if !dtdf.df_env[env] {
-                // Delta in frequency: band 0 is the absolute start
-                // value, bands 1.. are f_huff deltas.
                 let start = read(reader, start_bits)? as i32;
                 row.push(start);
                 for _ in 1..n {
                     row.push(sbr_huff_dec(reader, f_huff, f_lav)?);
                 }
             } else {
-                // Delta in time: every band is a t_huff delta.
                 for _ in 0..n {
                     row.push(sbr_huff_dec(reader, t_huff, t_lav)?);
                 }
             }
-            data.push(row);
         }
-        Ok(SbrEnvelopeData { data })
+        Ok(())
     }
 }
 
@@ -144,19 +158,36 @@ impl SbrNoiseData {
         ch: bool,
         amp_res: bool,
     ) -> Result<Self> {
+        let mut out = Self { data: Vec::new() };
+        out.parse_into(reader, grid, dtdf, num_noise_bands, coupling, ch, amp_res)?;
+        Ok(out)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn parse_into(
+        &mut self,
+        reader: &mut BitReader<'_>,
+        grid: &SbrGrid,
+        dtdf: &SbrDtdf,
+        num_noise_bands: usize,
+        coupling: bool,
+        ch: bool,
+        amp_res: bool,
+    ) -> Result<()> {
         let ctx = SbrHuffContext {
             coupling,
             ch,
             amp_res,
         };
         let ((t_huff, t_lav), (f_huff, f_lav)) = noise_tables(ctx);
-
-        let mut data = Vec::with_capacity(grid.num_noise);
+        if self.data.len() < grid.num_noise {
+            self.data.resize(grid.num_noise, Vec::new());
+        }
+        self.data.truncate(grid.num_noise);
         for noise in 0..grid.num_noise {
-            let mut row = Vec::with_capacity(num_noise_bands);
+            let row = &mut self.data[noise];
+            row.clear();
             if !dtdf.df_noise[noise] {
-                // Delta in frequency: band 0 is a 5-bit absolute start
-                // value, bands 1.. are f_huff deltas.
                 let start = read(reader, 5)? as i32;
                 row.push(start);
                 for _ in 1..num_noise_bands {
@@ -167,9 +198,8 @@ impl SbrNoiseData {
                     row.push(sbr_huff_dec(reader, t_huff, t_lav)?);
                 }
             }
-            data.push(row);
         }
-        Ok(SbrNoiseData { data })
+        Ok(())
     }
 }
 

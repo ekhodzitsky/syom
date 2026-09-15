@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Reused HE SBR conversion/reconstruction workspace (TASK-79): in-place
+  f32 planes, recycled SBR parse box, stack XLow/XHigh/env-adjust maps,
+  interned QMF modulation tables. HE borrowed decode after 2-frame
+  warmup **14.4 allocs/frame** (−91% vs 165) and **−30% peak live heap**
+  (313 KiB vs 451 KiB). Goldens unchanged (`lab/baseline/SBR.md`).
 - Zero-alloc LC speech/stereo borrowed callbacks after warmup (TASK-78):
   stack plane views, recycled spectral buffers, stack TNS/MS/Pulse,
   in-place PNS, reused encoder payload. Default `speech()` path **0**

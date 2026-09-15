@@ -66,7 +66,7 @@ pub struct SbrChannel {
 }
 
 /// A parsed SBR data element (single channel or channel pair).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SbrElement {
     /// `bs_coupling` (always `false` for a single channel element).
     pub coupling: bool,
@@ -89,24 +89,39 @@ pub struct SbrExtension {
 }
 
 /// `sbr_sinusoidal_coding()` (Table 4.74): `NHigh` add-harmonic flags.
+fn empty_channel() -> SbrChannel {
+    SbrChannel {
+        grid: SbrGrid {
+            frame_class: crate::engine::sbr_grid::FrameClass::FixFix,
+            num_env: 0,
+            num_noise: 0,
+            freq_res: Vec::new(),
+            var_bord_0: 0,
+            var_bord_1: 0,
+            rel_bord_0: Vec::new(),
+            rel_bord_1: Vec::new(),
+            pointer: 0,
+            amp_res_override: false,
+        },
+        dtdf: SbrDtdf {
+            df_env: Vec::new(),
+            df_noise: Vec::new(),
+        },
+        invf: SbrInvf {
+            invf_mode: Vec::new(),
+        },
+        envelope: SbrEnvelopeData { data: Vec::new() },
+        noise: SbrNoiseData { data: Vec::new() },
+        add_harmonic: Vec::new(),
+    }
+}
+
 fn parse_sinusoidal(reader: &mut BitReader<'_>, n_high: usize) -> Result<Vec<bool>> {
     let mut v = Vec::with_capacity(n_high);
     for _ in 0..n_high {
         v.push(read_flag(reader)?);
     }
     Ok(v)
-}
-
-/// Parse one channel's `sbr_grid` → `sbr_dtdf` → `sbr_invf` block (the
-/// shared prefix of both element types).
-fn parse_grid_dtdf_invf(
-    reader: &mut BitReader<'_>,
-    n_q: usize,
-) -> Result<(SbrGrid, SbrDtdf, SbrInvf)> {
-    let grid = SbrGrid::parse(reader)?;
-    let dtdf = SbrDtdf::parse(reader, grid.num_env, grid.num_noise)?;
-    let invf = SbrInvf::parse(reader, n_q)?;
-    Ok((grid, dtdf, invf))
 }
 
 impl SbrElement {
@@ -116,43 +131,54 @@ impl SbrElement {
     /// its noise-band count. `bs_amp_res` is the header amplitude
     /// resolution (it may be overridden by a single-envelope FIXFIX
     /// grid).
+    #[cfg(test)]
     pub fn parse_single(
         reader: &mut BitReader<'_>,
         bands: &HiLoTables,
         amp_res: bool,
     ) -> Result<Self> {
+        let mut out = SbrElement {
+            coupling: false,
+            channels: Vec::new(),
+            extension: None,
+        };
+        out.parse_single_into(reader, bands, amp_res)?;
+        Ok(out)
+    }
+
+    pub fn parse_single_into(
+        &mut self,
+        reader: &mut BitReader<'_>,
+        bands: &HiLoTables,
+        amp_res: bool,
+    ) -> Result<()> {
         let n_q = bands.n_q();
-        // bs_data_extra (1 bit) → optional bs_reserved (4).
         if read_flag(reader)? {
             read(reader, 4)?;
         }
-
-        let (grid, dtdf, invf) = parse_grid_dtdf_invf(reader, n_q)?;
-        let eff_amp = amp_res && !grid.amp_res_override;
-
-        let envelope = SbrEnvelopeData::parse(reader, &grid, &dtdf, bands, false, false, eff_amp)?;
-        let noise = SbrNoiseData::parse(reader, &grid, &dtdf, n_q, false, false, eff_amp)?;
-
-        let add_harmonic = if read_flag(reader)? {
-            parse_sinusoidal(reader, bands.n_high())?
-        } else {
-            Vec::new()
-        };
-
-        let extension = parse_extended_data(reader)?;
-
-        Ok(SbrElement {
-            coupling: false,
-            channels: vec![SbrChannel {
-                grid,
-                dtdf,
-                invf,
-                envelope,
-                noise,
-                add_harmonic,
-            }],
-            extension,
-        })
+        if self.channels.is_empty() {
+            self.channels.push(empty_channel());
+        }
+        self.channels.truncate(1);
+        let ch = &mut self.channels[0];
+        ch.grid.parse_into(reader)?;
+        ch.dtdf
+            .parse_into(reader, ch.grid.num_env, ch.grid.num_noise)?;
+        ch.invf.parse_into(reader, n_q)?;
+        let eff_amp = amp_res && !ch.grid.amp_res_override;
+        ch.envelope
+            .parse_into(reader, &ch.grid, &ch.dtdf, bands, false, false, eff_amp)?;
+        ch.noise
+            .parse_into(reader, &ch.grid, &ch.dtdf, n_q, false, false, eff_amp)?;
+        ch.add_harmonic.clear();
+        if read_flag(reader)? {
+            for _ in 0..bands.n_high() {
+                ch.add_harmonic.push(read_flag(reader)?);
+            }
+        }
+        self.coupling = false;
+        self.extension = parse_extended_data(reader)?;
+        Ok(())
     }
 
     /// Parse `sbr_channel_pair_element()` (Table 4.66), both the coupled

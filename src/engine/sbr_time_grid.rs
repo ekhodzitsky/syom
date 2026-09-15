@@ -46,118 +46,137 @@ pub struct TimeGrid {
 /// not strictly increasing, or that leave the
 /// `[0, num_time_slots + 8]` range, are rejected with
 /// [`Error::SbrGridInvalid`] (a malformed variable-border grid).
+#[cfg(test)]
 pub fn derive_time_grid(grid: &SbrGrid, num_time_slots: i32) -> Result<TimeGrid> {
-    let le = grid.num_env;
-    if le == 0 {
-        return Err(Error::SbrGridInvalid);
-    }
+    let mut out = TimeGrid {
+        t_e: Vec::new(),
+        t_q: Vec::new(),
+        l_a: -1,
+    };
+    out.derive_into(grid, num_time_slots)?;
+    Ok(out)
+}
 
-    // Leading / trailing absolute borders.
-    let abs_bord_lead = match grid.frame_class {
-        FrameClass::FixFix | FrameClass::FixVar => 0,
-        FrameClass::VarFix | FrameClass::VarVar => i32::from(grid.var_bord_0),
-    };
-    let abs_bord_trail = match grid.frame_class {
-        FrameClass::FixFix | FrameClass::VarFix => num_time_slots,
-        FrameClass::FixVar | FrameClass::VarVar => i32::from(grid.var_bord_1) + num_time_slots,
-    };
-
-    // Relative-border counts.
-    let n_rel_lead = match grid.frame_class {
-        FrameClass::FixFix => le - 1,
-        FrameClass::FixVar => 0,
-        FrameClass::VarFix | FrameClass::VarVar => grid.rel_bord_0.len(),
-    };
-    let n_rel_trail = match grid.frame_class {
-        FrameClass::FixFix | FrameClass::VarFix => 0,
-        FrameClass::FixVar | FrameClass::VarVar => grid.rel_bord_1.len(),
-    };
-    if n_rel_lead + n_rel_trail + 1 != le {
-        return Err(Error::SbrGridInvalid);
-    }
-
-    // relBordLead(l): FIXFIX splits the frame uniformly with
-    // NINT(numTimeSlots / LE); the variable classes carry
-    // 2·bs_rel_bord_0 + 2.
-    let rel_lead = |l: usize| -> i32 {
-        match grid.frame_class {
-            FrameClass::FixFix => nint_ratio(num_time_slots, le as i32),
-            _ => 2 * i32::from(grid.rel_bord_0[l]) + 2,
+impl TimeGrid {
+    /// Fill `self` from a parsed `sbr_grid()` (reuses border capacity).
+    pub fn derive_into(&mut self, grid: &SbrGrid, num_time_slots: i32) -> Result<()> {
+        let le = grid.num_env;
+        if le == 0 {
+            return Err(Error::SbrGridInvalid);
         }
-    };
-    // relBordTrail(l): 2·bs_rel_bord_1 + 2.
-    let rel_trail = |l: usize| -> i32 { 2 * i32::from(grid.rel_bord_1[l]) + 2 };
 
-    // tE(l).
-    let mut t_e = Vec::with_capacity(le + 1);
-    for l in 0..=le {
-        let border = if l == 0 {
-            abs_bord_lead
-        } else if l == le {
-            abs_bord_trail
-        } else if l <= n_rel_lead {
-            let mut b = abs_bord_lead;
-            for i in 0..l {
-                b += rel_lead(i);
-            }
-            b
-        } else {
-            let mut b = abs_bord_trail;
-            for i in 0..(le - l) {
-                b -= rel_trail(i);
-            }
-            b
+        // Leading / trailing absolute borders.
+        let abs_bord_lead = match grid.frame_class {
+            FrameClass::FixFix | FrameClass::FixVar => 0,
+            FrameClass::VarFix | FrameClass::VarVar => i32::from(grid.var_bord_0),
         };
-        t_e.push(border);
-    }
+        let abs_bord_trail = match grid.frame_class {
+            FrameClass::FixFix | FrameClass::VarFix => num_time_slots,
+            FrameClass::FixVar | FrameClass::VarVar => i32::from(grid.var_bord_1) + num_time_slots,
+        };
 
-    // §4.6.18.3.3 border sanity: strictly increasing, within the
-    // addressable slot range (the XLow / XHigh buffers extend
-    // tHFGen = 8 slots past the frame).
-    for w in t_e.windows(2) {
-        if w[1] <= w[0] {
+        // Relative-border counts.
+        let n_rel_lead = match grid.frame_class {
+            FrameClass::FixFix => le - 1,
+            FrameClass::FixVar => 0,
+            FrameClass::VarFix | FrameClass::VarVar => grid.rel_bord_0.len(),
+        };
+        let n_rel_trail = match grid.frame_class {
+            FrameClass::FixFix | FrameClass::VarFix => 0,
+            FrameClass::FixVar | FrameClass::VarVar => grid.rel_bord_1.len(),
+        };
+        if n_rel_lead + n_rel_trail + 1 != le {
             return Err(Error::SbrGridInvalid);
         }
-    }
-    if t_e[0] < 0 || t_e[le] > num_time_slots + 8 {
-        return Err(Error::SbrGridInvalid);
-    }
 
-    // tQ: one floor spans the frame; two floors split at
-    // tE(middleBorder) (Table 4.174).
-    let t_q = if le == 1 {
-        vec![t_e[0], t_e[1]]
-    } else {
-        let middle = middle_border(grid.frame_class, grid.pointer, le)?;
-        if middle == 0 || middle >= le {
+        // relBordLead(l): FIXFIX splits the frame uniformly with
+        // NINT(numTimeSlots / LE); the variable classes carry
+        // 2·bs_rel_bord_0 + 2.
+        let rel_lead = |l: usize| -> i32 {
+            match grid.frame_class {
+                FrameClass::FixFix => nint_ratio(num_time_slots, le as i32),
+                _ => 2 * i32::from(grid.rel_bord_0[l]) + 2,
+            }
+        };
+        // relBordTrail(l): 2·bs_rel_bord_1 + 2.
+        let rel_trail = |l: usize| -> i32 { 2 * i32::from(grid.rel_bord_1[l]) + 2 };
+
+        // tE(l).
+        self.t_e.clear();
+        for l in 0..=le {
+            let border = if l == 0 {
+                abs_bord_lead
+            } else if l == le {
+                abs_bord_trail
+            } else if l <= n_rel_lead {
+                let mut b = abs_bord_lead;
+                for i in 0..l {
+                    b += rel_lead(i);
+                }
+                b
+            } else {
+                let mut b = abs_bord_trail;
+                for i in 0..(le - l) {
+                    b -= rel_trail(i);
+                }
+                b
+            };
+            self.t_e.push(border);
+        }
+
+        // §4.6.18.3.3 border sanity: strictly increasing, within the
+        // addressable slot range (the XLow / XHigh buffers extend
+        // tHFGen = 8 slots past the frame).
+        for w in self.t_e.windows(2) {
+            if w[1] <= w[0] {
+                return Err(Error::SbrGridInvalid);
+            }
+        }
+        if self.t_e[0] < 0 || self.t_e[le] > num_time_slots + 8 {
             return Err(Error::SbrGridInvalid);
         }
-        vec![t_e[0], t_e[middle], t_e[le]]
-    };
-    if grid.num_noise != t_q.len() - 1 {
-        return Err(Error::SbrGridInvalid);
+
+        // tQ: one floor spans the frame; two floors split at
+        // tE(middleBorder) (Table 4.174).
+        self.t_q.clear();
+        if le == 1 {
+            self.t_q.push(self.t_e[0]);
+            self.t_q.push(self.t_e[1]);
+        } else {
+            let middle = middle_border(grid.frame_class, grid.pointer, le)?;
+            if middle == 0 || middle >= le {
+                return Err(Error::SbrGridInvalid);
+            }
+            self.t_q.push(self.t_e[0]);
+            self.t_q.push(self.t_e[middle]);
+            self.t_q.push(self.t_e[le]);
+        }
+        if grid.num_noise != self.t_q.len() - 1 {
+            return Err(Error::SbrGridInvalid);
+        }
+
+        // lA (Table 4.176).
+        let l_a = match grid.frame_class {
+            FrameClass::FixFix => -1,
+            FrameClass::FixVar | FrameClass::VarVar => {
+                if grid.pointer == 0 {
+                    -1
+                } else {
+                    le as i32 + 1 - grid.pointer as i32
+                }
+            }
+            FrameClass::VarFix => {
+                if grid.pointer > 1 {
+                    grid.pointer as i32 - 1
+                } else {
+                    -1
+                }
+            }
+        };
+
+        self.l_a = l_a;
+        Ok(())
     }
-
-    // lA (Table 4.176).
-    let l_a = match grid.frame_class {
-        FrameClass::FixFix => -1,
-        FrameClass::FixVar | FrameClass::VarVar => {
-            if grid.pointer == 0 {
-                -1
-            } else {
-                le as i32 + 1 - grid.pointer as i32
-            }
-        }
-        FrameClass::VarFix => {
-            if grid.pointer > 1 {
-                grid.pointer as i32 - 1
-            } else {
-                -1
-            }
-        }
-    };
-
-    Ok(TimeGrid { t_e, t_q, l_a })
 }
 
 /// Table 4.174 — the `middleBorder` envelope index that splits the two

@@ -350,6 +350,7 @@ impl ExtensionPayload {
         id_aac: crate::engine::raw_data_block::IdSynEle,
         fs_sbr: u32,
         prev_header: Option<crate::engine::sbr_header::SbrHeader>,
+        dest: &mut Option<Box<crate::engine::sbr_extension::SbrExtensionData>>,
     ) -> Result<ExtensionPayloadOrSbr> {
         if cnt == 0 {
             return Err(Error::ExtensionPayloadInvalid);
@@ -366,15 +367,11 @@ impl ExtensionPayload {
             )?)),
             ExtensionType::SbrData | ExtensionType::SbrDataCrc => {
                 let crc_flag = ty == ExtensionType::SbrDataCrc;
-                let sbr = crate::engine::sbr_extension::SbrExtensionData::parse(
-                    reader,
-                    id_aac,
-                    crc_flag,
-                    fs_sbr,
-                    Some(cnt),
-                    prev_header,
-                )?;
-                Ok(ExtensionPayloadOrSbr::Sbr(Box::new(sbr)))
+                let mut sbr = dest.take().unwrap_or_else(|| {
+                    Box::new(crate::engine::sbr_extension::SbrExtensionData::default())
+                });
+                sbr.parse_into(reader, id_aac, crc_flag, fs_sbr, Some(cnt), prev_header)?;
+                Ok(ExtensionPayloadOrSbr::Sbr(sbr))
             }
         }
     }

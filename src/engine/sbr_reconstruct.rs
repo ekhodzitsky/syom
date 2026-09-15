@@ -124,6 +124,7 @@ impl EnvelopeScalefactors {
     /// the first frame after a reset (in which case a time-coded first
     /// envelope is treated as if the reference were all-zero, which the
     /// §4.6.18.3.5 reset rule forbids on the wire anyway).
+    #[cfg(test)]
     pub fn reconstruct(
         env: &SbrEnvelopeData,
         grid: &SbrGrid,
@@ -133,8 +134,35 @@ impl EnvelopeScalefactors {
         ch: bool,
         prev: Option<&EnvelopeScalefactors>,
     ) -> Result<Self> {
+        let mut out = Self {
+            eq: Vec::new(),
+            freq_res: Vec::new(),
+        };
+        out.reconstruct_into(env, grid, dtdf, bands, coupling, ch, prev)?;
+        Ok(out)
+    }
+
+    /// Fill `self` in place (reuses row capacity). `n_high`/`n_low` fit
+    /// in 64 QMF bands, so a time-delta reference is copied onto the
+    /// stack instead of cloning a row.
+    #[allow(clippy::too_many_arguments, clippy::needless_range_loop)]
+    pub fn reconstruct_into(
+        &mut self,
+        env: &SbrEnvelopeData,
+        grid: &SbrGrid,
+        dtdf: &SbrDtdf,
+        bands: &HiLoTables,
+        coupling: bool,
+        ch: bool,
+        prev: Option<&EnvelopeScalefactors>,
+    ) -> Result<()> {
         let inv = inv_delta(coupling, ch);
-        let mut eq: Vec<Vec<i32>> = Vec::with_capacity(grid.num_env);
+        if self.eq.len() < grid.num_env {
+            self.eq.resize(grid.num_env, Vec::new());
+        }
+        self.eq.truncate(grid.num_env);
+        self.freq_res.clear();
+        self.freq_res.extend_from_slice(&grid.freq_res);
 
         for l in 0..grid.num_env {
             let cur_high = grid.freq_res[l];
@@ -147,41 +175,38 @@ impl EnvelopeScalefactors {
             if raw.len() != n {
                 return Err(Error::SbrGridInvalid);
             }
-            let mut row = vec![0i32; n];
+            self.eq[l].clear();
+            self.eq[l].resize(n, 0);
 
             if !dtdf.df_env[l] {
-                // Frequency direction.
-                row[0] = raw[0] * inv;
+                self.eq[l][0] = raw[0] * inv;
                 for k in 1..n {
-                    row[k] = row[k - 1] + raw[k] * inv;
+                    self.eq[l][k] = self.eq[l][k - 1] + raw[k] * inv;
                 }
             } else {
-                // Time direction: reference is the previous envelope of
-                // this frame (l-1), or the last envelope of the previous
-                // frame for l == 0.
-                let (prev_row, prev_high): (Vec<i32>, bool) = if l >= 1 {
-                    (eq[l - 1].clone(), grid.freq_res[l - 1])
+                // Time direction: copy the reference onto the stack so
+                // `eq[l]` and `eq[l-1]` are not borrowed together.
+                let mut prev_buf = [0i32; 64];
+                let (prev_len, prev_high) = if l >= 1 {
+                    let src = &self.eq[l - 1];
+                    let plen = src.len().min(64);
+                    prev_buf[..plen].copy_from_slice(&src[..plen]);
+                    (plen, grid.freq_res[l - 1])
                 } else if let Some(p) = prev {
-                    let last = p.eq.len().saturating_sub(1);
-                    (
-                        p.eq.get(last).cloned().unwrap_or_default(),
-                        *p.freq_res.get(last).unwrap_or(&cur_high),
-                    )
+                    let last = p.eq.last().map(Vec::as_slice).unwrap_or(&[]);
+                    let plen = last.len().min(64);
+                    prev_buf[..plen].copy_from_slice(&last[..plen]);
+                    (plen, *p.freq_res.last().unwrap_or(&cur_high))
                 } else {
-                    (vec![0i32; n], cur_high)
+                    (0, cur_high)
                 };
                 for k in 0..n {
-                    let g = ref_band(bands, &prev_row, cur_high, prev_high, k);
-                    row[k] = g + raw[k] * inv;
+                    let g = ref_band(bands, &prev_buf[..prev_len], cur_high, prev_high, k);
+                    self.eq[l][k] = g + raw[k] * inv;
                 }
             }
-            eq.push(row);
         }
-
-        Ok(EnvelopeScalefactors {
-            eq,
-            freq_res: grid.freq_res.clone(),
-        })
+        Ok(())
     }
 }
 
@@ -189,6 +214,7 @@ impl NoiseScalefactors {
     /// Reconstruct `Q(k,l)` from the raw `bs_data_noise` over `NQ`
     /// bands. Noise floors share one resolution, so there is no
     /// `i(k)` remap.
+    #[cfg(test)]
     pub fn reconstruct(
         noise: &SbrNoiseData,
         grid: &SbrGrid,
@@ -198,39 +224,63 @@ impl NoiseScalefactors {
         ch: bool,
         prev: Option<&NoiseScalefactors>,
     ) -> Result<Self> {
+        let mut out = Self { q: Vec::new() };
+        out.reconstruct_into(noise, grid, dtdf, num_noise_bands, coupling, ch, prev)?;
+        Ok(out)
+    }
+
+    /// Fill `self` in place (reuses row capacity).
+    #[allow(clippy::too_many_arguments, clippy::needless_range_loop)]
+    pub fn reconstruct_into(
+        &mut self,
+        noise: &SbrNoiseData,
+        grid: &SbrGrid,
+        dtdf: &SbrDtdf,
+        num_noise_bands: usize,
+        coupling: bool,
+        ch: bool,
+        prev: Option<&NoiseScalefactors>,
+    ) -> Result<()> {
         let inv = inv_delta(coupling, ch);
-        let mut q: Vec<Vec<i32>> = Vec::with_capacity(grid.num_noise);
+        if self.q.len() < grid.num_noise {
+            self.q.resize(grid.num_noise, Vec::new());
+        }
+        self.q.truncate(grid.num_noise);
 
         for l in 0..grid.num_noise {
             let raw = &noise.data[l];
             if raw.len() != num_noise_bands {
                 return Err(Error::SbrGridInvalid);
             }
-            let mut row = vec![0i32; num_noise_bands];
+            self.q[l].clear();
+            self.q[l].resize(num_noise_bands, 0);
             if !dtdf.df_noise[l] {
-                row[0] = raw[0] * inv;
+                self.q[l][0] = raw[0] * inv;
                 for k in 1..num_noise_bands {
-                    row[k] = row[k - 1] + raw[k] * inv;
+                    self.q[l][k] = self.q[l][k - 1] + raw[k] * inv;
                 }
             } else {
-                let prev_row: Vec<i32> = if l >= 1 {
-                    q[l - 1].clone()
+                let mut prev_buf = [0i32; 64];
+                let prev_len = if l >= 1 {
+                    let src = &self.q[l - 1];
+                    let plen = src.len().min(64);
+                    prev_buf[..plen].copy_from_slice(&src[..plen]);
+                    plen
                 } else if let Some(p) = prev {
-                    p.q.last()
-                        .cloned()
-                        .unwrap_or_else(|| vec![0i32; num_noise_bands])
+                    let last = p.q.last().map(Vec::as_slice).unwrap_or(&[]);
+                    let plen = last.len().min(64);
+                    prev_buf[..plen].copy_from_slice(&last[..plen]);
+                    plen
                 } else {
-                    vec![0i32; num_noise_bands]
+                    0
                 };
                 for k in 0..num_noise_bands {
-                    let g = prev_row.get(k).copied().unwrap_or(0);
-                    row[k] = g + raw[k] * inv;
+                    let g = if k < prev_len { prev_buf[k] } else { 0 };
+                    self.q[l][k] = g + raw[k] * inv;
                 }
             }
-            q.push(row);
         }
-
-        Ok(NoiseScalefactors { q })
+        Ok(())
     }
 }
 

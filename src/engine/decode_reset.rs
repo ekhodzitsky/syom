@@ -13,6 +13,7 @@ impl StreamDecoder {
         self.fb_r = Filterbank::new();
         self.rng = Lcg::new();
         self.sbr_pool.reset();
+        self.pending_sbrs.clear();
         self.sbr_active = false;
         self.sbr_declared = false;
         self.ps_declared = false;

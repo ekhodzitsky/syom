@@ -26,6 +26,38 @@
 //! No part of this implementation is derived from any external decoder.
 
 use crate::engine::{Error, Result};
+use std::sync::OnceLock;
+
+fn analysis_m() -> &'static [Complex] {
+    static M: OnceLock<Vec<Complex>> = OnceLock::new();
+    M.get_or_init(|| {
+        let mut m = Vec::with_capacity(32 * 64);
+        for k in 0..32 {
+            for n in 0..64 {
+                let arg = core::f64::consts::PI / 64.0 * (k as f64 + 0.5) * (2.0 * n as f64 - 0.5);
+                m.push(Complex::new(2.0 * arg.cos(), 2.0 * arg.sin()));
+            }
+        }
+        m
+    })
+    .as_slice()
+}
+
+fn synthesis_n_mat() -> &'static [Complex] {
+    static N: OnceLock<Vec<Complex>> = OnceLock::new();
+    N.get_or_init(|| {
+        let mut n_mat = Vec::with_capacity(128 * 64);
+        for n in 0..128 {
+            for k in 0..64 {
+                let arg =
+                    core::f64::consts::PI / 128.0 * (k as f64 + 0.5) * (2.0 * n as f64 - 255.0);
+                n_mat.push(Complex::new(arg.cos() / 64.0, arg.sin() / 64.0));
+            }
+        }
+        n_mat
+    })
+    .as_slice()
+}
 
 /// A complex number, as used by the SBR subband domain (§4.6.18.2.2:
 /// the subband samples are complex-valued).
@@ -284,7 +316,8 @@ pub struct AnalysisQmf {
     x: Vec<f64>,
     /// Precomputed modulation matrix
     /// `2·exp(i·π/64·(k + 0.5)·(2n − 0.5))`, row-major `[k][n]`.
-    m: Vec<Complex>,
+    /// Interned spec table (not session workspace).
+    m: &'static [Complex],
 }
 
 impl Default for AnalysisQmf {
@@ -297,16 +330,9 @@ impl AnalysisQmf {
     /// A fresh analysis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        let mut m = Vec::with_capacity(32 * 64);
-        for k in 0..32 {
-            for n in 0..64 {
-                let arg = core::f64::consts::PI / 64.0 * (k as f64 + 0.5) * (2.0 * n as f64 - 0.5);
-                m.push(Complex::new(2.0 * arg.cos(), 2.0 * arg.sin()));
-            }
-        }
         AnalysisQmf {
             x: vec![0.0; 320],
-            m,
+            m: analysis_m(),
         }
     }
 
@@ -357,7 +383,8 @@ pub struct SynthesisQmf {
     v: Vec<f64>,
     /// Precomputed `exp(i·π/128·(k + 0.5)·(2n − 255)) / 64`, row-major
     /// `[n][k]` (transposed for the inner sum over `k`).
-    n_mat: Vec<Complex>,
+    /// Interned spec table (not session workspace).
+    n_mat: &'static [Complex],
 }
 
 impl Default for SynthesisQmf {
@@ -370,17 +397,9 @@ impl SynthesisQmf {
     /// A fresh synthesis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        let mut n_mat = Vec::with_capacity(128 * 64);
-        for n in 0..128 {
-            for k in 0..64 {
-                let arg =
-                    core::f64::consts::PI / 128.0 * (k as f64 + 0.5) * (2.0 * n as f64 - 255.0);
-                n_mat.push(Complex::new(arg.cos() / 64.0, arg.sin() / 64.0));
-            }
-        }
         SynthesisQmf {
             v: vec![0.0; 1280],
-            n_mat,
+            n_mat: synthesis_n_mat(),
         }
     }
 

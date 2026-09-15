@@ -25,19 +25,19 @@
 
 use crate::engine::ps_decoder::PsDecoder;
 use crate::engine::ps_hybrid::LOOKAHEAD;
-use crate::engine::sbr_dequant::{DequantizedSbr, dequant_coupled, dequant_single};
+use crate::engine::sbr_dequant::{DequantizedSbr, dequant_coupled_into, dequant_single_into};
 use crate::engine::sbr_element::EXTENSION_ID_PS;
-use crate::engine::sbr_env_adjust::{EnvAdjustState, EnvParams, adjust};
+use crate::engine::sbr_env_adjust::{EnvAdjustState, EnvParams, adjust_into};
 use crate::engine::sbr_extension::SbrExtensionData;
 use crate::engine::sbr_freq_bands::{HiLoTables, k0 as derive_k0, k2 as derive_k2, master_table};
 use crate::engine::sbr_header::SbrHeader;
 use crate::engine::sbr_hf_gen::{
-    Patches, T_HF_ADJ, T_HF_GEN, build_patches, chirp_factors, generate_hf,
+    Patches, T_HF_ADJ, T_HF_GEN, build_patches, chirp_factors_into, generate_hf_into,
 };
 use crate::engine::sbr_limiter::limiter_table;
 use crate::engine::sbr_qmf::{AnalysisQmf, Complex, SynthesisQmf};
 use crate::engine::sbr_reconstruct::{EnvelopeScalefactors, NoiseScalefactors};
-use crate::engine::sbr_time_grid::derive_time_grid;
+use crate::engine::sbr_time_grid::TimeGrid;
 use crate::engine::{Error, Result};
 
 /// `numTimeSlots` for the 1024-sample core frame (§4.6.18.2.6).
@@ -52,13 +52,14 @@ const LF: usize = (NUM_TIME_SLOTS * RATE) as usize;
 /// Total `XLow` / `XHigh` / `Y` columns (`lf + tHFGen`).
 const COLS: usize = LF + T_HF_GEN;
 
-/// Per-channel cross-frame state.
+/// Per-channel cross-frame state plus reused conversion/reconstruction
+/// workspace (TASK-79).
 #[derive(Debug)]
 struct ChannelState {
     analysis: AnalysisQmf,
     synthesis: SynthesisQmf,
     /// The previous frame's last `tHFGen` analysis slots (`W'`).
-    w_hist: Vec<[Complex; 32]>,
+    w_hist: [[Complex; 32]; T_HF_GEN],
     /// The previous frame's `Y` buffer (spec absolute columns).
     y_prev: Vec<[Complex; 64]>,
     /// `tE'(LE')` — the previous frame's trailing envelope border.
@@ -69,8 +70,16 @@ struct ChannelState {
     env_state: EnvAdjustState,
     prev_invf: Vec<u8>,
     prev_bw: Vec<f64>,
-    prev_env: Option<EnvelopeScalefactors>,
-    prev_noise: Option<NoiseScalefactors>,
+    prev_env: EnvelopeScalefactors,
+    prev_noise: NoiseScalefactors,
+    env_cur: EnvelopeScalefactors,
+    noise_cur: NoiseScalefactors,
+    dequant: DequantizedSbr,
+    /// f32 core conversion (1024).
+    core: Vec<f32>,
+    pcm: Vec<f32>,
+    bw: Vec<f64>,
+    time_grid: TimeGrid,
 }
 
 impl ChannelState {
@@ -78,7 +87,7 @@ impl ChannelState {
         ChannelState {
             analysis: AnalysisQmf::new(),
             synthesis: SynthesisQmf::new(),
-            w_hist: vec![[Complex::default(); 32]; T_HF_GEN],
+            w_hist: [[Complex::default(); 32]; T_HF_GEN],
             y_prev: vec![[Complex::default(); 64]; COLS],
             t_e_last_prev: NUM_TIME_SLOTS,
             k_x_prev: 0,
@@ -86,27 +95,49 @@ impl ChannelState {
             env_state: EnvAdjustState::new(),
             prev_invf: Vec::new(),
             prev_bw: Vec::new(),
-            prev_env: None,
-            prev_noise: None,
+            prev_env: EnvelopeScalefactors {
+                eq: Vec::new(),
+                freq_res: Vec::new(),
+            },
+            prev_noise: NoiseScalefactors { q: Vec::new() },
+            env_cur: EnvelopeScalefactors {
+                eq: Vec::new(),
+                freq_res: Vec::new(),
+            },
+            noise_cur: NoiseScalefactors { q: Vec::new() },
+            dequant: DequantizedSbr {
+                e_orig: Vec::new(),
+                q_orig: Vec::new(),
+            },
+            core: vec![0.0; 1024],
+            pcm: Vec::with_capacity(LF * 64),
+            bw: Vec::new(),
+            time_grid: TimeGrid {
+                t_e: Vec::new(),
+                t_q: Vec::new(),
+                l_a: -1,
+            },
         }
     }
 
-    /// Run the analysis QMF over one 1024-sample core frame and build
-    /// the `XLow` buffer: columns `0..tHFGen` are the previous frame's
-    /// trailing slots (`W'`), columns `tHFGen..` the current `W`.
-    fn analyze(&mut self, core: &[f64]) -> Result<Vec<[Complex; 32]>> {
-        if core.len() != 1024 {
+    /// Run the analysis QMF over one 1024-sample core frame into
+    /// `x_low`: columns `0..tHFGen` are the previous frame's trailing
+    /// slots (`W'`), columns `tHFGen..` the current `W`.
+    fn analyze(&mut self, x_low: &mut [[Complex; 32]; COLS]) -> Result<()> {
+        if self.core.len() != 1024 {
             return Err(Error::SbrQmfInvalid);
         }
-        let mut x_low = Vec::with_capacity(COLS);
-        x_low.extend_from_slice(&self.w_hist);
+        x_low[..T_HF_GEN].copy_from_slice(&self.w_hist);
         for slot in 0..LF {
-            let w = self.analysis.push_slot(&core[slot * 32..(slot + 1) * 32])?;
-            x_low.push(w);
+            let mut s = [0.0f64; 32];
+            let src = &self.core[slot * 32..(slot + 1) * 32];
+            for (d, &v) in s.iter_mut().zip(src.iter()) {
+                *d = f64::from(v);
+            }
+            x_low[T_HF_GEN + slot] = self.analysis.push_slot(&s)?;
         }
-        self.w_hist.clear();
-        self.w_hist.extend_from_slice(&x_low[COLS - T_HF_GEN..]);
-        Ok(x_low)
+        self.w_hist.copy_from_slice(&x_low[COLS - T_HF_GEN..]);
+        Ok(())
     }
 }
 
@@ -124,6 +155,8 @@ pub struct SbrDecoder {
     /// PS decoder plus the second (right-channel) synthesis bank; the
     /// channel's own bank renders the left channel.
     ps: Option<PsState>,
+    /// Last `process`/`upsample` emitted PS stereo (`pcm` + `ps.pcm_r`).
+    ps_rendered: bool,
 }
 
 /// PS decoder + right-channel synthesis bank (Annex 8.A).
@@ -131,6 +164,7 @@ pub struct SbrDecoder {
 struct PsState {
     dec: PsDecoder,
     synthesis_r: SynthesisQmf,
+    pcm_r: Vec<f32>,
 }
 
 impl SbrDecoder {
@@ -148,7 +182,62 @@ impl SbrDecoder {
             f_table_lim: Vec::new(),
             channels: (0..num_channels).map(|_| ChannelState::new()).collect(),
             ps: None,
+            ps_rendered: false,
         })
+    }
+
+    #[cfg(test)]
+    fn fill_core_f64(&mut self, core: &[&[f64]]) -> Result<()> {
+        if core.len() != self.channels.len() {
+            return Err(Error::SbrQmfInvalid);
+        }
+        for (ch, src) in self.channels.iter_mut().zip(core.iter()) {
+            if src.len() != 1024 {
+                return Err(Error::SbrQmfInvalid);
+            }
+            if ch.core.len() != 1024 {
+                ch.core.resize(1024, 0.0);
+            }
+            for (d, s) in ch.core.iter_mut().zip(src.iter()) {
+                *d = *s as f32;
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn fill_core_f32(&mut self, planes: &[&[f32]]) -> Result<()> {
+        if planes.len() != self.channels.len() {
+            return Err(Error::SbrQmfInvalid);
+        }
+        for (ch, src) in self.channels.iter_mut().zip(planes.iter()) {
+            if src.len() != 1024 {
+                return Err(Error::SbrQmfInvalid);
+            }
+            if ch.core.len() != 1024 {
+                ch.core.resize(1024, 0.0);
+            }
+            ch.core.copy_from_slice(src);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn out_planes(&self) -> usize {
+        if self.ps_rendered {
+            2
+        } else {
+            self.channels.len()
+        }
+    }
+
+    pub(crate) fn pcm_plane(&self, i: usize) -> &[f32] {
+        if i == 1 && self.ps_rendered {
+            self.ps.as_ref().map(|p| p.pcm_r.as_slice()).unwrap_or(&[])
+        } else {
+            self.channels
+                .get(i)
+                .map(|c| c.pcm.as_slice())
+                .unwrap_or(&[])
+        }
     }
 
     /// §4.6.18.5 pure upsampling: no SBR data for this frame — run the
@@ -157,52 +246,72 @@ impl SbrDecoder {
     ///
     /// `core` holds one 1024-sample time signal per channel; returns
     /// 2048 samples per channel.
+    #[cfg(test)]
     pub fn upsample_frame(&mut self, core: &[&[f64]]) -> Result<Vec<Vec<f64>>> {
-        if core.len() != self.channels.len() {
-            return Err(Error::SbrQmfInvalid);
-        }
-        let mut out = Vec::with_capacity(core.len());
+        self.fill_core_f64(core)?;
+        let n = self.upsample_prepared()?;
+        Ok((0..n)
+            .map(|i| self.pcm_plane(i).iter().map(|&x| f64::from(x)).collect())
+            .collect())
+    }
+
+    pub(crate) fn upsample_prepared(&mut self) -> Result<usize> {
+        self.ps_rendered = false;
         let n_ch = self.channels.len();
-        for (ch, core_ch) in self.channels.iter_mut().zip(core.iter()) {
-            let x_low = ch.analyze(core_ch)?;
-            let mut x_cols: Vec<[Complex; 64]> = Vec::with_capacity(LF);
-            for l in 0..LF {
-                let mut x = [Complex::default(); 64];
-                x[..32].copy_from_slice(&x_low[l + T_HF_ADJ]);
-                x_cols.push(x);
+        for c in 0..n_ch {
+            let mut x_low = [[Complex::default(); 32]; COLS];
+            self.channels[c].analyze(&mut x_low)?;
+            let rendered = if n_ch == 1 {
+                emit_ps_from(
+                    &mut self.channels[0],
+                    self.ps.as_mut(),
+                    None,
+                    &x_low,
+                    None,
+                    0,
+                    None,
+                    32,
+                )?
+            } else {
+                false
+            };
+            if rendered {
+                self.ps_rendered = true;
+            } else {
+                synth_low(&mut self.channels[c], &x_low)?;
             }
-            // A PS-active stream holds its stereo parameters over a
-            // frame without SBR/PS payload (Annex 8.A.3); the whole
-            // 32-band spectrum counts as SBR-covered for the partial
-            // reset.
-            if n_ch != 1 || !emit_ps(ch, self.ps.as_mut(), &x_cols, &x_low, None, 32, &mut out)? {
-                out.push(synth_mono(ch, &x_cols)?);
-            }
-            // No Y for this frame; the next frame's lTemp splice sees
-            // an empty previous envelope span.
-            ch.y_prev
+            self.channels[c]
+                .y_prev
                 .iter_mut()
-                .for_each(|c| *c = [Complex::default(); 64]);
-            ch.t_e_last_prev = NUM_TIME_SLOTS;
+                .for_each(|col| *col = [Complex::default(); 64]);
+            self.channels[c].t_e_last_prev = NUM_TIME_SLOTS;
         }
-        Ok(out)
+        Ok(self.out_planes())
     }
 
     /// Decode one SBR frame: `ext` is the parsed `sbr_extension_data()`
     /// for this element, `core` one 1024-sample signal per channel.
     /// Returns 2048 samples per channel at the SBR rate.
+    #[cfg(test)]
     pub fn process_frame(
         &mut self,
         ext: &SbrExtensionData,
         core: &[&[f64]],
     ) -> Result<Vec<Vec<f64>>> {
+        self.fill_core_f64(core)?;
+        let n = self.process_prepared(ext)?;
+        Ok((0..n)
+            .map(|i| self.pcm_plane(i).iter().map(|&x| f64::from(x)).collect())
+            .collect())
+    }
+
+    pub(crate) fn process_prepared(&mut self, ext: &SbrExtensionData) -> Result<usize> {
+        self.ps_rendered = false;
         let n_ch = self.channels.len();
-        if core.len() != n_ch || ext.element.channels.len() != n_ch {
+        if ext.element.channels.len() != n_ch {
             return Err(Error::SbrFreqBandInvalid);
         }
 
-        // §4.6.18.3.3 reset: first header, or a transmitted header that
-        // changes the band geometry.
         let reset = match &self.header {
             None => true,
             Some(prev) => prev.band_geometry_changed(&ext.header),
@@ -224,168 +333,160 @@ impl SbrDecoder {
             for ch in &mut self.channels {
                 ch.prev_invf.clear();
                 ch.prev_bw.clear();
-                ch.prev_env = None;
-                ch.prev_noise = None;
+                ch.prev_env.eq.clear();
+                ch.prev_env.freq_res.clear();
+                ch.prev_noise.q.clear();
             }
         }
         self.header = Some(ext.header);
-        let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
-        let patches = self.patches.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
-
         let coupling = ext.element.coupling;
 
-        // Reconstruct the quantized scalefactors per transmitted
-        // channel, then dequantize (jointly for a coupled pair).
-        let mut recon: Vec<(EnvelopeScalefactors, NoiseScalefactors)> = Vec::with_capacity(n_ch);
         for (c, sbr_ch) in ext.element.channels.iter().enumerate() {
-            let st = &self.channels[c];
-            let env = EnvelopeScalefactors::reconstruct(
+            let ch = &mut self.channels[c];
+            let prev_env = if reset || ch.prev_env.eq.is_empty() {
+                None
+            } else {
+                Some(&ch.prev_env)
+            };
+            let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
+            ch.env_cur.reconstruct_into(
                 &sbr_ch.envelope,
                 &sbr_ch.grid,
                 &sbr_ch.dtdf,
                 bands,
                 coupling,
                 c == 1,
-                if reset { None } else { st.prev_env.as_ref() },
+                prev_env,
             )?;
-            let noise = NoiseScalefactors::reconstruct(
+            let prev_noise = if reset || ch.prev_noise.q.is_empty() {
+                None
+            } else {
+                Some(&ch.prev_noise)
+            };
+            ch.noise_cur.reconstruct_into(
                 &sbr_ch.noise,
                 &sbr_ch.grid,
                 &sbr_ch.dtdf,
                 bands.n_q(),
                 coupling,
                 c == 1,
-                if reset { None } else { st.prev_noise.as_ref() },
+                prev_noise,
             )?;
-            recon.push((env, noise));
         }
 
-        let dequant: Vec<DequantizedSbr> = if coupling && n_ch == 2 {
+        if coupling && n_ch == 2 {
             let amp_res = effective_amp_res(&ext.header, &ext.element.channels[0].grid);
-            let (l, r) =
-                dequant_coupled(&recon[0].0, &recon[0].1, &recon[1].0, &recon[1].1, amp_res);
-            vec![l, r]
+            let (left, right) = self.channels.split_at_mut(1);
+            dequant_coupled_into(
+                &left[0].env_cur,
+                &left[0].noise_cur,
+                &right[0].env_cur,
+                &right[0].noise_cur,
+                amp_res,
+                &mut left[0].dequant,
+                &mut right[0].dequant,
+            );
         } else {
-            (0..n_ch)
-                .map(|c| {
-                    let amp_res = effective_amp_res(&ext.header, &ext.element.channels[c].grid);
-                    dequant_single(&recon[c].0, &recon[c].1, amp_res)
-                })
-                .collect()
-        };
+            for c in 0..n_ch {
+                let amp_res = effective_amp_res(&ext.header, &ext.element.channels[c].grid);
+                let ch = &mut self.channels[c];
+                dequant_single_into(&ch.env_cur, &ch.noise_cur, amp_res, &mut ch.dequant);
+            }
+        }
 
-        let mut out = Vec::with_capacity(n_ch);
+        let ps_payload = if n_ch == 1 {
+            ext.element
+                .extension
+                .as_ref()
+                .filter(|e| e.id == EXTENSION_ID_PS)
+                .map(|e| e.data.as_slice())
+        } else {
+            None
+        };
+        if ps_payload.is_some() && self.ps.is_none() {
+            self.ps = Some(PsState {
+                dec: PsDecoder::new(),
+                synthesis_r: SynthesisQmf::new(),
+                pcm_r: Vec::with_capacity(LF * 64),
+            });
+        }
+
         for c in 0..n_ch {
             let sbr_ch = &ext.element.channels[c];
-            let grid = derive_time_grid(&sbr_ch.grid, NUM_TIME_SLOTS)?;
-
-            // Coupling: the second channel transmits no sbr_invf()
-            // (Table 4.66) — it shares the first channel's
-            // inverse-filtering modes.
-            let invf_modes = if coupling && c == 1 {
+            let invf_modes: &[u8] = if coupling && c == 1 {
                 &ext.element.channels[0].invf.invf_mode
             } else {
                 &sbr_ch.invf.invf_mode
             };
 
-            let ch = &mut self.channels[c];
+            let mut x_low = [[Complex::default(); 32]; COLS];
+            let mut x_high = [[Complex::default(); 64]; COLS];
+            {
+                let ch = &mut self.channels[c];
+                let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
+                let patches = self.patches.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
+                ch.time_grid.derive_into(&sbr_ch.grid, NUM_TIME_SLOTS)?;
+                chirp_factors_into(invf_modes, &ch.prev_invf, &ch.prev_bw, &mut ch.bw);
+                ch.analyze(&mut x_low)?;
+                let l_range = (RATE * ch.time_grid.t_e[0])
+                    ..(RATE * ch.time_grid.t_e[ch.time_grid.t_e.len() - 1]);
+                generate_hf_into(&x_low, patches, &ch.bw, bands, l_range, LF, &mut x_high)?;
+            }
 
-            // Chirp factors (per noise band).
-            let bw = chirp_factors(invf_modes, &ch.prev_invf, &ch.prev_bw);
-
-            // Analysis + XLow (with tHFGen history).
-            let x_low = ch.analyze(core[c])?;
-
-            // HF generation over the envelope span.
-            let l_range = (RATE * grid.t_e[0])..(RATE * grid.t_e[grid.t_e.len() - 1]);
-            let x_high = generate_hf(&x_low, patches, &bw, bands, l_range, LF)?;
-
-            // Envelope adjustment.
-            let freq_res: Vec<bool> = sbr_ch.grid.freq_res.clone();
-            let params = EnvParams {
-                bands,
-                f_table_lim: &self.f_table_lim,
-                t_e: &grid.t_e,
-                t_q: &grid.t_q,
-                freq_res: &freq_res,
-                l_a: grid.l_a,
-                e_orig: &dequant[c].e_orig,
-                q_orig: &dequant[c].q_orig,
-                add_harmonic: &sbr_ch.add_harmonic,
-                interpol_freq: ext.header.interpol_freq,
-                smoothing_mode: ext.header.smoothing_mode,
-                limiter_gains: ext.header.limiter_gains,
-                reset,
-            };
-            let y = adjust(&x_high, &params, &mut ch.env_state)?;
-
-            // §4.6.18.5 X assembly.
-            let l_temp = (RATE * ch.t_e_last_prev - NUM_TIME_SLOTS * RATE).max(0) as usize;
-            let mut x_cols: Vec<[Complex; 64]> = Vec::with_capacity(LF);
-            for l in 0..LF {
-                let mut x = [Complex::default(); 64];
-                let (kx_cur, m_cur, y_col) = if l < l_temp {
-                    (ch.k_x_prev, ch.m_prev, &ch.y_prev[l + T_HF_ADJ + LF])
-                } else {
-                    (bands.k_x, bands.m, &y[l + T_HF_ADJ])
+            {
+                let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
+                let ch = &mut self.channels[c];
+                let params = EnvParams {
+                    bands,
+                    f_table_lim: &self.f_table_lim,
+                    t_e: &ch.time_grid.t_e,
+                    t_q: &ch.time_grid.t_q,
+                    freq_res: &sbr_ch.grid.freq_res,
+                    l_a: ch.time_grid.l_a,
+                    e_orig: &ch.dequant.e_orig,
+                    q_orig: &ch.dequant.q_orig,
+                    add_harmonic: &sbr_ch.add_harmonic,
+                    interpol_freq: ext.header.interpol_freq,
+                    smoothing_mode: ext.header.smoothing_mode,
+                    limiter_gains: ext.header.limiter_gains,
+                    reset,
                 };
-                let kx_u = kx_cur.max(0) as usize;
-                for (k, cell) in x.iter_mut().enumerate().take(kx_u.min(32)) {
-                    *cell = x_low[l + T_HF_ADJ][k];
-                }
-                let hi = (kx_cur + m_cur).max(0) as usize;
-                let hi = hi.min(64);
-                if kx_u < hi {
-                    x[kx_u..hi].copy_from_slice(&y_col[kx_u..hi]);
-                }
-                x_cols.push(x);
+                adjust_into(&mut x_high, &params, &mut ch.env_state)?;
             }
 
-            // Annex 8.A: a single-channel element carrying an
-            // EXTENSION_ID_PS payload renders stereo through the PS
-            // tool (the element's own bank = left, the PS state's =
-            // right). Until the first decodable ps_data() the mono
-            // path below stays in effect.
-            let ps_payload = if n_ch == 1 {
-                ext.element
-                    .extension
-                    .as_ref()
-                    .filter(|e| e.id == EXTENSION_ID_PS)
-                    .map(|e| e.data.as_slice())
-            } else {
-                None
-            };
-            if ps_payload.is_some() && self.ps.is_none() {
-                self.ps = Some(PsState {
-                    dec: PsDecoder::new(),
-                    synthesis_r: SynthesisQmf::new(),
-                });
-            }
+            let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
+            let l_temp =
+                (RATE * self.channels[c].t_e_last_prev - NUM_TIME_SLOTS * RATE).max(0) as usize;
             let kx_plus_m = (bands.k_x + bands.m).max(0) as usize;
-            if !emit_ps(
-                ch,
+            let rendered = emit_ps_from(
+                &mut self.channels[c],
                 self.ps.as_mut(),
-                &x_cols,
+                Some(bands),
                 &x_low,
+                Some(&x_high),
+                l_temp,
                 ps_payload,
                 kx_plus_m,
-                &mut out,
-            )? {
-                out.push(synth_mono(ch, &x_cols)?);
+            )?;
+            if rendered {
+                self.ps_rendered = true;
+            } else {
+                synth_assembled(&mut self.channels[c], bands, &x_low, &x_high, l_temp)?;
             }
 
-            // Thread cross-frame state.
-            ch.y_prev = y;
-            ch.t_e_last_prev = grid.t_e[grid.t_e.len() - 1];
+            let ch = &mut self.channels[c];
+            ch.y_prev.copy_from_slice(&x_high);
+            ch.t_e_last_prev = ch.time_grid.t_e[ch.time_grid.t_e.len() - 1];
             ch.k_x_prev = bands.k_x;
             ch.m_prev = bands.m;
-            ch.prev_invf = invf_modes.clone();
-            ch.prev_bw = bw;
-            let (env, noise) = recon[c].clone();
-            ch.prev_env = Some(env);
-            ch.prev_noise = Some(noise);
+            ch.prev_invf.clear();
+            ch.prev_invf.extend_from_slice(invf_modes);
+            ch.prev_bw.clear();
+            ch.prev_bw.extend_from_slice(&ch.bw);
+            std::mem::swap(&mut ch.env_cur, &mut ch.prev_env);
+            std::mem::swap(&mut ch.noise_cur, &mut ch.prev_noise);
         }
-        Ok(out)
+        Ok(self.out_planes())
     }
 }
 
@@ -414,50 +515,98 @@ pub(crate) fn planes_f32(out: Vec<Vec<f64>>, mix_down_mono: bool) -> Vec<Vec<f32
     planar
 }
 
-fn synth_mono(ch: &mut ChannelState, x_cols: &[[Complex; 64]]) -> Result<Vec<f64>> {
-    let mut pcm = Vec::with_capacity(LF * 64);
-    for x in x_cols {
-        pcm.extend_from_slice(&ch.synthesis.push_slot(x)?);
+fn assemble_x(
+    ch: &ChannelState,
+    x_low: &[[Complex; 32]],
+    y_cur: Option<&[[Complex; 64]]>,
+    bands: Option<&HiLoTables>,
+    l: usize,
+    l_temp: usize,
+    x: &mut [Complex; 64],
+) {
+    *x = [Complex::default(); 64];
+    let Some(bands) = bands else {
+        x[..32].copy_from_slice(&x_low[l + T_HF_ADJ]);
+        return;
+    };
+    let (kx_cur, m_cur, y_col) = if l < l_temp {
+        (ch.k_x_prev, ch.m_prev, &ch.y_prev[l + T_HF_ADJ + LF])
+    } else {
+        let y = y_cur.unwrap_or(&ch.y_prev);
+        (bands.k_x, bands.m, &y[l + T_HF_ADJ])
+    };
+    let kx_u = kx_cur.max(0) as usize;
+    for (k, cell) in x.iter_mut().enumerate().take(kx_u.min(32)) {
+        *cell = x_low[l + T_HF_ADJ][k];
     }
-    Ok(pcm)
+    let hi = (kx_cur + m_cur).max(0) as usize;
+    let hi = hi.min(64);
+    if kx_u < hi {
+        x[kx_u..hi].copy_from_slice(&y_col[kx_u..hi]);
+    }
 }
 
-fn emit_ps(
+fn synth_low(ch: &mut ChannelState, x_low: &[[Complex; 32]]) -> Result<()> {
+    ch.pcm.clear();
+    for l in 0..LF {
+        let mut x = [Complex::default(); 64];
+        assemble_x(ch, x_low, None, None, l, 0, &mut x);
+        ch.pcm
+            .extend(ch.synthesis.push_slot(&x)?.iter().map(|&s| s as f32));
+    }
+    Ok(())
+}
+
+fn synth_assembled(
+    ch: &mut ChannelState,
+    bands: &HiLoTables,
+    x_low: &[[Complex; 32]],
+    y_cur: &[[Complex; 64]],
+    l_temp: usize,
+) -> Result<()> {
+    ch.pcm.clear();
+    for l in 0..LF {
+        let mut x = [Complex::default(); 64];
+        assemble_x(ch, x_low, Some(y_cur), Some(bands), l, l_temp, &mut x);
+        ch.pcm
+            .extend(ch.synthesis.push_slot(&x)?.iter().map(|&s| s as f32));
+    }
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+fn emit_ps_from(
     ch: &mut ChannelState,
     ps: Option<&mut PsState>,
-    x_cols: &[[Complex; 64]],
+    bands: Option<&HiLoTables>,
     x_low: &[[Complex; 32]],
+    y_cur: Option<&[[Complex; 64]]>,
+    l_temp: usize,
     payload: Option<&[u8]>,
     kx_plus_m: usize,
-    out: &mut Vec<Vec<f64>>,
 ) -> Result<bool> {
     let Some(ps) = ps else {
         return Ok(false);
     };
-    let x_input = build_x_input(x_cols, x_low);
+    let mut x_input = [[Complex::default(); 64]; LF + LOOKAHEAD];
+    for (l, col) in x_input.iter_mut().enumerate().take(LF) {
+        assemble_x(ch, x_low, y_cur, bands, l, l_temp, col);
+    }
+    for l in LF..LF + LOOKAHEAD {
+        x_input[l][..5].copy_from_slice(&x_low[l + T_HF_ADJ][..5]);
+    }
     let Some((lq, rq)) = ps.dec.process(payload, &x_input, kx_plus_m)? else {
         return Ok(false);
     };
-    let mut pcm_l = Vec::with_capacity(LF * 64);
-    let mut pcm_r = Vec::with_capacity(LF * 64);
+    ch.pcm.clear();
+    ps.pcm_r.clear();
     for l in 0..LF {
-        pcm_l.extend_from_slice(&ch.synthesis.push_slot(&lq[l])?);
-        pcm_r.extend_from_slice(&ps.synthesis_r.push_slot(&rq[l])?);
+        ch.pcm
+            .extend(ch.synthesis.push_slot(&lq[l])?.iter().map(|&s| s as f32));
+        ps.pcm_r
+            .extend(ps.synthesis_r.push_slot(&rq[l])?.iter().map(|&s| s as f32));
     }
-    out.push(pcm_l);
-    out.push(pcm_r);
     Ok(true)
-}
-
-fn build_x_input(x_cols: &[[Complex; 64]], x_low: &[[Complex; 32]]) -> Vec<[Complex; 64]> {
-    let mut v = Vec::with_capacity(LF + LOOKAHEAD);
-    v.extend_from_slice(x_cols);
-    for l in LF..LF + LOOKAHEAD {
-        let mut col = [Complex::default(); 64];
-        col[..5].copy_from_slice(&x_low[l + T_HF_ADJ][..5]);
-        v.push(col);
-    }
-    v
 }
 
 /// The effective `bs_amp_res` after the single-envelope FIXFIX
