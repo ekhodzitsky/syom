@@ -45,6 +45,36 @@ Requires **Rust 1.88** or newer (edition 2024; CI tests 1.88 and 1.97.1).
 ## Quick start
 
 ```rust
+# fn main() -> syom::Result<()> {
+let pcm: Vec<f32> = (0..48_000).map(|i| 0.3 * (i as f32 * 0.06).sin()).collect();
+let adts = syom::encode(&[&pcm[..]], 48_000)?;              // AAC-LC, 128 kbps, ADTS
+let back = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;
+assert_eq!((back.channels.len(), back.sample_rate), (1, 48_000));
+# Ok(())
+# }
+```
+
+`syom::decode` alone is the **speech** default (mono mix, 2 h cap);
+`DecodeOptions::audio()` keeps the coded channels. The
+[guide](https://docs.rs/syom/latest/syom/guide/) has a compiling example
+per task:
+
+| task | guide section |
+|---|---|
+| one-call encode / decode, speech vs full fidelity | 1 |
+| borrowed PCM, `Read` / `Write` / `Seek` sinks and sources | 2 |
+| priming, tail and exact length (ADTS vs M4A) | 3 |
+| push `Encoder` / `Decoder` with bounded memory | 4 |
+| raw access units and `AudioSpecificConfig` | 5 |
+| probing without decoding, sample-exact M4A seeking | 6 |
+| LC / quality VBR / HE v1 / HE v2 / surround | 7 |
+| limits, budgets and typed errors | 8 |
+| supported and unsupported profiles and containers | 9 |
+| behaviour changes since 0.6.0 | 10 |
+
+Details:
+
+```rust
 fn main() -> syom::Result<()> {
     assert!(syom::decode(&[]).is_err());
     assert!(!syom::sniff_aac(b"ID3"));

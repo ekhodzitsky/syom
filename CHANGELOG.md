@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `syom::guide`: a task-oriented guide with compiling, self-contained
+  examples (one-call use, borrowed PCM and `Read`/`Write`, timing, streaming,
+  raw access units, probing and seeking, encoder modes, limits and errors,
+  support matrix, behaviour changes); the README opens with a task table
+  (TASK-107).
 - HE-AAC v2 encode (TASK-91, TASK-92, TASK-93): `EncodeOptions::with_he_v2`
   codes stereo as a mono HE core plus parametric stereo (20-band level
   difference and coherence per access unit) for about 16–40 kbps; ADTS

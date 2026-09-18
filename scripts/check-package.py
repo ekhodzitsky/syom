@@ -58,6 +58,13 @@ def main() -> int:
             errors.append(f"packaged manifest sets package.{key}")
     if re.search(r"^\[target\.", unpacked.read_text(), re.M):
         errors.append("packaged manifest has target-specific tables")
+    # TASK-107: the guide's examples are self-contained; they must run from
+    # the packaged sources (other doc tests need the repository's goldens).
+    doc = subprocess.run(["cargo", "test", "--doc", "guide"], cwd=unpacked.parent,
+                         capture_output=True, text=True)
+    ran = re.search(r"test result: ok\. (\d+) passed; 0 failed", doc.stdout)
+    if doc.returncode != 0 or not ran or int(ran.group(1)) < 8:
+        errors.append("guide doc tests fail from the packaged crate:\n" + doc.stdout[-600:])
     size = crate.stat().st_size
     if size > CRATE_BUDGET_BYTES:
         errors.append(f"crate is {size} bytes (budget {CRATE_BUDGET_BYTES})")

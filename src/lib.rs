@@ -11,6 +11,7 @@ mod encode;
 pub mod encode_cmp;
 mod engine;
 mod error;
+pub mod guide;
 mod isomp4;
 mod layout;
 mod m4a_write;
