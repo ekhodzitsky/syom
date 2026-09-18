@@ -267,3 +267,7 @@ mod latency_tests;
 #[cfg(test)]
 #[path = "encode_mc_tests.rs"]
 mod encode_mc_tests;
+
+#[cfg(test)]
+#[path = "encode_he_v2_tests.rs"]
+mod encode_he_v2_tests;

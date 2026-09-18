@@ -42,6 +42,19 @@ pub fn write_he(core_fs_index: u8, out_fs_index: u8, channel_configuration: u8) 
     w.finish()
 }
 
+/// Explicit hierarchical HE v2 ASC: outer AOT 29 (PS), mono core
+/// (`channelConfiguration` 1), otherwise [`write_he`].
+pub fn write_he_ps(core_fs_index: u8, out_fs_index: u8) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    w.write(u32::from(AOT_PS), 5);
+    w.write(u32::from(core_fs_index), 4);
+    w.write(1, 4);
+    w.write(u32::from(out_fs_index), 4);
+    w.write(u32::from(AOT_LC), 5);
+    w.write(0, 3);
+    w.finish()
+}
+
 /// The 25 explicit two-rate HE ASC bits into an open writer.
 pub fn push_he(w: &mut BitWriter, core_fs_index: u8, out_fs_index: u8, channel_configuration: u8) {
     w.write(5, 5);

@@ -92,7 +92,8 @@ Streaming `Frame::meta` (`Copy`) names planes (5.1 = FL FR FC LFE BL BR)
 and core vs output rate; ADTS priming stays `None`.
 
 Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
-128 kbps; mono, stereo, or surround with 3, 4, 5, 6 or 8 planes in the
+128 kbps; HE-AAC v1 via `with_he`, HE-AAC v2 (parametric stereo, about
+16–40 kbps) via `with_he_v2`; mono, stereo, or surround with 3, 4, 5, 6 or 8 planes in the
 decode order — 5.1 is FL FR FC LFE BL BR, 7.1 adds SL SR — as
 `channel_configuration` 3–7 in ADTS, M4A and LATM; `bitrate_bps` is
 whole-stream, surround has no HE, lookahead or PCE output); planes are `&[Vec<f32>]`, `&[&[f32]]` or any

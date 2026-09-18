@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- HE-AAC v2 encode (TASK-91, TASK-92, TASK-93): `EncodeOptions::with_he_v2`
+  codes stereo as a mono HE core plus parametric stereo (20-band level
+  difference and coherence per access unit) for about 16–40 kbps; ADTS
+  implicit, M4A / LATM / `Encoder::asc` explicit AOT 29, HE v1 timeline.
+  libavcodec decodes the goldens `he2_48e*` as HE-AACv2 stereo with the
+  written image (`lab/quality/HE_V2.md`). New public field
+  `EncodeOptions::ps`.
 - Surround AAC-LC encode (TASK-114, TASK-116): `encode*`, `Encoder`,
   `encode_write` and `encode_write_m4a` accept 3, 4, 5, 6 or 8 planes in the
   decode order (5.1 = FL FR FC LFE BL BR, 7.1 adds SL SR) and signal

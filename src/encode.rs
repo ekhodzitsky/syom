@@ -16,6 +16,7 @@
 use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
 use crate::engine::enc_frame::LcEncoder;
 use crate::engine::enc_he::HeEncoder;
+use crate::engine::enc_he_ps::{AnyHe, PsHeEncoder};
 use crate::engine::swb::LONG_WINDOW_LEN as FRAME;
 use crate::error::{AacError, Result};
 use crate::m4a_write;
@@ -52,9 +53,13 @@ pub fn encode<P: AsRef<[f32]>>(pcm: &[P], sample_rate: u32) -> Result<Vec<u8>> {
 
 /// Build the HE v1 encoder: the output rate must halve to an ADTS rate and
 /// the whole-stream bitrate must fit the core's 6144 bits/channel/frame.
-pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<HeEncoder> {
+pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) -> Result<AnyHe> {
     let core = crate::engine::enc_sbr_prep::he_core_rate(sample_rate)
         .map_err(|_| AacError::Unsupported(crate::UnsupportedFeature::EncodeHeRate(sample_rate)))?;
+    if opts.ps && channels != 2 {
+        return Err(AacError::encode("encode: HE v2 needs stereo input"));
+    }
+    let channels = if opts.ps { 1 } else { channels }; // v2: mono core
     let max_bps = crate::engine::enc_frame::max_bitrate_bps(core, channels);
     if opts.bitrate_bps > max_bps {
         return Err(AacError::encode(format!(
@@ -62,12 +67,25 @@ pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
             opts.bitrate_bps
         )));
     }
-    Ok(HeEncoder::new(
+    if opts.ps {
+        let v2 = PsHeEncoder::new(sample_rate, opts.bitrate_bps, opts.lookahead)?;
+        return Ok(AnyHe::V2(Box::new(v2)));
+    }
+    Ok(AnyHe::V1(Box::new(HeEncoder::new(
         sample_rate,
         channels,
         opts.bitrate_bps,
         opts.lookahead,
-    )?)
+    )?)))
+}
+
+/// Explicit HE `AudioSpecificConfig`: AOT 5 two-rate, or AOT 29 for v2.
+pub(crate) fn he_asc(enc: &AnyHe, sample_rate: u32, planes: usize) -> Result<Vec<u8>> {
+    let out = fs_index(sample_rate)?;
+    Ok(match enc {
+        AnyHe::V1(_) => crate::engine::asc::write_he(enc.fs_index(), out, planes as u8),
+        AnyHe::V2(_) => crate::engine::asc::write_he_ps(enc.fs_index(), out),
+    })
 }
 
 /// HE v1 one-shot: every access unit, then ADTS (implicit SBR, core rate
@@ -84,24 +102,18 @@ fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Resul
         aus.push(au.to_vec());
         Ok(())
     })?;
+    let asc = he_asc(&enc, sample_rate, channels)?;
     match opts.container {
-        EncodeContainer::Adts => Ok(wrap_adts(&aus, enc.fs_index(), channels)),
-        EncodeContainer::Latm => {
-            let asc = crate::engine::asc::write_he(
-                enc.fs_index(),
-                fs_index(sample_rate)?,
-                channels as u8,
-            );
-            mux::wrap_latm(&aus, &asc)
-        }
-        EncodeContainer::M4a => m4a_write::mux_aac_he(
+        EncodeContainer::Adts => Ok(wrap_adts(&aus, enc.fs_index(), enc.core_channels(channels))),
+        EncodeContainer::Latm => mux::wrap_latm(&aus, &asc),
+        EncodeContainer::M4a => m4a_write::mux_aac(
             &aus,
-            enc.fs_index(),
-            fs_index(sample_rate)?,
+            &asc,
             channels,
             sample_rate,
             info.source,
             info.priming_out,
+            2048,
         ),
         EncodeContainer::Raw => Err(AacError::Unsupported(
             crate::UnsupportedFeature::EncodeRawOneShot,
@@ -226,6 +238,9 @@ pub(crate) fn check_mode(opts: &EncodeOptions) -> Result<()> {
                 "encode: quality VBR is LC only (he must be off)",
             ));
         }
+    }
+    if opts.ps && !opts.he {
+        return Err(AacError::encode("encode: ps needs he (use with_he_v2)"));
     }
     Ok(())
 }

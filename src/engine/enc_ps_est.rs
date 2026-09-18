@@ -35,6 +35,11 @@ pub(crate) const PS_BANDS: usize = 20;
 pub(crate) const PS_FRAME_SLOTS: usize = 32;
 /// Estimator lag behind its input, in QMF slots (the hybrid half-length).
 pub(crate) const PS_DELAY_SLOTS: usize = 6;
+/// The decoder's PS frame starts 8 slots before the block boundary the
+/// SBR estimator window uses (6 slots of grid lead + `tHFAdj` = 2), so
+/// the first analysed frame is this much shorter and frame `k` covers
+/// input slots `[32k − 8, 32k + 24)` — the PS frame of access unit `k + 1`.
+pub(crate) const PS_FRAME_LEAD: usize = 8;
 /// Output-rate samples per downmix block (one HE access unit).
 pub(crate) const PS_BLOCK: usize = 2048;
 
@@ -121,7 +126,7 @@ impl PsEstimator {
             tw,
             cur: Sums::default(),
             prev: Sums::default(),
-            slots: 0,
+            slots: PS_FRAME_LEAD,
             primed: 0,
         }
     }
@@ -130,7 +135,7 @@ impl PsEstimator {
         self.ring.clear();
         self.cur = Sums::default();
         self.prev = Sums::default();
-        self.slots = 0;
+        self.slots = PS_FRAME_LEAD;
         self.primed = 0;
     }
 
@@ -327,7 +332,6 @@ pub(crate) struct PsAnalysis {
     mix: PsDownmix,
 }
 
-#[cfg_attr(not(test), allow(dead_code))] // wired by TASK-93
 impl PsAnalysis {
     pub(crate) fn new() -> Self {
         Self {

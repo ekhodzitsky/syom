@@ -8,6 +8,7 @@
 //! in-tree and libavcodec decoders only skip `bs_sbr_crc_bits`).
 
 use super::bits::BitWriter;
+use super::enc_ps_bits::PsBits;
 use super::enc_sbr_est::SbrFrameParams;
 use super::error::{Error, Result};
 use super::sbr_envelope::{SbrEnvelopeData, SbrNoiseData};
@@ -253,11 +254,24 @@ fn write_harmonics(w: &mut BitWriter, add: &[bool], n_high: usize) -> Result<()>
 /// `sbr_channel_pair_element()` (Table 4.66), no extended data.
 /// `amp_res` is the header value; a single-envelope FIXFIX grid forces
 /// 1.5 dB per channel.
+#[cfg(test)]
 pub(crate) fn write_sbr_data(
     w: &mut BitWriter,
     amp_res: bool,
     bands: &HiLoTables,
     channels: &[&SbrFrameParams],
+) -> Result<()> {
+    write_sbr_data_ps(w, amp_res, bands, channels, None)
+}
+
+/// [`write_sbr_data`] with an optional PS payload in `bs_extended_data`
+/// (HE v2: a mono SCE element only).
+pub(crate) fn write_sbr_data_ps(
+    w: &mut BitWriter,
+    amp_res: bool,
+    bands: &HiLoTables,
+    channels: &[&SbrFrameParams],
+    ps: Option<&PsBits>,
 ) -> Result<()> {
     let n_q = bands.n_q();
     w.write_bit(false); // bs_data_extra
@@ -288,8 +302,14 @@ pub(crate) fn write_sbr_data(
         }
         _ => return Err(Error::SbrGridInvalid),
     }
-    w.write_bit(false); // bs_extended_data
-    Ok(())
+    match ps {
+        Some(_) if channels.len() != 1 => Err(Error::SbrGridInvalid),
+        Some(ps) => super::enc_ps_bits::write_extended_data(w, ps),
+        None => {
+            w.write_bit(false); // bs_extended_data
+            Ok(())
+        }
+    }
 }
 
 /// `sbr_extension_data()` after the `extension_type` nibble, no CRC:
@@ -301,13 +321,14 @@ pub(crate) fn write_sbr_extension(
     transmit_header: bool,
     bands: &HiLoTables,
     channels: &[&SbrFrameParams],
+    ps: Option<&PsBits>,
 ) -> Result<u64> {
     let start = w.bit_len();
     w.write_bit(transmit_header);
     if transmit_header {
         write_header(w, header)?;
     }
-    write_sbr_data(w, header.amp_res, bands, channels)?;
+    write_sbr_data_ps(w, header.amp_res, bands, channels, ps)?;
     Ok(w.bit_len() - start)
 }
 
@@ -319,10 +340,11 @@ pub(crate) fn sbr_extension_payload(
     transmit_header: bool,
     bands: &HiLoTables,
     channels: &[&SbrFrameParams],
+    ps: Option<&PsBits>,
 ) -> Result<Vec<u8>> {
     let mut w = BitWriter::new();
     w.write(EXT_SBR_DATA, 4);
-    write_sbr_extension(&mut w, header, transmit_header, bands, channels)?;
+    write_sbr_extension(&mut w, header, transmit_header, bands, channels, ps)?;
     let bytes = w.finish();
     if bytes.len() > FILL_MAX_BYTES {
         return Err(Error::SbrGridInvalid);
@@ -350,4 +372,4 @@ pub(crate) fn write_fill_element(w: &mut BitWriter, payload: &[u8]) -> Result<()
 
 #[cfg(test)]
 #[path = "enc_sbr_bits_tests.rs"]
-mod enc_sbr_bits_tests;
+pub(crate) mod enc_sbr_bits_tests;

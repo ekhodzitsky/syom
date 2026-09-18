@@ -6,6 +6,8 @@
 //! options, ADTS/M4A signalling and the public surface are TASK-90.
 
 use super::enc_frame::LcEncoder;
+use super::enc_ps_bits::PsWriter;
+use super::enc_ps_est::PsFrameParams;
 use super::enc_sbr_bits::sbr_extension_payload;
 use super::enc_sbr_est::{SLOTS, SbrEstimator};
 use super::enc_sbr_prep::{CORE_FRAME, FIR_DELAY, OUT_FRAME, QMF_SLOT, SbrPrep, he_core_rate};
@@ -18,6 +20,8 @@ pub(crate) const OUT_SAMPLES_PER_AU: u64 = OUT_FRAME as u64;
 /// `n − 1` (`tHFGen − tHFAdj`); AU `n` decodes core frame `n − 1` (LC
 /// priming).
 const GRID_LEAD: i64 = 6;
+/// PS configuration refresh period in access units (a join point).
+const PS_HEADER_EVERY: u64 = 8;
 /// Output-rate delay of the decoder's SBR QMF chain on top of LC
 /// priming and the halfband: measured through `SbrDecoder` with a
 /// low-frequency burst (cross-correlation lag; the prototype filters
@@ -62,6 +66,9 @@ pub(crate) struct HeEncoder {
     pending_fill: Vec<u8>,
     last_fill_len: usize,
     finished: bool,
+    /// HE v2: PS payload writer and the parameter frames waiting for
+    /// their access unit (`enc_he_ps.rs` feeds them; mono core only).
+    ps: Option<(PsWriter, std::collections::VecDeque<PsFrameParams>)>,
 }
 
 impl HeEncoder {
@@ -100,6 +107,7 @@ impl HeEncoder {
             pending_fill: Vec::new(),
             last_fill_len: 0,
             finished: false,
+            ps: None,
         })
     }
 
@@ -130,6 +138,26 @@ impl HeEncoder {
         self.pending_fill.clear();
         self.last_fill_len = 0;
         self.finished = false;
+        if let Some((w, q)) = &mut self.ps {
+            w.reset();
+            q.clear();
+        }
+    }
+
+    /// Carry parametric stereo (HE v2). Mono core only.
+    pub(crate) fn enable_ps(&mut self) -> Result<()> {
+        if self.channels != 1 {
+            return Err(Error::Format("HE encoder: PS needs a mono core"));
+        }
+        self.ps = Some((PsWriter::new(), std::collections::VecDeque::new()));
+        Ok(())
+    }
+
+    /// Queue the PS parameters of the next uncovered access unit.
+    pub(crate) fn push_ps(&mut self, p: PsFrameParams) {
+        if let Some((_, q)) = &mut self.ps {
+            q.push_back(p);
+        }
     }
 
     /// Push planar output-rate PCM of any length; complete AUs go to
@@ -247,8 +275,21 @@ impl HeEncoder {
             params.push(self.est[ch].estimate(&win)?);
         }
         let refs: Vec<_> = params.iter().collect();
+        // PS: AU n carries analysis frame n. The decoder reaches a frame's
+        // parameters at the END of its PS frame, so sending frame n one
+        // unit early centres the interpolation ramp on the source event
+        // (−0.5 k instead of +1.5 k samples; lab/quality/HE_V2.md). The
+        // configuration repeats every PS_HEADER_EVERY units; an empty
+        // queue (tail, drain) holds the last parameters.
+        let ps = match &mut self.ps {
+            Some((w, q)) => {
+                let header = n.is_multiple_of(PS_HEADER_EVERY);
+                Some(w.frame(q.pop_front().as_ref(), header)?)
+            }
+            None => None,
+        };
         let (header, bands) = (self.est[0].header(), self.est[0].bands());
-        sbr_extension_payload(header, true, bands, &refs)
+        sbr_extension_payload(header, true, bands, &refs, ps.as_ref())
     }
 
     /// Hand the next core frame (already buffered) to the LC with its AU's

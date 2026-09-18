@@ -186,6 +186,8 @@ pub struct EncodeOptions {
     /// carries the core rate); M4A and [`crate::Encoder::asc`] carry the
     /// explicit two-rate AOT 5 config. Priming is 3018 output samples.
     pub he: bool,
+    /// HE-AAC v2, see `with_he_v2`.
+    pub ps: bool,
     /// Quality VBR level `0..=10` (TASK-67). `None` (default) = ABR on
     /// `bitrate_bps`. With a level the LC encoder codes every frame at
     /// one fixed allowed-noise offset — level 5 is the psy model's
@@ -213,6 +215,7 @@ impl Default for EncodeOptions {
             pns: false,
             intensity: false,
             he: false,
+            ps: false,
             quality: None,
         }
     }
@@ -368,27 +371,10 @@ impl EncodeOptions {
         self.intensity = on;
         self
     }
-
-    /// HE-AAC v1 (SBR on an LC core at half the input rate). Off by
-    /// default. One-shot and push encode honor it identically.
-    ///
-    /// ```
-    /// use syom::{DecodeOptions, EncodeOptions, decode_with, encode_with, probe};
-    /// let pcm = vec![vec![0.0f32; 48_000]; 2];
-    /// let opts = EncodeOptions::adts().with_bitrate_bps(48_000).with_he(true);
-    /// let adts = encode_with(&pcm, 48_000, &opts)?;
-    /// assert_eq!(probe(&adts)?.meta.core_rate, 24_000); // ADTS header: LC at the core rate
-    /// let dec = decode_with(&adts, &DecodeOptions::audio())?;
-    /// assert_eq!((dec.sample_rate, dec.core_rate), (48_000, 24_000));
-    /// # Ok::<(), syom::AacError>(())
-    /// ```
-    #[inline]
-    pub fn with_he(mut self, on: bool) -> Self {
-        self.he = on;
-        self
-    }
 }
 
+#[path = "options_he.rs"]
+mod he_v2;
 #[path = "options_validate.rs"]
 mod validate;
 

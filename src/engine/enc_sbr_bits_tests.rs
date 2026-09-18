@@ -65,7 +65,12 @@ fn fixfix(num_env: usize, high: bool) -> SbrGrid {
 }
 
 /// One-envelope SCE: start values and all-zero deltas, no harmonics.
-fn minimal(n_high: usize, n_q: usize, env_start: i32, noise_start: i32) -> SbrFrameParams {
+pub(crate) fn minimal(
+    n_high: usize,
+    n_q: usize,
+    env_start: i32,
+    noise_start: i32,
+) -> SbrFrameParams {
     let mut env = vec![0i32; n_high];
     env[0] = env_start;
     let mut noise = vec![0i32; n_q];
@@ -308,7 +313,7 @@ fn extension_round_trips_with_header_and_with_reuse() {
     let (h, bands) = (est.header(), est.bands());
     let p = minimal(12, 2, 33, 10);
     let mut w = BitWriter::new();
-    let n = write_sbr_extension(&mut w, h, true, bands, &[&p]).unwrap();
+    let n = write_sbr_extension(&mut w, h, true, bands, &[&p], None).unwrap();
     assert_eq!(n, 1 + 16 + 49);
     let bytes = w.finish();
     let ext = SbrExtensionData::parse(
@@ -325,7 +330,7 @@ fn extension_round_trips_with_header_and_with_reuse() {
     assert_eq!(ext.num_sbr_bits, n);
     assert_eq!(ext.element.channels[0].envelope, p.envelope);
     let mut w = BitWriter::new();
-    let n2 = write_sbr_extension(&mut w, h, false, bands, &[&p]).unwrap();
+    let n2 = write_sbr_extension(&mut w, h, false, bands, &[&p], None).unwrap();
     assert_eq!(n2, 1 + 49);
     let bytes = w.finish();
     assert!(
@@ -358,7 +363,7 @@ fn payload_is_type_nibble_plus_zero_fill_to_the_byte() {
     let est = SbrEstimator::new(48_000, 24).unwrap();
     let (h, bands) = (est.header(), est.bands());
     let p = minimal(12, 2, 33, 10);
-    let payload = sbr_extension_payload(h, true, bands, &[&p]).unwrap();
+    let payload = sbr_extension_payload(h, true, bands, &[&p], None).unwrap();
     // 4 + 66 = 70 bits → 9 bytes, 2 fill bits.
     assert_eq!(payload.len(), 9);
     assert_eq!(payload[0] >> 4, EXT_SBR_DATA as u8);
@@ -435,7 +440,7 @@ fn estimator_frames_serialize_to_their_bit_estimate_and_decode_back() {
     let mut prev_bytes: Option<Vec<u8>> = None;
     for (i, p) in frames.iter().enumerate() {
         let mut w = BitWriter::new();
-        let n = write_sbr_extension(&mut w, h, i == 0, bands, &[p]).unwrap();
+        let n = write_sbr_extension(&mut w, h, i == 0, bands, &[p], None).unwrap();
         let header_bits = if i == 0 { 16 } else { 0 };
         assert_eq!(n, 1 + header_bits + u64::from(p.est_bits), "frame {i}");
         let bytes = w.finish();
@@ -453,7 +458,7 @@ fn estimator_frames_serialize_to_their_bit_estimate_and_decode_back() {
         assert_eq!((&ch.envelope, &ch.noise), (&p.envelope, &p.noise));
         // Byte-identical on repeat.
         let mut w2 = BitWriter::new();
-        write_sbr_extension(&mut w2, h, i == 0, bands, &[p]).unwrap();
+        write_sbr_extension(&mut w2, h, i == 0, bands, &[p], None).unwrap();
         assert_eq!(w2.finish(), bytes);
         prev_bytes = Some(bytes);
     }

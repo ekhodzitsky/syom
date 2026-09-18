@@ -151,11 +151,7 @@ impl Encoder {
             (Core::Mc(Box::new(mc)), asc)
         } else if opts.he {
             let he = crate::encode::new_he(sample_rate, channels, opts)?;
-            let out_idx = ADTS_SAMPLE_RATES_HZ
-                .iter()
-                .position(|&r| r == sample_rate)
-                .unwrap_or(0) as u8;
-            let asc = crate::engine::asc::write_he(he.fs_index(), out_idx, channels as u8);
+            let asc = crate::encode::he_asc(&he, sample_rate, channels)?;
             (Core::He(Box::new(he)), asc)
         } else {
             let lc = crate::encode::new_lc(sample_rate, channels, opts)?;

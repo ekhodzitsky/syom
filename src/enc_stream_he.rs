@@ -5,13 +5,14 @@
 
 use super::{EncodeInfo, EncodedFrame, Encoder};
 use crate::engine::enc_frame::LcEncoder;
-use crate::engine::enc_he::{HeEncoder, OUT_SAMPLES_PER_AU};
+use crate::engine::enc_he::OUT_SAMPLES_PER_AU;
+use crate::engine::enc_he_ps::AnyHe;
 use crate::error::{AacError, Result};
 
 /// The engine behind the push encoder.
 pub(super) enum Core {
     Lc(Box<LcEncoder>),
-    He(Box<HeEncoder>),
+    He(Box<AnyHe>),
     /// Surround LC (TASK-116): the engine plus PCM pending across feeds.
     Mc(Box<super::mc::McCore>),
 }
@@ -29,7 +30,8 @@ impl Core {
     pub(super) fn channel_config(&self, channels: usize) -> usize {
         match self {
             Core::Mc(m) => usize::from(m.enc.channel_configuration()),
-            _ => channels,
+            Core::He(e) => e.core_channels(channels),
+            Core::Lc(_) => channels,
         }
     }
 

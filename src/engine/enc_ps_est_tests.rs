@@ -267,7 +267,7 @@ fn reset_repeats_the_run_and_the_parameters_are_pinned() {
     assert_eq!(first, PINNED, "parameter / downmix hash {first:#x}");
 }
 
-const PINNED: u64 = 0x1911_65ad_bd5d_a401;
+const PINNED: u64 = 0x5751_0735_3ea9_c66e;
 
 #[test]
 #[ignore = "prints CPU / workspace numbers for lab/quality/PS_EST.md"]

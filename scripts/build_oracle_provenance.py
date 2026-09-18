@@ -232,6 +232,22 @@ def main() -> int:
             provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
         )
     )
+    for stem, src in (("he2_48e", "he2_48e.adts"), ("he2_48em", "he2_48em.m4a")):
+        records.append(
+            rec(
+                id=f"{stem}.lavc.s16",
+                path=f"src/goldens/{stem}.lavc.s16",
+                role="lavc-pcm-oracle",
+                engine="ffmpeg libavcodec 7.0.2-static (offline mint)",
+                command=f"ffmpeg -y -i src/goldens/{src} -f s16le src/goldens/{stem}.lavc.s16",
+                settings="syom HE-AAC v2 encode, 32 kbps (MINT_GOLDENS=1 cargo test --lib mint_he_v2_goldens); ffprobe: HE-AACv2, 2 ch, 48 kHz; s16le interleaved",
+                pcm_precision="s16le",
+                channel_order="L R",
+                priming_samples=3018,
+                comparison="deterministic",
+                provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+            )
+        )
     # TASK-114 surround encoder goldens: syom-encoded, libavcodec-decoded.
     for stem, src, order in (
         ("enc_mc51m", "enc_mc51.m4a", "FL FR FC LFE BL BR"),
