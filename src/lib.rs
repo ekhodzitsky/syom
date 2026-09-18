@@ -259,3 +259,7 @@ mod platform_tests;
 #[cfg(test)]
 #[path = "hostile_campaign_tests.rs"]
 mod hostile_campaign_tests;
+
+#[cfg(test)]
+#[path = "latency_tests.rs"]
+mod latency_tests;
