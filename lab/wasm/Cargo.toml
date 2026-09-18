@@ -1,0 +1,26 @@
+[package]
+name = "syom-lab-wasm"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "WASM smoke integration for syom (TASK-100). Not a workspace member; no dependency besides syom."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+syom = { path = "../.." }
+
+[[bin]]
+name = "syom_wasm_native"
+path = "src/native.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[workspace]
