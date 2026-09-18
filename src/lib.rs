@@ -263,3 +263,7 @@ mod hostile_campaign_tests;
 #[cfg(test)]
 #[path = "latency_tests.rs"]
 mod latency_tests;
+
+#[cfg(test)]
+#[path = "encode_mc_tests.rs"]
+mod encode_mc_tests;

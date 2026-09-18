@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Engine groundwork for surround encoding (TASK-114, not yet public): one
-  LC encoder per element for `channel_configuration` 3–7, LFE policy,
-  libavcodec-decoded goldens `enc_mc51` / `enc_mc71`. Public `encode*`
-  still takes mono/stereo.
+- Surround AAC-LC encode (TASK-114, TASK-116): `encode*`, `Encoder`,
+  `encode_write` and `encode_write_m4a` accept 3, 4, 5, 6 or 8 planes in the
+  decode order (5.1 = FL FR FC LFE BL BR, 7.1 adds SL SR) and signal
+  `channel_configuration` 3–7 in ADTS, M4A and LATM. One LC encoder per
+  element, whole-stream `bitrate_bps` split SCE 1 / CPE 2 / LFE 0.1, LFE
+  long-only and band-limited; quality VBR works; HE, lookahead and PCE
+  output are errors. libavcodec-decoded goldens `enc_mc51*` / `enc_mc71*`.
 - AAC-LC 7.1 decode (TASK-62): `channel_configuration` 7 maps to the
   libavcodec order FL FR FC LFE BL BR SL SR with `Layout::Mpeg(7)` labels
   (`mpeg_channels(7)`), PCE streams may declare up to eight planes (a second

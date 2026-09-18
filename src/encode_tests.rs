@@ -122,7 +122,7 @@ fn error_paths_are_encode_errors() {
         encode(&pcm, 47_000).unwrap_err(),
         encode::<Vec<f32>>(&[], 48_000).unwrap_err(),
         encode(&[vec![], vec![]], 48_000).unwrap_err(),
-        encode(&[pcm[0].clone(), pcm[0].clone(), pcm[0].clone()], 48_000).unwrap_err(),
+        encode(&vec![pcm[0].clone(); 7], 48_000).unwrap_err(), // 7 planes: no layout
         encode(&[vec![f32::NAN; 2048]], 48_000).unwrap_err(),
         encode_with(&pcm, 48_000, &EncodeOptions::adts().with_bitrate_bps(0)).unwrap_err(),
         encode_with(

@@ -52,7 +52,8 @@ impl Encoder {
         let hdr = crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC;
         let payload_off = match self.framing {
             EncodeContainer::Adts => {
-                crate::encode::adts_frame_into(au, self.enc.fs_index(), self.channels, scratch);
+                let cfg = self.enc.channel_config(self.channels);
+                crate::encode::adts_frame_into(au, self.enc.fs_index(), cfg, scratch);
                 Some(hdr)
             }
             EncodeContainer::Latm => {

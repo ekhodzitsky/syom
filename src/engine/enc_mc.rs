@@ -65,8 +65,13 @@ fn weight(kind: Kind) -> u64 {
     }
 }
 
+/// `channel_configuration` for a surround plane count (3, 4, 5, 6, 8).
+#[must_use]
+pub fn config_for(planes: usize) -> Option<u8> {
+    routes(planes).map(|r| r.0)
+}
+
 /// Multichannel LC encoder: one `raw_data_block` per 1024 samples/plane.
-#[cfg_attr(not(test), allow(dead_code))] // public wiring is TASK-116
 pub struct McEncoder {
     config: u8,
     routes: &'static [Route],
@@ -74,10 +79,21 @@ pub struct McEncoder {
     fs_index: u8,
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
 impl McEncoder {
     /// `planes` must be 3, 4, 5, 6 or 8; `bitrate_bps` is whole-stream.
+    #[cfg(test)]
     pub fn new(sample_rate: u32, planes: usize, bitrate_bps: u32) -> Result<Self> {
+        Self::new_with(sample_rate, planes, bitrate_bps, LcEncoder::new)
+    }
+
+    /// [`Self::new`] with the caller's element factory `(rate, channels,
+    /// bitrate share)` so encode options apply to every element.
+    pub fn new_with(
+        sample_rate: u32,
+        planes: usize,
+        bitrate_bps: u32,
+        make: impl Fn(u32, usize, u32) -> Result<LcEncoder>,
+    ) -> Result<Self> {
         let (config, routes) =
             routes(planes).ok_or(Error::Format("LC encoder: planes must be 3, 4, 5, 6 or 8"))?;
         let total: u64 = routes.iter().map(|r| weight(r.0)).sum();
@@ -86,7 +102,7 @@ impl McEncoder {
             let ch = if kind == Kind::Cpe { 2 } else { 1 };
             let share = (u64::from(bitrate_bps) * weight(kind) / total).max(1);
             let cap = u64::from(super::enc_frame::max_bitrate_bps(sample_rate, ch));
-            let mut e = LcEncoder::new(sample_rate, ch, share.min(cap) as u32)?;
+            let mut e = make(sample_rate, ch, share.min(cap) as u32)?;
             if kind == Kind::Lfe {
                 e.set_lfe();
             }
@@ -112,10 +128,22 @@ impl McEncoder {
         self.fs_index
     }
 
+    /// Input planes this encoder takes.
+    #[must_use]
+    pub fn planes(&self) -> usize {
+        self.routes.iter().map(|r| r.2[1]).max().unwrap_or(0) + 1
+    }
+
+    /// Drop overlap and rate state of every element.
+    pub fn reset(&mut self) {
+        for e in &mut self.elems {
+            e.reset();
+        }
+    }
+
     /// Encode 1024 samples per plane (public plane order) into `out`.
     pub fn encode_into(&mut self, pcm: &[&[f32]], out: &mut Vec<u8>) -> Result<()> {
-        let need = self.routes.iter().map(|r| r.2[1]).max().unwrap_or(0) + 1;
-        if pcm.len() != need || pcm.iter().any(|p| p.len() != LONG_WINDOW_LEN) {
+        if pcm.len() != self.planes() || pcm.iter().any(|p| p.len() != LONG_WINDOW_LEN) {
             return Err(Error::Format("LC encoder: bad frame shape"));
         }
         let mut w = BitWriter::from_vec(std::mem::take(out));

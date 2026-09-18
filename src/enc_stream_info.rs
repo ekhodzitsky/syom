@@ -32,3 +32,30 @@ pub struct EncodeInfo {
     /// MPEG layout of the coded planes (`1` mono / `2` stereo).
     pub layout: crate::Layout,
 }
+
+impl super::Encoder {
+    #[must_use]
+    pub fn frames(&self) -> u64 {
+        self.aac_frames
+    }
+
+    #[must_use]
+    pub fn samples(&self) -> u64 {
+        self.samples
+    }
+
+    #[must_use]
+    pub fn bytes(&self) -> u64 {
+        self.bytes
+    }
+
+    #[must_use]
+    pub fn is_failed(&self) -> bool {
+        self.life == super::Life::Failed
+    }
+
+    #[must_use]
+    pub fn is_finished(&self) -> bool {
+        self.life == super::Life::Finished
+    }
+}

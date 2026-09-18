@@ -119,7 +119,7 @@ pub fn mux_aac_he(
 }
 
 /// Shared writer: `frame_len` media units per access unit.
-fn mux_aac(
+pub(crate) fn mux_aac(
     payloads: &[Vec<u8>],
     asc: &[u8],
     channels: usize,

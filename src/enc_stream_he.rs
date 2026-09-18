@@ -12,6 +12,8 @@ use crate::error::{AacError, Result};
 pub(super) enum Core {
     Lc(Box<LcEncoder>),
     He(Box<HeEncoder>),
+    /// Surround LC (TASK-116): the engine plus PCM pending across feeds.
+    Mc(Box<super::mc::McCore>),
 }
 
 impl Core {
@@ -19,6 +21,23 @@ impl Core {
         match self {
             Core::Lc(e) => e.fs_index(),
             Core::He(e) => e.fs_index(),
+            Core::Mc(m) => m.enc.fs_index(),
+        }
+    }
+
+    /// `channel_configuration` for `channels` input planes.
+    pub(super) fn channel_config(&self, channels: usize) -> usize {
+        match self {
+            Core::Mc(m) => usize::from(m.enc.channel_configuration()),
+            _ => channels,
+        }
+    }
+
+    pub(super) fn reset(&mut self) {
+        match self {
+            Core::Lc(e) => e.reset(),
+            Core::He(e) => e.reset(),
+            Core::Mc(m) => m.reset(),
         }
     }
 }
@@ -28,7 +47,7 @@ impl Encoder {
     pub(super) fn lc(&mut self) -> Result<&mut LcEncoder> {
         match &mut self.enc {
             Core::Lc(e) => Ok(e),
-            Core::He(_) => Err(AacError::Lifecycle {
+            Core::He(_) | Core::Mc(_) => Err(AacError::Lifecycle {
                 state: crate::LifecycleState::Failed,
             }),
         }

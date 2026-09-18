@@ -59,7 +59,7 @@ fn borrowed_input_errors_match_the_streaming_contract() {
         matches!(e, AacError::InvalidPcm(PcmReject::Amplitude)),
         "{e}"
     );
-    let e = encode(&[&l[..], &l[..], &l[..]], 48_000).unwrap_err();
+    let e = encode(&[&l[..]; 7], 48_000).unwrap_err(); // 7 planes: no layout
     assert!(matches!(e, AacError::Encode(_)), "{e}");
     let mut push = Encoder::new(48_000, 2, &EncodeOptions::adts()).unwrap();
     let e = push.feed(&[&l[..], &short[..]], |_| Ok(())).unwrap_err();

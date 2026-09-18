@@ -250,3 +250,41 @@ pub fn wrap_loas_au(payload: &[u8], asc: &[u8]) -> Result<Vec<u8>> {
     crate::engine::latm_write::loas_frame_into(asc, bits, payload, &mut out)?;
     Ok(out)
 }
+
+/// One-shot surround encode (3, 4, 5, 6 or 8 planes): the push encoder's
+/// raw access units under the requested container.
+pub(super) fn encode_mc(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
+    if opts.container == EncodeContainer::Raw {
+        return Err(AacError::Unsupported(
+            crate::UnsupportedFeature::EncodeRawOneShot,
+        ));
+    }
+    let raw = opts.clone().with_container(EncodeContainer::Raw);
+    let mut enc = crate::Encoder::new(sample_rate, pcm.len(), &raw)?;
+    let mut aus: Vec<Vec<u8>> = Vec::new();
+    enc.feed(pcm, |f| {
+        aus.push(f.au.to_vec());
+        Ok(())
+    })?;
+    let info = enc.finish(|f| {
+        aus.push(f.au.to_vec());
+        Ok(())
+    })?;
+    let fs = fs_index(sample_rate)?;
+    let crate::Layout::Mpeg(cfg) = info.layout else {
+        return Err(AacError::encode("encode: surround layout"));
+    };
+    match opts.container {
+        EncodeContainer::Adts => Ok(super::wrap_adts(&aus, fs, usize::from(cfg))),
+        EncodeContainer::Latm => wrap_latm(&aus, enc.asc()),
+        _ => crate::m4a_write::mux_aac(
+            &aus,
+            enc.asc(),
+            pcm.len(),
+            sample_rate,
+            info.samples,
+            info.priming,
+            1024,
+        ),
+    }
+}

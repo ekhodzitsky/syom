@@ -1,7 +1,8 @@
 //! One-shot encode: planar f32 → AAC-LC (default) or HE-AAC v1
 //! ([`EncodeOptions::with_he`]) in ADTS or M4A.
 //!
-//! The default encoder writes AAC-LC (no SBR/PS), mono or stereo, with block
+//! The default encoder writes AAC-LC (no SBR/PS), mono, stereo or surround
+//! (3, 4, 5, 6, 8 planes = `channel_configuration` 3–7, TASK-116), with block
 //! switching (long windows for steady content, short windows on detected
 //! attacks). CBR-ish via a per-frame global scalefactor offset search plus
 //! a bounded one-frame bit credit. Output is conformant enough that
@@ -38,7 +39,8 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
 /// Planes are anything `AsRef<[f32]>`: `&[Vec<f32>]`, `&[&[f32]]`, arrays —
 /// no copy is made to satisfy the type (TASK-55).
 ///
-/// One plane per channel (mono or stereo), all planes the same length; the
+/// One plane per channel (mono, stereo, or surround 3 / 4 / 5 / 6 / 8 planes
+/// in the decoder's plane order), all planes the same length; the
 /// last content block is zero-padded to 1024 samples, then one extra zero
 /// MDCT drains the overlap so the last source samples reconstruct. The
 /// stream carries 1024-sample codec priming. Decoded ADTS length is
@@ -124,6 +126,9 @@ pub fn encode_with<P: AsRef<[f32]>>(
     validate(pcm, sample_rate, opts)?;
     if opts.he {
         return encode_he(pcm, sample_rate, opts);
+    }
+    if pcm.len() > 2 {
+        return mux::encode_mc(pcm, sample_rate, opts);
     }
     let channels = pcm.len();
     let mut enc = new_lc(sample_rate, channels, opts)?;
@@ -232,12 +237,7 @@ fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()
             "encode: unsupported sample rate {sample_rate}Hz (not in the AAC table)"
         )));
     }
-    if !(1..=2).contains(&pcm.len()) {
-        return Err(AacError::encode(format!(
-            "encode: channels must be 1 or 2, got {}",
-            pcm.len()
-        )));
-    }
+    check_planes(pcm.len(), opts)?;
     if opts.bitrate_bps == 0 {
         return Err(AacError::encode("encode: bitrate must be > 0"));
     }
@@ -256,6 +256,25 @@ fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()
         return Err(AacError::InvalidPcm(crate::PcmReject::PlaneLength));
     }
     check_pcm_samples(pcm.iter().copied())?;
+    Ok(())
+}
+
+/// Plane counts: 1–2 (LC / HE), or surround 3, 4, 5, 6, 8 — AAC-LC only,
+/// no lookahead (`channel_configuration` 3–7, TASK-116).
+pub(crate) fn check_planes(planes: usize, opts: &EncodeOptions) -> Result<()> {
+    if (1..=2).contains(&planes) {
+        return Ok(());
+    }
+    if crate::engine::enc_mc::config_for(planes).is_none() {
+        return Err(AacError::encode(format!(
+            "encode: channels must be 1, 2, 3, 4, 5, 6 or 8, got {planes}"
+        )));
+    }
+    if opts.he || opts.lookahead {
+        return Err(AacError::encode(
+            "encode: surround is AAC-LC without lookahead (he and lookahead must be off)",
+        ));
+    }
     Ok(())
 }
 

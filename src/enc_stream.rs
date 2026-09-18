@@ -75,7 +75,8 @@ pub struct EncodedFrame<'a> {
 /// Byte-exact with one-shot [`crate::encode_with`] on the same PCM, for any
 /// feed chunking. Peak RAM is one frame of PCM plus the current access
 /// unit. Validation matches one-shot encode: the ADTS sample-rate table,
-/// 1–2 channels, finite samples in `[-1, 1]`, equal plane lengths.
+/// 1–2 channels or surround 3 / 4 / 5 / 6 / 8 planes (LC, no lookahead),
+/// finite samples in `[-1, 1]`, equal plane lengths.
 /// `|x| > 1` and non-finite samples are [`crate::AacError::InvalidPcm`] (no clip).
 pub struct Encoder {
     enc: Core,
@@ -126,11 +127,7 @@ impl Encoder {
                 "encode: unsupported sample rate {sample_rate}Hz (not in the AAC table)"
             )));
         }
-        if !(1..=2).contains(&channels) {
-            return Err(AacError::encode(format!(
-                "encode: channels must be 1 or 2, got {channels}"
-            )));
-        }
+        crate::encode::check_planes(channels, opts)?;
         if opts.bitrate_bps == 0 {
             return Err(AacError::encode("encode: bitrate must be > 0"));
         }
@@ -147,7 +144,12 @@ impl Encoder {
             ));
         }
         let framing = opts.container;
-        let (enc, asc) = if opts.he {
+        let (enc, asc) = if channels > 2 {
+            let mc = mc::McCore::new(sample_rate, channels, opts)?;
+            let asc =
+                crate::engine::asc::write_lc(mc.enc.fs_index(), mc.enc.channel_configuration());
+            (Core::Mc(Box::new(mc)), asc)
+        } else if opts.he {
             let he = crate::encode::new_he(sample_rate, channels, opts)?;
             let out_idx = ADTS_SAMPLE_RATES_HZ
                 .iter()
@@ -206,39 +208,11 @@ impl Encoder {
         Err(e)
     }
 
-    #[must_use]
-    pub fn frames(&self) -> u64 {
-        self.aac_frames
-    }
-
-    #[must_use]
-    pub fn samples(&self) -> u64 {
-        self.samples
-    }
-
-    #[must_use]
-    pub fn bytes(&self) -> u64 {
-        self.bytes
-    }
-
-    #[must_use]
-    pub fn is_failed(&self) -> bool {
-        self.life == Life::Failed
-    }
-
-    #[must_use]
-    pub fn is_finished(&self) -> bool {
-        self.life == Life::Finished
-    }
-
     /// Drop overlap, rate credit, pending PCM, and counters. Prepared KBD
     /// windows, psy spreading, and vector capacity are kept. Rate, channels,
     /// and [`EncodeOptions`] are unchanged. No global cache.
     pub fn reset(&mut self) -> Result<()> {
-        match &mut self.enc {
-            Core::Lc(e) => e.reset(),
-            Core::He(e) => e.reset(),
-        }
+        self.enc.reset();
         self.he_n = 0;
         self.attributed = 0;
         for p in &mut self.pending {
@@ -270,8 +244,10 @@ impl Encoder {
         if let Err(e) = crate::encode::check_pcm_samples(planes.iter().copied()) {
             return self.fail(e);
         }
-        if matches!(self.enc, Core::He(_)) {
-            return self.feed_he(planes, on_frame);
+        match self.enc {
+            Core::He(_) => return self.feed_he(planes, on_frame),
+            Core::Mc(_) => return self.feed_mc(planes, on_frame),
+            Core::Lc(_) => {}
         }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);
@@ -321,8 +297,10 @@ impl Encoder {
         if self.samples == 0 {
             return self.fail(AacError::InvalidPcm(crate::PcmReject::Empty));
         }
-        if matches!(self.enc, Core::He(_)) {
-            return self.finish_he(on_frame);
+        match self.enc {
+            Core::He(_) => return self.finish_he(on_frame),
+            Core::Mc(_) => return self.finish_mc(on_frame),
+            Core::Lc(_) => {}
         }
         let mut cb = on_frame;
         let mut scratch = std::mem::take(&mut self.scratch);
@@ -387,6 +365,9 @@ mod emit;
 #[path = "enc_stream_he.rs"]
 mod he;
 use he::Core;
+
+#[path = "enc_stream_mc.rs"]
+mod mc;
 
 #[path = "enc_stream_info.rs"]
 mod info;
