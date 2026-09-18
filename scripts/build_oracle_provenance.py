@@ -218,6 +218,20 @@ def main() -> int:
                 provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
             )
         )
+    records.append(
+        rec(
+            id="tns_gain.s16",
+            path="src/goldens/tns_gain.s16",
+            role="lavc-pcm-oracle",
+            engine="ffmpeg libavcodec 7.0.2-static (offline mint)",
+            command="ffmpeg -i tns_gain.adts -f s16le tns_gain.s16",
+            settings="TASK-117: last six frames of a syom LC stereo encode (550/660 Hz cut at N=20000, 96 kbps) with an order-12 high-gain TNS filter; single-precision reference, syom's f64 synthesis differs by <= 5 LSB",
+            pcm_precision="s16le",
+            channel_order="L R",
+            comparison="deterministic",
+            provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+        )
+    )
     # TASK-114 surround encoder goldens: syom-encoded, libavcodec-decoded.
     for stem, src, order in (
         ("enc_mc51m", "enc_mc51.m4a", "FL FR FC LFE BL BR"),

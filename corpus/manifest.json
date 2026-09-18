@@ -366,6 +366,25 @@
       "derivation": "LC in-band PCE 7.1 ADTS (ffmpeg 7.1(wide): LFE plane coded as a side SCE, TASK-62); oracle mc71p.s16"
     },
     {
+      "id": "lc-tns-gain-adts",
+      "kind": "bitstream",
+      "split": "dev",
+      "recording_id": "syom-enc-mc-tones",
+      "class": "tonal+transient",
+      "profile": "lc",
+      "rate": 48000,
+      "layout": "stereo",
+      "bitrate_bps": 96000,
+      "valid_samples": 6144,
+      "origin": "in-tree syom golden",
+      "origin_url": "src/goldens/tns_gain.adts",
+      "license": "MIT (syom fixture; not a licensed natural recording)",
+      "redistribution": "in-tree",
+      "sha256": "551877b8cb4e1c9c188f2e3581f669c811de2d1097d368a2e1a2c2ee6f58b1c3",
+      "path": "src/goldens/tns_gain.adts",
+      "derivation": "TASK-117 high-gain TNS fixture (mid-stream cut, six frames); lavc pcm tns_gain.s16"
+    },
+    {
       "id": "enc-mc51-m4a",
       "kind": "bitstream",
       "split": "dev",

@@ -344,6 +344,18 @@ def cases() -> list[dict]:
             derivation="LC in-band PCE 7.1 ADTS (ffmpeg 7.1(wide): LFE plane coded as a side SCE, TASK-62); oracle mc71p.s16",
         ),
         bitstream(
+            "lc-tns-gain-adts",
+            "src/goldens/tns_gain.adts",
+            rec="syom-enc-mc-tones",
+            cls="tonal+transient",
+            profile="lc",
+            rate=48_000,
+            layout="stereo",
+            samples=6_144,
+            bitrate_bps=96_000,
+            derivation="TASK-117 high-gain TNS fixture (mid-stream cut, six frames); lavc pcm tns_gain.s16",
+        ),
+        bitstream(
             "enc-mc51-m4a",
             "src/goldens/enc_mc51.m4a",
             rec="syom-enc-mc-tones",

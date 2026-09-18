@@ -280,6 +280,23 @@
       "sha256": "c0128a6a8b3f453f5474477b6cb5813996dc53d40f4cc6499e735309d62f0f96"
     },
     {
+      "id": "tns_gain.s16",
+      "path": "src/goldens/tns_gain.s16",
+      "role": "lavc-pcm-oracle",
+      "engine": "ffmpeg libavcodec 7.0.2-static (offline mint)",
+      "command": "ffmpeg -i tns_gain.adts -f s16le tns_gain.s16",
+      "settings": "TASK-117: last six frames of a syom LC stereo encode (550/660 Hz cut at N=20000, 96 kbps) with an order-12 high-gain TNS filter; single-precision reference, syom's f64 synthesis differs by <= 5 LSB",
+      "pcm_precision": "s16le",
+      "channel_order": "L R",
+      "comparison": "deterministic",
+      "provenance_gap": "ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "sha256": "3869a53d40ef1caa3f76027beeaf4e901567db78e32bf642d7061eef977d59b7"
+    },
+    {
       "id": "enc_mc51m.lavc.s16",
       "path": "src/goldens/enc_mc51m.lavc.s16",
       "role": "lavc-pcm-oracle",
@@ -1060,6 +1077,23 @@
       "command": null,
       "settings": null,
       "sha256": "76643d517e6728c3cb9953ec0ddc670620bac315daca5e5e6bc60d5c7efcc9ff"
+    },
+    {
+      "id": "tns_gain.adts",
+      "path": "src/goldens/tns_gain.adts",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "551877b8cb4e1c9c188f2e3581f669c811de2d1097d368a2e1a2c2ee6f58b1c3"
     },
     {
       "id": "noise.adts",

@@ -146,6 +146,10 @@ fn decode_lpc(
         let t = sign_extend(c, coef_res2);
         *slot = (t as f64 / if t >= 0 { iqfac } else { iqfac_m }).sin();
     }
+    #[cfg(test)]
+    if tns_lavc_tests::single_precision() {
+        return Ok(tns_lavc_tests::step_up_f32(&tmp2[..order]));
+    }
     let mut a = [0.0f64; MAX_TNS_ORDER + 1];
     a[0] = 1.0;
     for m in 1..=order {
@@ -159,10 +163,17 @@ fn decode_lpc(
     Ok(a)
 }
 
+/// All-pole synthesis in f64: a high-gain filter amplifies rounding, and
+/// single precision (libavcodec) drifts up to 5 LSB from this result on
+/// `goldens/tns_gain.adts` (TASK-117, `tns_lavc_tests`).
 fn ar_filter(spec: &mut [f32], start: usize, size: usize, inc: i32, lpc: &[f64]) {
     let order = lpc.len().saturating_sub(1);
     if size == 0 || order == 0 {
         return;
+    }
+    #[cfg(test)]
+    if tns_lavc_tests::single_precision() {
+        return tns_lavc_tests::ar_filter_f32(spec, start, size, inc, lpc);
     }
     let mut hist = [0.0f64; 12];
     let mut pos = 0usize;
@@ -229,3 +240,7 @@ pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Re
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "tns_lavc_tests.rs"]
+mod tns_lavc_tests;
