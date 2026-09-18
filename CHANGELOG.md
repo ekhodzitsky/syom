@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Engine groundwork for surround encoding (TASK-114, not yet public): one
+  LC encoder per element for `channel_configuration` 3–7, LFE policy,
+  libavcodec-decoded goldens `enc_mc51` / `enc_mc71`. Public `encode*`
+  still takes mono/stereo.
 - AAC-LC 7.1 decode (TASK-62): `channel_configuration` 7 maps to the
   libavcodec order FL FR FC LFE BL BR SL SR with `Layout::Mpeg(7)` labels
   (`mpeg_channels(7)`), PCE streams may declare up to eight planes (a second

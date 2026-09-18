@@ -95,14 +95,12 @@ pub struct LcEncoder {
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
     target_q_s: [[f32; MAX_FLAT_SHORT]; 2],
     psy_short: Psy,
-    /// Test hook: force OnlyLong every frame (pre-echo A/B measurement).
-    #[cfg(test)]
+    /// Off = OnlyLong every frame (LFE elements; pre-echo A/B in tests).
     block_switching: bool,
     /// Test hook: whole-pair M/S A/B (per-band when true).
     #[cfg(test)]
     ms_per_band: bool,
-    /// Test hook: TNS A/B (long frames, on when true).
-    #[cfg(test)]
+    /// Off = no TNS (LFE elements; A/B in tests).
     tns_enabled: bool,
 }
 
@@ -181,11 +179,9 @@ impl LcEncoder {
             books_s: [[0; MAX_FLAT_SHORT]; 2],
             target_q_s: [[0.0; MAX_FLAT_SHORT]; 2],
             psy_short: Psy::new_short(short_offsets, sample_rate),
-            #[cfg(test)]
             block_switching: true,
             #[cfg(test)]
             ms_per_band: true,
-            #[cfg(test)]
             tns_enabled: true,
         })
     }
@@ -278,9 +274,7 @@ impl LcEncoder {
     /// CPE window decision).
     fn detect(&mut self, pcm: &[&[f32]]) -> bool {
         let attack = (0..self.channels).any(|ch| self.detectors[ch].push(pcm[ch]));
-        #[cfg(test)]
-        let attack = attack && self.block_switching;
-        attack
+        attack && self.block_switching
     }
 
     /// Encode 1024 samples per channel into one `raw_data_block`. Causal
@@ -334,11 +328,7 @@ impl LcEncoder {
                 *c = a.coded;
             }
         }
-        #[cfg(test)]
-        let tns_enabled = self.tns_enabled;
-        #[cfg(not(test))]
-        let tns_enabled = true;
-        self.apply_tns(&mut specs, &coded, tns_enabled);
+        self.apply_tns(&mut specs, &coded, self.tns_enabled);
         self.grouping = if self.seq.is_eight_short() && self.short_group {
             super::enc_group::Grouping::decide(&specs, self.channels, self.short_offsets)
         } else {

@@ -31,6 +31,14 @@ impl LcEncoder {
         }
     }
 
+    /// LFE element policy (TASK-114): long windows only, no TNS, band
+    /// limited to 120 Hz.
+    pub(crate) fn set_lfe(&mut self) {
+        self.block_switching = false;
+        self.tns_enabled = false;
+        self.set_cutoff_hz(Some(120));
+    }
+
     /// Stop coding core bands at `hz` (the SBR crossover `k0`); `None`
     /// restores full band. Long and short psy share the rule.
     pub(crate) fn set_cutoff_hz(&mut self, hz: Option<u32>) {

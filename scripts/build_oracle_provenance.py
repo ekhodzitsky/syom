@@ -218,6 +218,23 @@ def main() -> int:
                 provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
             )
         )
+    # TASK-114 surround encoder goldens: syom-encoded, libavcodec-decoded.
+    for stem, order in (("enc_mc51", "FL FR FC LFE BL BR"), ("enc_mc71", "FL FR FC LFE BL BR SL SR")):
+        records.append(
+            rec(
+                id=f"{stem}.lavc.s16",
+                path=f"src/goldens/{stem}.lavc.s16",
+                role="lavc-pcm-oracle",
+                engine="ffmpeg libavcodec 7.0.2-static (offline mint)",
+                command=f"ffmpeg -y -i src/goldens/{stem}.adts -f s16le src/goldens/{stem}.lavc.s16",
+                settings="syom McEncoder ADTS (MINT_GOLDENS=1 cargo test --lib mint_mc_goldens); s16le interleaved 48 kHz",
+                pcm_precision="s16le",
+                channel_order=order,
+                priming_samples=1024,
+                comparison="deterministic",
+                provenance_gap="ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
+            )
+        )
     # Remaining committed files: inventory with gap, no invented backend version.
     known = {r["path"] for r in records}
     for folder, prefix in ((g, "src/goldens"), (e, "src/engine/goldens")):
