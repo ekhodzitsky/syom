@@ -40,6 +40,7 @@ pub(crate) mod error;
 pub mod extension_payload;
 pub(crate) mod fb_pool;
 pub mod filterbank;
+pub(crate) mod heap;
 pub mod huff;
 pub mod huff_esc;
 pub mod huff_pair;

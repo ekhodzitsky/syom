@@ -73,8 +73,10 @@ pub struct StreamDecoder {
 }
 
 impl StreamDecoder {
-    pub fn new() -> Self {
-        Self::default()
+    /// Boxed: the state is about 25 KiB and used to sit in every caller's
+    /// stack frame (TASK-118).
+    pub fn new() -> Box<Self> {
+        Box::default()
     }
 
     /// Seed mapping from an ASC-embedded PCE (M4A/LATM). In-band PCE still wins.

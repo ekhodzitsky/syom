@@ -205,3 +205,41 @@ fn latency_report() {
         stream.len()
     );
 }
+
+/// TASK-118: the codec fits a 128 KiB thread stack (musl's default). Frame
+/// matrices live in reusable heap state, not in stack frames. Debug builds
+/// use more stack than release, so the budget here is the musl figure, not
+/// the 96 KiB the release probe (`lab/footprint` `stack`) holds.
+/// Optimized builds must fit musl's 128 KiB; unoptimized builds copy
+/// by-value temporaries and measured about 320 KiB, so they get 512.
+const STACK_KIB: usize = if cfg!(debug_assertions) { 512 } else { 128 };
+
+#[test]
+fn codec_runs_on_a_128_kib_thread_stack() {
+    let pcm: Vec<Vec<f32>> = (0..2)
+        .map(|p| {
+            (0..16_384)
+                .map(|i| 0.3 * ((i * (p + 3)) as f32 * 0.01).sin())
+                .collect()
+        })
+        .collect();
+    let six: Vec<Vec<f32>> = (0..6).map(|p| pcm[p % 2].clone()).collect();
+    let he2 = crate::encode_with(
+        &pcm,
+        48_000,
+        &EncodeOptions::adts()
+            .with_he_v2(true)
+            .with_bitrate_bps(32_000),
+    )
+    .unwrap();
+    let t = std::thread::Builder::new()
+        .stack_size(STACK_KIB * 1024)
+        .spawn(move || {
+            let dec = crate::decode_with(&he2, &DecodeOptions::unbounded()).unwrap();
+            let lc = crate::encode_with(&pcm, 48_000, &EncodeOptions::adts()).unwrap();
+            let mc = crate::encode_with(&six, 48_000, &EncodeOptions::adts()).unwrap();
+            (dec.channels.len(), !lc.is_empty(), !mc.is_empty())
+        })
+        .unwrap();
+    assert_eq!(t.join().unwrap(), (2, true, true));
+}

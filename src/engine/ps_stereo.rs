@@ -83,6 +83,9 @@ pub struct PsStereo {
     opd_hist: [Vec<f64>; 2],
     h_from: Vec<H4>,
     h_to: Vec<H4>,
+    /// Per-slot mixing coefficients of the current frame: 70 KiB, kept
+    /// off the stack (TASK-118).
+    h_slots: Vec<[H4; 34]>,
 }
 
 impl PsStereo {
@@ -96,6 +99,7 @@ impl PsStereo {
             opd_hist: [vec![0.0; n_bands], vec![0.0; n_bands]],
             h_from: Vec::new(),
             h_to: Vec::new(),
+            h_slots: Vec::new(),
         }
     }
 
@@ -116,7 +120,7 @@ impl PsStereo {
         &mut self,
         ps: &PsData,
         idx: &PsIndices,
-        h_slots: &mut [[H4; 34]; NUM_QMF_SLOTS],
+        h_slots: &mut [[H4; 34]],
     ) -> Result<()> {
         self.fit_h_tmp();
         let nb = self.n_bands;
@@ -198,8 +202,14 @@ impl PsStereo {
         {
             return Err(Error::PsDataInvalid);
         }
-        let mut h_slots = [[[Complex::default(); 4]; 34]; NUM_QMF_SLOTS];
-        self.fill_h_slots(ps, idx, &mut h_slots)?;
+        let mut h_slots = std::mem::take(&mut self.h_slots);
+        h_slots.clear();
+        h_slots.resize(NUM_QMF_SLOTS, [[Complex::default(); 4]; 34]);
+        let filled = self.fill_h_slots(ps, idx, &mut h_slots);
+        if let Err(e) = filled {
+            self.h_slots = h_slots;
+            return Err(e);
+        }
         let mut lrow = [Complex::default(); 91];
         let mut rrow = [Complex::default(); 91];
         for n in 0..NUM_QMF_SLOTS {
@@ -217,6 +227,7 @@ impl PsStereo {
             crate::engine::ps_hybrid::synthesize_slot(config, &lrow[..nr_hyb], &mut l_qmf[n]);
             crate::engine::ps_hybrid::synthesize_slot(config, &rrow[..nr_hyb], &mut r_qmf[n]);
         }
+        self.h_slots = h_slots;
         Ok(())
     }
 
@@ -277,8 +288,14 @@ impl PsStereo {
             return Err(Error::PsDataInvalid);
         }
 
-        let mut h_slots = [[[Complex::default(); 4]; 34]; NUM_QMF_SLOTS];
-        self.fill_h_slots(ps, idx, &mut h_slots)?;
+        let mut h_slots = std::mem::take(&mut self.h_slots);
+        h_slots.clear();
+        h_slots.resize(NUM_QMF_SLOTS, [[Complex::default(); 4]; 34]);
+        let filled = self.fill_h_slots(ps, idx, &mut h_slots);
+        if let Err(e) = filled {
+            self.h_slots = h_slots;
+            return Err(e);
+        }
 
         // Mix.
         let mut l = vec![vec![Complex::default(); nr_hyb]; NUM_QMF_SLOTS];
@@ -296,6 +313,7 @@ impl PsStereo {
                 r[n][k] = h[1] * s[n][k] + h[3] * d[n][k];
             }
         }
+        self.h_slots = h_slots;
         Ok((l, r))
     }
 

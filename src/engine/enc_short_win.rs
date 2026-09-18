@@ -28,8 +28,8 @@ impl ShortWindows {
     pub fn new() -> Self {
         let long = window_left(2 * LONG_WINDOW_LEN, WindowShape::Kbd);
         let short = window_left(2 * SHORT_WINDOW_LEN, WindowShape::Kbd);
-        let mut start = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
-        let mut stop = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
+        let mut start = crate::engine::heap::heap_array::<f32, { 2 * LONG_WINDOW_LEN }>(0.0);
+        let mut stop = crate::engine::heap::heap_array::<f32, { 2 * LONG_WINDOW_LEN }>(0.0);
         for i in 0..LONG_WINDOW_LEN {
             start[i] = long[i] * 32768.0;
             stop[LONG_WINDOW_LEN + i] = long[LONG_WINDOW_LEN - 1 - i] * 32768.0;

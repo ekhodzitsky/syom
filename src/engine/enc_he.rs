@@ -49,7 +49,7 @@ pub(crate) struct HeInfo {
 
 /// Mono / stereo HE v1 encoder producing raw `raw_data_block`s.
 pub(crate) struct HeEncoder {
-    lc: LcEncoder,
+    lc: Box<LcEncoder>,
     channels: usize,
     lookahead: bool,
     prep: [SbrPrep; 2],
@@ -84,7 +84,8 @@ impl HeEncoder {
         if !(1..=2).contains(&channels) {
             return Err(Error::Format("HE encoder: channels must be 1 or 2"));
         }
-        let mut lc = LcEncoder::new(core_rate, channels, bitrate_bps)?.with_lookahead(lookahead);
+        let mut lc =
+            Box::new(LcEncoder::new(core_rate, channels, bitrate_bps)?.with_lookahead(lookahead));
         let kbps = bitrate_bps / 1000 / channels as u32;
         let est = [
             SbrEstimator::new(out_rate, kbps)?,

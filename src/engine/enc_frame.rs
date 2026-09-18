@@ -47,7 +47,11 @@ pub struct LcEncoder {
     window: Box<[f32; 2 * LONG_WINDOW_LEN]>,
     /// Start/stop/short analysis windows (same scaling).
     windows: ShortWindows,
-    prev: [[f32; LONG_WINDOW_LEN]; 2],
+    prev: Box<[[f32; LONG_WINDOW_LEN]; 2]>,
+    /// Frame scratch kept off the stack (TASK-118): windowed input and the
+    /// pre-TNS spectra the psy model reads.
+    win_buf: Box<[f32; 2 * LONG_WINDOW_LEN]>,
+    psy_buf: Option<Box<[[f32; LONG_WINDOW_LEN]; 2]>>,
     chans: Box<[QuantChannel; 2]>,
     books: [[u8; MAX_BANDS]; 2],
     gains: [u8; 2],
@@ -128,7 +132,7 @@ impl LcEncoder {
         // sidelobe rejection than sine, so masked-band decisions aren't
         // fighting analysis leakage. The ics_info shape bit matches.
         let half = window_left(2 * LONG_WINDOW_LEN, WindowShape::Kbd);
-        let mut window = Box::new([0.0f32; 2 * LONG_WINDOW_LEN]);
+        let mut window = super::heap::heap_array::<f32, { 2 * LONG_WINDOW_LEN }>(0.0);
         for i in 0..LONG_WINDOW_LEN {
             window[i] = half[i] * 32768.0;
             window[2 * LONG_WINDOW_LEN - 1 - i] = half[i] * 32768.0;
@@ -143,8 +147,10 @@ impl LcEncoder {
             short_offsets,
             window,
             windows: ShortWindows::new(),
-            prev: [[0.0; LONG_WINDOW_LEN]; 2],
-            chans: Box::new([QuantChannel::new(n_bands), QuantChannel::new(n_bands)]),
+            prev: super::heap::heap_array([0.0; LONG_WINDOW_LEN]),
+            win_buf: super::heap::heap_array(0.0),
+            psy_buf: None,
+            chans: super::heap::heap_array(QuantChannel::new(n_bands)),
             books: [[0; MAX_BANDS]; 2],
             gains: [100; 2],
             psy: Psy::new(offsets, sample_rate),
@@ -167,15 +173,9 @@ impl LcEncoder {
             held: None,
             payload: Vec::with_capacity(MAX_PAYLOAD_BYTES),
             fill: Vec::new(),
-            alloc: Box::new([
-                super::enc_alloc::AllocCache::new(),
-                super::enc_alloc::AllocCache::new(),
-            ]),
+            alloc: super::heap::heap_array(super::enc_alloc::AllocCache::new()),
             quality: None,
-            chans_s: Box::new([
-                QuantShort::new(short_offsets.len() - 1),
-                QuantShort::new(short_offsets.len() - 1),
-            ]),
+            chans_s: super::heap::heap_array(QuantShort::new(short_offsets.len() - 1)),
             books_s: [[0; MAX_FLAT_SHORT]; 2],
             target_q_s: [[0.0; MAX_FLAT_SHORT]; 2],
             psy_short: Psy::new_short(short_offsets, sample_rate),
@@ -296,12 +296,12 @@ impl LcEncoder {
     fn analyze(&mut self, pcm: &[&[f32]], attack: bool) -> [[f32; LONG_WINDOW_LEN]; 2] {
         self.seq = self.next_seq(attack);
         let mut specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
+        let buf = &mut *self.win_buf;
         for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter()).zip(pcm.iter()) {
-            let mut buf = [0.0f32; 2 * LONG_WINDOW_LEN];
             buf[..LONG_WINDOW_LEN].copy_from_slice(prev);
             buf[LONG_WINDOW_LEN..].copy_from_slice(plane);
             match self.seq {
-                WindowSequence::EightShort => enc_short::spectra(&buf, &self.windows, spec),
+                WindowSequence::EightShort => enc_short::spectra(buf, &self.windows, spec),
                 seq => {
                     let window: &[f32] = match seq {
                         WindowSequence::LongStart => &self.windows.start[..],
@@ -311,26 +311,24 @@ impl LcEncoder {
                     for (b, &w) in buf.iter_mut().zip(window.iter()) {
                         *b *= w;
                     }
-                    mdct_into_f32(&buf, spec);
+                    mdct_into_f32(buf, spec);
                 }
             }
         }
         for (prev, plane) in self.prev.iter_mut().zip(pcm.iter()) {
             prev.copy_from_slice(plane);
         }
-        // TNS analysis on the raw L/R spectra, before the M/S decision:
-        // the decoder applies the inverse filter after the M/S undo
-        // (`decode_cpe`), so the analysis must mirror that order. The psy
-        // model works on the ORIGINAL (pre-TNS) spectrum: whitening drops
-        // the loudest band by the prediction gain, which would sink the
-        // −60 dB coded-band floor with it. The TNS span is the coded-band
-        // span (`enc_tns` module docs), so the masks are computed here on
-        // the L/R spectra; `enc_frame_rate` snapshots for the build psy.
+        // TNS runs on the raw L/R spectra before M/S (the decoder inverts
+        // in that order). Psy reads the pre-TNS spectrum: whitening would
+        // sink the −60 dB coded-band floor; the TNS span is the coded span.
         let long = !self.seq.is_eight_short();
-        let mut psy_specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
+        let mut psy_specs = self
+            .psy_buf
+            .take()
+            .unwrap_or_else(|| super::heap::heap_array([0.0; LONG_WINDOW_LEN]));
         let mut coded = [[false; MAX_BANDS]; 2];
         if long {
-            psy_specs = specs;
+            *psy_specs = specs;
             self.prepare_alloc(&specs);
             for (c, a) in coded.iter_mut().zip(self.alloc.iter()) {
                 *c = a.coded;
@@ -346,6 +344,7 @@ impl LcEncoder {
         if long {
             self.finish_alloc(&specs, &psy_specs);
         }
+        self.psy_buf = Some(psy_specs);
         specs
     }
 }

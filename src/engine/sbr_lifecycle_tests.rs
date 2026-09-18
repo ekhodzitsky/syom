@@ -14,7 +14,7 @@ use crate::{DecodeOptions, Decoder, decode_with};
 const FS: u32 = 48_000;
 const FS_SBR: u32 = 96_000;
 
-fn he_dec() -> StreamDecoder {
+fn he_dec() -> Box<StreamDecoder> {
     let mut dec = StreamDecoder::new();
     dec.set_he_config(true, false, FS_SBR);
     dec

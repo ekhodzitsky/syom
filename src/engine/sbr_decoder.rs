@@ -123,8 +123,8 @@ impl ChannelState {
     /// Run the analysis QMF over one 1024-sample core frame into
     /// `x_low`: columns `0..tHFGen` are the previous frame's trailing
     /// slots (`W'`), columns `tHFGen..` the current `W`.
-    fn analyze(&mut self, x_low: &mut [[Complex; 32]; COLS]) -> Result<()> {
-        if self.core.len() != 1024 {
+    fn analyze(&mut self, x_low: &mut [[Complex; 32]]) -> Result<()> {
+        if self.core.len() != 1024 || x_low.len() != COLS {
             return Err(Error::SbrQmfInvalid);
         }
         x_low[..T_HF_GEN].copy_from_slice(&self.w_hist);
@@ -157,6 +157,10 @@ pub struct SbrDecoder {
     ps: Option<PsState>,
     /// Last `process`/`upsample` emitted PS stereo (`pcm` + `ps.pcm_r`).
     ps_rendered: bool,
+    /// Frame-sized analysis / HF matrices shared by the channels (they are
+    /// processed one after another); off the stack since TASK-118.
+    x_low: Vec<[Complex; 32]>,
+    x_high: Vec<[Complex; 64]>,
 }
 
 /// PS decoder + right-channel synthesis bank (Annex 8.A).
@@ -165,6 +169,20 @@ struct PsState {
     dec: PsDecoder,
     synthesis_r: SynthesisQmf,
     pcm_r: Vec<f32>,
+    /// Frame-sized QMF matrices, kept off the stack (TASK-118: they were
+    /// 104 KiB of locals per frame).
+    x_input: Vec<[Complex; 64]>,
+    l_qmf: Vec<[Complex; 64]>,
+    r_qmf: Vec<[Complex; 64]>,
+}
+
+/// A zeroed `n`-column matrix in `v` (reusing its allocation), moved out so
+/// the caller can borrow the decoder state next to it.
+fn take_cols<const N: usize>(v: &mut Vec<[Complex; N]>, n: usize) -> Vec<[Complex; N]> {
+    let mut m = std::mem::take(v);
+    m.clear();
+    m.resize(n, [Complex::default(); N]);
+    m
 }
 
 impl SbrDecoder {
@@ -183,6 +201,8 @@ impl SbrDecoder {
             channels: (0..num_channels).map(|_| ChannelState::new()).collect(),
             ps: None,
             ps_rendered: false,
+            x_low: Vec::new(),
+            x_high: Vec::new(),
         })
     }
 
@@ -259,7 +279,7 @@ impl SbrDecoder {
         self.ps_rendered = false;
         let n_ch = self.channels.len();
         for c in 0..n_ch {
-            let mut x_low = [[Complex::default(); 32]; COLS];
+            let mut x_low = take_cols(&mut self.x_low, COLS);
             self.channels[c].analyze(&mut x_low)?;
             let rendered = if n_ch == 1 {
                 emit_ps_from(
@@ -285,6 +305,7 @@ impl SbrDecoder {
                 .iter_mut()
                 .for_each(|col| *col = [Complex::default(); 64]);
             self.channels[c].t_e_last_prev = NUM_TIME_SLOTS;
+            self.x_low = x_low;
         }
         Ok(self.out_planes())
     }
@@ -408,6 +429,9 @@ impl SbrDecoder {
                 dec: PsDecoder::new(),
                 synthesis_r: SynthesisQmf::new(),
                 pcm_r: Vec::with_capacity(LF * 64),
+                x_input: Vec::new(),
+                l_qmf: Vec::new(),
+                r_qmf: Vec::new(),
             });
         }
 
@@ -419,8 +443,8 @@ impl SbrDecoder {
                 &sbr_ch.invf.invf_mode
             };
 
-            let mut x_low = [[Complex::default(); 32]; COLS];
-            let mut x_high = [[Complex::default(); 64]; COLS];
+            let mut x_low = take_cols(&mut self.x_low, COLS);
+            let mut x_high = take_cols(&mut self.x_high, COLS);
             {
                 let ch = &mut self.channels[c];
                 let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
@@ -485,6 +509,8 @@ impl SbrDecoder {
             ch.prev_bw.extend_from_slice(&ch.bw);
             std::mem::swap(&mut ch.env_cur, &mut ch.prev_env);
             std::mem::swap(&mut ch.noise_cur, &mut ch.prev_noise);
+            self.x_low = x_low;
+            self.x_high = x_high;
         }
         Ok(self.out_planes())
     }
@@ -588,18 +614,20 @@ fn emit_ps_from(
     let Some(ps) = ps else {
         return Ok(false);
     };
-    let mut x_input = [[Complex::default(); 64]; LF + LOOKAHEAD];
+    let mut x_input = take_cols(&mut ps.x_input, LF + LOOKAHEAD);
     for (l, col) in x_input.iter_mut().enumerate().take(LF) {
         assemble_x(ch, x_low, y_cur, bands, l, l_temp, col);
     }
     for l in LF..LF + LOOKAHEAD {
         x_input[l][..5].copy_from_slice(&x_low[l + T_HF_ADJ][..5]);
     }
-    if !ps.dec.process_prepared(payload, &x_input, kx_plus_m)? {
+    let active = ps.dec.process_prepared(payload, &x_input, kx_plus_m);
+    ps.x_input = x_input;
+    if !active? {
         return Ok(false);
     }
-    let mut l_qmf = [[Complex::default(); 64]; LF];
-    let mut r_qmf = [[Complex::default(); 64]; LF];
+    let mut l_qmf = take_cols(&mut ps.l_qmf, LF);
+    let mut r_qmf = take_cols(&mut ps.r_qmf, LF);
     ps.dec.mix_qmf(&mut l_qmf, &mut r_qmf)?;
     ch.pcm.clear();
     ps.pcm_r.clear();
@@ -613,6 +641,8 @@ fn emit_ps_from(
                 .map(|&s| s as f32),
         );
     }
+    ps.l_qmf = l_qmf;
+    ps.r_qmf = r_qmf;
     Ok(true)
 }
 

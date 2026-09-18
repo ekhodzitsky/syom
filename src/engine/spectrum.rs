@@ -12,8 +12,10 @@ use std::sync::LazyLock;
 /// `SF_OFFSET` in §4.6.2.3.3 — scalefactor 100 is unit gain.
 pub const SF_OFFSET: i32 = 100;
 
-static POW43: LazyLock<[f32; 8192]> = LazyLock::new(|| {
-    let mut t = [0.0f32; 8192];
+/// Built on the heap: as a by-value array the initializer needed 52 KiB of
+/// stack on the first decoded frame (TASK-118).
+static POW43: LazyLock<Box<[f32; 8192]>> = LazyLock::new(|| {
+    let mut t = super::heap::heap_array::<f32, 8192>(0.0);
     for (i, slot) in t.iter_mut().enumerate() {
         let a = i as f32;
         *slot = a * a.cbrt();

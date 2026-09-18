@@ -8,7 +8,6 @@ use crate::engine::enc_quant::{MAX_BANDS, MAX_FLAT_SHORT, QuantChannel, QuantSho
 use crate::engine::enc_tns::EncTns;
 use crate::engine::error::Result;
 use crate::engine::ics::WindowSequence;
-use crate::engine::swb::LONG_WINDOW_LEN;
 
 impl LcEncoder {
     /// Encode 1024 samples per channel into one `raw_data_block`. Causal
@@ -34,7 +33,7 @@ impl LcEncoder {
     /// Zero overlap, rate credit, detectors, and lookahead. Prepared KBD
     /// windows, psy spreading matrices, and quant boxes stay allocated.
     pub(crate) fn reset(&mut self) {
-        self.prev = [[0.0; LONG_WINDOW_LEN]; 2];
+        self.prev.iter_mut().for_each(|p| p.fill(0.0));
         let n_bands = self.chans[0].n_bands;
         self.chans[0] = QuantChannel::new(n_bands);
         self.chans[1] = QuantChannel::new(n_bands);

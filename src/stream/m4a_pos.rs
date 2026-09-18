@@ -59,7 +59,7 @@ pub struct M4aSeek<R> {
     track: AacTrack,
     asc: AudioSpecificConfig,
     opts: DecodeOptions,
-    dec: StreamDecoder,
+    dec: Box<StreamDecoder>,
     scratch: Vec<f32>,
     next_frame: usize,
     discard_left: usize,

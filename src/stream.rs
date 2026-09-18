@@ -81,7 +81,7 @@ pub struct Decoder {
     buf: Vec<u8>,
     pos: usize,
     container: Container,
-    dec: StreamDecoder,
+    dec: Box<StreamDecoder>,
     /// Sticky LATM `StreamMuxConfig()`; persists across feeds.
     mux: Option<MuxCfg>,
     /// Parsed ASC when this instance is in raw-AU mode.

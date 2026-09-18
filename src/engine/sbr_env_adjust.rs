@@ -97,6 +97,46 @@ pub struct EnvParams<'a> {
     pub reset: bool,
 }
 
+/// Per-frame working tables of [`adjust_into`] (`8 × 64` envelope maps,
+/// `48 × 64` smoothing buffers), reused across frames.
+#[derive(Debug, Clone, Default)]
+struct AdjScratch {
+    e_map: Vec<f64>,
+    q_map: Vec<f64>,
+    s_index: Vec<bool>,
+    s_map: Vec<bool>,
+    e_curr: Vec<f64>,
+    g_lim_boost: Vec<f64>,
+    q_m_lim_boost: Vec<f64>,
+    s_m_boost: Vec<f64>,
+    g_temp: Vec<f64>,
+    q_temp: Vec<f64>,
+}
+
+impl AdjScratch {
+    fn reset(&mut self) {
+        for v in [
+            &mut self.e_map,
+            &mut self.q_map,
+            &mut self.e_curr,
+            &mut self.g_lim_boost,
+            &mut self.q_m_lim_boost,
+            &mut self.s_m_boost,
+        ] {
+            v.clear();
+            v.resize(8 * 64, 0.0);
+        }
+        for v in [&mut self.s_index, &mut self.s_map] {
+            v.clear();
+            v.resize(8 * 64, false);
+        }
+        for v in [&mut self.g_temp, &mut self.q_temp] {
+            v.clear();
+            v.resize(48 * 64, 0.0);
+        }
+    }
+}
+
 /// Cross-frame envelope-adjuster state for one channel, plus reused
 /// per-frame mapping/gain scratch (TASK-79).
 #[derive(Debug, Default)]
@@ -115,6 +155,7 @@ pub struct EnvAdjustState {
     index_noise: usize,
     index_sine: usize,
     started: bool,
+    scratch: AdjScratch,
 }
 
 impl EnvAdjustState {
@@ -199,22 +240,28 @@ pub fn adjust_into(
     if l_e > 8 || m_cnt > 64 || n_cols + h_sl > 48 {
         return Err(Error::SbrFreqBandInvalid);
     }
-    let mut e_map = [0.0f64; 8 * 64];
-    let mut q_map = [0.0f64; 8 * 64];
-    let mut s_index = [false; 8 * 64];
-    let mut s_map = [false; 8 * 64];
-    let mut e_curr = [0.0f64; 8 * 64];
-    let mut g_lim_boost = [0.0f64; 8 * 64];
-    let mut q_m_lim_boost = [0.0f64; 8 * 64];
-    let mut s_m_boost = [0.0f64; 8 * 64];
+    // Frame-sized tables live in the state, zeroed per frame: as locals
+    // they were 77 KiB of stack (TASK-118).
+    let mut sc = std::mem::take(&mut st.scratch);
+    sc.reset();
+    let AdjScratch {
+        e_map,
+        q_map,
+        s_index,
+        s_map,
+        e_curr,
+        g_lim_boost,
+        q_m_lim_boost,
+        s_m_boost,
+        g_temp,
+        q_temp,
+    } = &mut sc;
     let mut q_m = [0.0f64; 64];
     let mut s_m = [0.0f64; 64];
     let mut g = [0.0f64; 64];
     let mut g_max = [0.0f64; 64];
     let mut q_m_lim = [0.0f64; 64];
     let mut g_lim = [0.0f64; 64];
-    let mut g_temp = [0.0f64; 48 * 64];
-    let mut q_temp = [0.0f64; 48 * 64];
     let ix = |l: usize, m: usize| l * m_cnt + m;
 
     // Envelope band table per resolution.
@@ -535,6 +582,7 @@ pub fn adjust_into(
     st.l_a_prev_frame = p.l_a;
     st.l_e_prev = l_e as i32;
 
+    st.scratch = sc;
     Ok(())
 }
 

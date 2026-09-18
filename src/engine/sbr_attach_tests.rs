@@ -98,7 +98,7 @@ fn write_lfe(w: &mut BitWriter, tag: u8, line_sfb: u8) {
     write_ics_line(w, line_sfb);
 }
 
-fn he_dec() -> StreamDecoder {
+fn he_dec() -> Box<StreamDecoder> {
     let mut dec = StreamDecoder::new();
     dec.set_he_config(true, false, FS_SBR);
     dec

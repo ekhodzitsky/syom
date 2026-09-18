@@ -26,6 +26,28 @@ probe, bisection to 4 KiB):
 | encode HE v2 | 163 KiB |
 | encode 5.1 | 163 KiB |
 
+**After TASK-118** (frame matrices moved into reusable heap state, tables
+and boxed state built through `engine::heap::heap_array`):
+
+| operation | before | after |
+|---|---:|---:|
+| decode LC stereo | 115 KiB | 39 KiB |
+| decode HE v2 (SBR + PS) | 391 KiB | 39 KiB |
+| encode LC stereo | 163 KiB | 83 KiB |
+| encode HE v2 | 163 KiB | 83 KiB |
+| encode 5.1 | 163 KiB | 91 KiB |
+
+What was on the stack: PS mixing coefficients (70 KiB) and QMF matrices
+(104 KiB) per frame, the envelope adjuster's tables (77 KiB), SBR `XLow` /
+`XHigh` (61 KiB), the `POW43` table initializer (52 KiB, first frame only),
+the 25 KiB decoder state by value in `decode_with`, and in the encoder the
+quantizer channels built on the stack inside `Box::new` (44 KiB) plus two
+8 KiB frame buffers. PCM and bytes are identical on every golden; decode
+speed by the minimum of ten alternating pinned runs: LC −3.1%, HE v2 −0.2%;
+encode cells scatter −12% … +8% around a −1.7% median on this noisy host
+with identical stream hashes. Unoptimized (debug) builds still need about
+320 KiB. `gdb` frame walks at the overflow point located every item.
+
 Retained heap (earlier lab cells): LC decode session 37–40 KiB retained,
 5.1 decode 627–851 KiB, `Encoder::new` 82 KiB in 8 allocations;
 `codec_workspace_bytes` gives the HE / PS state lower bounds. Code size:
