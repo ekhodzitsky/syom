@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `encode_write` and `encode_write_m4a` accept 3, 4, 5, 6 or 8 planes in the
   decode order (5.1 = FL FR FC LFE BL BR, 7.1 adds SL SR) and signal
   `channel_configuration` 3–7 in ADTS, M4A and LATM. One LC encoder per
-  element, whole-stream `bitrate_bps` split SCE 1 / CPE 2 / LFE 0.1, LFE
-  long-only and band-limited; quality VBR works; HE, lookahead and PCE
+  element; ABR searches one allowed-noise offset for the whole frame so
+  bits follow demand across elements (TASK-115, `lab/quality/MC_ALLOC.md`),
+  LFE long-only, band-limited and coded 12 dB finer; quality VBR works; HE, lookahead and PCE
   output are errors. libavcodec-decoded goldens `enc_mc51*` / `enc_mc71*`.
 - AAC-LC 7.1 decode (TASK-62): `channel_configuration` 7 maps to the
   libavcodec order FL FR FC LFE BL BR SL SR with `Layout::Mpeg(7)` labels

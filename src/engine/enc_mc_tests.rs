@@ -264,3 +264,139 @@ fn libavcodec_decodes_our_surround_streams_with_isolated_planes() {
         );
     }
 }
+
+/// Uneven surround programme: busy fronts, AM-noise centre, 60 Hz LFE,
+/// quiet ambience behind, a soft tone at the sides (7.1).
+fn programme(planes: usize, frames: usize) -> Vec<Vec<f32>> {
+    let n = frames * 1024;
+    let tone = |f: u32, amp: f32, i: usize| {
+        let cycles = (i as u64 * u64::from(f)) % u64::from(RATE);
+        amp * det_math::sincos(cycles as f32 / RATE as f32 * std::f32::consts::TAU).0
+    };
+    let noise = noise_planes(planes, frames);
+    let mut out = vec![vec![0.0f32; n]; planes];
+    for i in 0..n {
+        let mut rich = 0.0f32;
+        for h in 1..=12u32 {
+            rich += tone(196 * h, 0.2 / h as f32, i);
+        }
+        out[0][i] = rich + 0.02 * noise[0][i];
+        out[1][i] = 0.8 * rich + tone(2093, 0.05, i) + 0.02 * noise[1][i];
+        let am = 0.5 + 0.5 * tone(4, 1.0, i);
+        out[2][i] = 0.3 * am * noise[2][i];
+        if planes >= 6 {
+            out[3][i] = tone(60, 0.3, i);
+            out[4][i] = 0.01 * noise[4][i];
+            out[5][i] = 0.01 * noise[5][i];
+        }
+        if planes == 8 {
+            out[6][i] = tone(523, 0.02, i) + 0.004 * noise[6][i];
+            out[7][i] = tone(659, 0.02, i) + 0.004 * noise[7][i];
+        }
+    }
+    out
+}
+
+/// (per-plane SNR dB against the source, total bytes, encode seconds).
+fn run(pcm: &[Vec<f32>], bps: u32, fixed: bool) -> (Vec<f64>, usize, f64) {
+    let mut enc = McEncoder::new(RATE, pcm.len(), bps).unwrap();
+    enc.set_fixed_split(fixed);
+    let t = std::time::Instant::now();
+    let mut adts = Vec::new();
+    let mut rdb = Vec::new();
+    let mut zero_tail = pcm.to_vec();
+    for p in &mut zero_tail {
+        p.extend(std::iter::repeat_n(0.0, 1024)); // drain frame
+    }
+    for f in 0..zero_tail[0].len() / 1024 {
+        let frame: Vec<&[f32]> = zero_tail
+            .iter()
+            .map(|p| &p[f * 1024..(f + 1) * 1024])
+            .collect();
+        enc.encode_into(&frame, &mut rdb).unwrap();
+        crate::encode::adts_frame_into(
+            &rdb,
+            enc.fs_index(),
+            usize::from(enc.channel_configuration()),
+            &mut adts,
+        );
+    }
+    let secs = t.elapsed().as_secs_f64();
+    let dec = decode_with(&adts, &DecodeOptions::unbounded()).unwrap();
+    let snr = pcm
+        .iter()
+        .zip(dec.channels.iter())
+        .map(|(src, got)| {
+            let (mut ps, mut pe) = (0.0f64, 0.0f64);
+            for (i, &s) in src.iter().enumerate().skip(2048) {
+                let e = f64::from(s) - f64::from(got[i + 1024]);
+                ps += f64::from(s).powi(2);
+                pe += e * e;
+            }
+            10.0 * (ps / pe.max(1e-12)).log10()
+        })
+        .collect();
+    (snr, adts.len(), secs)
+}
+
+#[test]
+#[ignore = "prints the TASK-115 A/B table for lab/quality/MC_ALLOC.md"]
+fn allocation_report() {
+    for (planes, rates) in [(6usize, [128_000u32, 256_000]), (8, [192_000, 320_000])] {
+        let pcm = programme(planes, 96);
+        for bps in rates {
+            for fixed in [true, false] {
+                let (snr, bytes, secs) = run(&pcm, bps, fixed);
+                let s: Vec<String> = snr.iter().map(|d| format!("{d:.1}")).collect();
+                println!(
+                    "{planes}ch {bps} {}: bytes {bytes} ({:.1} kbps) {:.1} ms  snr [{}]",
+                    if fixed { "fixed " } else { "common" },
+                    bytes as f64 * 8.0 / (97.0 * 1024.0 / 48_000.0) / 1000.0,
+                    secs * 1e3,
+                    s.join(", ")
+                );
+            }
+        }
+    }
+    let st = programme(3, 96);
+    let t = std::time::Instant::now();
+    let _ = crate::encode_with(&st[..2], RATE, &crate::EncodeOptions::adts()).unwrap();
+    println!("stereo 128k: {:.1} ms", t.elapsed().as_secs_f64() * 1e3);
+}
+
+/// TASK-115: the common offset moves bits from quiet planes (and their
+/// stuffing) to the busy front pair and keeps the LFE alive at low rates;
+/// the total rate does not move.
+#[test]
+fn common_offset_beats_the_fixed_split_on_an_uneven_programme() {
+    for (planes, bps) in [(6usize, 128_000u32), (8, 192_000)] {
+        let pcm = programme(planes, 48);
+        let (fixed, fixed_bytes, _) = run(&pcm, bps, true);
+        let (common, common_bytes, _) = run(&pcm, bps, false);
+        let gain = (common[0] + common[1] - fixed[0] - fixed[1]) / 2.0;
+        assert!(
+            gain >= 1.5 && common[0] >= fixed[0] && common[1] >= fixed[1],
+            "{planes}ch front pair gained {gain:.1} dB: {common:?} vs {fixed:?}"
+        );
+        assert!(
+            fixed[3] < 3.0 && common[3] >= 12.0,
+            "LFE {:.1} vs {:.1}",
+            common[3],
+            fixed[3]
+        );
+        for ch in 0..planes {
+            assert!(
+                common[ch] >= fixed[ch] - 3.0,
+                "plane {ch} gave back more than 3 dB of surplus"
+            );
+        }
+        let target = f64::from(bps) / 8.0 * 49.0 * 1024.0 / f64::from(RATE);
+        for bytes in [fixed_bytes, common_bytes] {
+            let payload = bytes as f64 - 49.0 * 7.0;
+            assert!(
+                (payload / target - 1.0).abs() <= 0.03,
+                "rate {payload} vs {target}"
+            );
+        }
+    }
+}

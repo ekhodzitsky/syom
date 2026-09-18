@@ -372,7 +372,7 @@ impl LcEncoder {
         coded
     }
 
-    fn quant_all_zero(&self) -> bool {
+    pub(super) fn quant_all_zero(&self) -> bool {
         if self.seq.is_eight_short() {
             self.chans_s[..self.channels]
                 .iter()

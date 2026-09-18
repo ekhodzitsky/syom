@@ -286,6 +286,14 @@ impl LcEncoder {
     /// supplies a decision taken one frame ahead (`lookahead` child
     /// module); everything downstream of the sequence choice is identical.
     fn encode_with_attack(&mut self, pcm: &[&[f32]], attack: bool) -> Result<()> {
+        let specs = self.analyze(pcm, attack);
+        self.rate_control(&specs)?;
+        self.prev_seq = self.seq;
+        Ok(())
+    }
+
+    /// Everything before rate control: the coded spectra of this frame.
+    fn analyze(&mut self, pcm: &[&[f32]], attack: bool) -> [[f32; LONG_WINDOW_LEN]; 2] {
         self.seq = self.next_seq(attack);
         let mut specs = [[0.0f32; LONG_WINDOW_LEN]; 2];
         for ((spec, prev), plane) in specs.iter_mut().zip(self.prev.iter()).zip(pcm.iter()) {
@@ -338,9 +346,7 @@ impl LcEncoder {
         if long {
             self.finish_alloc(&specs, &psy_specs);
         }
-        self.rate_control(&specs)?;
-        self.prev_seq = self.seq;
-        Ok(())
+        specs
     }
 }
 
@@ -374,6 +380,11 @@ mod alloc;
 /// HE hooks (`enc_frame_he.rs`): SBR fill bytes + core cutoff (TASK-89).
 #[path = "enc_frame_he.rs"]
 mod he;
+
+/// Split-phase hooks for the surround encoder (`enc_frame_mc.rs`, TASK-115).
+#[path = "enc_frame_mc.rs"]
+mod mc;
+pub(crate) use mc::Specs;
 
 #[cfg(test)]
 #[path = "enc_frame_tests.rs"]

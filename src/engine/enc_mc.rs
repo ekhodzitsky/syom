@@ -6,9 +6,12 @@
 //!
 //! Input planes use the decoder's public order (TASK-62): 3.0 FL FR FC,
 //! 4.0 + BC, 5.0 FL FR FC BL BR, 5.1 FL FR FC LFE BL BR, 7.1 FL FR FC LFE
-//! BL BR SL SR. The whole-stream bitrate splits by fixed element weights
-//! (SCE 1, CPE 2, LFE 0.1); every element runs its own rate loop and
-//! keeps the 6144 bits/channel cap. LFE: long windows, no TNS, 120 Hz.
+//! BL BR SL SR. ABR (TASK-115): one allowed-noise offset is searched for
+//! the whole frame, so every element sits at the same noise-to-mask
+//! distance and bits follow demand; one frame of credit and ABR stuffing
+//! work as in stereo. Quality VBR (and the `fixed_split` lab switch) run
+//! each element's own loop on a weight share (SCE 1, CPE 2, LFE 0.1).
+//! Elements keep the 6144 bits/channel cap. LFE: long, no TNS, 120 Hz.
 
 use super::bits::BitWriter;
 use super::enc_frame::LcEncoder;
@@ -77,6 +80,13 @@ pub struct McEncoder {
     routes: &'static [Route],
     elems: Vec<LcEncoder>,
     fs_index: u8,
+    /// Whole-frame ABR budget in bits, unspent credit, stuffing debt.
+    budget: usize,
+    credit: i64,
+    pad_debt: i64,
+    /// Per-element rate loops on the weight split (quality VBR, lab A/B).
+    fixed_split: bool,
+    specs: Vec<super::enc_frame::Specs>,
 }
 
 impl McEncoder {
@@ -109,11 +119,23 @@ impl McEncoder {
             elems.push(e);
         }
         let fs_index = elems.first().map_or(0, LcEncoder::fs_index);
+        let cap: usize = routes
+            .iter()
+            .map(|r| if r.0 == Kind::Cpe { 2 } else { 1 })
+            .sum::<usize>()
+            * super::enc_frame::MAX_BITS_PER_CHANNEL;
+        let budget = (u64::from(bitrate_bps) * 1024 / u64::from(sample_rate)) as usize;
+        let fixed_split = elems.iter().any(LcEncoder::is_quality);
         Ok(Self {
             config,
             routes,
+            specs: vec![[[0.0; LONG_WINDOW_LEN]; 2]; elems.len()],
             elems,
             fs_index,
+            budget: budget.min(cap).min(super::enc_frame::MAX_PAYLOAD_BYTES * 8),
+            credit: 0,
+            pad_debt: 0,
+            fixed_split,
         })
     }
 
@@ -139,12 +161,23 @@ impl McEncoder {
         for e in &mut self.elems {
             e.reset();
         }
+        self.credit = 0;
+        self.pad_debt = 0;
+    }
+
+    /// Lab A/B: per-element loops on the fixed weight split (TASK-114).
+    #[cfg(test)]
+    pub fn set_fixed_split(&mut self, on: bool) {
+        self.fixed_split = on;
     }
 
     /// Encode 1024 samples per plane (public plane order) into `out`.
     pub fn encode_into(&mut self, pcm: &[&[f32]], out: &mut Vec<u8>) -> Result<()> {
         if pcm.len() != self.planes() || pcm.iter().any(|p| p.len() != LONG_WINDOW_LEN) {
             return Err(Error::Format("LC encoder: bad frame shape"));
+        }
+        if !self.fixed_split {
+            return self.encode_common(pcm, out);
         }
         let mut w = BitWriter::from_vec(std::mem::take(out));
         let mut padded = 0usize;
@@ -174,6 +207,111 @@ impl McEncoder {
         Ok(())
     }
 }
+
+impl McEncoder {
+    /// Frame bits with every element at `offset` (each element's build
+    /// carries its own END + pad; the frame has one).
+    fn bits_at(&mut self, offset: i32) -> usize {
+        let each: usize = self
+            .elems
+            .iter_mut()
+            .zip(self.specs.iter())
+            .zip(self.routes.iter())
+            .map(|((e, s), r)| e.mc_bits(s, elem_offset(r.0, offset)))
+            .sum();
+        each - 10 * (self.elems.len() - 1)
+    }
+
+    /// ABR with one allowed-noise offset for the whole frame.
+    fn encode_common(&mut self, pcm: &[&[f32]], out: &mut Vec<u8>) -> Result<()> {
+        for ((enc, specs), &(kind, _, src)) in self
+            .elems
+            .iter_mut()
+            .zip(self.specs.iter_mut())
+            .zip(self.routes.iter())
+        {
+            *specs = if kind == Kind::Cpe {
+                enc.mc_analyze(&[pcm[src[0]], pcm[src[1]]])?
+            } else {
+                enc.mc_analyze(&[pcm[src[0]]])?
+            };
+        }
+        let spend = self.budget + self.credit.min(self.budget as i64 / 2) as usize;
+        let limit = spend.saturating_sub(32);
+        let (mut lo, mut hi) = (OFFSET_LO, OFFSET_HI);
+        let offset = if self.bits_at(lo) <= limit {
+            lo
+        } else if self.bits_at(hi) > limit {
+            hi
+        } else {
+            while hi - lo > 1 {
+                let mid = lo + (hi - lo) / 2;
+                if self.bits_at(mid) <= limit {
+                    hi = mid;
+                } else {
+                    lo = mid;
+                }
+            }
+            hi
+        };
+        // Over budget even at the ceiling (short-window bursts): every
+        // element drops top bands to its proportional share, as the
+        // stereo loop's hard cap does.
+        let total = self.bits_at(offset);
+        let scale = (total > limit).then_some((limit, total));
+        let mut w = BitWriter::from_vec(std::mem::take(out));
+        let mut silent = true;
+        for ((enc, specs), &(kind, tag, _)) in self
+            .elems
+            .iter_mut()
+            .zip(self.specs.iter())
+            .zip(self.routes.iter())
+        {
+            let at = elem_offset(kind, offset);
+            let cap = scale.map_or(usize::MAX, |(limit, total)| {
+                enc.mc_bits(specs, at) * limit / total
+            });
+            let (_, zero) = enc.mc_emit(specs, at, cap);
+            silent &= zero;
+            let rdb = enc.payload();
+            let last = last_set_bit(rdb).ok_or(Error::Format("LC encoder: empty element"))?;
+            w.write(kind as u32, 3);
+            w.write(u32::from(tag), 4);
+            append_bits(&mut w, rdb, 7, last - 2);
+        }
+        w.write(7, 3); // END
+        let mut bytes = w.finish();
+        let coded = bytes.len() * 8;
+        // ABR stuffing after END, as in stereo (`fit_budget`).
+        let pad_to = self.budget.saturating_sub(self.pad_debt.max(0) as usize);
+        if !silent && coded < pad_to * 97 / 100 {
+            bytes.resize((pad_to / 8).max(bytes.len()), 0);
+        }
+        let emitted = (bytes.len() * 8) as i64;
+        self.pad_debt = (self.pad_debt + emitted - self.budget as i64).max(0);
+        self.credit =
+            (self.credit + self.budget as i64 - coded as i64).clamp(0, self.budget as i64);
+        *out = bytes;
+        Ok(())
+    }
+}
+
+/// LFE codes 12 dB below the common allowed noise: a lone sub-bass tone
+/// has nothing else in its element to mask the noise, and the element
+/// costs a few dozen bits (lab/quality/MC_ALLOC.md).
+const LFE_BIAS: i32 = -16;
+
+fn elem_offset(kind: Kind, offset: i32) -> i32 {
+    if kind == Kind::Lfe {
+        (offset + LFE_BIAS).max(OFFSET_LO)
+    } else {
+        offset
+    }
+}
+
+/// Allowed-noise offset search range (the LC rate loop's).
+const OFFSET_LO: i32 = -60;
+const OFFSET_HI: i32 = 240;
 
 /// Index (MSB-first) of the last set bit.
 fn last_set_bit(bytes: &[u8]) -> Option<usize> {

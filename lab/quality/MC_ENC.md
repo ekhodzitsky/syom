@@ -63,6 +63,8 @@ TASK-95-style qualification runs.
 
 ## Follow-up tasks
 
+Status: TASK-114, TASK-115 (`MC_ALLOC.md`) and TASK-116 are done.
+
 1. Element and bitstream orchestration for configurations 3–7 (fixed
    weight split, channel-isolation goldens decoded by libavcodec).
 2. Interelement rate and psy policy (common allowed-noise offset search,

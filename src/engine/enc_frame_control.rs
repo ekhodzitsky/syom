@@ -25,10 +25,8 @@ impl LcEncoder {
         self
     }
 
-    /// Quantize the built spectra into `payload` under the active mode.
-    pub(super) fn rate_control(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2]) -> Result<()> {
-        let cap = max_frame_bits(self.channels);
-        // |x|^0.75 once per frame: every `build` re-quantizes these spectra.
+    /// `|x|^0.75` once per frame: every `build` re-quantizes these spectra.
+    pub(super) fn cache_mags(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2]) {
         for (ch, spec) in specs.iter().enumerate().take(self.channels) {
             if self.seq.is_eight_short() {
                 crate::engine::enc_quant::cache_mags(spec, &mut self.chans_s[ch].mag);
@@ -36,6 +34,12 @@ impl LcEncoder {
                 crate::engine::enc_quant::cache_mags(spec, &mut self.chans[ch].mag);
             }
         }
+    }
+
+    /// Quantize the built spectra into `payload` under the active mode.
+    pub(super) fn rate_control(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2]) -> Result<()> {
+        let cap = max_frame_bits(self.channels);
+        self.cache_mags(specs);
         let mut payload = std::mem::take(&mut self.payload);
         if let Some(offset) = self.quality {
             // The level's offset, coarsened uniformly (never by dropping
