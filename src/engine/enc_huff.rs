@@ -56,13 +56,14 @@ pub fn tuple_index(cb: u8, v: &[i32]) -> Option<usize> {
 /// Escape-sequence bit count for one magnitude ≥ 16 (§4.6.3.3):
 /// `n` = floor(log2(mag)) ≥ 4, then `n − 4` one-bits, a zero stop bit, and
 /// the `n`-bit offset.
-fn esc_bits(mag: u32) -> usize {
+pub(crate) fn esc_bits(mag: u32) -> usize {
     let n = 31 - mag.leading_zeros() as usize; // floor(log2(mag)), mag ≥ 16 → n ≥ 4
     (n - 4) + 1 + n
 }
 
 /// Total bits to emit tuple `v` under book `cb`, or `None` when the book
 /// cannot represent it.
+#[cfg_attr(not(test), allow(dead_code))] // reference for `enc_quant`'s one-pass table
 pub fn spectral_bits(cb: u8, v: &[i32]) -> Option<usize> {
     let idx = tuple_index(cb, v)?;
     let (len, _) = tables(cb)?;

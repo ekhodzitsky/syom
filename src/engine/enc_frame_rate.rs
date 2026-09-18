@@ -259,7 +259,7 @@ impl LcEncoder {
         enc_quant::band_peaks(spec, offsets, &mut peaks);
         enc_quant::raw_scalefactors(&peaks, tq, offset, q);
         *gain = enc_quant::normalize_sf(q);
-        enc_quant::quantize(spec, offsets, q);
+        enc_quant::quantize_cached(spec, offsets, q);
         *books = enc_section::plan_books(q);
     }
 

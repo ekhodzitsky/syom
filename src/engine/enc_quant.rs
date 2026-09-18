@@ -3,7 +3,6 @@
 //! (ISO/IEC 14496-3 §4.6.2–4.6.3).
 
 use super::det_math;
-use super::enc_huff::spectral_bits;
 use super::spectrum::SF_OFFSET;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 
@@ -23,16 +22,26 @@ pub const QUANT_ROUND: f32 = 0.4054;
 /// the rounded `sf_for_peak` never lands on the `QUANT_MAX` clip plateau.
 pub const QUANT_SAFE: f32 = 7600.0;
 
+/// Quantized magnitude from a cached `|x|^0.75`.
 #[inline]
-fn quant_mag(x: f32, gain: f32) -> i32 {
-    let mag = (det_math::pow_three_quarter(x) * gain + QUANT_ROUND).floor() as i32;
-    mag.min(QUANT_MAX)
+fn quant_mag(pow34: f32, gain: f32) -> i32 {
+    ((pow34 * gain + QUANT_ROUND).floor() as i32).min(QUANT_MAX)
+}
+
+/// Fill `mag` with `|x|^0.75` (det_math: two exactly-rounded sqrts).
+pub fn cache_mags(spec: &[f32; 1024], mag: &mut [f32; 1024]) {
+    for (m, &x) in mag.iter_mut().zip(spec.iter()) {
+        *m = det_math::pow_three_quarter(x);
+    }
 }
 
 /// One quantized long-window channel.
 #[derive(Clone)]
 pub struct QuantChannel {
     pub quant: [i32; 1024],
+    /// `|x|^0.75` of the frame's spectrum ([`QuantChannel::cache_mags`]):
+    /// fixed across the rate loop's re-quantizations (TASK-83).
+    pub mag: [f32; 1024],
     /// `bits[band][book]` — spectral bits under each book, or
     /// [`UNREPRESENTABLE`].
     pub bits: [[u32; BOOKS]; MAX_BANDS],
@@ -60,6 +69,7 @@ impl QuantChannel {
     pub fn new(n_bands: usize) -> Self {
         Self {
             quant: [0; 1024],
+            mag: [0.0; 1024],
             bits: [[UNREPRESENTABLE; BOOKS]; MAX_BANDS],
             sf: [0; MAX_BANDS],
             coded: [false; MAX_BANDS],
@@ -87,6 +97,8 @@ pub const MAX_FLAT_SHORT: usize = MAX_GROUPS * MAX_SFB_SHORT;
 #[derive(Clone)]
 pub struct QuantShort {
     pub quant: [i32; LONG_WINDOW_LEN],
+    /// `|x|^0.75` cache, as in [`QuantChannel`].
+    pub mag: [f32; LONG_WINDOW_LEN],
     /// `bits[g * n_sfb + band][book]`.
     pub bits: [[u32; BOOKS]; MAX_FLAT_SHORT],
     /// Absolute scalefactors actually quantized with (the transmitted ones).
@@ -105,6 +117,7 @@ impl QuantShort {
     pub fn new(n_sfb: usize) -> Self {
         Self {
             quant: [0; LONG_WINDOW_LEN],
+            mag: [0.0; LONG_WINDOW_LEN],
             bits: [[UNREPRESENTABLE; BOOKS]; MAX_FLAT_SHORT],
             sf: [0; MAX_FLAT_SHORT],
             coded: [false; MAX_FLAT_SHORT],
@@ -204,7 +217,15 @@ pub fn normalize_sf(out: &mut QuantChannel) -> u8 {
 
 /// Quantize `spec` with the (normalized) `out.sf` and fill the per-band,
 /// per-book bit-cost table.
+#[cfg(test)]
 pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
+    cache_mags(spec, &mut out.mag);
+    quantize_cached(spec, offsets, out);
+}
+
+/// [`quantize`] with `out.mag` already holding this spectrum's
+/// [`cache_mags`] (the rate loop re-quantizes one spectrum many times).
+pub fn quantize_cached(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
     out.quant = [0; 1024];
     let n_bands = out.n_bands.min(offsets.len() - 1);
     let bands = out
@@ -224,8 +245,9 @@ pub fn quantize(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel) {
         // Deterministic gain + |x|^0.75 (det_math): libm exp2/powf are not
         // bit-identical across platforms and would drift the encoded bytes.
         let gain = det_math::exp2(-0.1875f32 * (sf - SF_OFFSET) as f32);
-        for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-            let mag = quant_mag(x, gain);
+        let src = spec[lo..hi].iter().zip(out.mag[lo..hi].iter());
+        for (q, (&x, &m)) in out.quant[lo..hi].iter_mut().zip(src) {
+            let mag = quant_mag(m, gain);
             *q = if x < 0.0 { -mag } else { mag };
         }
         *zero = out.quant[lo..hi].iter().all(|&v| v == 0);
@@ -242,52 +264,11 @@ pub fn requant_band(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel,
     let hi = usize::from(offsets[b + 1]);
     let gain = det_math::exp2(-0.1875f32 * (out.sf[b] - SF_OFFSET) as f32);
     for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-        let mag = quant_mag(x, gain);
+        let mag = quant_mag(det_math::pow_three_quarter(x), gain);
         *q = if x < 0.0 { -mag } else { mag };
     }
     out.zero[b] = out.quant[lo..hi].iter().all(|&v| v == 0);
     fill_bits(&mut out.bits[b], &out.quant[lo..hi]);
-}
-
-/// `true` if consecutive coded scalefactors are in `[0, 255]` with DPCM ±60.
-#[must_use]
-pub fn dpcm_ok(sf: &[i32], coded: &[bool], n: usize) -> bool {
-    let mut prev: Option<i32> = None;
-    for b in 0..n {
-        if !coded[b] {
-            continue;
-        }
-        let v = sf[b];
-        if !(0..=255).contains(&v) {
-            return false;
-        }
-        if let Some(p) = prev
-            && (v - p).abs() > 60
-        {
-            return false;
-        }
-        prev = Some(v);
-    }
-    true
-}
-
-/// Cost of one band under every book: quad books 1–4 walk 4-tuples, pair
-/// books 5–11 walk pairs (long-window band widths are multiples of 4).
-fn fill_bits(bits: &mut [u32; BOOKS], vals: &[i32]) {
-    for (cb, slot) in bits.iter_mut().enumerate().skip(1) {
-        let step = if cb <= 4 { 4 } else { 2 };
-        let mut total = 0u32;
-        let mut i = 0usize;
-        while i < vals.len() {
-            let Some(n) = spectral_bits(cb as u8, &vals[i..i + step]) else {
-                total = UNREPRESENTABLE;
-                break;
-            };
-            total = total.saturating_add(n as u32);
-            i += step;
-        }
-        *slot = total;
-    }
 }
 
 /// Per-(window, band) peak |coefficient| of a window-major short spectrum,
@@ -360,7 +341,14 @@ pub fn normalize_sf_short(out: &mut QuantShort) -> u8 {
 /// Quantize a window-major short spectrum with the (normalized) `out.sf`
 /// and fill the per-(group, band) bit-cost table. Grouped bands concatenate
 /// windows in decoder order before Huffman costing.
+#[cfg(test)]
 pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut QuantShort) {
+    cache_mags(spec, &mut out.mag);
+    quantize_short_cached(spec, offsets, out);
+}
+
+/// [`quantize_short`] with `out.mag` already cached for this spectrum.
+pub fn quantize_short_cached(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut QuantShort) {
     out.quant = [0; LONG_WINDOW_LEN];
     let mut wbase = 0usize;
     for g in 0..out.n_groups {
@@ -381,8 +369,9 @@ pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut 
                 let w = wbase + k;
                 let lo = w * SHORT_WINDOW_LEN + start;
                 let hi = w * SHORT_WINDOW_LEN + end;
-                for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
-                    let mag = quant_mag(x, gain);
+                let src = spec[lo..hi].iter().zip(out.mag[lo..hi].iter());
+                for (q, (&x, &m)) in out.quant[lo..hi].iter_mut().zip(src) {
+                    let mag = quant_mag(m, gain);
                     *q = if x < 0.0 { -mag } else { mag };
                 }
                 tmp[n..n + (hi - lo)].copy_from_slice(&out.quant[lo..hi]);
@@ -394,6 +383,11 @@ pub fn quantize_short(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out: &mut 
         wbase += glen;
     }
 }
+
+#[path = "enc_quant_bits.rs"]
+mod bits;
+pub use bits::dpcm_ok;
+use bits::fill_bits;
 
 #[cfg(test)]
 #[path = "enc_quant_tests.rs"]

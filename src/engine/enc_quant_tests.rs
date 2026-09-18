@@ -176,3 +176,53 @@ fn two_band_one_step_picks_higher_error() {
     assert!(s0 > s1, "loud band must score higher: {s0} vs {s1}");
     assert!(dpcm_ok(&q.sf, &q.coded, n));
 }
+
+/// TASK-83: the one-pass cost table equals walking `spectral_bits` book by
+/// book, for every magnitude class (LAV 1, 2, 4, 7, 12, escapes, clip).
+#[test]
+fn one_pass_fill_bits_matches_the_per_book_reference() {
+    use super::{BOOKS, UNREPRESENTABLE};
+    use crate::engine::enc_huff::spectral_bits;
+    let reference = |vals: &[i32]| {
+        let mut bits = [7u32; BOOKS];
+        for (cb, slot) in bits.iter_mut().enumerate().skip(1) {
+            let step = if cb <= 4 { 4 } else { 2 };
+            let mut total = 0u32;
+            for t in vals.chunks(step) {
+                match spectral_bits(cb as u8, t) {
+                    Some(n) => total = total.saturating_add(n as u32),
+                    None => {
+                        total = UNREPRESENTABLE;
+                        break;
+                    }
+                }
+            }
+            *slot = total;
+        }
+        bits
+    };
+    let mut s = 0x1234_5678u32;
+    let mut next = move || {
+        s = s.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        s >> 8
+    };
+    for &lim in &[
+        0i32, 1, 2, 3, 4, 5, 7, 8, 12, 13, 15, 16, 17, 40, 1000, 8191,
+    ] {
+        for width in [4usize, 8, 12, 16, 32, 96] {
+            for _ in 0..40 {
+                let mut vals = vec![0i32; width];
+                for v in &mut vals {
+                    let m = (next() % (lim as u32 + 1)) as i32;
+                    *v = if next() & 1 == 0 { m } else { -m };
+                }
+                if lim > 0 {
+                    vals[(next() as usize) % width] = lim; // hit the class edge
+                }
+                let mut got = [7u32; BOOKS];
+                super::bits::fill_bits(&mut got, &vals);
+                assert_eq!(got, reference(&vals), "lim {lim} width {width} {vals:?}");
+            }
+        }
+    }
+}

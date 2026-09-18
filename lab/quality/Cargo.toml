@@ -25,3 +25,7 @@ path = "src/tonality.rs"
 [[bin]]
 name = "syom_curves"
 path = "src/curves.rs"
+
+[[bin]]
+name = "syom_speed"
+path = "src/speed.rs"

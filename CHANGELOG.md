@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- LC encode speed (TASK-83): the rate loop caches `|x|^0.75` once per
+  frame and costs all Huffman books in one pass per band — 21–42% faster
+  on busy material, byte-identical output (`lab/quality/SPEED.md`).
 - LC quantization and rate control (TASK-113): scalefactors now come
   from the masked threshold (noise-to-mask targets per band, computed
   once per frame) and the rate loop moves an allowed-noise offset —

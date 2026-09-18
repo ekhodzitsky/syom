@@ -126,7 +126,7 @@ pub fn channel_build(
     }
     enc_quant::raw_scalefactors_short(&gpeaks, tq, 0, q);
     *gain = enc_quant::normalize_sf_short(q);
-    enc_quant::quantize_short(spec, offsets, q);
+    enc_quant::quantize_short_cached(spec, offsets, q);
     *books = plan_books_short(q);
     channel_body_bits_short(books, q, *gain, standalone, tns)
 }
