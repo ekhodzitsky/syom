@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Minimum supported Rust is now **1.88** (was 1.97): the code needs `let`
   chains and nothing newer; the library tests run on 1.88 in CI (TASK-99).
+- `NOTICE` (patent disclaimer) ships in the crate and now names encoding
+  as well as decoding; provenance audit in `corpus/PROVENANCE.md` (TASK-104).
 - The published crate ships library sources only — 141 files / 355 KB
   instead of 568 files / 5.1 MB with goldens, lab and tooling
   (`scripts/check-package.py` audits contents, the empty dependency table

@@ -22,6 +22,7 @@ include = [
     "/README.md",
     "/CHANGELOG.md",
     "/LICENSE",
+    "/NOTICE",
     "/Cargo.toml",
 ]
 

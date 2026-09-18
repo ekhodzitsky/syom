@@ -8,6 +8,6 @@ tables are ISO numbers, not a third-party decoder dump.
 
 AAC patent exposure is a property of the format (Via LA / former MPEG LA
 pool), not of this implementation. The same exposure applies to FFmpeg
-and any other AAC decoder. This repository does not grant patent rights.
+and any other AAC decoder or encoder. This repository does not grant patent rights.
 Evaluate AAC licensing for your jurisdiction before shipping a product
-that decodes AAC.
+that decodes or encodes AAC.

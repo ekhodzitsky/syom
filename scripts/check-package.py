@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CRATE_BUDGET_BYTES = 512 * 1024  # 355 KB measured on 2026-09-18
 ALLOWED_TOP = {
     ".cargo_vcs_info.json", "Cargo.lock", "Cargo.toml", "Cargo.toml.orig",
-    "CHANGELOG.md", "LICENSE", "README.md",
+    "CHANGELOG.md", "LICENSE", "NOTICE", "README.md",
 }
 
 
@@ -58,6 +58,22 @@ def main() -> int:
             errors.append(f"packaged manifest sets package.{key}")
     if re.search(r"^\[target\.", unpacked.read_text(), re.M):
         errors.append("packaged manifest has target-specific tables")
+    # TASK-104: every shipped file is UTF-8 text (no binaries, fixtures or
+    # comparator objects) and the MIT notice ships with it.
+    for f in files:
+        path = unpacked.parent / f
+        try:
+            path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, FileNotFoundError):
+            errors.append(f"not a UTF-8 text file in package: {f}")
+    lic = (unpacked.parent / "LICENSE").read_text() if (unpacked.parent / "LICENSE").is_file() else ""
+    if "MIT License" not in lic or "Permission is hereby granted" not in lic:
+        errors.append("LICENSE (MIT notice) missing from the package")
+    notice = unpacked.parent / "NOTICE"
+    if not notice.is_file() or "patent" not in notice.read_text().lower():
+        errors.append("NOTICE (patent disclaimer the README links to) missing from the package")
+    if packed["package"].get("license") != "MIT":
+        errors.append("package.license is not MIT")
     # TASK-107: the guide's examples are self-contained; they must run from
     # the packaged sources (other doc tests need the repository's goldens).
     doc = subprocess.run(["cargo", "test", "--doc", "guide"], cwd=unpacked.parent,
