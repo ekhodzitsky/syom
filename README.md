@@ -40,7 +40,7 @@ matched-PCM leaderboard; see that file and `syom::decode_cmp`.
 syom = "0.6"
 ```
 
-Requires **Rust 1.97**, edition 2024.
+Requires **Rust 1.88** or newer (edition 2024; CI tests 1.88 and 1.97.1).
 
 ## Quick start
 

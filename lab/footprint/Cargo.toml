@@ -1,0 +1,19 @@
+[package]
+name = "syom-lab-footprint"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Minimal AAC-only consumers for footprint budgets (TASK-99). Not a workspace member."
+
+[dependencies]
+syom = { path = "../.." }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[workspace]

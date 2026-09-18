@@ -65,3 +65,17 @@ jobs:
         run: cargo test --workspace --lib
       - name: doc tests
         run: cargo test --doc
+      - name: package audit
+        if: matrix.host == 'linux-x64'
+        run: python scripts/check-package.py
+
+  msrv:
+    name: msrv 1.88
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.88"
+      - name: library tests on the declared minimum
+        run: cargo +1.88 test --lib

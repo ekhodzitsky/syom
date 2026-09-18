@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Minimum supported Rust is now **1.88** (was 1.97): the code needs `let`
+  chains and nothing newer; the library tests run on 1.88 in CI (TASK-99).
+- The published crate ships library sources only — 141 files / 355 KB
+  instead of 568 files / 5.1 MB with goldens, lab and tooling
+  (`scripts/check-package.py` audits contents, the empty dependency table
+  and a 512 KiB budget).
 - LC encode speed (TASK-83): the rate loop caches `|x|^0.75` once per
   frame and costs all Huffman books in one pass per band — 21–42% faster
   on busy material, byte-identical output (`lab/quality/SPEED.md`).

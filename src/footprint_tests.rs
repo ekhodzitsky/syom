@@ -29,9 +29,15 @@ fn product_dependencies_are_empty() {
 }
 
 #[test]
-fn toolchain_pin_is_1_97() {
+fn msrv_is_1_88_and_the_dev_pin_is_1_97() {
+    // TASK-99: the declared minimum is what the code needs (let chains);
+    // development and CI stay pinned for stable fmt / clippy output.
     let cargo = cargo_toml();
-    assert!(cargo.contains("rust-version = \"1.97\""));
+    assert!(cargo.contains("rust-version = \"1.88\""));
+    assert!(
+        cargo.contains("\"!/src/**/*_tests.rs\""),
+        "package include list"
+    );
     assert!(cargo.contains("edition = \"2024\""));
     let pin = fs::read_to_string(root().join("rust-toolchain.toml")).unwrap();
     assert!(pin.contains("1.97.1"));

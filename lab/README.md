@@ -16,6 +16,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
 | [prime](prime/) | encoder priming / omitted tail (TASK-40) | TASK-40 |
 | [quality](quality/) | same-bitrate LC encode SNR/rate (TASK-16) | TASK-16 |
+| [footprint](footprint/) | minimal decode / encode consumers, size budgets, MSRV and package policy ([REPORT](footprint/REPORT.md)) | TASK-99 |
 | [wasm](wasm/) | `wasm32-unknown-unknown` smoke run under Node, native reference ([REPORT](wasm/REPORT.md)) | TASK-100 |
 | [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | TASK-14 |
 | [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | TASK-48/49 |

@@ -64,7 +64,7 @@ Hidden `decode_cmp` / `encode_cmp` / `mem_iso` are bench-only
 | Public AU+ASC decode | **go later** | TASK-52. Real gap vs rusty_aac for muxers. |
 | Borrowed encode planes | **go later** | TASK-55. One extra copy on the encode path. |
 | Streaming M4A | **go later** | TASK-57. |
-| Lower MSRV below 1.97 | **no-go now** | Edition 2024 is declared; not a silent downgrade. |
+| Lower MSRV below 1.97 | **done in TASK-99** | Declared 1.88 with evidence (let chains are the floor; all tests pass on 1.88); see `lab/footprint/REPORT.md`. |
 
 Re-measure after a default or MSRV change. Do not treat rlib byte
 counts as a CI gate (they include rustc metadata and move with

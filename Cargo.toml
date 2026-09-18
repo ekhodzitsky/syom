@@ -2,7 +2,7 @@
 name = "syom"
 version = "0.6.0"
 edition = "2024"
-rust-version = "1.97"
+rust-version = "1.88"
 license = "MIT"
 authors = ["Evgeny Khodzitsky"]
 description = "just aac. Pure-Rust AAC-LC / HE-AAC codec: decode (ADTS, M4A, LATM) and LC encode."
@@ -13,6 +13,17 @@ documentation = "https://docs.rs/syom"
 keywords = ["aac", "adts", "m4a", "he-aac", "decoder"]
 categories = ["multimedia::audio"]
 autobenches = false
+# The crate ships the library only (TASK-99): tests, goldens, benches, lab,
+# corpus and tooling stay in the repository. `scripts/check-package.py`
+# enforces the list, the empty dependency table and the size budget.
+include = [
+    "/src/**/*.rs",
+    "!/src/**/*_tests.rs",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/LICENSE",
+    "/Cargo.toml",
+]
 
 [lints.clippy]
 unwrap_used = "deny"
