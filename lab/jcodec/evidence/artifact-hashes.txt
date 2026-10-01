@@ -1,0 +1,9 @@
+# sha256 (pinned 2026-09-22, repo1.maven.org)
+30f132c786d253a720acbc773fa800a4dfb23c8eb9bf7690bbbcc6aa33d4ee8a  jcodec-0.2.5.pom
+890329dad124e8b739c1d6602a59a53c8a474daddff265c2561e21c498496c81  jcodec-0.2.5.jar
+9945efa92e16b3fbe8eb8bf37f00be53fa0adb52d09ac978a0744ca2ef3697db  jcodec-0.2.5-sources.jar
+
+# maven .sha1 verification
+jcodec-0.2.5.pom: maven=f48d001cc27ad9319d91fee5638732ec9214108b actual=f48d001cc27ad9319d91fee5638732ec9214108b OK
+jcodec-0.2.5.jar: maven=0b1968a3dbf46aa5ac9630ce9e3cbf67c4940d08 actual=0b1968a3dbf46aa5ac9630ce9e3cbf67c4940d08 OK
+jcodec-0.2.5-sources.jar: maven=4f513ac8e20a4c10e4f90c3d46e34acae37e3c33 actual=4f513ac8e20a4c10e4f90c3d46e34acae37e3c33 OK

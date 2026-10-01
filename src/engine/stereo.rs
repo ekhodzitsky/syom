@@ -5,7 +5,6 @@ use super::error::{Error, Result};
 use super::ics::IcsInfo;
 use super::section::{INTENSITY_HCB, INTENSITY_HCB2, SectionData, is_intensity, is_noise};
 use super::sf::ScaleFactors;
-use super::swb::{long_offsets, short_offsets};
 
 /// `ms_mask_present` (2 bits): 0 off, 1 per-band, 2 all-1, 3 reserved.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -111,11 +110,7 @@ pub fn apply_ms(
         return Ok(());
     }
     let win_len = ics.window_len();
-    let offsets = if ics.window_sequence.is_eight_short() {
-        short_offsets(fs_index)?
-    } else {
-        long_offsets(fs_index)?
-    };
+    let offsets = ics.swb_offsets(fs_index)?;
     let mut wbase = 0usize;
     for g in 0..ics.num_window_groups as usize {
         let glen = ics.window_group_length[g] as usize;
@@ -165,11 +160,7 @@ pub fn apply_intensity(
     fs_index: u8,
 ) -> Result<()> {
     let win_len = ics.window_len();
-    let offsets = if ics.window_sequence.is_eight_short() {
-        short_offsets(fs_index)?
-    } else {
-        long_offsets(fs_index)?
-    };
+    let offsets = ics.swb_offsets(fs_index)?;
     let mut wbase = 0usize;
     for g in 0..ics.num_window_groups as usize {
         let glen = ics.window_group_length[g] as usize;

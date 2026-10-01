@@ -91,6 +91,13 @@ pub(crate) fn ingest_fil(
     pool: &mut SbrPool,
     pending: &mut Vec<((ElemKind, u8), Box<SbrExtensionData>)>,
 ) -> Result<()> {
+    if cnt == 0 {
+        // fill_element()'s `while (cnt > 0)` loop never runs: a
+        // zero-count FIL carries no extension_payload (ISO/IEC
+        // 14496-3 §4.4.2.7; lavc's TYPE_FIL arm loops the same way).
+        // Seen in the wild: GPAC-muxed Akamai BBB DASH HE-AAC.
+        return Ok(());
+    }
     let start = br.bit_position();
     let id_aac = match last_elem {
         Some((ElemKind::Cpe, _)) => IdSynEle::Cpe,

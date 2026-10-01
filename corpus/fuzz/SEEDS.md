@@ -12,6 +12,8 @@ loads these plus committed goldens. Ordinary tests never spawn the campaign.
 | latm48 | `src/goldens/latm48.latm` | LOAS/LATM |
 | sine441 | `src/goldens/sine441.m4a` | M4A |
 | he48 | `src/goldens/he48.adts` | ADTS HE |
+| fmp4_lc | `src/goldens/fmp4_lc.mp4` | fMP4 LC (TASK-126) |
+| ld48 / ld64m / ld64mus | `src/goldens/ld*.loas` | LOAS AAC-LD (TASK-131) |
 
 ## Malformed (this directory)
 
@@ -24,6 +26,7 @@ loads these plus committed goldens. Ordinary tests never spawn the campaign.
 | `asc-main-aot.bin` | ASC AOT 1 (Main) | `AudioSpecificConfig` unsupported AOT |
 | `latm-truncated.bin` | LOAS sync only | LATM / decode error |
 | `m4a-truncated.bin` | `ftyp` size 24, 8 bytes present | ISOBMFF / decode error |
+| `fmp4-truncated.bin` | fMP4 init + 24 B of the first `moof` (TASK-126) | frag top-level walk, `Truncated` |
 
 ## Lifecycle (TASK-49)
 

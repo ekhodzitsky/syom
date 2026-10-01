@@ -59,6 +59,8 @@ pub struct LcEncoder {
     target_q: [[f32; MAX_BANDS]; 2],
     /// Unspent bits carried forward (bounded at one frame's budget).
     credit: i64,
+    /// Previous frame's noise offset. The next search tries it first.
+    rate_guess: i32,
     /// Stuffing debt so 10 s payload/valid stays within ±3%.
     pad_debt: i64,
     /// This frame's per-band M/S decision (`ms_mask_present` 0/1/2).
@@ -86,9 +88,10 @@ pub struct LcEncoder {
     held: Option<Box<lookahead::HeldFrame>>,
     /// Reused `raw_data_block` bytes (TASK-78).
     payload: Vec<u8>,
-    /// HE: `extension_payload` bytes of the SBR FIL written before `END`
-    /// (empty = LC only). Set per frame by the HE encoder (TASK-89).
+    /// HE: SBR FIL `extension_payload` bytes (empty = LC); set per frame.
     fill: Vec<u8>,
+    /// ABR stuffing: EXT_FILL payload bytes as FILs before `END` (TASK-121); 0 outside `fit_budget`.
+    pad_fill: usize,
     /// Long-frame allocation inputs, once per frame (TASK-113).
     alloc: Box<[super::enc_alloc::AllocCache; 2]>,
     /// Quality VBR (TASK-67): a fixed allowed-noise offset instead of the
@@ -156,6 +159,7 @@ impl LcEncoder {
             psy: Psy::new(offsets, sample_rate),
             target_q: [[0.0; MAX_BANDS]; 2],
             credit: 0,
+            rate_guess: rate::OFFSET_LO,
             pad_debt: 0,
             ms: MsBands::off(),
             tns: [EncTns::off(), EncTns::off()],
@@ -173,6 +177,7 @@ impl LcEncoder {
             held: None,
             payload: Vec::with_capacity(MAX_PAYLOAD_BYTES),
             fill: Vec::new(),
+            pad_fill: 0,
             alloc: super::heap::heap_array(super::enc_alloc::AllocCache::new()),
             quality: None,
             chans_s: super::heap::heap_array(QuantShort::new(short_offsets.len() - 1)),
@@ -277,14 +282,7 @@ impl LcEncoder {
         attack && self.block_switching
     }
 
-    /// Encode 1024 samples per channel into one `raw_data_block`. Causal
-    /// path (lookahead off): the attack decision comes from THIS frame's
-    /// samples.
-    /// Core pipeline — window + forward MDCT → TNS → per-band M/S → psy →
-    /// quantize → section plan → rate loop → emit — given the attack
-    /// decision driving this frame's window sequence. The lookahead path
-    /// supplies a decision taken one frame ahead (`lookahead` child
-    /// module); everything downstream of the sequence choice is identical.
+    /// Window through emit. `attack` is this frame, or one frame ahead.
     fn encode_with_attack(&mut self, pcm: &[&[f32]], attack: bool) -> Result<()> {
         let specs = self.analyze(pcm, attack);
         self.rate_control(&specs)?;
@@ -355,6 +353,7 @@ impl LcEncoder {
 mod rate;
 pub use control::QUALITY_MAX;
 pub use rate::max_bitrate_bps;
+pub(crate) use rate::search_monotonic;
 
 #[path = "enc_refine.rs"]
 mod refine;

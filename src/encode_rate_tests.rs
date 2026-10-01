@@ -96,7 +96,12 @@ fn budget_bits(bps: u32, ch: usize) -> usize {
 fn row(s: &Sweep) -> Result<Row> {
     let (adts, info) = encode_tracked(&s.pcm, s.bps)?;
     let oneshot = encode_with(&s.pcm, RATE, &EncodeOptions::adts().with_bitrate_bps(s.bps))?;
-    assert_eq!(adts, oneshot, "{} streaming != one-shot", s.name);
+    assert_eq!(
+        adts.as_slice(),
+        crate::gapless::strip_id3(&oneshot),
+        "{} streaming != one-shot",
+        s.name
+    );
     assert_eq!(info.bytes as usize, adts.len());
     let frames = walk_frames(&adts)?;
     let payload = adts_payload_bytes(&adts).expect("payload");
@@ -394,8 +399,11 @@ fn abr_fill_keeps_sine_audible_after_priming() -> Result<()> {
         )?,
         &DecodeOptions::unbounded(),
     )?;
-    let skip = 1024usize;
-    let y = &dec.channels[0][skip..skip + N1];
+    let y = if dec.channels[0].len() == N1 {
+        dec.channels[0].as_slice()
+    } else {
+        &dec.channels[0][1024..1024 + N1]
+    };
     let mut sig = 0.0f64;
     let mut err = 0.0f64;
     for (a, b) in src.iter().zip(y.iter()) {
@@ -413,7 +421,7 @@ fn abr_fill_keeps_sine_audible_after_priming() -> Result<()> {
 }
 
 #[test]
-fn abr_undershoot_pads_trailing_zeros_after_end() -> Result<()> {
+fn abr_undershoot_pads_fill_elements_before_end() -> Result<()> {
     let src = sine(N1, 440.0, 0.5);
     let (adts, _) = encode_tracked(&[src], 128_000)?;
     let frames = walk_frames(&adts)?;
@@ -425,16 +433,20 @@ fn abr_undershoot_pads_trailing_zeros_after_end() -> Result<()> {
         let fl = usize::from(hdr.aac_frame_length);
         let payload = &adts[pos + off..pos + fl];
         if pay * 8 >= budget_bits(128_000, 1) * 97 / 100 && payload.len() >= 16 {
-            saw_pad |= payload[payload.len() - 16..].iter().all(|&b| b == 0);
+            // TASK-121: leftover budget is EXT_FILL fill_element()s before
+            // ID_END; the frame ends with END + <8 align bits, so the last
+            // byte is never zero (fdk-aac rejects trailing zero stuffing).
+            saw_pad = true;
+            assert_ne!(payload[payload.len() - 1], 0, "zero stuffing after ID_END");
         }
         pos += fl;
     }
-    assert!(saw_pad, "leftover budget must be unused bytes after ID_END");
+    assert!(saw_pad, "leftover budget must pad to the ABR ceiling");
     Ok(())
 }
 
 #[test]
-fn abr_trailing_pad_is_pcm_neutral() -> Result<()> {
+fn abr_fill_padding_is_decode_neutral() -> Result<()> {
     let l = sine(N1 / 4, 440.0, 0.5);
     let r = sine(N1 / 4, 2_997.0, 0.4);
     let stuffed = encode_with(
@@ -442,30 +454,34 @@ fn abr_trailing_pad_is_pcm_neutral() -> Result<()> {
         RATE,
         &EncodeOptions::adts().with_bitrate_bps(128_000),
     )?;
+    // Every AU is consumed through ID_END: padding is in-band EXT_FILL
+    // (ignored by the decoder), never trailing bytes (TASK-121).
+    let au = crate::gapless::strip_id3(&stuffed);
     let mut pos = 0usize;
-    let mut stripped = Vec::with_capacity(stuffed.len());
-    while pos < stuffed.len() {
-        let (hdr, off) = AdtsHeader::parse(&stuffed[pos..]).map_err(crate::AacError::from)?;
+    let mut dec = crate::engine::decode::StreamDecoder::new();
+    while pos < au.len() {
+        let (hdr, off) = AdtsHeader::parse(&au[pos..]).map_err(crate::AacError::from)?;
         let fl = usize::from(hdr.aac_frame_length);
-        let mut payload = stuffed[pos + off..pos + fl].to_vec();
-        while payload.last() == Some(&0) {
-            payload.pop();
-        }
-        crate::encode::adts_frame_into(
-            &payload,
+        let payload = &au[pos + off..pos + fl];
+        dec.decode_raw_data_block(
+            hdr.audio_object_type(),
             hdr.sampling_frequency_index,
-            usize::from(hdr.channel_configuration.max(1)),
-            &mut stripped,
+            RATE,
+            hdr.channel_configuration,
+            1,
+            payload,
+        )
+        .map_err(crate::AacError::from)?;
+        assert_eq!(
+            dec.last_rdb_bytes,
+            payload.len(),
+            "padding bytes must sit inside the AU, not trail ID_END"
         );
         pos += fl;
     }
-    let a = decode_with(&stuffed, &DecodeOptions::unbounded())?;
-    let b = decode_with(&stripped, &DecodeOptions::unbounded())?;
-    assert_eq!(a.sample_rate, b.sample_rate);
-    assert_eq!(a.channels.len(), b.channels.len());
-    for (l, r) in a.channels.iter().zip(b.channels.iter()) {
-        assert_eq!(l, r, "trailing unused bytes must not change PCM");
-    }
+    let pcm = decode_with(&stuffed, &DecodeOptions::unbounded())?;
+    assert_eq!(pcm.channels.len(), 2);
+    assert_eq!(pcm.sample_rate, RATE);
     Ok(())
 }
 

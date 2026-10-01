@@ -11,7 +11,9 @@ impl Decoder {
     /// Configure a push decoder from an `AudioSpecificConfig` blob and then
     /// [`decode_au`](Self::decode_au) complete access units.
     ///
-    /// The ASC is parsed and validated (LC / HE-AAC v1 / HE-AAC v2). PCM is
+    /// The ASC is parsed and validated (LC / HE-AAC v1 / HE-AAC v2 / AAC-LD
+    /// AOT 23 at 512 samples per frame). A 480-sample LD
+    /// `frameLengthFlag` is [`AacError::Unsupported`]. PCM is
     /// delivered through the same borrowed [`Frame`] callback as [`Self::feed`].
     ///
     /// ```
@@ -56,7 +58,10 @@ impl Decoder {
     pub fn set_asc(&mut self, asc: &[u8]) -> Result<()> {
         self.ensure_open()?;
         self.opts.validate()?;
-        if matches!(self.container, Container::Adts | Container::Latm) {
+        if matches!(
+            self.container,
+            Container::Adts | Container::Latm | Container::Fmp4
+        ) {
             return Err(AacError::Unsupported(
                 crate::UnsupportedFeature::RawAccessUnit,
             ));

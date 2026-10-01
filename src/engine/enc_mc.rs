@@ -84,6 +84,8 @@ pub struct McEncoder {
     budget: usize,
     credit: i64,
     pad_debt: i64,
+    /// Previous frame's common noise offset.
+    rate_guess: i32,
     /// Per-element rate loops on the weight split (quality VBR, lab A/B).
     fixed_split: bool,
     specs: Vec<super::enc_frame::Specs>,
@@ -135,6 +137,7 @@ impl McEncoder {
             budget: budget.min(cap).min(super::enc_frame::MAX_PAYLOAD_BYTES * 8),
             credit: 0,
             pad_debt: 0,
+            rate_guess: OFFSET_LO,
             fixed_split,
         })
     }
@@ -163,6 +166,13 @@ impl McEncoder {
         }
         self.credit = 0;
         self.pad_debt = 0;
+        self.rate_guess = OFFSET_LO;
+    }
+
+    /// Test hook: force the next common-offset search to start cold.
+    #[cfg(test)]
+    pub(crate) fn pin_rate_guess(&mut self, v: i32) {
+        self.rate_guess = v;
     }
 
     /// Lab A/B: per-element loops on the fixed weight split (TASK-114).
@@ -196,13 +206,13 @@ impl McEncoder {
             w.write(u32::from(tag), 4);
             append_bits(&mut w, rdb, 7, last - 2);
         }
-        w.write(7, 3); // END
-        let mut bytes = w.finish();
-        // Keep the elements' ABR stuffing: unused bytes after END.
+        // Keep the elements' ABR stuffing as EXT_FILL FILs before END.
+        let base = w.bit_len() as usize;
         let target = padded.min(super::enc_frame::MAX_PAYLOAD_BYTES);
-        if bytes.len() < target {
-            bytes.resize(target, 0);
-        }
+        let room = target.saturating_mul(8).saturating_sub(base + 3);
+        super::enc_pad::write_pad_fill(&mut w, super::enc_pad::pad_fill_for_room(room));
+        w.write(7, 3); // END
+        let bytes = w.finish();
         *out = bytes;
         Ok(())
     }
@@ -238,22 +248,11 @@ impl McEncoder {
         }
         let spend = self.budget + self.credit.min(self.budget as i64 / 2) as usize;
         let limit = spend.saturating_sub(32);
-        let (mut lo, mut hi) = (OFFSET_LO, OFFSET_HI);
-        let offset = if self.bits_at(lo) <= limit {
-            lo
-        } else if self.bits_at(hi) > limit {
-            hi
-        } else {
-            while hi - lo > 1 {
-                let mid = lo + (hi - lo) / 2;
-                if self.bits_at(mid) <= limit {
-                    hi = mid;
-                } else {
-                    lo = mid;
-                }
-            }
-            hi
-        };
+        let guess = self.rate_guess;
+        let offset = super::enc_frame::search_monotonic(OFFSET_LO, OFFSET_HI, guess, |off| {
+            self.bits_at(off) <= limit
+        });
+        self.rate_guess = offset;
         // Over budget even at the ceiling (short-window bursts): every
         // element drops top bands to its proportional share, as the
         // stereo loop's hard cap does.
@@ -279,14 +278,17 @@ impl McEncoder {
             w.write(u32::from(tag), 4);
             append_bits(&mut w, rdb, 7, last - 2);
         }
-        w.write(7, 3); // END
-        let mut bytes = w.finish();
-        let coded = bytes.len() * 8;
-        // ABR stuffing after END, as in stereo (`fit_budget`).
+        // ABR stuffing before END as EXT_FILL FILs, as in stereo
+        // (`fit_budget`); trailing zeros are rejected by fdk-aac.
+        let base = w.bit_len() as usize;
+        let coded = (base + 3).div_ceil(8) * 8;
         let pad_to = self.budget.saturating_sub(self.pad_debt.max(0) as usize);
         if !silent && coded < pad_to * 97 / 100 {
-            bytes.resize((pad_to / 8).max(bytes.len()), 0);
+            let room = (pad_to / 8).saturating_mul(8).saturating_sub(base + 3);
+            super::enc_pad::write_pad_fill(&mut w, super::enc_pad::pad_fill_for_room(room));
         }
+        w.write(7, 3); // END
+        let bytes = w.finish();
         let emitted = (bytes.len() * 8) as i64;
         self.pad_debt = (self.pad_debt + emitted - self.budget as i64).max(0);
         self.credit =

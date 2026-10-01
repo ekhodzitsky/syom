@@ -110,7 +110,15 @@ fn main() {
     let sine = load("src/goldens/sine48.adts");
     let he = load("src/goldens/he48.adts");
     let latm = load("src/goldens/latm48.latm");
-    let seeds = [sine.as_slice(), he.as_slice(), latm.as_slice()];
+    let fmp4 = load("src/goldens/fmp4_lc.mp4");
+    let ld = load("src/goldens/ld64m.loas");
+    let seeds = [
+        sine.as_slice(),
+        he.as_slice(),
+        latm.as_slice(),
+        fmp4.as_slice(),
+        ld.as_slice(),
+    ];
     let (limit, max_iters, seed) = parse_args();
     let start = Instant::now();
     let mut rng = seed;

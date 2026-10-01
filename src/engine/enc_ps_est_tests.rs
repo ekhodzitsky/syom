@@ -146,6 +146,34 @@ fn panned_tones_give_the_expected_iid_full_coherence_and_a_faithful_model() {
 }
 
 #[test]
+fn fine_iid_grid_is_tighter_than_coarse_on_an_11_db_pan() {
+    let s = programme(8 * PS_BLOCK);
+    let g = 10f32.powf(-11.0 / 20.0);
+    let coarse = analyse(&s, &scaled(&s, g));
+    let mut ps = PsAnalysis::new();
+    ps.set_iid_fine(true);
+    let mut fine = Vec::new();
+    for (bl, br) in s
+        .chunks_exact(PS_BLOCK)
+        .zip(scaled(&s, g).chunks_exact(PS_BLOCK))
+    {
+        let mut m = [0.0f32; PS_BLOCK];
+        if let Some(p) = ps
+            .block(bl.try_into().unwrap(), br.try_into().unwrap(), &mut m)
+            .unwrap()
+        {
+            fine.push(p);
+        }
+    }
+    let c = coarse.params.last().unwrap();
+    let f = fine.last().unwrap();
+    for b in active_bands(&coarse) {
+        assert_eq!(c.iid[b], 4, "coarse band {b}: {:?}", c.iid);
+        assert_eq!(f.iid[b], 5, "fine band {b}: {:?}", f.iid);
+    }
+}
+
+#[test]
 fn decorrelated_ambience_is_near_zero_coherence_and_keeps_its_energy() {
     let n = 8 * PS_BLOCK;
     let run = analyse(&noise(1, 0.3, n), &noise(2, 0.3, n));

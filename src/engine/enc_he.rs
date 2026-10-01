@@ -11,9 +11,13 @@ use super::enc_ps_est::PsFrameParams;
 use super::enc_sbr_bits::sbr_extension_payload;
 use super::enc_sbr_est::{SLOTS, SbrEstimator};
 use super::enc_sbr_prep::{CORE_FRAME, FIR_DELAY, OUT_FRAME, QMF_SLOT, SbrPrep, he_core_rate};
-use super::enc_sbr_qmf::{BANDS, EncSlot};
+use super::enc_sbr_qmf::{BANDS, EncSlot, core_cutoff_hz};
 use super::error::{Error, Result};
 
+/// Core kbps/channel at or below which a narrow frame may end the LC
+/// core under the SBR crossover. 24 covers both 24 kbps speech rates
+/// (12 and 24 per channel).
+const SHAPE_CORE_KBPS: u32 = 24;
 /// Output-rate samples per access unit.
 pub(crate) const OUT_SAMPLES_PER_AU: u64 = OUT_FRAME as u64;
 /// Analysis slots the envelope grid of AU `n` starts before core frame
@@ -52,6 +56,9 @@ pub(crate) struct HeEncoder {
     lc: Box<LcEncoder>,
     channels: usize,
     lookahead: bool,
+    out_rate: u32,
+    /// Apply [`core_cutoff_hz`] per frame (low-rate HE only).
+    shape_core: bool,
     prep: [SbrPrep; 2],
     est: [SbrEstimator; 2],
     core: [Vec<f32>; 2],
@@ -69,6 +76,16 @@ pub(crate) struct HeEncoder {
     /// HE v2: PS payload writer and the parameter frames waiting for
     /// their access unit (`enc_he_ps.rs` feeds them; mono core only).
     ps: Option<(PsWriter, std::collections::VecDeque<PsFrameParams>)>,
+}
+
+/// Slots of core frame `n` inside a queue whose index 0 is absolute
+/// `slot_base` (the caller passes `start = n·SLOTS − slot_base`).
+fn frame_slots(slots: &[EncSlot], start: usize) -> &[EncSlot] {
+    if start >= slots.len() {
+        &[]
+    } else {
+        &slots[start..(start + SLOTS).min(slots.len())]
+    }
 }
 
 impl HeEncoder {
@@ -97,6 +114,8 @@ impl HeEncoder {
             lc,
             channels,
             lookahead,
+            out_rate,
+            shape_core: kbps <= SHAPE_CORE_KBPS,
             prep: [SbrPrep::new(), SbrPrep::new()],
             est,
             core: [Vec::new(), Vec::new()],
@@ -145,13 +164,27 @@ impl HeEncoder {
         }
     }
 
-    /// Carry parametric stereo (HE v2). Mono core only.
-    pub(crate) fn enable_ps(&mut self) -> Result<()> {
+    /// Carry parametric stereo (HE v2). Mono core only. `fine_iid`
+    /// writes `iid_mode` 4; the product path passes `false` (mode 1).
+    pub(crate) fn enable_ps(&mut self, fine_iid: bool) -> Result<()> {
         if self.channels != 1 {
             return Err(Error::Format("HE encoder: PS needs a mono core"));
         }
-        self.ps = Some((PsWriter::new(), std::collections::VecDeque::new()));
+        let w = if fine_iid {
+            PsWriter::new().with_fine_iid()
+        } else {
+            PsWriter::new()
+        };
+        self.ps = Some((w, std::collections::VecDeque::new()));
         Ok(())
+    }
+
+    /// (`ps_data` bits, extended-data block bits) written so far.
+    pub(crate) fn ps_side_info(&self) -> (u64, u64) {
+        match &self.ps {
+            Some((w, _)) => (w.ps_bits(), w.ext_bits()),
+            None => (0, 0),
+        }
     }
 
     /// Queue the PS parameters of the next uncovered access unit.
@@ -185,7 +218,8 @@ impl HeEncoder {
     }
 
     /// End of input: flush the filterbanks, code the padded content tail
-    /// and one silent drain frame, and report the accounting.
+    /// and silent drain frames until priming plus the source fit, and
+    /// report the accounting.
     pub(crate) fn finish<F>(&mut self, mut on_au: F) -> Result<HeInfo>
     where
         F: FnMut(&[u8]) -> Result<()>,
@@ -211,11 +245,22 @@ impl HeEncoder {
             self.encode_core_frame(&mut on_au)?;
         }
         // Drain: one silent frame so the last content overlap-adds.
-        for core in self.core.iter_mut().take(self.channels) {
-            core.clear();
-            core.resize(CORE_FRAME, 0.0);
+        // The SBR chain can still leave the decoded tail short of the
+        // source by up to SBR_DELAY_OUT samples (priming is 3018). One
+        // extra silent core frame closes that; lengths that already
+        // cover priming + source stay byte-identical. With lookahead the
+        // held frame is counted in `frames` and emitted by the flush
+        // below, so the comparison is against `frames`, not `aus`.
+        loop {
+            for core in self.core.iter_mut().take(self.channels) {
+                core.clear();
+                core.resize(CORE_FRAME, 0.0);
+            }
+            self.encode_core_frame(&mut on_au)?;
+            if self.frames.saturating_mul(OUT_FRAME as u64) >= HE_PRIMING_OUT + self.source {
+                break;
+            }
         }
-        self.encode_core_frame(&mut on_au)?;
         if self.lookahead {
             self.lc.set_fill(&std::mem::take(&mut self.pending_fill))?;
             if let Some(au) = self.lc.flush()? {
@@ -300,6 +345,15 @@ impl HeEncoder {
         F: FnMut(&[u8]) -> Result<()>,
     {
         let n = self.frames;
+        if self.shape_core {
+            let kx = self.est[0].bands().k_x as usize;
+            let start = (n * SLOTS as u64).saturating_sub(self.slot_base) as usize;
+            let s0 = frame_slots(&self.slots[0], start);
+            let s1 = frame_slots(&self.slots[1], start);
+            let ch: [&[EncSlot]; 2] = [s0, s1];
+            let hz = core_cutoff_hz(&ch[..self.channels], kx, self.out_rate);
+            self.lc.set_cutoff_hz(Some(hz));
+        }
         let fill = self.fill_for(n)?;
         let mut frames = [[0.0f32; CORE_FRAME]; 2];
         for (frame, core) in frames

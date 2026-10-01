@@ -21,7 +21,10 @@ struct Clip {
 }
 
 fn main() {
-    let reps: usize = std::env::args().nth(1).and_then(|s| s.parse().ok()).unwrap_or(31);
+    let reps: usize = std::env::args()
+        .nth(1)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(31);
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo = root.parent().unwrap().parent().unwrap();
     let clips = clips(repo);
@@ -74,12 +77,27 @@ fn clips(repo: &Path) -> Vec<Clip> {
     if let Some(l) = lecture(repo) {
         // 0.25 s natural speech, tiled to 2 s (speed only; content repeats).
         let tiled: Vec<Vec<f32>> = l.iter().map(|p| p.repeat(8)).collect();
-        v.push(Clip { name: "lecture-st", pcm: tiled.clone() });
-        v.push(Clip { name: "lecture-mono", pcm: vec![tiled[0].clone()] });
+        v.push(Clip {
+            name: "lecture-st",
+            pcm: tiled.clone(),
+        });
+        v.push(Clip {
+            name: "lecture-mono",
+            pcm: vec![tiled[0].clone()],
+        });
     }
-    v.push(Clip { name: "music-st", pcm: music(2.0) });
-    v.push(Clip { name: "noise-st", pcm: vec![noise(0.3, 5, 2.0), noise(0.3, 6, 2.0)] });
-    v.push(Clip { name: "click-mono", pcm: vec![clicks(2.0)] });
+    v.push(Clip {
+        name: "music-st",
+        pcm: music(2.0),
+    });
+    v.push(Clip {
+        name: "noise-st",
+        pcm: vec![noise(0.3, 5, 2.0), noise(0.3, 6, 2.0)],
+    });
+    v.push(Clip {
+        name: "click-mono",
+        pcm: vec![clicks(2.0)],
+    });
     v
 }
 
@@ -87,9 +105,18 @@ fn lecture(repo: &Path) -> Option<Vec<Vec<f32>>> {
     let bytes = fs::read(repo.join("src/goldens/lecture.m4a")).ok()?;
     let dec = decode_with(&bytes, &DecodeOptions::unbounded()).ok()?;
     // The golden is quiet; normalize to a 0.5 peak so the rate loop works.
-    let peak = dec.channels.iter().flatten().fold(0.0f32, |m, &x| m.max(x.abs()));
+    let peak = dec
+        .channels
+        .iter()
+        .flatten()
+        .fold(0.0f32, |m, &x| m.max(x.abs()));
     let g = if peak > 0.0 { 0.5 / peak } else { 1.0 };
-    Some(dec.channels.iter().map(|p| p.iter().map(|&x| x * g).collect()).collect())
+    Some(
+        dec.channels
+            .iter()
+            .map(|p| p.iter().map(|&x| x * g).collect())
+            .collect(),
+    )
 }
 
 fn noise(amp: f32, seed: u32, secs: f64) -> Vec<f32> {

@@ -185,3 +185,198 @@ fn book11_signs_before_escape() -> Result<(), super::Error> {
     );
     Ok(())
 }
+
+/// Same bits and the same `invquant(q) * gain` as the integer tuple path.
+fn assert_fill(cb: u8, bytes: &[u8], n: usize, expect_bits: u64) -> Result<(), super::Error> {
+    let gain = super::spectrum::sf_gain(137);
+    let mut slow_br = BitReader::new(bytes);
+    let mut slow = vec![0.0f32; n];
+    let mut filled = 0usize;
+    let mut tuple = [0i32; 4];
+    while filled < n {
+        let k = huff::decode_tuple(&mut slow_br, cb, &mut tuple)?;
+        let take = k.min(n - filled);
+        for (slot, &q) in slow[filled..filled + take].iter_mut().zip(tuple.iter()) {
+            *slot = super::spectrum::invquant(q) * gain;
+        }
+        filled += take;
+        if take < k {
+            break;
+        }
+    }
+    let mut fast_br = BitReader::new(bytes);
+    let mut fast = vec![0.0f32; n];
+    huff::SpectralBook::open(cb)?.fill(&mut fast_br, gain, &mut fast)?;
+    for (i, (got, want)) in fast.iter().zip(&slow).enumerate() {
+        assert_eq!(got.to_bits(), want.to_bits(), "cb={cb} i={i}");
+    }
+    assert_eq!(slow_br.bit_position(), expect_bits, "cb={cb} slow");
+    assert_eq!(fast_br.bit_position(), expect_bits, "cb={cb} fast");
+    Ok(())
+}
+
+#[test]
+fn fill_band_matches_invquant_including_spill_and_escape() -> Result<(), super::Error> {
+    let gain_bits = |len: u8| u64::from(len);
+
+    // Signed pair, two tuples, contiguous band.
+    let (l0, c0) = (super::huff_pair::H5_LEN[0], super::huff_pair::H5_CODE[0]);
+    let (l40, c40) = (super::huff_pair::H5_LEN[40], super::huff_pair::H5_CODE[40]);
+    let mut w = BitWriter::new();
+    w.write(u32::from(c0), u32::from(l0));
+    w.write(u32::from(c40), u32::from(l40));
+    w.write(0b1010, 4);
+    let pair_bits = gain_bits(l0) + gain_bits(l40);
+    assert_fill(5, &w.finish(), 4, pair_bits)?;
+
+    // Unsigned pair: one sign bit, full tuple.
+    let (l1, c1) = (super::huff_pair::H7_LEN[1], super::huff_pair::H7_CODE[1]);
+    let mut w = BitWriter::new();
+    w.write(u32::from(c1), u32::from(l1));
+    w.write_bit(true);
+    w.write(0b1010, 4);
+    assert_fill(7, &w.finish(), 2, gain_bits(l1) + 1)?;
+
+    // Unsigned quad [1, 1, 0, 0] into a 1-wide band: the second sign is
+    // consumed and the coefficient is dropped.
+    let idx = 36usize;
+    let (lq, cq) = (
+        super::huff_quad::H3_LEN[idx],
+        super::huff_quad::H3_CODE[idx],
+    );
+    let mut w = BitWriter::new();
+    w.write(u32::from(cq), u32::from(lq));
+    w.write_bit(true);
+    w.write_bit(false);
+    w.write(0b1010, 4);
+    assert_fill(3, &w.finish(), 1, gain_bits(lq) + 2)?;
+
+    // Signed quad spilled across two tuples (band length 5).
+    let (la, ca) = (super::huff_quad::H1_LEN[0], super::huff_quad::H1_CODE[0]);
+    let mut w = BitWriter::new();
+    w.write(u32::from(ca), u32::from(la));
+    w.write(u32::from(ca), u32::from(la));
+    w.write(0b1010, 4);
+    assert_fill(1, &w.finish(), 5, gain_bits(la) * 2)?;
+
+    // Book 11: sign, then escape past the POW43 table (n=13, off=5 → 8197).
+    let esc_idx = 16 * 17;
+    let (le, ce) = (
+        super::huff_esc::H11_LEN[esc_idx],
+        super::huff_esc::H11_CODE[esc_idx],
+    );
+    let mut w = BitWriter::new();
+    w.write(u32::from(ce), u32::from(le));
+    w.write_bit(true);
+    for _ in 0..9 {
+        w.write_bit(true);
+    }
+    w.write_bit(false);
+    w.write(5, 13);
+    w.write(0b1010, 4);
+    let esc_bits = gain_bits(le) + 1 + 9 + 1 + 13;
+    assert_fill(11, &w.finish(), 2, esc_bits)?;
+    // Same stream, one written sample: the escape is still consumed.
+    let mut w = BitWriter::new();
+    w.write(u32::from(ce), u32::from(le));
+    w.write_bit(true);
+    for _ in 0..9 {
+        w.write_bit(true);
+    }
+    w.write_bit(false);
+    w.write(5, 13);
+    w.write(0b1010, 4);
+    assert_fill(11, &w.finish(), 1, esc_bits)?;
+    Ok(())
+}
+
+/// One short group of two windows, book 11, compared with the integer
+/// quant path. Standard short bands are multiples of 4, so a pair stays
+/// inside one window; the group is still one coefficient stream.
+#[test]
+fn grouped_short_book11_matches_integer_rescale() -> Result<(), super::Error> {
+    use super::ics::{IcsInfo, WindowSequence, WindowShape};
+    use super::section::SectionData;
+    use super::sf::ScaleFactors;
+
+    let mut lens = [0u8; 8];
+    lens[0] = 2;
+    for slot in lens.iter_mut().take(7).skip(1) {
+        *slot = 1;
+    }
+    let ics = IcsInfo {
+        window_sequence: WindowSequence::EightShort,
+        window_shape: WindowShape::Sine,
+        max_sfb: 1,
+        num_windows: 8,
+        num_window_groups: 7,
+        window_group_length: lens,
+        num_swb: 14,
+        ld: false,
+    };
+    let mut sections = SectionData::default();
+    sections.sfb_cb = vec![
+        vec![11],
+        vec![0],
+        vec![0],
+        vec![0],
+        vec![0],
+        vec![0],
+        vec![0],
+    ];
+    let mut sf = ScaleFactors::default();
+    sf.sf = vec![vec![137]; 7];
+
+    let (l0, c0) = (super::huff_esc::H11_LEN[0], super::huff_esc::H11_CODE[0]);
+    let (l1, c1) = (super::huff_esc::H11_LEN[1], super::huff_esc::H11_CODE[1]);
+    let esc_idx = 16 * 17;
+    let (le, ce) = (
+        super::huff_esc::H11_LEN[esc_idx],
+        super::huff_esc::H11_CODE[esc_idx],
+    );
+    let mut w = BitWriter::new();
+    // (0, 1) with a sign, then (0, 0): first window, band width 4.
+    w.write(u32::from(c1), u32::from(l1));
+    w.write_bit(true);
+    w.write(u32::from(c0), u32::from(l0));
+    // Escape pair into the second window of the group, then (0, 0).
+    w.write(u32::from(ce), u32::from(le));
+    w.write_bit(true);
+    for _ in 0..9 {
+        w.write_bit(true);
+    }
+    w.write_bit(false);
+    w.write(5, 13);
+    w.write(u32::from(c0), u32::from(l0));
+    w.write(0b1010, 4);
+    let bytes = w.finish();
+    let expect = u64::from(l1) + 1 + u64::from(l0) + u64::from(le) + 1 + 9 + 1 + 13 + u64::from(l0);
+
+    let mut slow_br = BitReader::new(&bytes);
+    let mut quant = Vec::new();
+    super::spectrum::parse_quant_into(&mut slow_br, &ics, &sections, 3, &mut quant)?;
+    let mut slow = Vec::new();
+    super::spectrum::rescale_into(&quant, &ics, &sections, &sf, 3, &mut slow)?;
+    let mut fast_br = BitReader::new(&bytes);
+    let mut fast = Vec::new();
+    super::spectrum_scaled::decode_scaled_into(&mut fast_br, &ics, &sections, &sf, 3, &mut fast)?;
+
+    assert_eq!(slow_br.bit_position(), expect);
+    assert_eq!(fast_br.bit_position(), expect);
+    assert_eq!(fast.len(), slow.len());
+    for (i, (got, want)) in fast.iter().zip(&slow).enumerate() {
+        assert_eq!(got.to_bits(), want.to_bits(), "i={i}");
+    }
+    let gain = super::spectrum::sf_gain(137);
+    assert_eq!(
+        fast[1].to_bits(),
+        (super::spectrum::invquant(-1) * gain).to_bits()
+    );
+    assert_eq!(
+        fast[128].to_bits(),
+        (super::spectrum::invquant(-8197) * gain).to_bits()
+    );
+    assert_eq!(fast[4].to_bits(), 0f32.to_bits());
+    assert_eq!(fast[256].to_bits(), 0f32.to_bits());
+    Ok(())
+}

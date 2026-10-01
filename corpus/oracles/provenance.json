@@ -22,7 +22,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "3cc1ea5e78a56c50ae4c4b1f9698657214f994c024fb30b7c07f080d85962fbb"
+      "sha256": "a241df9c67438aa90cb4b93be60f2bf7c0158389e97def1596e7ff275d0cb402"
     },
     {
       "id": "enc48m.lavc.s16",
@@ -39,7 +39,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "d2b4f076f0ce5a9864adc2f2836e54498573e8c3e357d7db507b9527a304c1e6"
+      "sha256": "9e41dcdfa5295d3026c0ba47df40f4dcf6da6b597c29e8ba26228ff3299e7b9c"
     },
     {
       "id": "enc48t.lavc.s16",
@@ -56,7 +56,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "b21868fab71fadb506c5e286272e8680a4cd587077f2b7e5fd3b8c0bda431d63"
+      "sha256": "d278bc00f988e97bf1836ed8b4b52657fdcc468018203f0ae6d12983f20f79e9"
     },
     {
       "id": "enc48l.lavc.s16",
@@ -73,7 +73,7 @@
       "remainder_samples": null,
       "valid_samples": null,
       "settings": null,
-      "sha256": "0a2bf6556a97d1e9a912938d82d3fc3c87078cda3a4df46e3d899986b4fa8225"
+      "sha256": "ff62c52fb06a995242d5e500130763f29c5defb4ad460fee322fe58641ed6e3e"
     },
     {
       "id": "he48e.lavc.s16",
@@ -90,7 +90,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "c09d6f1fe9670911050c016bb980e539a2b2c6dc8bf1e4187ed85bc0cc2d2926"
+      "sha256": "32998caa839de8479739f422e9959a0741d86a4df32a7ef99db98a1bff4c8742"
     },
     {
       "id": "he48em.lavc.s16",
@@ -107,7 +107,7 @@
       "provenance_gap": "ffmpeg 7.0.2-static (johnvansickle) build flags not recorded",
       "engine_build": null,
       "remainder_samples": null,
-      "sha256": "72b7108fd470e91083523576bdd413f48b5d1f2734694389d44e282c9505c14a"
+      "sha256": "ff2686e62afc1b3a4fbbef9e7b9c1354e1f5b79d1e003f5f6f12cd0ebd5692f4"
     },
     {
       "id": "enc48lt.lavc.s16",
@@ -124,7 +124,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "3cc1ea5e78a56c50ae4c4b1f9698657214f994c024fb30b7c07f080d85962fbb"
+      "sha256": "a241df9c67438aa90cb4b93be60f2bf7c0158389e97def1596e7ff275d0cb402"
     },
     {
       "id": "he48elt.lavc.s16",
@@ -141,7 +141,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "c09d6f1fe9670911050c016bb980e539a2b2c6dc8bf1e4187ed85bc0cc2d2926"
+      "sha256": "32998caa839de8479739f422e9959a0741d86a4df32a7ef99db98a1bff4c8742"
     },
     {
       "id": "pns48.s16",
@@ -311,7 +311,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "3533c9013a00425aa322bb3eb8fa5a15a186fa72434472275c284c91c19b790b"
+      "sha256": "69b0a861af09eeb1a7cd03f5795d3f739f495823b5974e940e260033a3c7ace3"
     },
     {
       "id": "he2_48em.lavc.s16",
@@ -328,7 +328,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "99f88569ffcf15ac8cbfc6a28d7c6aa436b5ec239708053d7f97e4c4e8486d0a"
+      "sha256": "431b594bcc4755ae8483dcaf3abbb9c58b32f3d25ae0bd6b9b93cb4d74c005cb"
     },
     {
       "id": "enc_mc51m.lavc.s16",
@@ -345,7 +345,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "03ba216358b8f1a6a3706ae2a3904d8cf8143ddf5403ddd9b2a20cc1eadfe168"
+      "sha256": "b005e65e758e2da711d928773b18058208aabb9da5b03a5ad3f068101b7b3da3"
     },
     {
       "id": "enc_mc71l.lavc.s16",
@@ -362,7 +362,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "61ec96002ccae41a3aa77e57097dead2bcf21e11c2b731c3a044e1ca349eac0f"
+      "sha256": "15a6c6b02022ca795e0d36629bf88935793ffb4bfe00bc4995c0d36e964edf48"
     },
     {
       "id": "enc_mc51.lavc.s16",
@@ -379,7 +379,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "e695f5b8a69126f42eb09cbbe1d8aa5cbd9ab7d0bc99188d1fc579514f026f28"
+      "sha256": "cd601edcfa909db732d92046c2609e0ce96712008e513b9a363741e1c3d77ee9"
     },
     {
       "id": "enc_mc71.lavc.s16",
@@ -396,7 +396,7 @@
       "engine_build": null,
       "remainder_samples": null,
       "valid_samples": null,
-      "sha256": "0f8433f5c545a53cc88d2a9cda544cbb4140646918e4b5fc6d4fbc8fb9d41204"
+      "sha256": "e701146188b9230045bb5dcfc9b810c369a97fadb7ee2b101f7cf81019aa9d62"
     },
     {
       "id": "aac_mp4_48k_mono.s16",
@@ -416,6 +416,40 @@
       "sha256": "f6d00d3478843da4c14311d3733d0521092805fedf351304285b080bf820bea0"
     },
     {
+      "id": "bbb_fil.au",
+      "path": "src/goldens/bbb_fil.au",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "78917c6c2b6f6b7c2ed78015c7ca3bf03571198b18ac3a3af0b5bbcf8984bd2a"
+    },
+    {
+      "id": "bbb_fil.s16",
+      "path": "src/goldens/bbb_fil.s16",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "s16le",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "d481a52d2a75bdc58d90a7c96b694d3789c2b1fc415152158a27a4bda80dc5a4"
+    },
+    {
       "id": "enc48.adts",
       "path": "src/goldens/enc48.adts",
       "role": "committed-fixture",
@@ -430,7 +464,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "49a0a33d31bfb811795cc4177011a03a9f21acf251e7f4d070f3d09b2a3a801d"
+      "sha256": "7712665fda7d3b0d9414c851de30bdc78ad10ac83c8ec851d701e6408e9e1280"
     },
     {
       "id": "enc48l.adts",
@@ -447,7 +481,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "5570d652e9db0072407e78467e73bf1e145601494a34cb26f5bf88eaf4bb18ce"
+      "sha256": "b7c98baf0f9859872c6f14aabe3ed33f967c3661923abbaa86ce0c96e9c1306f"
     },
     {
       "id": "enc48lt.latm",
@@ -464,7 +498,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "c7b0ee3891cdcbb30a2ddf007e2cd1d48cf9a571881e986596ec454c52346821"
+      "sha256": "5c63f647e8622fbed35b98a1796b7e13afee4d781a53c3d566e7032ad815b5b9"
     },
     {
       "id": "enc48m.m4a",
@@ -481,7 +515,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "6b6b3def4673a1b8f812e81dbdf4745c597a79dcb6817e8de0d28601ab63eede"
+      "sha256": "b627e78949c2185651aa6df899b9c0dac35053c1f8fab66c2b418717a027b8e3"
     },
     {
       "id": "enc48t.adts",
@@ -498,7 +532,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "c2a5f3e9d6867e99e058a64ea64252058e130b7d554eb6d9e53b343d767484e8"
+      "sha256": "a6d91181e670eabce8dfac50d215c2fb9d1940b2328d55a461802cd776188eda"
     },
     {
       "id": "enc_mc51.adts",
@@ -515,7 +549,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "d79f4dda506ef817e61d646881c0692808e5143db8052312a55f712b8673d4a1"
+      "sha256": "cbda2ee35e3ccf4aae1597fbd36fdf9084d84106ae6badefd7e85192f4348daf"
     },
     {
       "id": "enc_mc51.m4a",
@@ -532,7 +566,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "b9679eb9ffb41139166a1dd84cc58e26bf2f5d6775875b42a3cb4b54faea1d57"
+      "sha256": "fe3fba97cbd58854aa91bdf49b1aa91202a62a38f4aa9cd98201c520f93bf2ee"
     },
     {
       "id": "enc_mc71.adts",
@@ -549,7 +583,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "429b9a3e49966b557d6ac510d8ac839ebcd7b835f18b5f4c320416223ce73016"
+      "sha256": "440acc014cd088593fe325b62b668467a81075905445b744e3f849b2a59906b1"
     },
     {
       "id": "enc_mc71.latm",
@@ -566,7 +600,313 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "c76686ca4f6407b13a4b4dbbe0d0cd00c6f50add3467f949e5cc6621e680ebcb"
+      "sha256": "fda991a243809e62f4c1acacc03f8efedec92cc2f9fb8e6a8cc600c89a72ed15"
+    },
+    {
+      "id": "fmp4_2track.mp4",
+      "path": "src/goldens/fmp4_2track.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "2b09d1d58b859a3c3a53408c035203cbf9d48f1b9da5ca449936de65eb0d8711"
+    },
+    {
+      "id": "fmp4_bbb_init.m4a",
+      "path": "src/goldens/fmp4_bbb_init.m4a",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "4846d82d3e0045ba8d23b4338fa5ce2c592d70f84444df51a126567f9e80b3a0"
+    },
+    {
+      "id": "fmp4_bbb_seg1.m4a",
+      "path": "src/goldens/fmp4_bbb_seg1.m4a",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "02f822bccf4add90234e09eea08a7b8629ae2c0f3d847d2ef995a1adce51b9ec"
+    },
+    {
+      "id": "fmp4_cenc.mp4",
+      "path": "src/goldens/fmp4_cenc.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "ab603e1e19ebdf9094687652e5f6c3b029dfbe5e55778aba69f258eaea0bf672"
+    },
+    {
+      "id": "fmp4_dash_init.m4s",
+      "path": "src/goldens/fmp4_dash_init.m4s",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "d9f9cc69360eb47a121218094b836eb4231fa92e4fe841ce471365d8754f8d30"
+    },
+    {
+      "id": "fmp4_dash_seg1.m4s",
+      "path": "src/goldens/fmp4_dash_seg1.m4s",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "0e418d95afbf87addf09d351dbdebe886a6285fef3662c330fb3428a898c3d36"
+    },
+    {
+      "id": "fmp4_dash_seg2.m4s",
+      "path": "src/goldens/fmp4_dash_seg2.m4s",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "e2e49cabd011d266a111e730609493108ce03269b38ccc3ef26c9273a4660083"
+    },
+    {
+      "id": "fmp4_he.mp4",
+      "path": "src/goldens/fmp4_he.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "511c2635ca09b7849119b3ecb8b8ee6b75a5c0813755907e66910dfab450f1b3"
+    },
+    {
+      "id": "fmp4_he2.mp4",
+      "path": "src/goldens/fmp4_he2.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "c4d5995958cc0759618e0d74eb12ae383217c6616d001c60b2b242ad36caa89a"
+    },
+    {
+      "id": "fmp4_lc.mp4",
+      "path": "src/goldens/fmp4_lc.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "5abb2331c4ca03d6924b1f479a653571e72a9103f370a6993ed43171260fed15"
+    },
+    {
+      "id": "fmp4_lc_cmaf.mp4",
+      "path": "src/goldens/fmp4_lc_cmaf.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "4b817c3e8ee5db6d00a5fda3c355b54d5fd622850c114f9fd327c362f1e82225"
+    },
+    {
+      "id": "fmp4_lc_dbmoof.mp4",
+      "path": "src/goldens/fmp4_lc_dbmoof.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "e93ac3acbaeffc92f3b61a63cc2bfe7022918a59b256703fa32bd3d2b66ed6ff"
+    },
+    {
+      "id": "fmp4_lc_flat.m4a",
+      "path": "src/goldens/fmp4_lc_flat.m4a",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "503d30833257b60e79c3110e8bfd7fdbd688ba97841a19e2dcfc37f51a056c51"
+    },
+    {
+      "id": "fmp4_lc_notfdt.mp4",
+      "path": "src/goldens/fmp4_lc_notfdt.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "7f455d38fbf9c74168e39249d220c703a210d1fa18bd156138a683b22319e8ef"
+    },
+    {
+      "id": "fmp4_lc_omit.mp4",
+      "path": "src/goldens/fmp4_lc_omit.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "8306684e909d2e1a407fa024f86957d4cfbfcb9a683a3830d0e8a1f8c6734f63"
+    },
+    {
+      "id": "fmp4_lc_sidx.mp4",
+      "path": "src/goldens/fmp4_lc_sidx.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "a3a4afbe4eb59117a0a3ce5368b382187a41cdfcba27244636f431380a142a94"
+    },
+    {
+      "id": "fmp4_lc_v1.mp4",
+      "path": "src/goldens/fmp4_lc_v1.mp4",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "9f50f632842c1fa515aa51c78e29c6142b69a52e6c9e3e8febb4713dfbb57050"
+    },
+    {
+      "id": "fmp4_timeline.txt",
+      "path": "src/goldens/fmp4_timeline.txt",
+      "role": "committed-fixture",
+      "engine": "ffprobe 7.0.2-static",
+      "pcm_precision": "timeline text",
+      "comparison": "deterministic",
+      "provenance_gap": null,
+      "engine_build": "ffmpeg 7.0.2-static (lab/fmp4/PIN.md)",
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": "python3 lab/fmp4/gen_timeline_oracle.py",
+      "settings": null,
+      "sha256": "8ae6a365ebe513bc23961ca9ad4ff7a5df016d6171c2bb40855623ff8c4ef53b"
     },
     {
       "id": "he2_48e.adts",
@@ -583,7 +923,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "292e28aaa32dece4aa1fe9fa0162856189e10ca0e250b96af6aa76a9ee6006f9"
+      "sha256": "c90e120186c1298b76d8711af0fb7321ffeba9b8e65603123625b9f2ed8f19dd"
     },
     {
       "id": "he2_48em.m4a",
@@ -600,7 +940,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "3a6d30bf33f5bafa69746052025bddc287b5162c7c3bf66bca7c62cc9a598ba9"
+      "sha256": "39ffa8686e08f7b56e4980d9b5a4523d5c8890184cd87ae214cf16dc64b60463"
     },
     {
       "id": "he48.adts",
@@ -702,7 +1042,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "640eb434534bcb4617b50fe69040d2969a06c20a27aec533f4c1eb7a8e133bf1"
+      "sha256": "808257506793601de6f1da3b681734f9e10ff6f65596c48c0f8576b4f8a461dc"
     },
     {
       "id": "he48elt.latm",
@@ -719,7 +1059,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "4ce8d07f399aa2dcbc43466da9e3eae99c3168863dc24f2d332abdde3ff08b12"
+      "sha256": "ff002d57bc8e90fbb015be189a8807ad04c6c5b57cc67690669bd7acd352dfe3"
     },
     {
       "id": "he48em.m4a",
@@ -736,7 +1076,7 @@
       "channel_order": null,
       "command": null,
       "settings": null,
-      "sha256": "c9939d19dea3fb73086f5232145dcc54b0b0cfceda998fb2384cd303b4a75af3"
+      "sha256": "e9e1d3dd4e877f11ef537a5daf4cdc4ec3a58dada10684c56cf66472ace8220a"
     },
     {
       "id": "latm48.latm",
@@ -771,6 +1111,125 @@
       "command": null,
       "settings": null,
       "sha256": "ca0ef242b8216c86eb14daa439a99b277f278c68a54e046336f9556693f50cc2"
+    },
+    {
+      "id": "ld48.fdk.s16",
+      "path": "src/goldens/ld48.fdk.s16",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "s16le",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "17754178d7c5dd31e005789fd09a3fa7fe513a494ae5fe3c912da75f2ef5eb88"
+    },
+    {
+      "id": "ld48.loas",
+      "path": "src/goldens/ld48.loas",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "793b3099faae24e09fbc3898a242a29ffdfe276c4af102bbb2a29e38d1a7ffcb"
+    },
+    {
+      "id": "ld64m.fdk.s16",
+      "path": "src/goldens/ld64m.fdk.s16",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "s16le",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "d1672815703b281c62b059f27927c2ff834aab5cd0273ed4ca3068b430358032"
+    },
+    {
+      "id": "ld64m.loas",
+      "path": "src/goldens/ld64m.loas",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "6d74efe9cc809fa5167cabd6c960711f92e47579847d435fcecc619ad275bb19"
+    },
+    {
+      "id": "ld64m.xaac.s16",
+      "path": "src/goldens/ld64m.xaac.s16",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "s16le",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "b592158b1fdbc2e6a6316f29de33c3f8372d9d57a09d23ee5a8ff1a04a8ba7f0"
+    },
+    {
+      "id": "ld64mus.fdk.s16",
+      "path": "src/goldens/ld64mus.fdk.s16",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "s16le",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "d77dc20e5d1bf18a7c023cd47802a22a507401cf9b931943ca517753373fb189"
+    },
+    {
+      "id": "ld64mus.loas",
+      "path": "src/goldens/ld64mus.loas",
+      "role": "committed-fixture",
+      "engine": "unknown (historical checkout)",
+      "pcm_precision": "bitstream",
+      "comparison": "deterministic",
+      "provenance_gap": "mint backend version, exact command, priming/remainder not recorded; not reminted",
+      "engine_build": null,
+      "priming_samples": null,
+      "remainder_samples": null,
+      "valid_samples": null,
+      "channel_order": null,
+      "command": null,
+      "settings": null,
+      "sha256": "d7a31913725f78b7852c98717c859bab4ef8b3fa9d92e57cda912deb74ecf3e7"
     },
     {
       "id": "lecture.m4a",

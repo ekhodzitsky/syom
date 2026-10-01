@@ -240,12 +240,12 @@ impl PsDecorr {
         for k in 0..c.nr_allpass_bands {
             let f = f_center(config, k);
             let arg = -core::f64::consts::PI * Q_PHI * f;
-            let (s, co) = arg.sin_cos();
+            let (s, co) = super::det_math::sincos_f64(arg);
             phi_fract.push(Complex::new(co, s));
             let mut qs = [Complex::default(); 3];
             for (m, q) in qs.iter_mut().enumerate() {
                 let arg = -core::f64::consts::PI * Q_FRACT[m] * f;
-                let (s, co) = arg.sin_cos();
+                let (s, co) = super::det_math::sincos_f64(arg);
                 *q = Complex::new(co, s);
             }
             q_fract.push(qs);

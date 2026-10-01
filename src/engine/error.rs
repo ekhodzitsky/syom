@@ -66,7 +66,6 @@ pub enum Error {
     /// Parametric stereo payload invalid.
     PsDataInvalid,
     /// FIL `extension_payload` SBR type without a body (legacy skip).
-    #[allow(dead_code)]
     UnsupportedExtensionSbr(u8),
     /// FIL reserved `extension_type`.
     UnsupportedExtensionType(u8),

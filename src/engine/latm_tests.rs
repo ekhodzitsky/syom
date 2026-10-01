@@ -241,3 +241,35 @@ fn mux_cfg_crc_present_corrupt_rejected() {
         Err(Error::LatmCrcMismatch)
     ));
 }
+
+#[test]
+fn mux_cfg_ld_aot23_fdk_frame_parses_and_payload_extracts() -> Result<(), Error> {
+    // First LOAS frame of the FDK v2.0.3 LD cell (lab/profiles/REPORT.md,
+    // ld48.loas): AOT 23, 48 kHz mono, extensionFlag 1 + resilience 000 +
+    // epConfig 0, frameLengthType 0, one 70-byte payload.
+    let frame = unhex(
+        "56e04e2000b989002788c1442dad0cdd2885a891324892e448ea913855d300a021e211ef9f42f30ecff0cf63e68d56d88bc120eec77bb2e31d4c8dcdd9d9e993ab299d9d9d9d9d9d859d1d058505200000",
+    );
+    let v = (u32::from(frame[0]) << 16) | (u32::from(frame[1]) << 8) | u32::from(frame[2]);
+    assert_eq!(v >> 13, super::LOAS_SYNC);
+    assert_eq!(frame.len(), 3 + (v & 0x1FFF) as usize);
+    let mut br = BitReader::new(&frame[3..]);
+    assert!(!br.read_bit()?); // useSameStreamMux
+    let cfg = MuxCfg::parse(&mut br)?;
+    assert_eq!(cfg.asc.aot, 23);
+    assert_eq!(cfg.asc.sample_rate, 48_000);
+    assert_eq!(cfg.asc.output_sample_rate, 48_000);
+    assert_eq!(cfg.asc.channel_configuration, 1);
+    assert!(!cfg.asc.sbr_present);
+    assert_eq!(cfg.frame_length_type, 0);
+    assert_eq!(cfg.num_sub_frames, 0);
+    let payload = read_payload(&mut br, &cfg)?;
+    assert_eq!(payload.len(), 70);
+    Ok(())
+}
+
+fn unhex(s: &str) -> Vec<u8> {
+    (0..s.len() / 2)
+        .map(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
+        .collect()
+}

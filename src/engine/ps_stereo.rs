@@ -12,7 +12,7 @@
 //! are derived per stereo band from the dequantized cues:
 //!
 //! * IID: `c(b) = 10^(iid(b)/20)` on the Table 8.25 (default) or
-//!   8.26 (fine) dB grid;
+//!   8.26 (fine) dB grid, read from a const gain table;
 //! * ICC: `ρ(b)` on the Table 8.28 grid, driving **mixing procedure
 //!   Ra** (`icc_mode 0..2`: scale factors `c1 = √(2/(1+c²))`,
 //!   `c2 = √2·c/√(1+c²)`, rotation `α = ½·arccos(ρ)`,
@@ -57,6 +57,22 @@ const IID_DB_FINE: [f64; 31] = [
     -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 13.0, 16.0, 19.0, 22.0, 25.0, 30.0, 35.0, 40.0, 45.0,
     50.0,
 ];
+
+/// `10^(dB/20)` for one IID grid, from `exp10_f64`.
+const fn iid_gains<const N: usize>(db: &[f64; N]) -> [f64; N] {
+    let mut g = [0.0; N];
+    let mut i = 0;
+    while i < N {
+        g[i] = super::det_math::exp10_f64(db[i] / 20.0);
+        i += 1;
+    }
+    g
+}
+
+/// Table 8.25 as linear gains `c = 10^(dB/20)`.
+const IID_GAIN_COARSE: [f64; 15] = iid_gains(&IID_DB_COARSE);
+/// Table 8.26 as linear gains `c = 10^(dB/20)`.
+const IID_GAIN_FINE: [f64; 31] = iid_gains(&IID_DB_FINE);
 
 /// Table 8.28 — ICC quantization grid `ρ`.
 const ICC_RHO: [f64; 8] = [1.0, 0.937, 0.84118, 0.60092, 0.36764, 0.0, -0.589, -1.0];
@@ -344,16 +360,15 @@ impl PsStereo {
         let rb = ps.config.icc_mode >= 3;
 
         for b in 0..nb {
-            let iid_db = if fine {
-                *IID_DB_FINE
+            let c = if fine {
+                *IID_GAIN_FINE
                     .get((iid[b] + 15) as usize)
                     .ok_or(Error::PsDataInvalid)?
             } else {
-                *IID_DB_COARSE
+                *IID_GAIN_COARSE
                     .get((iid[b] + 7) as usize)
                     .ok_or(Error::PsDataInvalid)?
             };
-            let c = 10f64.powf(iid_db / 20.0);
             let rho = *ICC_RHO.get(icc[b] as usize).ok_or(Error::PsDataInvalid)?;
 
             let (h11, h12, h21, h22) = if rb { mix_rb(c, rho) } else { mix_ra(c, rho) };
@@ -391,17 +406,17 @@ impl PsStereo {
                 let sm = |h: &[Vec<f64>; 2], cur: f64| -> f64 {
                     let mut acc = Complex::default();
                     for (w, ang) in [(0.25, h[0][b]), (0.5, h[1][b]), (1.0, cur)] {
-                        let (si, co) = ang.sin_cos();
+                        let (si, co) = super::det_math::sincos_f64(ang);
                         acc += Complex::new(co * w, si * w);
                     }
-                    acc.im.atan2(acc.re)
+                    super::det_math::atan2_f64(acc.im, acc.re)
                 };
                 let phi_opd = sm(&self.opd_hist, opd_cur[b]);
                 let phi_ipd = sm(&self.ipd_hist, ipd_cur[b]);
                 let phi1 = phi_opd;
                 let phi2 = phi_opd - phi_ipd;
-                let (s1, c1) = phi1.sin_cos();
-                let (s2, c2) = phi2.sin_cos();
+                let (s1, c1) = super::det_math::sincos_f64(phi1);
+                let (s2, c2) = super::det_math::sincos_f64(phi2);
                 let r1 = Complex::new(c1, s1);
                 let r2 = Complex::new(c2, s2);
                 self.h_to[b][0] = self.h_to[b][0] * r1;
@@ -424,14 +439,11 @@ fn mix_ra(c: f64, rho: f64) -> (f64, f64, f64, f64) {
     let denom = (1.0 + c * c).sqrt();
     let c1 = core::f64::consts::SQRT_2 / denom;
     let c2 = core::f64::consts::SQRT_2 * c / denom;
-    let alpha = 0.5 * rho.clamp(-1.0, 1.0).acos();
+    let alpha = 0.5 * super::det_math::acos_f64(rho.clamp(-1.0, 1.0));
     let beta = alpha * (c1 - c2) / core::f64::consts::SQRT_2;
-    (
-        (alpha + beta).cos() * c2,
-        (beta - alpha).cos() * c1,
-        (alpha + beta).sin() * c2,
-        (beta - alpha).sin() * c1,
-    )
+    let (s_sum, c_sum) = super::det_math::sincos_f64(alpha + beta);
+    let (s_diff, c_diff) = super::det_math::sincos_f64(beta - alpha);
+    (c_sum * c2, c_diff * c1, s_sum * c2, s_diff * c1)
 }
 
 /// §8.6.4.6.2.2 mixing procedure Rb.
@@ -440,19 +452,18 @@ fn mix_rb(c: f64, rho: f64) -> (f64, f64, f64, f64) {
     let mut alpha = if (c - 1.0).abs() < 1e-12 {
         core::f64::consts::FRAC_PI_4
     } else {
-        0.5 * (2.0 * c * rho / (c * c - 1.0)).atan()
+        0.5 * super::det_math::atan_f64(2.0 * c * rho / (c * c - 1.0))
     };
-    // Modulo correction into [0, π/2).
-    alpha -= (alpha / core::f64::consts::FRAC_PI_2).floor() * core::f64::consts::FRAC_PI_2;
+    // `½·atan` lands in (−π/4, π/4); one shift puts a negative angle in [0, π/2).
+    if alpha < 0.0 {
+        alpha += core::f64::consts::FRAC_PI_2;
+    }
     let mu = 1.0 + (4.0 * rho * rho - 4.0) / (c + 1.0 / c).powi(2);
-    let gamma = ((1.0 - mu) / (1.0 + mu)).max(0.0).sqrt().atan();
+    let gamma = super::det_math::atan_f64(((1.0 - mu) / (1.0 + mu)).max(0.0).sqrt());
+    let (sa, ca) = super::det_math::sincos_f64(alpha);
+    let (sg, cg) = super::det_math::sincos_f64(gamma);
     let s2 = core::f64::consts::SQRT_2;
-    (
-        s2 * alpha.cos() * gamma.cos(),
-        s2 * alpha.sin() * gamma.cos(),
-        -s2 * alpha.sin() * gamma.sin(),
-        s2 * alpha.cos() * gamma.sin(),
-    )
+    (s2 * ca * cg, s2 * sa * cg, -s2 * sa * sg, s2 * ca * sg)
 }
 
 #[cfg(test)]
@@ -628,11 +639,61 @@ mod tests {
     fn ra_energy_invariant() {
         for iid in -7..=7 {
             for &rho in &ICC_RHO {
-                let c = 10f64.powf(IID_DB_COARSE[(iid + 7) as usize] / 20.0);
+                let c = IID_GAIN_COARSE[(iid + 7) as usize];
                 let (a, b, x, y) = mix_ra(c, rho);
                 let e = a * a + b * b + x * x + y * y;
                 assert!((e - 2.0).abs() < 1e-12, "iid {iid} rho {rho}: {e}");
             }
         }
+    }
+
+    /// Each tabulated gain is the exp10 series (relative error 0) and
+    /// within 1e-12 of `10^(dB/20)`.
+    #[test]
+    fn iid_gain_tables_match_exp10_series() {
+        let ln2 = f64::from_bits(0x3FE6_2E42_FEFA_39EF);
+        let log2_10 = f64::from_bits(0x400A_934F_0979_A371);
+        let series = |db: f64| -> f64 {
+            let y = (db / 20.0) * log2_10;
+            let n = y.floor() as i32;
+            let r = (y - f64::from(n)) * ln2;
+            let mut p = 1.0;
+            let mut k = 16i32;
+            while k >= 1 {
+                p = 1.0 + r * p / f64::from(k);
+                k -= 1;
+            }
+            let mut scale = 1.0;
+            let mut i = n;
+            if i > 0 {
+                while i > 0 {
+                    scale *= 2.0;
+                    i -= 1;
+                }
+            } else {
+                while i < 0 {
+                    scale *= 0.5;
+                    i += 1;
+                }
+            }
+            scale * p
+        };
+        let check = |db: &[f64], gain: &[f64]| {
+            for (&db, &g) in db.iter().zip(gain) {
+                let s = series(db);
+                assert_eq!(g.to_bits(), s.to_bits(), "{db} dB series");
+                let real = (db / 20.0 * std::f64::consts::LOG2_10).exp2();
+                let rel = ((g - real) / real).abs();
+                assert!(rel < 1e-12, "{db} dB rel {rel:e}");
+            }
+        };
+        check(&IID_DB_COARSE, &IID_GAIN_COARSE);
+        check(&IID_DB_FINE, &IID_GAIN_FINE);
+        assert_eq!(IID_GAIN_COARSE[7], 1.0);
+        assert_eq!(IID_GAIN_FINE[15], 1.0);
+        let sqrt10 = 10f64.sqrt();
+        assert!(((IID_GAIN_COARSE[11] - sqrt10) / sqrt10).abs() < 1e-12);
+        assert!(((IID_GAIN_FINE[2] - 0.01) / 0.01).abs() < 1e-12);
+        assert!(((IID_GAIN_FINE[28] - 100.0) / 100.0).abs() < 1e-12);
     }
 }

@@ -7,8 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-01
+
 ### Added
 
+- Opt-in AAC-LD encode (`EncodeOptions::with_ld`): 512-sample frames,
+  mono or stereo, LOAS or M4A, priming of one frame. `encode` stays
+  AAC-LC. ADTS is rejected (it cannot signal AOT 23), as are HE,
+  lookahead, quality VBR and the LC-only tools. Qualified against
+  FDK v2.0.3 and libxaac 0.1.13 (syom's decode of the committed
+  streams is within 2 LSB and 55 dB of both).
+
+- Bounded fragmented-MP4 input (TASK-124, decision-25; contract and lavf
+  parity in lab/fmp4/REPORT.md): an init `moov` (empty sample table,
+  `mvex`/`trex` defaults) plus `moof`/`mdat` fragments decode on the slice
+  (`decode` / `decode_with` / `decode_streaming`) and seekable
+  (`decode_seek` / `M4aSeek`) paths, including concatenated DASH
+  init + media segments (a zero `elst.segment_duration` there is an open
+  end: priming trim, no duration cap). tfhd base resolution covers
+  explicit `base_data_offset`, `default_base_is_moof` and the implicit
+  previous-fragment base; trun v0/v1 with the trun → tfhd → trex defaults
+  chain; resolved sample ranges are fenced inside the following `mdat`
+  payload. `probe` reports the init segment (profile/rates/layout; the
+  priming edit when present). Outside the envelope, errors are typed and
+  matchable — encrypted (`enca` / traf-level `saiz`/`saio`/`senc`),
+  multi-track or foreign-track fragments, nonzero composition offsets and
+  sample-description switches are
+  `AacError::Unsupported(UnsupportedFeature::FragmentedMp4(..))`; mfhd
+  sequence gaps, unknown trun versions, zero resolved durations and ranges
+  outside the `mdat` are `AacError::Malformed`; a truncated
+  init/`moof`/`mdat` once the fMP4 init is visible, and dangling box
+  headers, are `AacError::Truncated` (TASK-126).
+
+- Incremental fragmented-MP4 delivery through the push `Decoder`
+  (TASK-125): `feed` accepts arbitrary chunkings of an fMP4 init segment
+  plus `moof`/`mdat` fragments (a fragmented init is recognized by its
+  `mvex`; a flat moov keeps `UnsupportedFeature::M4aPush`) and delivers
+  each AU as soon as it completes inside the `mdat`. Resident buffering
+  stays at one box payload / one AU plus headers: the init `moov` and
+  each `moof` are fenced by the metadata budget, and the per-fragment
+  sample table is dropped with its fragment. `mfhd`/`tfdt` continuity,
+  the edit-window trim (priming/remainder in `StreamInfo`) and the
+  failed/finished/`reset` lifecycle mirror the one-shot fMP4 and
+  ADTS/LATM push rules; a finish over a mid-box or mid-AU cut is a typed
+  `AacError::Truncated`. One `feed` of a whole init widens to the
+  metadata budget after the bytes sniff as fMP4 (it is not stuck on the
+  ADTS partial-buffer cap). A box size that wraps the absolute end is
+  `AacError::Malformed`, not a panic.
+
+- fMP4 qualification corpus (TASK-126): every lab/fmp4/REPORT.md §2
+  contract cell is pinned by committed goldens with sha256 provenance
+  (`lab/fmp4/GOLDENS.md`, checked by `verify_pins.py`), including the
+  third-party GPAC-muxed Big Buck Bunny DASH HE vector
+  (`fmp4_bbb_{init,seg1}.m4a`, pins in `lab/fmp4/PIN.md`). Fragment
+  timelines (per-sample dts/cts, tfdt-less accumulation, DASH `elst`
+  priming versus the untrimmed mov-muxer presentation, continuous `mfhd`
+  sequence numbers) are asserted against a committed ffprobe-derived
+  oracle (`src/goldens/fmp4_timeline.txt`,
+  `lab/fmp4/gen_timeline_oracle.py`);
+  the tfdt-less fixture `fmp4_lc_notfdt.mp4` (`lab/fmp4/strip_tfdt.py`)
+  proves accumulation decodes bit-identically, and truncation /
+  mid-fragment cuts are typed errors with a fuzz seed
+  (`corpus/fuzz/fmp4-truncated.bin`). Tests never spawn ffmpeg/ffprobe.
+
+- AAC-LD (AOT 23) configuration and transport framing (TASK-128, first
+  step of the LD epic, decision-28): `AudioSpecificConfig` and LATM/LOAS
+  `StreamMuxConfig` carrying ER AAC LD now parse (GA syntax with the ER
+  resilience flags and `epConfig`), and `probe` / `probe_with` report the
+  new `ProbeProfile::Ld` with correct rate and channel metadata.
+  ADTS cannot signal AOT 23 and keeps its typed error. ELD (39) and USAC (42)
+  configs remain rejected.
+- AAC-LD decode (TASK-129): 512-sample LOAS and raw access units reconstruct
+  through the LD window pair (sine and low-overlap), the 1024-point IMDCT
+  and LD TNS limits. FDK v2.0.3 PCM matches within 2 LSB / 55 dB on frames
+  that do not use perceptual noise (`ld64m`, `ld64mus`, and the noise-free
+  frames of `ld48`). The PNS generator stays the non-normative lavc LCG, so
+  it is not bit-identical to FDK or libxaac fixed-point noise. A 480-sample
+  `frameLengthFlag` stays `Unsupported`.
+- AAC-LD in M4A (TASK-130): an `mp4a` sample entry with an AOT 23 config
+  decodes on the slice and seekable paths. `elst` priming and tail are
+  sample counts on the 512-sample grid (same rules as LC), and a seek
+  replays one overlap frame rather than the two LC frames. `probe` reports
+  `ProbeProfile::Ld` with that trim. Push LOAS follows the same
+  failed/finished/`reset` lifecycle as ADTS.
+- AAC-LD decode qualification (TASK-131): the committed oracles are FDK
+  v2.0.3 and, for `ld64m`, libxaac 0.1.13 (`lab/profiles/LD_QUALIFY.md`).
+  Decoder delay matches FDK `outputDelay` 0. libavcodec 7.0.2 still cannot
+  decode these streams, and no ISO 14496-26 ER-LD conformance vectors are
+  in the tree. That is the claim boundary, not a certificate.
 - `syom::guide`: a task-oriented guide with compiling, self-contained
   examples (one-call use, borrowed PCM and `Read`/`Write`, timing, streaming,
   raw access units, probing and seeking, encoder modes, limits and errors,
@@ -40,6 +126,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- One-shot ADTS encode (`encode`, `encode_with`, `write`, `encode_write`)
+  prepends an ID3v2.4 `iTunSMPB` tag with the encoder delay, the unplayed
+  tail and the source length. HE v1 and HE v2 priming is 3018
+  output-rate samples. Decode trims to the source length when the decoded
+  sample count equals priming + source + remainder, and reports those
+  edges. A stale tag leaves the padded PCM in place. A push decode applies
+  a tag whose priming and remainder are each at most 4096 samples as
+  frames arrive, and ignores a larger edge so the resident buffer stays
+  one access unit. `probe` reports the tag when the buffered ADTS frames
+  fill that sum (1024 or 2048 samples per frame). Push `Encoder` callbacks
+  stay raw access units. Untagged ADTS is unchanged. LATM output carries
+  no delay tag.
+  M4A and one-shot fragmented MP4 without an edit list honour the same
+  tag inside `moov`. An edit list wins. A push fragmented MP4 decode does
+  not read the tag.
+- Parametric-stereo IID gains are a const table of `10^(dB/20)` filled by
+  `exp10_f64`. The decode path no longer calls `powf` for those gains.
+  The committed `ps48` planar f32 on this host is unchanged.
+- The crate summary and the README no longer open with a slogan. The
+  README is a short codec page: badges, one example, the support matrix,
+  and the 2026-10-01 matched-shape timings.
+- LC encode keeps the same bitstream. On x86_64 the long-window quantizer
+  uses SSE2 multiply-then-add and trunc-toward-zero, which matches `floor`
+  on the non-negative quantizer sum; other targets use the same scalar
+  trunc. The TNS autocorrelation converts the span to f64 once, and the
+  analysis filter is a fixed-order FIR with the same left-to-right f64
+  products. Huffman length lookups use the index the book LAV already
+  bounds, the section scan accumulates each live book in one pass, and
+  the long-window mask leaves `Σ√|x|` to the post-TNS allocation. Encoder
+  goldens (`enc48*`, `he48e*`, scalar FFT and SSE2-only FFT) are unchanged.
+  On one 2.0 s 48 kHz stereo clip at a 24 kbps ADTS request, in-process
+  `encode_with` (`taskset -c 0`, release, load average 0.96) moved from a
+  seven-rep median of 6.877 ms to 5.479 ms. The output stayed 6774 bytes.
+  The recorded FDK-AAC 2.0.3 driver-only median on this cell is 5.902 ms.
+- Decoder IMDCT pre/twiddle/post tables, TNS reflection sines, QMF DCT
+  plans, and parametric-stereo mix angles are built with the
+  exactly-rounded helpers in `det_math`. `sine48`, `tns48`, `he48` and
+  `ps48` decode to the same planar f32 on x86_64 and Darwin arm64
+  (rustc 1.97.1). Sine and KBD windows were already host-identical and
+  stay shared with analysis, so the committed encoder goldens are
+  unchanged.
+- LC IMDCT on x86_64 inlines the AVX radix-2 stages and runs the
+  pre/post rotate on SSE2 with separate mul/add/sub (no FMA). PCM bits
+  of the committed LC fixtures are unchanged. On one paired run of
+  `sine48.adts` (48000 Hz, 1 channel, 13312 samples, `taskset -c 0`,
+  load average about 16) syom's median was 94 µs (bootstrap 86–138)
+  and symphonia 0.6.1 was 143 µs (143.3–143.7).
+- Frames without pulses write each spectral coefficient during the
+  Huffman read (signed magnitude times the scale-factor gain) and skip
+  the integer quant buffer. Pulse frames still parse, apply the pulse,
+  then rescale. Grouped short windows stay one coefficient stream.
+  `invquant` uses the unsigned magnitude, so a debug build does not
+  overflow on `i32::MIN.abs()`; no AAC coefficient reaches that value.
+  Only-long frames window the IMDCT output with a multiply and then an
+  add. Encoder bytes are unchanged.
+- Low-rate HE v1 (at most 24 kbps per channel) sets the LC core cutoff
+  per frame to the top of the highest analysis band below the SBR
+  crossover that is within 20 dB of that frame's peak. A flat spectrum
+  and silence stay at the crossover. On the lecture cells, LF SNR moved
+  from 31.5 dB to 36.6 dB (stereo) and from 32.2 dB to 37.8 dB (mono);
+  the LC, tremolo-LC and noise guards did not move
+  (`lab/quality/CORE_TUNE.md`). Rates above 24 kbps per channel are
+  unchanged.
+- LC encode reuses work inside the rate loop. Scalefactor gains are a
+  256-entry table of the same deterministic `exp2`. Long-window band
+  peaks come from the per-frame allocation cache. An all-zero band skips
+  the Huffman walk. The noise-offset search starts at the previous
+  frame's offset and walks a short neighborhood before bisecting. Bit
+  counts are not strictly monotone, so an arbitrary start can stop at a
+  different crossing; the running guess matches a cold bisection on the
+  locked signals, including the encoder goldens. A steady tone quantizes
+  at most four times per frame after the first; busy noise stays under
+  eight. Release median over 15 cells is +20.6% (busy ABR +43% to
+  +57%); one click cell sits inside the noise of a 7-rep run. Those
+  streams are byte-identical (`lab/quality/SPEED.md`).
 - Stack use (TASK-118): decoding needs 39 KiB of stack (HE v2 was 391 KiB,
   LC 115 KiB) and encoding 83–91 KiB (was 163 KiB) in optimized builds, so
   the codec now runs on 128 KiB thread stacks such as musl's default.
@@ -70,6 +231,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   inflation +3 → +0.5 dB. LC encode CPU −3 % at 128 kbps. Encoder
   goldens re-minted (`enc48{,m,t,l}`, `he48e{,m}`) with ffmpeg 7.0.2 and
   registered in the corpus/oracle manifests; decoded output changes.
+- LC encoder core tuning (TASK-133, closing the TASK-95 deficits on
+  tonal-modulated stereo and low-rate speech): the attack detector now
+  compares each high-passed sub-block against a leaky accumulator fed the
+  previous sub-block's energy (the fdk-aac `block_switch` scheme) instead
+  of a flat two-frame mean, so smooth periodic swells (8 Hz AM tremolo)
+  stay on long windows while clicks still switch; TNS span bands are
+  coded or dropped by the rate loop's water level like any other band
+  (force-coding the span at a coarse target blew the frame budget exactly
+  where TNS fired hardest — stream-start collapses, tremolo and click
+  clusters); the psychoacoustic signal-to-mask ratio moves from 18 to
+  27 dB. Tremolo 48 kbps stereo (dev synth, neutral ffmpeg decode):
+  SNR 21.0 → 44.8 dB, LF SNR 25.9 → 54.7 dB vs fdk-lc 37.5 / 40.5 at
+  matched rate; lecture 24 kbps: LC LF SNR 28.5 → 42.6 dB, HE v1
+  15.1 → 31.5 dB vs fdk 31.5 / 34.4; no loss on noise/mix guards
+  (`lab/quality/CORE_TUNE.md`). All encoder goldens re-minted
+  (`enc48*`, `he48e*`, `he2_48e*`, `enc_mc*`, the `fmp4_he*` remuxes)
+  with ffmpeg 7.0.2 and registered in the corpus/oracle manifests;
+  decoded output changes; the lavc tolerance gates (≤ 2 LSB / ≥ 55 dB)
+  and the full-length FDK decode gate pass on every re-minted stream.
+
+### Fixed
+
+- Push `Encoder` with lookahead matches one-shot bytes when a steady
+  level steps into the silent drain. Finish flushed the held frame
+  before that drain, so the last content frame missed the drain's
+  attack and stayed on a long window where one-shot used a long-start
+  window. The drain is now the lookahead successor, as in one-shot.
+  Causal encode and the committed lookahead goldens (minted one-shot)
+  are unchanged.
+
+- HE encode covers the source tail. Priming is 3018 output samples, and
+  one silent drain frame was not always enough: a 3127-sample input
+  coded three access units (6144 decoded samples) against 6145 required,
+  so ADTS dropped the last source sample and M4A refused the file
+  (`valid samples exceed coded duration after priming`). Finish now
+  emits at most one extra silent access unit when the coded length
+  would not cover priming plus the source. HE v1 and HE v2 share that
+  finish. Lengths that already fit, including the committed HE goldens,
+  are unchanged.
+
+- `encode_write` rejects unequal plane lengths with
+  `InvalidPcm::PlaneLength` before any byte is written. A shorter later
+  plane used to panic while slicing the chunk.
+
+- An in-band PCE with more channel elements than the mapper's old
+  16-slot table is a format error (`PCE layout exceeds 7.1` or
+  `PCE extra channel element`) instead of a panic. Layouts up to 7.1
+  are unchanged.
+
+- A fragmented-MP4 sample of size 0 is fenced inside its `mdat` the
+  same way a non-empty sample is. An offset outside that payload is
+  `Malformed`. On the push path it used to move the cursor past the
+  fragment and underflow the following skip. An empty sample whose
+  offset lies in the payload is unchanged.
+
+- ISOBMFF box ends are computed in 64-bit arithmetic before they become
+  a buffer offset. A largesize that does not fit the address width
+  (wasm32) is a format error; it no longer collapses to a short box
+  whose child walker would not advance. Sample-table indexes use the
+  same checked add. Valid files are unchanged.
+
+- ABR stuffing interoperability (TASK-121): undersized frames were padded
+  with zero bytes after `ID_END`, which fdk-aac 2.0.3 (the AOSP platform
+  software AAC decoder codebase) rejects with `AAC_DEC_UNKNOWN`, killing
+  the stream; FAAD2 also lost ADTS sync on stuffed multichannel streams.
+  Leftover budget is now EXT_FILL `fill_element()` padding *before*
+  `ID_END` (`engine/enc_pad`), chunked at the 269-byte count syntax. The
+  ABR payload/valid ±3 % contract and per-frame budgets are unchanged;
+  decoded PCM is unchanged. Encoder goldens re-minted (`enc48*`,
+  `he48e*`, `he2_48e*`, `enc_mc*`) with ffmpeg 7.0.2 and registered in
+  the corpus/oracle manifests; `lab/fdk/smoke.py` gates every syom
+  golden on a full-length FDK decode.
 
 ### Added
 
@@ -345,6 +578,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Zero-count FIL fill elements decode as the empty extension they are
+  (TASK-127): `fill_element()`'s `while (cnt > 0)` loop never enters
+  `extension_payload()` when the count resolves to 0, so the element is
+  a 4-bit no-op — syom rejected it as `Malformed(Sbr)`, killing every
+  later access unit. Seen in the wild in the GPAC-muxed Akamai BBB DASH
+  HE-AAC vector; all 94 AUs now decode and match lavf at max 1 LSB /
+  rms 0.70 (`lab/fmp4/REPORT.md` §4.1, goldens `bbb_fil.*`).
+- LC stereo speech mono is the documented mean of the two planes again
+  (TASK-122): the fast-mono path kept the left CPE channel untouched on
+  ADTS one-shot, push streaming and M4A (HE stereo and LC multichannel
+  already mixed). The CPE right channel is now folded into the mono mix
+  in place — no extra allocation.
 - M4A write rejects overflowing v0 box sizes, `stco` offsets, sample
   sizes and `stsd` 16.16 rates instead of wrapping `u32` (TASK-44).
   Ceiling is `u32::MAX` bytes (`co64`/largesize later). 88.2/96 kHz M4A

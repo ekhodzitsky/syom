@@ -6,6 +6,8 @@ use super::error::{Error, Result};
 pub const LONG_WINDOW_LEN: usize = 1024;
 /// Short-window spectrum length (one of eight).
 pub const SHORT_WINDOW_LEN: usize = 128;
+/// AAC-LD spectrum length (512-line frames, long windows only).
+pub const LD_WINDOW_LEN: usize = 512;
 
 /// Table 4.129 — 44.1 / 48 kHz long (49 SWB).
 const LONG_48K: &[u16] = &[
@@ -66,6 +68,22 @@ const SHORT_24K: &[u16] = &[
 /// Table 4.139 / 4.141 — 64 / 88.2 / 96 kHz short (12 SWB).
 const SHORT_64K: &[u16] = &[0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 92, 128];
 
+/// ER AAC LD 512-line long — 44.1–96 kHz (36 SWB).
+const LD_512_48K: &[u16] = &[
+    0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 68, 76, 84, 92, 100, 112, 124,
+    136, 148, 164, 184, 208, 236, 268, 300, 332, 364, 396, 428, 460, 512,
+];
+/// ER AAC LD 512-line long — 32 kHz (37 SWB).
+const LD_512_32K: &[u16] = &[
+    0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 64, 72, 80, 88, 96, 108, 120, 132,
+    144, 160, 176, 192, 212, 236, 260, 288, 320, 352, 384, 416, 448, 480, 512,
+];
+/// ER AAC LD 512-line long — 7.35–24 kHz (31 SWB).
+const LD_512_24K: &[u16] = &[
+    0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 52, 60, 68, 80, 92, 104, 120, 140, 164, 192, 224,
+    256, 288, 320, 352, 384, 416, 448, 480, 512,
+];
+
 const LONG: [&[u16]; 12] = [
     LONG_96K, LONG_96K, LONG_64K, LONG_48K, LONG_48K, LONG_32K, LONG_24K, LONG_24K, LONG_16K,
     LONG_16K, LONG_16K, LONG_8K,
@@ -88,4 +106,16 @@ pub fn short_offsets(fs_index: u8) -> Result<&'static [u16]> {
         .get(fs_index as usize)
         .copied()
         .ok_or(Error::UnsupportedSampleRateIndex(fs_index))
+}
+
+/// AAC-LD 512-line long-window `swb_offset` for `samplingFrequencyIndex`
+/// 0..=11 (96–44.1 kHz share the 48K table, 24–7.35 kHz the 24K table).
+pub fn long_offsets_ld(fs_index: u8) -> Result<&'static [u16]> {
+    let table = match fs_index {
+        0..=4 => LD_512_48K,
+        5 => LD_512_32K,
+        6..=11 => LD_512_24K,
+        _ => return Err(Error::UnsupportedSampleRateIndex(fs_index)),
+    };
+    Ok(table)
 }

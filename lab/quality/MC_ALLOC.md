@@ -61,3 +61,34 @@ the mean within [0.90, 1.03].
 Limit of the evidence: SNR on synthetic material, no listening; the
 common offset equalizes noise-to-mask by construction, SNR only shows
 where the bits went.
+
+## After the TASK-133 core (2026-09-27)
+
+Same programme, 97 frames, release, this tree
+(`cargo test --release --lib -- --ignored allocation_report --nocapture`).
+The 27 dB mask ratio lifted every tonal plane by about 5–8 dB versus the
+table above. It also flipped the shortage ranking: the fixed split no
+longer pays the old TNS-span tax, so the busy front pair is slightly
+ahead of the common offset.
+
+| case | split | ADTS kbps | ms | SNR dB per plane (FL FR FC LFE BL BR [SL SR]) |
+|---|---|---:|---:|---|
+| 5.1 128k | fixed | 130.9 | 39.0 | 23.1 22.9 1.0 **0.0** 0.9 1.0 |
+| 5.1 128k | common | 130.8 | 40.0 | 21.6 21.7 1.4 20.4 1.0 1.0 |
+| 5.1 256k | fixed | 259.2 | 47.0 | 23.5 23.5 2.5 27.1 2.5 2.6 |
+| 5.1 256k | common | 258.8 | 50.2 | 22.9 22.6 4.8 25.3 4.2 4.3 |
+| 7.1 192k | fixed | 195.0 | 60.8 | 23.3 23.1 1.0 **0.0** 1.1 1.1 21.1 21.6 |
+| 7.1 192k | common | 195.0 | 54.3 | 22.3 22.2 2.5 24.2 2.0 2.0 20.3 20.7 |
+| 7.1 320k | fixed | 323.6 | 63.2 | 23.4 23.5 2.2 25.1 2.2 2.2 21.8 22.5 |
+| 7.1 320k | common | 322.7 | 62.6 | 23.1 22.9 6.5 25.2 6.0 6.0 20.6 21.0 |
+
+Front-pair gap, fixed minus common: 1.4 dB at 5.1/128k, 0.8 dB at
+5.1/256k, 1.0 dB at 7.1/192k, 0.5 dB at 7.1/320k. At the two shortage
+rates the fixed split still encodes the LFE as silence (0.0 dB) while
+the common offset, with the same −16 step bias, holds it at 20.4 and
+24.2 dB. Payload stays inside the ±3 % band on every row.
+
+Decision: keep one common offset for ABR. A weight change that handed
+the front pair that 1.4 dB back would spend the LFE's few dozen bits
+and recreate the silence the bias exists to prevent. The fixed split
+stays the quality-VBR path only. No encoder bytes change.

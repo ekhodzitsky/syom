@@ -4,7 +4,6 @@ use super::error::{Error, Result};
 use super::ics::IcsInfo;
 use super::section::{SectionData, is_noise};
 use super::sf::ScaleFactors;
-use super::swb::{long_offsets, short_offsets};
 
 /// LCG suggested by §4.6.13.3 ("one multiply-accumulate per random value").
 ///
@@ -60,11 +59,7 @@ pub fn apply(
     mut pair: Option<&mut PairPns<'_>>,
 ) -> Result<()> {
     let win_len = ics.window_len();
-    let offsets = if ics.window_sequence.is_eight_short() {
-        short_offsets(fs_index)?
-    } else {
-        long_offsets(fs_index)?
-    };
+    let offsets = ics.swb_offsets(fs_index)?;
     let mut wbase = 0usize;
     for g in 0..ics.num_window_groups as usize {
         let glen = ics.window_group_length[g] as usize;

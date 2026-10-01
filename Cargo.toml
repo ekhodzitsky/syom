@@ -1,17 +1,17 @@
 [package]
 name = "syom"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT"
 authors = ["Evgeny Khodzitsky"]
-description = "just aac. Pure-Rust AAC-LC / HE-AAC codec: decode (ADTS, M4A, LATM) and LC encode."
+description = "AAC to planar f32. LC, HE-AAC, AAC-LD. ADTS, M4A, LATM. Zero deps."
 readme = "README.md"
 repository = "https://github.com/ekhodzitsky/syom"
 homepage = "https://github.com/ekhodzitsky/syom"
 documentation = "https://docs.rs/syom"
-keywords = ["aac", "adts", "m4a", "he-aac", "decoder"]
-categories = ["multimedia::audio"]
+keywords = ["aac", "he-aac", "adts", "m4a", "latm"]
+categories = ["multimedia::audio", "multimedia::encoding"]
 autobenches = false
 # The crate ships the library only (TASK-99): tests, goldens, benches, lab,
 # corpus and tooling stay in the repository. `scripts/check-package.py`

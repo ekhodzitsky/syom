@@ -3,7 +3,9 @@
 //! writing here (TASK-92) and no public wiring (TASK-93).
 //!
 //! Mode: the baseline profile — 20 stereo bands, coarse IID (±7), ICC
-//! (0..=7), one envelope per 32-slot frame, no IPD/OPD.
+//! (0..=7), one envelope per 32-slot frame, no IPD/OPD. Fine IID
+//! (±15, Table 8.26) is opt-in via [`PsAnalysis::set_iid_fine`];
+//! the product path stays coarse.
 //!
 //! Analysis runs on the 64-band encoder QMF ([`EncAnalysisQmf`]) of L and
 //! R. QMF bands 0–2 are split by the §8.6.4.3 hybrid filters (Type A ×8
@@ -47,6 +49,12 @@ pub(crate) const PS_BLOCK: usize = 2048;
 const IID_DB: [f32; 15] = [
     -25.0, -18.0, -14.0, -10.0, -7.0, -4.0, -2.0, 0.0, 2.0, 4.0, 7.0, 10.0, 14.0, 18.0, 25.0,
 ];
+/// Table 8.26 fine IID grid, dB, index −15..=15 (`iid_mode` 3..=5).
+const IID_DB_FINE: [f32; 31] = [
+    -50.0, -45.0, -40.0, -35.0, -30.0, -25.0, -22.0, -19.0, -16.0, -13.0, -10.0, -8.0, -6.0, -4.0,
+    -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 13.0, 16.0, 19.0, 22.0, 25.0, 30.0, 35.0, 40.0, 45.0,
+    50.0,
+];
 /// Table 8.28 ICC grid, index 0..=7.
 const ICC_RHO: [f32; 8] = [1.0, 0.937, 0.84118, 0.60092, 0.36764, 0.0, -0.589, -1.0];
 /// Table 8.36 — `g⁰[n]`, QMF band 0, Q = 8.
@@ -89,7 +97,7 @@ const CARRY: f64 = 0.25;
 /// One frame's quantized parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) struct PsFrameParams {
-    /// Coarse IID index per band, −7..=7 (positive = left louder).
+    /// IID index per band: coarse −7..=7, or fine −15..=15.
     pub iid: [i8; PS_BANDS],
     /// ICC index per band, 0..=7 (0 = fully correlated).
     pub icc: [u8; PS_BANDS],
@@ -112,6 +120,8 @@ pub(crate) struct PsEstimator {
     prev: Sums,
     slots: usize,
     primed: usize,
+    /// Table 8.26 instead of Table 8.25.
+    iid_fine: bool,
 }
 
 impl PsEstimator {
@@ -128,6 +138,7 @@ impl PsEstimator {
             prev: Sums::default(),
             slots: PS_FRAME_LEAD,
             primed: 0,
+            iid_fine: false,
         }
     }
 
@@ -262,7 +273,12 @@ impl PsEstimator {
             }
             let ratio = ((el + SILENCE * 1e-3) / (er + SILENCE * 1e-3)) as f32;
             let db = 3.010_3 * det_math::log2(ratio.clamp(1e-6, 1e6));
-            out.iid[b] = nearest(&IID_DB, db) as i8 - 7;
+            let (grid, zero) = if self.iid_fine {
+                (&IID_DB_FINE[..], 15i8)
+            } else {
+                (&IID_DB[..], 7i8)
+            };
+            out.iid[b] = nearest(grid, db) as i8 - zero;
             // One side silent: coherence is undefined, keep ICC = 1.
             if el.min(er) > 1e-5 * el.max(er) {
                 let rho = (re / (el * er).sqrt()) as f32;
@@ -345,6 +361,11 @@ impl PsAnalysis {
         self.qmf.iter_mut().for_each(EncAnalysisQmf::reset);
         self.est.reset();
         self.mix.reset();
+    }
+
+    /// Quantize IID on Table 8.26 (`iid_mode` 4). Default is coarse.
+    pub(crate) fn set_iid_fine(&mut self, on: bool) {
+        self.est.iid_fine = on;
     }
 
     /// One 2048-sample block: the mono downmix into `mono`, and the

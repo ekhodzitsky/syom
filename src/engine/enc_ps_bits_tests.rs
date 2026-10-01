@@ -47,6 +47,61 @@ fn decode(
 }
 
 #[test]
+fn fine_iid_header_is_mode_4_and_round_trips() {
+    // enable_ps_header 1 | enable_iid 1, iid_mode 100 | enable_icc 1,
+    // icc_mode 001 | enable_ext 0 | frame_class 0 | num_env 01 |
+    // iid_dt 0 + 20 × fine zero ("1") | icc_dt 0 + 20 × "0".
+    let want = format!("11100100100010{}0{}", "1".repeat(20), "0".repeat(20));
+    let b = PsWriter::new()
+        .with_fine_iid()
+        .frame(Some(&PsFrameParams::default()), true)
+        .unwrap();
+    assert_eq!(bit_string(&b), want);
+    assert_eq!(b.bits, 55);
+    let mut cfg = None;
+    let mut state = PsIndexState::default();
+    let (d, iid, icc) = decode(&b, &mut cfg, &mut state);
+    assert_eq!(d.config.iid_mode, 4);
+    assert!(d.config.iid_quant_fine());
+    assert_eq!(iid[0], vec![0; PS_BANDS]);
+    assert_eq!(icc[0], vec![0; PS_BANDS]);
+    // Ends of the fine grid, including a −30 frequency delta.
+    let p = PsFrameParams {
+        iid: [
+            15, -15, 15, -15, 7, -7, 1, -1, 0, 8, -8, 12, -12, 4, -4, 15, -15, 2, -2, 0,
+        ],
+        icc: [0, 7, 1, 6, 2, 5, 3, 4, 0, 1, 2, 3, 4, 5, 6, 7, 0, 7, 3, 1],
+    };
+    let mut w = PsWriter::new().with_fine_iid();
+    let (mut cfg, mut state) = (None, PsIndexState::default());
+    for header in [true, false] {
+        let bits = w.frame(Some(&p), header).unwrap();
+        let (d, iid, icc) = decode(&bits, &mut cfg, &mut state);
+        assert_eq!(d.config.iid_mode, 4);
+        assert_eq!(iid[0], p.iid.map(i32::from).to_vec());
+        assert_eq!(icc[0], p.icc.map(i32::from).to_vec());
+        if header {
+            assert!(!d.iid_dt[0], "header frames stay frequency-differential");
+        }
+    }
+    let mut over = p;
+    over.iid[0] = 16;
+    assert!(
+        PsWriter::new()
+            .with_fine_iid()
+            .frame(Some(&over), true)
+            .is_err()
+    );
+    over.iid[0] = -16;
+    assert!(
+        PsWriter::new()
+            .with_fine_iid()
+            .frame(Some(&over), true)
+            .is_err()
+    );
+}
+
+#[test]
 fn header_frame_with_neutral_parameters_is_the_hand_derived_vector() {
     // Table 8.1 by hand: enable_ps_header 1 | enable_iid 1, iid_mode 001 |
     // enable_icc 1, icc_mode 001 | enable_ext 0 | frame_class 0 |

@@ -48,9 +48,14 @@
 //! # 3. Timing: priming, tail, exact length
 //!
 //! An AAC encoder delays the signal (LC 1024 samples, HE 3018 output
-//! samples) and pads the last frame. ADTS and LATM cannot say so: the
-//! decoded length is whole frames and starts with the priming. M4A carries
-//! an edit list, and syom honours it on decode and writes it on encode.
+//! samples) and pads the last frame. A one-shot ADTS encode stores that
+//! delay in a leading `iTunSMPB` tag. Decode returns the source length
+//! and reports both edges when the decoded sample count matches the tag.
+//! `probe` reports the same tag once the frames in the buffer fill it.
+//! LATM has no delay tag, so its decoded length is whole frames and
+//! starts at the priming sample. M4A carries an edit list, which wins
+//! over a tag. A flat M4A or one-shot fragmented MP4 with no edit list
+//! trims from `iTunSMPB` in `moov` under the same count check.
 //!
 //! ```
 //! let pcm = vec![0.2f32; 5000];
@@ -59,10 +64,9 @@
 //! let opts = syom::DecodeOptions::audio();
 //! let a = syom::decode_with(&adts, &opts)?;
 //! let m = syom::decode_with(&m4a, &opts)?;
-//! assert_eq!(a.channels[0].len(), (5000usize.div_ceil(1024) + 1) * 1024);
-//! assert_eq!((a.priming, a.remainder), (None, None));       // unknown, not zero
+//! assert_eq!(a.channels[0].len(), 5000);
+//! assert_eq!((a.priming, a.remainder), (Some(1024), Some(120)));
 //! assert_eq!((m.channels[0].len(), m.priming), (5000, Some(1024)));
-//! // Aligning ADTS by hand: skip `EncodeInfo::priming`, keep `samples`.
 //! # Ok::<(), syom::AacError>(())
 //! ```
 //!
@@ -92,8 +96,13 @@
 //!
 //! A frame reaches the callback on the byte (decode) or sample (encode)
 //! that completes it. A callback error fails the instance; `reset` reuses
-//! it. The push decoder takes ADTS and LATM; M4A is
-//! [`crate::decode_seek_streaming`] or [`crate::M4aSeek`].
+//! it. The push decoder takes ADTS, LATM and fragmented MP4 (init segment
+//! + fragments, any chunking); flat M4A stays random-access — see
+//!   [`crate::decode_seek_streaming`] or [`crate::M4aSeek`].
+//!
+//! `Encoder::feed` emits raw access units, so the concatenation above has
+//! no delay tag and the decoded length stays whole frames. `encode`,
+//! `encode_with`, `write` and `encode_write` prepend the tag.
 //!
 //! # 5. Raw access units (RTP, your own container)
 //!
@@ -126,7 +135,7 @@
 //! let p = syom::probe(&m4a)?;                              // no PCM is decoded
 //! assert_eq!(p.duration, ProbeDuration::Exact { samples: 48_000 });
 //! assert!(matches!(p.trim, ProbeTrim::Exact { priming: 1024, .. }));
-//! // ADTS / LATM: duration and trim are `Unknown` (no index, VBR).
+//! // Untagged ADTS and LATM: duration and trim stay `Unknown`.
 //!
 //! let mut seek = M4aSeek::open(Cursor::new(m4a), DecodeOptions::audio())?;
 //! seek.seek(24_000)?;                                      // presentation samples
@@ -135,6 +144,10 @@
 //! assert_eq!(got, 24_000);                                 // sample-exact, pre-roll hidden
 //! # Ok::<(), syom::AacError>(())
 //! ```
+//!
+//! Untagged ADTS and LATM leave duration and trim `Unknown`. A leading
+//! `iTunSMPB` tag whose sample counts equal the frames in the buffer
+//! fills both.
 //!
 //! # 7. Choosing an encoder mode
 //!
@@ -145,11 +158,13 @@
 //! | constant quality | `with_quality(0..=10)` | LC only, no rate target |
 //! | about 48–64 kbps | `low_rate()` / `with_he(true)` | HE v1: half-rate core + SBR |
 //! | about 16–40 kbps stereo | `with_he_v2(true)` | mono core + parametric stereo |
+//! | 512-sample delay | `with_ld(true)` | AAC-LD, LOAS or M4A, not ADTS, not the default |
 //! | 3.0 – 7.1 | 3, 4, 5, 6 or 8 planes | LC only; 5.1 = FL FR FC LFE BL BR |
 //!
 //! `bitrate_bps` is whole-stream. HE needs a 16–48 kHz input whose half is
 //! an AAC rate. Containers: [`crate::EncodeContainer`] `Adts`, `Latm`,
-//! `M4a`, `Raw` (push encoder only).
+//! `M4a`, `Raw` (push encoder only). One-shot ADTS output starts with the
+//! delay tag. `Encoder::feed` does not.
 //!
 //! ```
 //! use syom::EncodeOptions;
@@ -192,12 +207,28 @@
 //!
 //! Decode: AAC-LC, HE-AAC v1 (SBR), HE-AAC v2 (PS); ADTS, M4A / ISOBMFF,
 //! LATM / LOAS, raw access units with a config; mono to 7.1 and streams
-//! with a Program Config Element. Not decoded: Main / SSR / LTP objects,
-//! 960-sample frames, channel configurations 8–15 (all three are
-//! [`crate::AacError::Unsupported`]), LD / ELD / USAC, fragmented MP4, DRM.
+//! with a Program Config Element. Bounded fragmented MP4 (one unencrypted
+//! AAC track, init `moov` + `moof`/`trun`, DASH init + segments) decodes
+//! on the slice, seekable and push (`Decoder::feed`, any chunking) paths;
+//! truncated fragments fail typed
+//! [`crate::AacError::Truncated`]. Not decoded: Main / SSR / LTP
+//! objects, 960-sample frames, channel configurations 8–15 (all three are
+//! [`crate::AacError::Unsupported`]), AAC-ELD, USAC, 480-sample AAC-LD
+//! frames, multi-track or encrypted fMP4, DRM.
+//! AAC-LD (AOT 23, 512 samples per frame) decodes from LATM/LOAS, M4A and
+//! a raw access unit with an ASC. An M4A `elst` trims priming and the tail
+//! in samples, and seeking replays one overlap frame. A flat M4A or
+//! one-shot fragmented MP4 with no edit list trims from `iTunSMPB` in
+//! `moov` when the counts match; an edit list wins. A push fragmented
+//! MP4 decode does not read that tag. `probe` reports
+//! [`crate::ProbeProfile::Ld`]. ADTS cannot signal AOT 23. The decode is
+//! qualified against FDK and libxaac, not libavcodec (it rejects these
+//! streams) and not ISO 14496-26 vectors (not obtained).
 //!
-//! Encode: LC (ABR or quality VBR), HE v1, HE v2, surround LC; not
-//! encoded: PCE layouts, HE surround, CBR with a bit reservoir.
+//! Encode: LC (ABR or quality VBR), HE v1, HE v2, surround LC, and
+//! opt-in AAC-LD (`with_ld`, 512-sample frames, LOAS or M4A, priming
+//! 512; not ADTS and not the default). Not encoded: PCE layouts, HE
+//! surround, ELD, 480-sample LD, CBR with a bit reservoir.
 //!
 //! # 10. Behaviour changes since 0.6.0
 //!
@@ -208,6 +239,11 @@
 //!   decode as unlabeled planes.
 //! - LC rate control changed (noise-to-mask allocation): the same options
 //!   produce different, better-allocated bytes.
+//! - Opt-in AAC-LD encode: `EncodeOptions::with_ld` (LOAS or M4A).
 //! - New: `with_quality`, `with_he`, `with_he_v2`, `high_quality`,
 //!   `low_rate`, `EncodeContainer::Latm`, `encode_write`,
 //!   `encode_write_m4a`, `wrap_loas_au`, 7.1 decode, borrowed-plane encode.
+//! - One-shot ADTS encode prepends an `iTunSMPB` tag. Decode trims when
+//!   the counts match, and `probe` reports the tag when the buffered
+//!   frames fill it. Push `Encoder` frames stay raw access units.
+//! - Parametric-stereo IID gains are a const table from `exp10_f64`.

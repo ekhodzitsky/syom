@@ -87,11 +87,11 @@ fn every_layout_and_container_round_trips_with_plane_identity() {
             assert_eq!(dec.channels.len(), planes);
             let got: Vec<u32> = dec.channels.iter().map(|c| dominant(c, &tones)).collect();
             assert_eq!(got, tones, "{planes} planes {container:?}: plane identity");
-            if container == EncodeContainer::M4a {
-                assert_eq!(dec.channels[0].len(), N, "M4A presentation is N");
-                assert_eq!(dec.priming, Some(1024));
-            } else {
+            if container == EncodeContainer::Latm {
                 assert_eq!(dec.channels[0].len(), (N.div_ceil(1024) + 1) * 1024);
+            } else {
+                assert_eq!(dec.channels[0].len(), N, "{container:?} presentation is N");
+                assert_eq!(dec.priming, Some(1024));
             }
         }
     }
@@ -120,8 +120,9 @@ fn push_chunking_and_sinks_match_one_shot() {
                 break; // byte-at-a-time is slow; the prefix is enough
             }
         }
+        let raw = crate::gapless::strip_id3(&want);
         if at < N {
-            assert_eq!(got.as_slice(), &want[..got.len()], "chunk 1 prefix");
+            assert_eq!(got.as_slice(), &raw[..got.len()], "chunk 1 prefix");
             continue;
         }
         let info = enc
@@ -131,7 +132,7 @@ fn push_chunking_and_sinks_match_one_shot() {
                 Ok(())
             })
             .unwrap();
-        assert_eq!(got, want, "chunk {chunk}");
+        assert_eq!(got.as_slice(), raw, "chunk {chunk}");
         assert_eq!(fed, N);
         assert_eq!(info.layout, Layout::Mpeg(6));
         assert_eq!(info.channels, 6);

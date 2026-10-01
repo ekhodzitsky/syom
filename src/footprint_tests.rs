@@ -80,5 +80,6 @@ fn documented_consumer_calls_still_decode_and_encode() {
     assert!(pcm.channels.iter().all(|c| c.iter().all(|x| x.is_finite())));
     let out = crate::encode(&[vec![0.0f32; 2048]], 48_000).unwrap();
     assert!(out.len() > 7);
-    assert_eq!(out[0], 0xff);
+    assert!(out.starts_with(b"ID3"));
+    assert_eq!(crate::gapless::strip_id3(&out)[0], 0xff);
 }

@@ -16,7 +16,7 @@ fn greedy_sine_encode_still_decodes() {
     let adts = encode(&pcm, RATE).unwrap();
     let dec = decode_with(&adts, &DecodeOptions::unbounded()).unwrap();
     assert!(dec.channels[0].iter().all(|x| x.is_finite()));
-    assert_eq!(adts[0], 0xff);
+    assert_eq!(crate::gapless::strip_id3(&adts)[0], 0xff);
 }
 
 #[test]

@@ -18,9 +18,10 @@ use crate::stream::{
 /// (`channel_configuration` 3–7) follows the libavcodec layout order
 /// (5.1 = FL FR FC LFE BL BR, 7.1 adds SL SR); PCE streams follow PCE declaration order
 /// (front, side, back, LFE). Speech mono is the mean of the non-LFE planes.
-/// PCM is presentation-valid: M4A honours `elst`; ADTS has no trim, so
-/// decoded length includes codec delay. Channel labels and decode-side
-/// priming/remainder are TASK-61; `#[non_exhaustive]` leaves room.
+/// PCM is presentation-valid: M4A honours `elst`. A one-shot ADTS decode
+/// honours a leading `iTunSMPB` tag when its counts match the decoded
+/// length. Channel labels and decode-side priming/remainder are TASK-61;
+/// `#[non_exhaustive]` leaves room.
 #[derive(Debug, Clone)]
 #[non_exhaustive]
 pub struct DecodedAac {

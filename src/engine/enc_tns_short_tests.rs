@@ -18,6 +18,7 @@ fn short_ics(n_swb: u8) -> IcsInfo {
         num_window_groups: 8,
         window_group_length: [1; 8],
         num_swb: n_swb,
+        ld: false,
     }
 }
 

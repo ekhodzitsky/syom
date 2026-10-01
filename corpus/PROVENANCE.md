@@ -94,6 +94,24 @@ are bench-only and absent from the packaged dependency table.
   by running an encoder on synthetic input embeds no third-party work.
 - `ps48.adts` (commit `0ce2ac6`) is described as a "real-stereo" HE v2
   golden; its source and encoder are not recorded.
+- `src/goldens/bbb_fil.au` / `bbb_fil.s16` (TASK-127) derive from the
+  GPAC-muxed Akamai BBB DASH HE-AAC vector (Big Buck Bunny, Blender
+  Foundation, CC-BY; fetched from `dash.akamaized.net`, sha256 pinned in
+  `lab/fmp4/PIN.md`): 94 raw access units extracted verbatim, the `.s16`
+  is an ffmpeg 7.0.2-static lavf decode of the same segment.
+- `src/goldens/fmp4_*` (TASK-124) are minted by `lab/fmp4/gen_goldens.sh`
+  (ffmpeg 7.0.2-static, pinned in `lab/fmp4/PIN.md`): the LC/dash/cenc/
+  2track files wrap the same deterministic lavfi synthetic stereo source
+  as lab/fmp4/gen_fixtures.sh; `fmp4_he.mp4` / `fmp4_he2.mp4` are the
+  ffmpeg mov muxer re-wrapping (`-c:a copy`) the in-tree `he48em.m4a` /
+  `he2_48em.m4a` goldens. No third-party content.
+- TASK-126 additions: `fmp4_lc_notfdt.mp4` is `fmp4_lc_dbmoof.mp4` with
+  every `tfdt` removed by `lab/fmp4/strip_tfdt.py` (in-tree box surgery);
+  `fmp4_bbb_init.m4a` / `fmp4_bbb_seg1.m4a` are byte-identical copies of
+  the PIN.md-pinned third-party BBB fetch (CC-BY, see the `bbb_fil`
+  entry); `fmp4_timeline.txt` is an ffprobe 7.0.2-static `-show_packets`
+  oracle minted by `lab/fmp4/gen_timeline_oracle.py`. sha256 pins for all
+  `fmp4_*` goldens: `lab/fmp4/GOLDENS.md` (checked by `verify_pins.py`).
 
 ## 6. Release blockers
 

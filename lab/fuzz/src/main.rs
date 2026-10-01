@@ -74,6 +74,10 @@ fn load_seeds(root: &Path) -> Vec<(String, Vec<u8>)> {
         "src/goldens/lecture.m4a",
         "src/goldens/he48.latm",
         "src/goldens/ps48.m4a",
+        "src/goldens/fmp4_lc.mp4",
+        "src/goldens/ld48.loas",
+        "src/goldens/ld64m.loas",
+        "src/goldens/ld64mus.loas",
     ];
     for rel in goldens {
         let p = root.join(rel);

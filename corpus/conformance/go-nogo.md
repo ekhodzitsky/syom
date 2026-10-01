@@ -26,6 +26,7 @@ non-syom syntax source. They must not treat a self-roundtrip as proof.
 | Cell | Why |
 |---|---|
 | ISO 14496-26 pass/fail | Paid bitstreams with redistribution rights. TASK-103 stays unqualified without them. |
+| ER AAC LD (AOT 23) 14496-26 | **Not obtained.** Decode qualification is the committed FDK v2.0.3 and libxaac 0.1.13 LOAS oracles in `lab/profiles/LD_QUALIFY.md` (TASK-131), not a conformance certificate. lavc 7.0.2 rejects these streams. The 480-sample grid stays unsupported. |
 | ADTS multi-block CRC positions | Need 13818-7 or a measured FFmpeg/FAAD2 CRC over known multi-RDB frames. |
 | CCE reconstruction quality | Syntax fence first; coupling math is a separate experiment. |
 | Encoder 6144 vs 8184-byte ADTS cap | Measure current encoder against the 6144-bit rule before changing the rate loop. |

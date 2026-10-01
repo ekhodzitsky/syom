@@ -35,6 +35,12 @@ None minimized. No panic on this campaign. Ordinary tests already
 assert the known-invalid ADTS length seed reaches
 `Error::AdtsFrameLengthTooSmall`.
 
+## TASK-131 (2026-09-26)
+
+Seeds gained `ld48.loas`, `ld64m.loas`, `ld64mus.loas`. Release parser
+run: 46817 iterations, 20.0 s, 24 seeds, 0 panics. Not a new exhaustive
+campaign; the LD syntax is in the seed set and did not panic.
+
 ## Limits
 
 Speech decode caps and a 64 KiB mutation ceiling bound work. This

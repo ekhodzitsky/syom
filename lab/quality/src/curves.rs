@@ -68,7 +68,10 @@ fn main() -> ExitCode {
     println!("|---|---|---|---:|---:|---:|---:|---:|");
     for clip in clips(repo) {
         for (mode, rates) in [
-            (Mode::Lc, &[32_000u32, 48_000, 64_000, 96_000, 128_000, 192_000][..]),
+            (
+                Mode::Lc,
+                &[32_000u32, 48_000, 64_000, 96_000, 128_000, 192_000][..],
+            ),
             (Mode::LcLookahead, &[64_000, 128_000][..]),
             (Mode::He, &[24_000, 32_000, 48_000, 64_000][..]),
         ] {
@@ -93,8 +96,12 @@ fn quality_curves(repo: &Path) {
         for level in [0u8, 2, 4, 5, 6, 8, 10] {
             let opts = EncodeOptions::adts().with_quality(level);
             let secs = clip.pcm[0].len() as f64 / RATE as f64;
-            let Ok(stream) = encode_with(&clip.pcm, RATE, &opts) else { continue };
-            let Ok(dec) = decode_with(&stream, &DecodeOptions::unbounded()) else { continue };
+            let Ok(stream) = encode_with(&clip.pcm, RATE, &opts) else {
+                continue;
+            };
+            let Ok(dec) = decode_with(&stream, &DecodeOptions::unbounded()) else {
+                continue;
+            };
             let ch = clip.pcm.len();
             let (mut snr, mut lf, mut hf) = (0.0, 0.0, 0.0);
             for c in 0..ch.min(dec.channels.len()) {
@@ -105,7 +112,13 @@ fn quality_curves(repo: &Path) {
             }
             println!(
                 "| {} | {} | {} | {:.1} | {:.1} | {:.1} | {:.1} |",
-                clip.name, clip.class, level, stream.len() as f64 * 8.0 / secs / 1000.0, snr, lf, hf
+                clip.name,
+                clip.class,
+                level,
+                stream.len() as f64 * 8.0 / secs / 1000.0,
+                snr,
+                lf,
+                hf
             );
         }
     }
@@ -117,14 +130,26 @@ fn row(clip: &Clip, mode: Mode, bps: u32) {
     let stream = match encode_with(&clip.pcm, RATE, &mode.opts(bps)) {
         Ok(s) => s,
         Err(e) => {
-            println!("| {} | {} | {} | {} | — | — | — | error: {e} |", clip.name, clip.class, mode.tag(), bps / 1000);
+            println!(
+                "| {} | {} | {} | {} | — | — | — | error: {e} |",
+                clip.name,
+                clip.class,
+                mode.tag(),
+                bps / 1000
+            );
             return;
         }
     };
     let dec = match decode_with(&stream, &DecodeOptions::unbounded()) {
         Ok(d) => d,
         Err(e) => {
-            println!("| {} | {} | {} | {} | — | — | — | decode error: {e} |", clip.name, clip.class, mode.tag(), bps / 1000);
+            println!(
+                "| {} | {} | {} | {} | — | — | — | decode error: {e} |",
+                clip.name,
+                clip.class,
+                mode.tag(),
+                bps / 1000
+            );
             return;
         }
     };
@@ -138,7 +163,14 @@ fn row(clip: &Clip, mode: Mode, bps: u32) {
     }
     println!(
         "| {} | {} | {} | {} | {:.1} | {:.1} | {:.1} | {:.1} |",
-        clip.name, clip.class, mode.tag(), bps / 1000, actual, snr, lf, hf
+        clip.name,
+        clip.class,
+        mode.tag(),
+        bps / 1000,
+        actual,
+        snr,
+        lf,
+        hf
     );
 }
 
@@ -154,7 +186,11 @@ fn measures(want: &[f32], got: &[f32], priming: usize) -> (f64, f64, f64) {
         ps += s * s;
         pe += e * e;
     }
-    let snr = if pe == 0.0 { 200.0 } else { 10.0 * (ps / pe).log10() };
+    let snr = if pe == 0.0 {
+        200.0
+    } else {
+        10.0 * (ps / pe).log10()
+    };
     // Block spectra (2048, Hann), 43 bins of 23.4 Hz per ~1 kHz.
     let fft_n = 2048usize;
     let split_bin = (SPLIT_HZ / (RATE as f64 / fft_n as f64)) as usize;
@@ -194,8 +230,16 @@ fn measures(want: &[f32], got: &[f32], priming: usize) -> (f64, f64, f64) {
             }
         }
     }
-    let lf_snr = if lf_e == 0.0 { 200.0 } else { 10.0 * (lf_s / lf_e).log10() };
-    let hf = if hf_cnt == 0 { 0.0 } else { hf_err / hf_cnt as f64 };
+    let lf_snr = if lf_e == 0.0 {
+        200.0
+    } else {
+        10.0 * (lf_s / lf_e).log10()
+    };
+    let hf = if hf_cnt == 0 {
+        0.0
+    } else {
+        hf_err / hf_cnt as f64
+    };
     (snr, lf_snr, hf)
 }
 
@@ -238,21 +282,51 @@ fn power_spectrum(x: &[f64]) -> Vec<f64> {
 
 fn clips(repo: &Path) -> Vec<Clip> {
     let mut v = vec![
-        Clip { name: "sine440", class: "tonal", pcm: vec![sine(440.0, 0.5)] },
-        Clip { name: "noise", class: "noise", pcm: vec![noise(0.4, 1)] },
-        Clip { name: "mix", class: "tone+noise", pcm: vec![mix(1), mix(2)] },
-        Clip { name: "tremolo", class: "stereo tonal", pcm: tremolo() },
-        Clip { name: "click", class: "transient", pcm: vec![clicks()] },
-        Clip { name: "voice-like", class: "harmonic+HF", pcm: vec![voice(3), voice(4)] },
+        Clip {
+            name: "sine440",
+            class: "tonal",
+            pcm: vec![sine(440.0, 0.5)],
+        },
+        Clip {
+            name: "noise",
+            class: "noise",
+            pcm: vec![noise(0.4, 1)],
+        },
+        Clip {
+            name: "mix",
+            class: "tone+noise",
+            pcm: vec![mix(1), mix(2)],
+        },
+        Clip {
+            name: "tremolo",
+            class: "stereo tonal",
+            pcm: tremolo(),
+        },
+        Clip {
+            name: "click",
+            class: "transient",
+            pcm: vec![clicks()],
+        },
+        Clip {
+            name: "voice-like",
+            class: "harmonic+HF",
+            pcm: vec![voice(3), voice(4)],
+        },
     ];
     if let Some(pcm) = lecture(repo) {
-        v.push(Clip { name: "lecture", class: "speech (0.25 s)", pcm });
+        v.push(Clip {
+            name: "lecture",
+            class: "speech (0.25 s)",
+            pcm,
+        });
     }
     v
 }
 
 fn sine(hz: f64, amp: f32) -> Vec<f32> {
-    (0..N).map(|i| amp * ((2.0 * std::f64::consts::PI * hz * i as f64 / RATE as f64).sin() as f32)).collect()
+    (0..N)
+        .map(|i| amp * ((2.0 * std::f64::consts::PI * hz * i as f64 / RATE as f64).sin() as f32))
+        .collect()
 }
 
 fn lcg(seed: &mut u32) -> f32 {
@@ -305,8 +379,10 @@ fn voice(seed: u32) -> Vec<f32> {
     for h in 1..=40 {
         let f = 150.0 * h as f64;
         for (i, v) in out.iter_mut().enumerate() {
-            let vib = 1.0 + 0.01 * (2.0 * std::f64::consts::PI * 5.0 * i as f64 / RATE as f64).sin();
-            *v += 0.012 * ((2.0 * std::f64::consts::PI * f * vib * i as f64 / RATE as f64).sin() as f32);
+            let vib =
+                1.0 + 0.01 * (2.0 * std::f64::consts::PI * 5.0 * i as f64 / RATE as f64).sin();
+            *v += 0.012
+                * ((2.0 * std::f64::consts::PI * f * vib * i as f64 / RATE as f64).sin() as f32);
         }
     }
     let mut s = 7u32.wrapping_mul(seed);
@@ -340,7 +416,10 @@ fn cpu_and_delay() {
         let _ = encode_with(&pcm, RATE, &q5);
         best = best.min(t.elapsed().as_secs_f64() * 1e3);
     }
-    println!("| LC quality 5 | — | {best:.1} | {:.0}× | 1024 | none (causal; no rate loop) |", 10_000.0 / best);
+    println!(
+        "| LC quality 5 | — | {best:.1} | {:.0}× | 1024 | none (causal; no rate loop) |",
+        10_000.0 / best
+    );
     for (mode, bps, lat) in [
         (Mode::Lc, 128_000u32, "none (causal)"),
         (Mode::Lc, 48_000, "none (causal)"),

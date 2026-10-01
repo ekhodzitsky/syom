@@ -55,9 +55,11 @@ Cells are **covered**, **synth-only**, **identified-not-obtained**, or **gap**.
 |---|---|
 | LC | in-tree goldens |
 | HE v1 / v2 | in-tree `he-*`, `he-ps*` |
-| 960-sample frames | **gap** (TASK-63) |
+| 960-sample frames | **gap** — no-go 0.x (TASK-63, decision-27, `lab/frame960/`); clean `Unsupported(FrameLength960)` measured |
 | Encoder 24–256 kbps ladder | **gap** (identified as needed; only 128 kbps encoder goldens) |
 | ISO 14496-26 vectors | **gap** (normative text not obtained) |
+| AAC-LD 512-sample | in-tree FDK v2.0.3 / libxaac 0.1.13 oracles `ld64m`, `ld64mus`, `ld48` (`lab/profiles/LD_QUALIFY.md`). Not a 14496-26 certificate. lavc cannot decode the fixtures. |
+| AAC-LD 480-sample | **gap** — `frameLengthFlag` stays `Unsupported` |
 | Independently authored ASC/ADTS/LATM/PCE headers | in-tree `corpus/conformance/vectors.json` (not 14496-26) |
 
 Natural audio bytes are **not** in git. Until they are obtained offline,

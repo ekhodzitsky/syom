@@ -37,6 +37,49 @@ impl EncSlot {
     }
 }
 
+/// 10^(−20/10). The next QMF band above a speech formant is about −29 dB
+/// on the lecture onset; keeping it still opened a scale-factor section.
+const FORMANT_RATIO: f32 = 1.0e-2;
+
+/// Core cutoff in Hz for the slots of one core frame: top of the highest
+/// analysis band below `k_x` within 20 dB of the peak. A flat spectrum
+/// and silence both return the crossover (`k_x · fs / 128`), so noise
+/// and harmonic patch sources stay put. The caller passes that frame's
+/// slots only — a later frame in the same queue must not set this one.
+pub(crate) fn core_cutoff_hz(channels: &[&[EncSlot]], k_x: usize, out_rate: u32) -> u32 {
+    let k_x = k_x.min(BANDS);
+    let k0_hz = ((u64::from(out_rate) * k_x as u64) / (BANDS as u64 * 2)) as u32;
+    if k_x == 0 {
+        return k0_hz;
+    }
+    let mut e = [0.0f32; BANDS];
+    for slots in channels {
+        for s in *slots {
+            for (k, acc) in e.iter_mut().enumerate().take(k_x) {
+                *acc += s.energy(k);
+            }
+        }
+    }
+    let mut peak = 0.0f32;
+    for v in e.iter().take(k_x) {
+        if *v > peak {
+            peak = *v;
+        }
+    }
+    if peak < 1.0e-18 {
+        return k0_hz;
+    }
+    let thresh = peak * FORMANT_RATIO;
+    let mut top = 0usize;
+    for (k, v) in e.iter().enumerate().take(k_x) {
+        if *v >= thresh {
+            top = k;
+        }
+    }
+    let hz = ((u64::from(out_rate) * (top as u64 + 1)) / (BANDS as u64 * 2)) as u32;
+    if hz == 0 { k0_hz } else { hz.min(k0_hz) }
+}
+
 struct Plan {
     bitrev: [u16; N2],
     tw_re: Vec<f32>,

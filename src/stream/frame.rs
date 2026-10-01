@@ -34,11 +34,13 @@ pub struct StreamInfo {
     pub layout: Layout,
     /// Payload frames decoded, including edit-list-skipped ones.
     pub aac_frames: u64,
-    /// Output samples per channel after any `elst` skip.
+    /// Output samples per channel after an edit-list or `iTunSMPB` trim.
     pub samples: u64,
-    /// Encoder delay skipped at the start, when the container says so.
-    /// ADTS has no trim → [`None`].
+    /// Encoder delay skipped at the start, when an edit list or a matching
+    /// `iTunSMPB` tag says so. A push ADTS feed applies a modest tag as
+    /// frames arrive. These stay [`None`] when the tag is absent or the
+    /// decoded count does not match it.
     pub priming: Option<u64>,
-    /// Unplayed coded tail, when the container says so. ADTS → [`None`].
+    /// Unplayed coded tail, under the same rule as [`Self::priming`].
     pub remainder: Option<u64>,
 }

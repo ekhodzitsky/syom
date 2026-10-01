@@ -278,6 +278,26 @@ fn cfg3_declared_2x_keeps_three_planes() -> Result<(), Error> {
 }
 
 #[test]
+fn zero_count_fil_is_an_empty_extension() -> Result<(), Error> {
+    // ISO/IEC 14496-3 fill_element(): `while (cnt > 0)` — a FIL whose
+    // count resolves to 0 carries no extension_payload at all; the
+    // GPAC-muxed BBB DASH vector emits one per AU (TASK-127,
+    // lab/fmp4/REPORT.md §4.1). lavc's TYPE_FIL arm loops the same way.
+    let plain = pce_frame(&[(false, 0)], &[], &[], |w| write_sce(w, 0, 1));
+    let padded = pce_frame(&[(false, 0)], &[], &[], |w| {
+        write_sce(w, 0, 1);
+        w.write(6, 3); // ID_FIL
+        w.write(0, 4); // cnt == 0: no extension_payload follows
+    });
+    let mut a = he_dec();
+    let want = decode_he(&mut a, &plain, 0)?;
+    let mut b = he_dec();
+    let got = decode_he(&mut b, &padded, 0)?;
+    assert_eq!(got, want, "zero-count FIL must decode as absent");
+    Ok(())
+}
+
+#[test]
 fn sbr_without_channel_element_is_format() {
     let bytes = {
         let mut w = BitWriter::new();

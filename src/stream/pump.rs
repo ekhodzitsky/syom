@@ -36,11 +36,12 @@ impl Decoder {
             if avail.len() < 8 && !final_flush {
                 return Ok(()); // wait for enough bytes to sniff
             }
-            if sniff_is_isobmff(avail) {
-                return Err(AacError::Unsupported(crate::UnsupportedFeature::M4aPush));
-            }
-            // Sniff order and ADTS fallback mirror `decode_with`.
-            self.container = if sniff_is_adts(avail) || !sniff_is_latm(avail) {
+            // Sniff order and ADTS fallback mirror `decode_with`. ISOBMFF
+            // enters the fMP4 pump: a fragmented init (`mvex`) decodes
+            // incrementally, a flat moov keeps its M4aPush rejection there.
+            self.container = if sniff_is_isobmff(avail) {
+                Container::Fmp4
+            } else if sniff_is_adts(avail) || !sniff_is_latm(avail) {
                 Container::Adts
             } else {
                 Container::Latm
@@ -49,6 +50,7 @@ impl Decoder {
         match self.container {
             Container::Adts => self.pump_adts(buf, sink, est_frames, on_frame, final_flush),
             Container::Latm => self.pump_latm(buf, sink, est_frames, on_frame),
+            Container::Fmp4 => self.pump_fmp4(buf, on_frame, final_flush),
             Container::Au => {
                 if final_flush {
                     Ok(())
@@ -73,6 +75,14 @@ impl Decoder {
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        let tag_budget = self
+            .opts
+            .memory
+            .max_buffered_input_bytes
+            .min(self.opts.memory.max_input_bytes);
+        if self.gap.hold(buf, &mut self.pos, final_flush, tag_budget)? {
+            return Ok(());
+        }
         loop {
             let avail = &buf[self.pos..];
             let (hdr, payload_off) = match AdtsHeader::parse(avail) {
@@ -102,26 +112,9 @@ impl Decoder {
                     .map_err(AacError::from)?;
             }
             let payload = &avail[payload_off..frame_len];
-            let idx = self.aac_frames;
             let rate = match sink.as_deref_mut() {
-                // One-shot mono: decode straight into the caller's plane.
-                Some(dst) => {
-                    self.check_sink_growth(dst.len())?;
-                    let before = dst.len();
-                    let rate = self
-                        .dec
-                        .decode_adts_header_payload(&hdr, payload, Some(dst))
-                        .map_err(AacError::from)?;
-                    let n = dst.len() - before;
-                    self.tally(rate, 1, n)?;
-                    self.sink_frame_samples = n;
-                    self.opts.memory.check_output(1, dst.len() as u64)?;
-                    if idx == 0 {
-                        self.reserve_hint(dst, est_frames, n)?;
-                    }
-                    rate
-                }
-                None => self.decode_adts(&hdr, payload, idx)?,
+                Some(dst) => self.adts_into(dst, &hdr, payload, est_frames)?,
+                None => self.decode_adts(&hdr, payload, self.aac_frames)?,
             };
             self.pos += frame_len;
             if sink.is_none() {
@@ -258,7 +251,17 @@ impl Decoder {
     }
 
     /// Caps + consistency for one decoded frame (delivery is the caller's).
-    fn tally(&mut self, rate: u32, n_ch: usize, n_samples: usize) -> Result<()> {
+    pub(super) fn tally(&mut self, rate: u32, n_ch: usize, n_samples: usize) -> Result<()> {
+        self.tally_decoded(rate, n_ch, n_samples)?;
+        self.samples_out += n_samples as u64;
+        self.emitted += 1;
+        Ok(())
+    }
+
+    /// Channel/workspace fences, the rate/channel lock and the
+    /// decoded-duration cap — everything but the delivery counters, which
+    /// the fMP4 windowing path (stream/fmp4.rs) accounts itself.
+    pub(super) fn tally_decoded(&mut self, rate: u32, n_ch: usize, n_samples: usize) -> Result<()> {
         if n_ch == 0 {
             return Ok(()); // channel-less frame: consumed, not emitted
         }
@@ -291,14 +294,12 @@ impl Decoder {
             let observed_s = self.samples_decoded as f64 / f64::from(rate.max(1));
             return Err(AacError::too_long(observed_s, self.opts.max_duration_secs));
         }
-        self.samples_out += n_samples as u64;
-        self.emitted += 1;
         Ok(())
     }
 
     /// Pre-size the mono sink after frame 1: exact frame count × first
     /// frame's samples beats geometric growth (hint only, capped).
-    fn reserve_hint(
+    pub(super) fn reserve_hint(
         &self,
         dst: &mut Vec<f32>,
         est_frames: Option<usize>,
@@ -320,7 +321,7 @@ impl Decoder {
         Ok(())
     }
 
-    fn check_sink_growth(&self, dst_len: usize) -> Result<()> {
+    pub(super) fn check_sink_growth(&self, dst_len: usize) -> Result<()> {
         let guess = if self.sink_frame_samples == 0 {
             2048
         } else {
@@ -348,24 +349,34 @@ impl Decoder {
         if n_ch == 0 {
             return Ok(()); // channel-less frame: consumed, not emitted
         }
-        self.tally(rate, n_ch, n_samples)?;
+        self.tally_decoded(rate, n_ch, n_samples)?;
+        if self.aac_frames == 0 {
+            self.gap.arm(n_samples);
+        }
+        let (start, end) = self.gap.take(n_samples);
         self.aac_frames += 1;
+        if end == start {
+            return Ok(());
+        }
+        let shown = end - start;
+        self.samples_out += shown as u64;
+        self.emitted += 1;
         // Stack plane views — no per-frame heap (TASK-78).
         let mut slots: [&[f32]; crate::layout::MAX_PLANES] = [&[]; crate::layout::MAX_PLANES];
         let planar: &[&[f32]] = if mono {
-            slots[0] = self.mono_scratch.as_slice();
+            slots[0] = &self.mono_scratch[start..end];
             &slots[..1]
         } else {
             let planes = self.dec.frame_planes();
             let n = planes.len().min(crate::layout::MAX_PLANES);
             for (i, p) in planes.iter().enumerate().take(n) {
-                slots[i] = p.as_slice();
+                slots[i] = &p[start..end];
             }
             &slots[..n]
         };
         on_frame(Frame {
             sample_rate: rate,
-            samples: n_samples,
+            samples: shown,
             planar,
             meta: self.dec.last_meta(),
         })

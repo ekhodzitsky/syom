@@ -129,12 +129,8 @@ impl ChannelState {
         }
         x_low[..T_HF_GEN].copy_from_slice(&self.w_hist);
         for slot in 0..LF {
-            let mut s = [0.0f64; 32];
             let src = &self.core[slot * 32..(slot + 1) * 32];
-            for (d, &v) in s.iter_mut().zip(src.iter()) {
-                *d = f64::from(v);
-            }
-            x_low[T_HF_GEN + slot] = self.analysis.push_slot(&s)?;
+            x_low[T_HF_GEN + slot] = self.analysis.push_slot(src)?;
         }
         self.w_hist.copy_from_slice(&x_low[COLS - T_HF_GEN..]);
         Ok(())
@@ -161,6 +157,13 @@ pub struct SbrDecoder {
     /// processed one after another); off the stack since TASK-118.
     x_low: Vec<[Complex; 32]>,
     x_high: Vec<[Complex; 64]>,
+    /// Stage totals for one decoder lifetime. Printed on drop when
+    /// `SYOM_PROF` is set; otherwise they stay zero.
+    prof_an: u64,
+    prof_hf: u64,
+    prof_adj: u64,
+    prof_sy: u64,
+    prof_frames: u64,
 }
 
 /// PS decoder + right-channel synthesis bank (Annex 8.A).
@@ -185,6 +188,18 @@ fn take_cols<const N: usize>(v: &mut Vec<[Complex; N]>, n: usize) -> Vec<[Comple
     m
 }
 
+/// Same allocation reuse as [`take_cols`], without wiping columns that
+/// already have length `n`. The caller writes every column it reads:
+/// `analyze` overwrites `x_low`, and `generate_hf_into` zeroes `x_high`
+/// before any read. A first use (`len != n`) still zero-fills.
+fn take_cols_dirty<const N: usize>(v: &mut Vec<[Complex; N]>, n: usize) -> Vec<[Complex; N]> {
+    let mut m = std::mem::take(v);
+    if m.len() != n {
+        m.resize(n, [Complex::default(); N]);
+    }
+    m
+}
+
 impl SbrDecoder {
     /// A fresh SBR decoder. `fs_sbr` is the SBR internal rate (twice
     /// the core rate); `num_channels` is 1 (SCE) or 2 (CPE).
@@ -203,6 +218,11 @@ impl SbrDecoder {
             ps_rendered: false,
             x_low: Vec::new(),
             x_high: Vec::new(),
+            prof_an: 0,
+            prof_hf: 0,
+            prof_adj: 0,
+            prof_sy: 0,
+            prof_frames: 0,
         })
     }
 
@@ -279,7 +299,7 @@ impl SbrDecoder {
         self.ps_rendered = false;
         let n_ch = self.channels.len();
         for c in 0..n_ch {
-            let mut x_low = take_cols(&mut self.x_low, COLS);
+            let mut x_low = take_cols_dirty(&mut self.x_low, COLS);
             self.channels[c].analyze(&mut x_low)?;
             let rendered = if n_ch == 1 {
                 emit_ps_from(
@@ -443,21 +463,27 @@ impl SbrDecoder {
                 &sbr_ch.invf.invf_mode
             };
 
-            let mut x_low = take_cols(&mut self.x_low, COLS);
-            let mut x_high = take_cols(&mut self.x_high, COLS);
-            {
+            let mut x_low = take_cols_dirty(&mut self.x_low, COLS);
+            let mut x_high = take_cols_dirty(&mut self.x_high, COLS);
+            let t_an = super::prof::stamp();
+            let (an_ns, hf_ns) = {
                 let ch = &mut self.channels[c];
                 let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
                 let patches = self.patches.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
                 ch.time_grid.derive_into(&sbr_ch.grid, NUM_TIME_SLOTS)?;
                 chirp_factors_into(invf_modes, &ch.prev_invf, &ch.prev_bw, &mut ch.bw);
                 ch.analyze(&mut x_low)?;
+                let an_ns = super::prof::ns(t_an);
+                let t_hf = super::prof::stamp();
                 let l_range = (RATE * ch.time_grid.t_e[0])
                     ..(RATE * ch.time_grid.t_e[ch.time_grid.t_e.len() - 1]);
                 generate_hf_into(&x_low, patches, &ch.bw, bands, l_range, LF, &mut x_high)?;
-            }
+                (an_ns, super::prof::ns(t_hf))
+            };
+            self.prof_an += an_ns;
+            self.prof_hf += hf_ns;
 
-            {
+            let adj_ns = {
                 let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
                 let ch = &mut self.channels[c];
                 let params = EnvParams {
@@ -475,13 +501,17 @@ impl SbrDecoder {
                     limiter_gains: ext.header.limiter_gains,
                     reset,
                 };
+                let t_adj = super::prof::stamp();
                 adjust_into(&mut x_high, &params, &mut ch.env_state)?;
-            }
+                super::prof::ns(t_adj)
+            };
+            self.prof_adj += adj_ns;
 
             let bands = self.bands.as_ref().ok_or(Error::SbrFreqBandInvalid)?;
             let l_temp =
                 (RATE * self.channels[c].t_e_last_prev - NUM_TIME_SLOTS * RATE).max(0) as usize;
             let kx_plus_m = (bands.k_x + bands.m).max(0) as usize;
+            let t_sy = super::prof::stamp();
             let rendered = emit_ps_from(
                 &mut self.channels[c],
                 self.ps.as_mut(),
@@ -497,9 +527,12 @@ impl SbrDecoder {
             } else {
                 synth_assembled(&mut self.channels[c], bands, &x_low, &x_high, l_temp)?;
             }
-
+            self.prof_sy += super::prof::ns(t_sy);
             let ch = &mut self.channels[c];
-            ch.y_prev.copy_from_slice(&x_high);
+            // `y_prev` is only read on the next frame. Swapping hands it
+            // the buffer `generate_hf_into` just filled; the returned
+            // buffer is zeroed before the next channel reads it.
+            std::mem::swap(&mut ch.y_prev, &mut x_high);
             ch.t_e_last_prev = ch.time_grid.t_e[ch.time_grid.t_e.len() - 1];
             ch.k_x_prev = bands.k_x;
             ch.m_prev = bands.m;
@@ -512,35 +545,31 @@ impl SbrDecoder {
             self.x_low = x_low;
             self.x_high = x_high;
         }
+        if super::prof::on() {
+            self.prof_frames = self.prof_frames.saturating_add(1);
+        }
         Ok(self.out_planes())
     }
 }
 
-/// Assemble the Annex 8.A.3 `Xinput` matrix: the 32 assembled `X`
-/// columns followed by `LOOKAHEAD` slots taken from `XLow` beyond the
-/// frame (`XLow(k, l + tHFAdj)`, `k < 5` — the split bands the hybrid
-/// filterbank consumes ahead of time).
-#[allow(dead_code)]
-pub(crate) fn planes_f32(out: Vec<Vec<f64>>, mix_down_mono: bool) -> Vec<Vec<f32>> {
-    let mut planar: Vec<Vec<f32>> = out
-        .into_iter()
-        .map(|ch| ch.into_iter().map(|x| x as f32).collect())
-        .collect();
-    if mix_down_mono {
-        if planar.len() > 1 {
-            let r = planar.remove(1);
-            let n = planar[0].len().min(r.len());
-            for i in 0..n {
-                planar[0][i] = 0.5 * (planar[0][i] + r[i]);
-            }
-            planar.truncate(1);
+impl Drop for SbrDecoder {
+    fn drop(&mut self) {
+        if self.prof_frames == 0 {
+            return;
         }
-    } else if planar.len() == 1 {
-        planar.push(planar[0].clone());
+        let n = self.prof_frames;
+        eprintln!(
+            "sbr_prof frames={n} an_ms={:.3} hf_ms={:.3} adj_ms={:.3} sy_ms={:.3}",
+            self.prof_an as f64 / 1e6,
+            self.prof_hf as f64 / 1e6,
+            self.prof_adj as f64 / 1e6,
+            self.prof_sy as f64 / 1e6
+        );
     }
-    planar
 }
 
+/// Assemble one Annex 8.A.3 `X` column: lowband from `XLow`, highband
+/// from the current or previous HF grid (`k < kx` stays lowband).
 fn assemble_x(
     ch: &ChannelState,
     x_low: &[[Complex; 32]],
@@ -550,9 +579,9 @@ fn assemble_x(
     l_temp: usize,
     x: &mut [Complex; 64],
 ) {
-    *x = [Complex::default(); 64];
     let Some(bands) = bands else {
         x[..32].copy_from_slice(&x_low[l + T_HF_ADJ]);
+        x[32..].fill(Complex::default());
         return;
     };
     let (kx_cur, m_cur, y_col) = if l < l_temp {
@@ -561,14 +590,25 @@ fn assemble_x(
         let y = y_cur.unwrap_or(&ch.y_prev);
         (bands.k_x, bands.m, &y[l + T_HF_ADJ])
     };
-    let kx_u = kx_cur.max(0) as usize;
-    for (k, cell) in x.iter_mut().enumerate().take(kx_u.min(32)) {
-        *cell = x_low[l + T_HF_ADJ][k];
+    // Low band from XLow, the gap above bin 32 stays zero when `kx` sits
+    // there, high band from Y, and the tail above `kx + M` stays zero.
+    let kx_u = (kx_cur.max(0) as usize).min(64);
+    let low_n = kx_u.min(32);
+    if low_n > 0 {
+        x[..low_n].copy_from_slice(&x_low[l + T_HF_ADJ][..low_n]);
     }
-    let hi = (kx_cur + m_cur).max(0) as usize;
-    let hi = hi.min(64);
+    let hi = ((kx_cur + m_cur).max(0) as usize).min(64);
+    let mut filled = low_n;
+    if kx_u > filled {
+        x[filled..kx_u].fill(Complex::default());
+        filled = kx_u;
+    }
     if kx_u < hi {
         x[kx_u..hi].copy_from_slice(&y_col[kx_u..hi]);
+        filled = hi;
+    }
+    if filled < 64 {
+        x[filled..].fill(Complex::default());
     }
 }
 
@@ -577,8 +617,7 @@ fn synth_low(ch: &mut ChannelState, x_low: &[[Complex; 32]]) -> Result<()> {
     for l in 0..LF {
         let mut x = [Complex::default(); 64];
         assemble_x(ch, x_low, None, None, l, 0, &mut x);
-        ch.pcm
-            .extend(ch.synthesis.push_slot(&x)?.iter().map(|&s| s as f32));
+        ch.pcm.extend_from_slice(&ch.synthesis.push_slot(&x)?);
     }
     Ok(())
 }
@@ -594,8 +633,7 @@ fn synth_assembled(
     for l in 0..LF {
         let mut x = [Complex::default(); 64];
         assemble_x(ch, x_low, Some(y_cur), Some(bands), l, l_temp, &mut x);
-        ch.pcm
-            .extend(ch.synthesis.push_slot(&x)?.iter().map(|&s| s as f32));
+        ch.pcm.extend_from_slice(&ch.synthesis.push_slot(&x)?);
     }
     Ok(())
 }
@@ -633,13 +671,9 @@ fn emit_ps_from(
     ps.pcm_r.clear();
     for l in 0..LF {
         ch.pcm
-            .extend(ch.synthesis.push_slot(&l_qmf[l])?.iter().map(|&s| s as f32));
-        ps.pcm_r.extend(
-            ps.synthesis_r
-                .push_slot(&r_qmf[l])?
-                .iter()
-                .map(|&s| s as f32),
-        );
+            .extend_from_slice(&ch.synthesis.push_slot(&l_qmf[l])?);
+        ps.pcm_r
+            .extend_from_slice(&ps.synthesis_r.push_slot(&r_qmf[l])?);
     }
     ps.l_qmf = l_qmf;
     ps.r_qmf = r_qmf;

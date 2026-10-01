@@ -42,6 +42,7 @@ impl LcEncoder {
         self.target_q = [[0.0; MAX_BANDS]; 2];
         self.credit = 0;
         self.pad_debt = 0;
+        self.rate_guess = super::rate::OFFSET_LO;
         self.ms = MsBands::off();
         self.tns = [EncTns::off(), EncTns::off()];
         self.prev_seq = WindowSequence::OnlyLong;
@@ -52,6 +53,7 @@ impl LcEncoder {
         self.held = None;
         self.payload.clear();
         self.fill.clear();
+        self.pad_fill = 0;
         let n_sfb = self.chans_s[0].n_sfb;
         self.chans_s[0] = QuantShort::new(n_sfb);
         self.chans_s[1] = QuantShort::new(n_sfb);

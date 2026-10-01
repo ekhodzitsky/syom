@@ -3,9 +3,11 @@
 /// Tallies from a finished streaming encode.
 ///
 /// Input / bitstream tallies plus the AAC timeline (Apple QA1636-style).
-/// ADTS still cannot carry trim. M4A writes [`Self::priming`] as
-/// `elst.media_time`, [`Self::samples`] as `elst`/`mvhd` presentation
-/// duration, and [`Self::remainder`] as the unplayed `mdhd` tail.
+/// A one-shot ADTS encode stores these counts in a leading `iTunSMPB`
+/// tag. [`super::Encoder`] feed callbacks stay raw access units. M4A
+/// writes [`Self::priming`] as `elst.media_time`, [`Self::samples`] as
+/// the `elst`/`mvhd` presentation duration, and [`Self::remainder`] as
+/// the unplayed `mdhd` tail.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct EncodeInfo {

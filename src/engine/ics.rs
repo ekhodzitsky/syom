@@ -57,6 +57,8 @@ pub struct IcsInfo {
     /// Table 4.128 window sequence.
     pub window_sequence: WindowSequence,
     /// This block's right-half shape (left half comes from the previous block).
+    /// On the LD path `Kbd` means the low-overlap window (FDK maps the LD
+    /// shape bit the same way); LD never uses a Kaiser window.
     pub window_shape: WindowShape,
     /// Number of coded scalefactor bands.
     pub max_sfb: u8,
@@ -68,14 +70,30 @@ pub struct IcsInfo {
     pub window_group_length: [u8; 8],
     /// Number of SWB in the table for this rate / sequence.
     pub num_swb: u8,
+    /// ER AAC LD (AOT 23): 512-line frames, long windows only.
+    pub ld: bool,
 }
 
 impl IcsInfo {
     /// Parse Table 4.6. LC rejects predictor / LTP bodies.
     pub fn parse(br: &mut BitReader<'_>, fs_index: u8, common_window: bool) -> Result<Self> {
+        Self::parse_mode(br, fs_index, common_window, false)
+    }
+
+    /// `ld` selects the ER AAC LD 512-line syntax (TASK-129).
+    pub fn parse_mode(
+        br: &mut BitReader<'_>,
+        fs_index: u8,
+        common_window: bool,
+        ld: bool,
+    ) -> Result<Self> {
         let _reserved = br.read_bit()?;
         let window_sequence = WindowSequence::from_bits(br.read(2)? as u8);
         let window_shape = WindowShape::from_bit(br.read_bit()?);
+        if ld && !matches!(window_sequence, WindowSequence::OnlyLong) {
+            // ER AAC LD carries long windows only (FDK: AAC_DEC_PARSE_ERROR).
+            return Err(Error::IcsInfoInvalid);
+        }
         let (max_sfb, grouping) = if window_sequence.is_eight_short() {
             (br.read(4)? as u8, Some(br.read(7)? as u8))
         } else {
@@ -93,6 +111,8 @@ impl IcsInfo {
             grouping_of(window_sequence, grouping);
         let offsets = if window_sequence.is_eight_short() {
             short_offsets(fs_index)?
+        } else if ld {
+            super::swb::long_offsets_ld(fs_index)?
         } else {
             long_offsets(fs_index)?
         };
@@ -108,16 +128,30 @@ impl IcsInfo {
             num_window_groups,
             window_group_length,
             num_swb,
+            ld,
         })
     }
 
-    /// Window length in coefficients (1024 or 128).
+    /// Window length in coefficients (1024 or 128; 512 for LD).
     #[must_use]
     pub fn window_len(&self) -> usize {
         if self.window_sequence.is_eight_short() {
             super::swb::SHORT_WINDOW_LEN
+        } else if self.ld {
+            super::swb::LD_WINDOW_LEN
         } else {
             super::swb::LONG_WINDOW_LEN
+        }
+    }
+
+    /// `swb_offset` table for this frame's sequence / profile.
+    pub fn swb_offsets(&self, fs_index: u8) -> Result<&'static [u16]> {
+        if self.window_sequence.is_eight_short() {
+            short_offsets(fs_index)
+        } else if self.ld {
+            super::swb::long_offsets_ld(fs_index)
+        } else {
+            long_offsets(fs_index)
         }
     }
 }

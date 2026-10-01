@@ -7,13 +7,14 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use crate::engine::adts::AdtsHeader;
 use crate::engine::error::Error;
 use crate::{
-    DecodeOptions, decode_with, sniff_aac, sniff_is_adts, sniff_is_isobmff, sniff_is_latm,
+    AacError, DecodeOptions, decode_with, sniff_aac, sniff_is_adts, sniff_is_isobmff, sniff_is_latm,
 };
 
 const SINE48: &[u8] = include_bytes!("goldens/sine48.adts");
 const LATM48: &[u8] = include_bytes!("goldens/latm48.latm");
 const SINE441: &[u8] = include_bytes!("goldens/sine441.m4a");
 const HE48: &[u8] = include_bytes!("goldens/he48.adts");
+const FMP4_LC: &[u8] = include_bytes!("goldens/fmp4_lc.mp4");
 const EMPTY: &[u8] = include_bytes!("../corpus/fuzz/empty.bin");
 const ADTS_TRUNC: &[u8] = include_bytes!("../corpus/fuzz/adts-truncated.bin");
 const ADTS_LEN: &[u8] = include_bytes!("../corpus/fuzz/adts-len-too-small.bin");
@@ -21,6 +22,7 @@ const ADTS_SRATE: &[u8] = include_bytes!("../corpus/fuzz/adts-reserved-srate.bin
 const ASC_MAIN: &[u8] = include_bytes!("../corpus/fuzz/asc-main-aot.bin");
 const LATM_TRUNC: &[u8] = include_bytes!("../corpus/fuzz/latm-truncated.bin");
 const M4A_TRUNC: &[u8] = include_bytes!("../corpus/fuzz/m4a-truncated.bin");
+const FMP4_TRUNC: &[u8] = include_bytes!("../corpus/fuzz/fmp4-truncated.bin");
 
 fn harvest(data: &[u8]) {
     let panicked = catch_unwind(AssertUnwindSafe(|| {
@@ -41,6 +43,7 @@ fn valid_goldens_still_decode() {
         ("latm48", LATM48),
         ("sine441", SINE441),
         ("he48", HE48),
+        ("fmp4_lc", FMP4_LC),
     ] {
         harvest(bytes);
         let pcm = decode_with(bytes, &DecodeOptions::speech()).unwrap_or_else(|e| {
@@ -61,6 +64,7 @@ fn malformed_seeds_never_panic_and_do_not_succeed() {
         ("asc-main-aot", ASC_MAIN),
         ("latm-truncated", LATM_TRUNC),
         ("m4a-truncated", M4A_TRUNC),
+        ("fmp4-truncated", FMP4_TRUNC),
     ] {
         harvest(bytes);
         assert!(
@@ -68,6 +72,18 @@ fn malformed_seeds_never_panic_and_do_not_succeed() {
             "{name} must not decode as AAC"
         );
     }
+}
+
+#[test]
+fn fmp4_truncated_reaches_the_fragment_walk() {
+    harvest(FMP4_TRUNC);
+    assert!(
+        matches!(
+            decode_with(FMP4_TRUNC, &DecodeOptions::speech()),
+            Err(AacError::Truncated { .. })
+        ),
+        "init + partial moof must be typed Truncated (TASK-126)"
+    );
 }
 
 #[test]
@@ -95,5 +111,7 @@ fn provenance_lists_smoke_corpus() {
     assert!(raw.contains("TASK-48"));
     assert!(raw.contains("adts-len-too-small"));
     assert!(raw.contains("sine48.adts"));
+    assert!(raw.contains("fmp4_lc"));
+    assert!(raw.contains("fmp4-truncated.bin"));
     assert!(raw.contains("lab/fuzz"));
 }

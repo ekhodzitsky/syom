@@ -1,0 +1,596 @@
+{
+  "task": "TASK-14",
+  "synthetic": true,
+  "label": "SYNTHETIC-NOT-LISTENING-EVIDENCE",
+  "seed": "task-14",
+  "excerpt_sec": 12,
+  "session_max_min": 45,
+  "items_max": 12,
+  "priming": 1024,
+  "loudness_lufs": -23.0,
+  "true_peak_dbtp": -1.0,
+  "fade_ms": 20,
+  "margin_mushra": 3.0,
+  "margin_bs1116": 0.1,
+  "hidden_ref_min": 90.0,
+  "low_anchor_max": 90.0,
+  "fail_frac": 0.15,
+  "n_exploratory": 20,
+  "planning_sd_mushra": 10.0,
+  "required_peers": [
+    {
+      "id": "syom-lc",
+      "pin": "in-tree encode_with",
+      "status": "available"
+    },
+    {
+      "id": "lavc9-native-aac",
+      "pin": "FFmpeg 9.0.1 native aac (TASK-6/16)",
+      "status": "available"
+    }
+  ],
+  "optional_peers": [
+    {
+      "id": "fdk-2.0.3",
+      "status": "prefix-not-installed"
+    },
+    {
+      "id": "faac-1.31.1",
+      "status": "prefix-not-installed"
+    },
+    {
+      "id": "glint-0.11.0",
+      "status": "encode-pcm-rebuild"
+    },
+    {
+      "id": "apple-audiotoolbox",
+      "status": "no-host"
+    }
+  ],
+  "holdout": [
+    {
+      "id": "nat-cv-ar",
+      "recording_id": "commonvoice-ar-corpus",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "license": "CC0 (Common Voice)"
+    },
+    {
+      "id": "nat-cv-ja",
+      "recording_id": "commonvoice-ja-corpus",
+      "category": "speech-unvoiced",
+      "presence": "gap-until-obtained",
+      "license": "CC0 (Common Voice)"
+    },
+    {
+      "id": "nat-fma-percussion",
+      "recording_id": "fma-cc0-percussion",
+      "category": "percussion-transient",
+      "presence": "gap-until-obtained",
+      "license": "CC0 (Free Music Archive, per-track license must be rechecked)"
+    },
+    {
+      "id": "nat-librispeech-1580",
+      "recording_id": "openslr12-spk-1580",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "license": "CC BY 4.0 (LibriSpeech)"
+    },
+    {
+      "id": "nat-librispeech-1995",
+      "recording_id": "openslr12-spk-1995",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "license": "CC BY 4.0 (LibriSpeech)"
+    },
+    {
+      "id": "nat-librispeech-2094",
+      "recording_id": "openslr12-spk-2094",
+      "category": "speech-sibilants",
+      "presence": "gap-until-obtained",
+      "license": "CC BY 4.0 (LibriSpeech)"
+    },
+    {
+      "id": "nat-librivox-war",
+      "recording_id": "librivox-war-of-the-worlds",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "license": "Public domain (LibriVox)"
+    },
+    {
+      "id": "nat-musopen-chopin",
+      "recording_id": "musopen-chopin-op28",
+      "category": "tonal-music",
+      "presence": "gap-until-obtained",
+      "license": "Public domain (Musopen)"
+    }
+  ],
+  "items": [
+    {
+      "index": 0,
+      "source_id": "nat-cv-ar",
+      "recording_id": "commonvoice-ar-corpus",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item00/c00.meta.json",
+          "blind_id": "9L3RCHGB",
+          "n_samples": 576320,
+          "raw_samples": 576064,
+          "rate": 48000
+        },
+        {
+          "file": "item00/c01.meta.json",
+          "blind_id": "MFECHQSJ",
+          "n_samples": 576320,
+          "raw_samples": 576128,
+          "rate": 48000
+        },
+        {
+          "file": "item00/c02.meta.json",
+          "blind_id": "LVBTVWPU",
+          "n_samples": 576320,
+          "raw_samples": 576192,
+          "rate": 48000
+        },
+        {
+          "file": "item00/c03.meta.json",
+          "blind_id": "DZMS65TY",
+          "n_samples": 576320,
+          "raw_samples": 576256,
+          "rate": 48000
+        },
+        {
+          "file": "item00/c04.meta.json",
+          "blind_id": "4JNUK8FU",
+          "n_samples": 576320,
+          "raw_samples": 576320,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        1,
+        0,
+        3,
+        2,
+        4
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 1,
+      "source_id": "nat-cv-ja",
+      "recording_id": "commonvoice-ja-corpus",
+      "category": "speech-unvoiced",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item01/c00.meta.json",
+          "blind_id": "YUP325MC",
+          "n_samples": 576352,
+          "raw_samples": 576096,
+          "rate": 48000
+        },
+        {
+          "file": "item01/c01.meta.json",
+          "blind_id": "5MZDKACV",
+          "n_samples": 576352,
+          "raw_samples": 576160,
+          "rate": 48000
+        },
+        {
+          "file": "item01/c02.meta.json",
+          "blind_id": "HGYU2VCG",
+          "n_samples": 576352,
+          "raw_samples": 576224,
+          "rate": 48000
+        },
+        {
+          "file": "item01/c03.meta.json",
+          "blind_id": "NEMZNUBM",
+          "n_samples": 576352,
+          "raw_samples": 576288,
+          "rate": 48000
+        },
+        {
+          "file": "item01/c04.meta.json",
+          "blind_id": "LVHTXRU4",
+          "n_samples": 576352,
+          "raw_samples": 576352,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        2,
+        4,
+        0,
+        1,
+        3
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 2,
+      "source_id": "nat-fma-percussion",
+      "recording_id": "fma-cc0-percussion",
+      "category": "percussion-transient",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item02/c00.meta.json",
+          "blind_id": "7LLUDGGT",
+          "n_samples": 576384,
+          "raw_samples": 576128,
+          "rate": 48000
+        },
+        {
+          "file": "item02/c01.meta.json",
+          "blind_id": "UBHFBMCW",
+          "n_samples": 576384,
+          "raw_samples": 576192,
+          "rate": 48000
+        },
+        {
+          "file": "item02/c02.meta.json",
+          "blind_id": "R7SEHQ88",
+          "n_samples": 576384,
+          "raw_samples": 576256,
+          "rate": 48000
+        },
+        {
+          "file": "item02/c03.meta.json",
+          "blind_id": "Y8PA85TH",
+          "n_samples": 576384,
+          "raw_samples": 576320,
+          "rate": 48000
+        },
+        {
+          "file": "item02/c04.meta.json",
+          "blind_id": "3BQQ7PB2",
+          "n_samples": 576384,
+          "raw_samples": 576384,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        3,
+        0,
+        2,
+        4,
+        1
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 3,
+      "source_id": "nat-librispeech-1580",
+      "recording_id": "openslr12-spk-1580",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item03/c00.meta.json",
+          "blind_id": "CFYLMB4P",
+          "n_samples": 576320,
+          "raw_samples": 576064,
+          "rate": 48000
+        },
+        {
+          "file": "item03/c01.meta.json",
+          "blind_id": "7DXFTX26",
+          "n_samples": 576320,
+          "raw_samples": 576128,
+          "rate": 48000
+        },
+        {
+          "file": "item03/c02.meta.json",
+          "blind_id": "7DFGTDDW",
+          "n_samples": 576320,
+          "raw_samples": 576192,
+          "rate": 48000
+        },
+        {
+          "file": "item03/c03.meta.json",
+          "blind_id": "S7JPGTTM",
+          "n_samples": 576320,
+          "raw_samples": 576256,
+          "rate": 48000
+        },
+        {
+          "file": "item03/c04.meta.json",
+          "blind_id": "9KREBGBR",
+          "n_samples": 576320,
+          "raw_samples": 576320,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        3,
+        2,
+        0,
+        4,
+        1
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 4,
+      "source_id": "nat-librispeech-1995",
+      "recording_id": "openslr12-spk-1995",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item04/c00.meta.json",
+          "blind_id": "L7R354LG",
+          "n_samples": 576352,
+          "raw_samples": 576096,
+          "rate": 48000
+        },
+        {
+          "file": "item04/c01.meta.json",
+          "blind_id": "PJHLS6YA",
+          "n_samples": 576352,
+          "raw_samples": 576160,
+          "rate": 48000
+        },
+        {
+          "file": "item04/c02.meta.json",
+          "blind_id": "XKZWB6SG",
+          "n_samples": 576352,
+          "raw_samples": 576224,
+          "rate": 48000
+        },
+        {
+          "file": "item04/c03.meta.json",
+          "blind_id": "YRYVGGCX",
+          "n_samples": 576352,
+          "raw_samples": 576288,
+          "rate": 48000
+        },
+        {
+          "file": "item04/c04.meta.json",
+          "blind_id": "BU8AQB8L",
+          "n_samples": 576352,
+          "raw_samples": 576352,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 5,
+      "source_id": "nat-librispeech-2094",
+      "recording_id": "openslr12-spk-2094",
+      "category": "speech-sibilants",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item05/c00.meta.json",
+          "blind_id": "DHHXLFS5",
+          "n_samples": 576384,
+          "raw_samples": 576128,
+          "rate": 48000
+        },
+        {
+          "file": "item05/c01.meta.json",
+          "blind_id": "WYVGCZEY",
+          "n_samples": 576384,
+          "raw_samples": 576192,
+          "rate": 48000
+        },
+        {
+          "file": "item05/c02.meta.json",
+          "blind_id": "SNDTL44E",
+          "n_samples": 576384,
+          "raw_samples": 576256,
+          "rate": 48000
+        },
+        {
+          "file": "item05/c03.meta.json",
+          "blind_id": "CPNLFJ7F",
+          "n_samples": 576384,
+          "raw_samples": 576320,
+          "rate": 48000
+        },
+        {
+          "file": "item05/c04.meta.json",
+          "blind_id": "NEAESGM3",
+          "n_samples": 576384,
+          "raw_samples": 576384,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        2,
+        3,
+        0,
+        1,
+        4
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 6,
+      "source_id": "nat-librivox-war",
+      "recording_id": "librivox-war-of-the-worlds",
+      "category": "speech-voiced",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 64000,
+      "method": "BS.1534-3",
+      "method_reason": "intermediate impairment expected",
+      "conditions": [
+        "hidden_ref",
+        "lp35",
+        "lp7k",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item06/c00.meta.json",
+          "blind_id": "3NJQ9LPN",
+          "n_samples": 576320,
+          "raw_samples": 576064,
+          "rate": 48000
+        },
+        {
+          "file": "item06/c01.meta.json",
+          "blind_id": "YJE6ALXJ",
+          "n_samples": 576320,
+          "raw_samples": 576128,
+          "rate": 48000
+        },
+        {
+          "file": "item06/c02.meta.json",
+          "blind_id": "DT3UGRRX",
+          "n_samples": 576320,
+          "raw_samples": 576192,
+          "rate": 48000
+        },
+        {
+          "file": "item06/c03.meta.json",
+          "blind_id": "JRBJ69XP",
+          "n_samples": 576320,
+          "raw_samples": 576256,
+          "rate": 48000
+        },
+        {
+          "file": "item06/c04.meta.json",
+          "blind_id": "VD7NXEHE",
+          "n_samples": 576320,
+          "raw_samples": 576320,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        2,
+        4,
+        3,
+        0,
+        1
+      ],
+      "open_reference": true
+    },
+    {
+      "index": 7,
+      "source_id": "nat-musopen-chopin",
+      "recording_id": "musopen-chopin-op28",
+      "category": "tonal-music",
+      "presence": "gap-until-obtained",
+      "profile": "lc",
+      "bitrate_bps": 128000,
+      "method": "BS.1116-3",
+      "method_reason": "near-transparency; MUSHRA ceiling risk",
+      "conditions": [
+        "hidden_ref",
+        "syom-lc",
+        "lavc9-native-aac"
+      ],
+      "files": [
+        {
+          "file": "item07/c00.meta.json",
+          "blind_id": "FHJB9C5E",
+          "n_samples": 576224,
+          "raw_samples": 576096,
+          "rate": 48000
+        },
+        {
+          "file": "item07/c01.meta.json",
+          "blind_id": "WS5S7RVD",
+          "n_samples": 576224,
+          "raw_samples": 576160,
+          "rate": 48000
+        },
+        {
+          "file": "item07/c02.meta.json",
+          "blind_id": "4W67R4PJ",
+          "n_samples": 576224,
+          "raw_samples": 576224,
+          "rate": 48000
+        }
+      ],
+      "ui_order": [
+        1,
+        2,
+        0
+      ],
+      "open_reference": true
+    }
+  ]
+}

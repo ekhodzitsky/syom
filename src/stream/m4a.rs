@@ -29,9 +29,16 @@ pub(crate) fn stream_m4a<F>(data: &[u8], opts: &DecodeOptions, on_frame: F) -> R
 where
     F: FnMut(Frame<'_>) -> Result<()>,
 {
-    let track = isomp4::parse_aac_track_with(data, &opts.memory).map_err(map_m4a_parse_err)?;
+    // Bounded fMP4 (init moov + moof/trun) keeps its typed errors; the flat
+    // path keeps collapsing parse failures to NotAac.
+    let track = if isomp4::frag::is_fragmented(data) {
+        isomp4::frag::parse_fmp4_track_with(data, &opts.memory)?
+    } else {
+        isomp4::parse_aac_track_with(data, &opts.memory).map_err(map_m4a_parse_err)?
+    };
     play_m4a_track(
         track,
+        crate::gapless::itunsmpb_in(data),
         opts,
         |off, len| sample_payload(data, off, len),
         on_frame,
@@ -40,6 +47,7 @@ where
 
 pub(crate) fn play_m4a_track<F, G>(
     track: AacTrack,
+    gapless: Option<crate::gapless::Delay>,
     opts: &DecodeOptions,
     mut get_au: G,
     mut on_frame: F,
@@ -73,6 +81,27 @@ where
     dec.mix_down_mono = mono;
     let mut scratch: Vec<f32> = Vec::new();
     let (mut skip_left, mut play_left) = track.edit_window(out_rate)?;
+    // An edit list already trims. A matching `iTunSMPB` applies only when
+    // `moov` has no `elst`, and only when the tag sums to the coded length.
+    let mut applied = None;
+    if !track.has_elst
+        && let Some(d) = gapless
+    {
+        let spf = crate::gapless::output_frame_samples(asc.aot, asc.sbr_present, asc.ps_present);
+        let coded = (track.frames.len() as u64).saturating_mul(spf);
+        let sum = d
+            .priming
+            .saturating_add(d.source)
+            .saturating_add(d.remainder);
+        if spf > 0
+            && coded == sum
+            && let (Ok(skip), Ok(play)) = (usize::try_from(d.priming), usize::try_from(d.source))
+        {
+            skip_left = skip;
+            play_left = Some(play);
+            applied = Some(d);
+        }
+    }
     let skip0 = skip_left;
     let mut locked: Option<(u32, usize)> = None;
     let mut aac_frames = 0u64;
@@ -188,13 +217,12 @@ where
         return Err(AacError::NotAac);
     }
     let (sample_rate, channels) = locked.unwrap_or((out_rate, 0));
-    let priming = track.has_elst.then_some(skip0 as u64);
-    let remainder = track.has_elst.then_some(
-        track
-            .total_samples
-            .saturating_sub(skip0 as u64)
-            .saturating_sub(samples_out),
-    );
+    let priming = applied
+        .map(|d| d.priming)
+        .or_else(|| track.has_elst.then_some(skip0 as u64));
+    let remainder = applied
+        .map(|d| d.remainder)
+        .or_else(|| track.unplayed_tail(skip0 as u64, samples_out));
     Ok(StreamInfo {
         sample_rate,
         core_rate: dec.last_core_rate(),

@@ -1,0 +1,14 @@
+[package]
+name = "syom-lab-profiles"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated profile-expansion probe (TASK-97). Not a workspace member."
+
+[dependencies]
+syom = { path = "../../.." }
+
+[[bin]]
+name = "syom_probe"
+path = "src/main.rs"

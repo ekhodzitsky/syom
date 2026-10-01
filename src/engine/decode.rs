@@ -1,20 +1,17 @@
-//! Stream-level LC driver: `raw_data_block()` → planar PCM.
+//! Stream-level LC/LD driver: `raw_data_block()` → planar PCM.
 
 #[cfg(test)]
 use super::adts::AdtsHeader;
 use super::bits::BitReader;
-use super::cce::{PendingChan, parse_cce};
-use super::channel_map::{ElemKind, Element, PceChannelMap, map_planes_into, mono_mix, reorder};
+use super::cce::PendingChan;
+use super::channel_map::{Element, PceChannelMap, map_planes_into, mono_mix, reorder};
 use super::error::Result;
-use super::fb_pool::{FbPool, reject_dup};
+use super::fb_pool::FbPool;
 use super::filterbank::Filterbank;
-use super::ics_body::parse_ics_into;
 use super::pns::Lcg;
-use super::raw_data_block::IdSynEle;
 use super::sbr_attach::SbrPool;
 use super::section::SectionData;
 use super::sf::ScaleFactors;
-use super::skip::{fill_count, skip_dse};
 
 /// Filterbank scale is ±32768; public decode maps with this to ~[-1, 1].
 pub(crate) const INV_S16: f32 = 1.0 / 32768.0;
@@ -34,11 +31,11 @@ pub struct StreamDecoder {
     pub(crate) fb_r: Filterbank,
     pub(crate) rng: Lcg,
     pub mix_down_mono: bool,
-    sbr_pool: SbrPool,
+    pub(crate) sbr_pool: SbrPool,
     pub(crate) sbr_active: bool,
     sbr_declared: bool,
     ps_declared: bool,
-    sbr_out_rate: Option<u32>,
+    pub(crate) sbr_out_rate: Option<u32>,
     pub(crate) pcm_l: Vec<f32>,
     pub(crate) pcm_r: Vec<f32>,
     pub(crate) frame_ch: Vec<Vec<f32>>,
@@ -52,7 +49,7 @@ pub struct StreamDecoder {
     pub(crate) sf_r: ScaleFactors,
     pub(crate) fast_mono: bool,
     pub(crate) elems: Vec<Element>,
-    pce: Option<PceChannelMap>,
+    pub(crate) pce: Option<PceChannelMap>,
     pub(crate) fb_pool: FbPool,
     pub(crate) pending: Vec<PendingChan>,
     pub(crate) cces: Vec<super::cce::CcePayload>,
@@ -66,10 +63,16 @@ pub struct StreamDecoder {
     /// Independent-CCE IMDCT scratch (TASK-78).
     pub(crate) cce_pcm: Vec<f32>,
     pub(crate) pns_shared: Vec<f32>,
-    pending_sbrs: Vec<(
+    pub(crate) pending_sbrs: Vec<(
         (super::channel_map::ElemKind, u8),
         Box<super::sbr_extension::SbrExtensionData>,
     )>,
+    /// Stage totals, printed on drop when `SYOM_PROF` is set.
+    pub(crate) prof_lc: u64,
+    pub(crate) prof_fin: u64,
+    pub(crate) prof_sbr: u64,
+    pub(crate) prof_scale: u64,
+    pub(crate) prof_frames: u64,
 }
 
 impl StreamDecoder {
@@ -154,10 +157,15 @@ impl StreamDecoder {
     ) -> Result<u32> {
         let rate =
             self.decode_into_bufs(aot, fs_index, sample_rate, channel_configuration, payload)?;
+        let t_sc = super::prof::stamp();
         for ch in &mut self.frame_ch {
             for v in ch.iter_mut() {
                 *v *= INV_S16;
             }
+        }
+        self.prof_scale += super::prof::ns(t_sc);
+        if super::prof::on() {
+            self.prof_frames = self.prof_frames.saturating_add(1);
         }
         Ok(rate)
     }
@@ -177,7 +185,8 @@ impl StreamDecoder {
     ) -> Result<u32> {
         meta::check_config(aot, channel_configuration)?;
         self.refill_spec_bufs();
-        let core_aot = 2;
+        let ld = aot == super::asc::AOT_LD;
+        let core_aot = if ld { aot } else { 2 };
         let mut br = BitReader::new(payload);
         // cfg 0 / ≥3 / PCE: per-channel FBs. cfg 1/2 keep the fast path.
         let multichannel =
@@ -192,70 +201,20 @@ impl StreamDecoder {
         self.fb_pool.begin_frame();
         self.sbr_pool.begin_frame();
         self.pending_sbrs.clear();
-        let mut last_elem = None;
-        loop {
-            if br.bits_remaining() < 3 {
-                break;
-            }
-            let id = IdSynEle::from_bits(br.read(3)? as u8);
-            match id {
-                IdSynEle::End => break,
-                IdSynEle::Sce | IdSynEle::Lfe => {
-                    let tag = br.read(4)? as u8;
-                    let kind = if id == IdSynEle::Sce {
-                        ElemKind::Sce
-                    } else {
-                        ElemKind::Lfe
-                    };
-                    last_elem = Some((kind, tag));
-                    if multichannel {
-                        reject_dup(&self.elems, kind, tag)?;
-                    }
-                    let (ics, tns) = parse_ics_into(
-                        &mut br,
-                        fs_index,
-                        core_aot,
-                        None,
-                        &mut self.quant,
-                        &mut self.spec_l,
-                        &mut self.sections_l,
-                        &mut self.sf_l,
-                    )?;
-                    self.finish_sce_pns(&ics, fs_index)?;
-                    self.stash_chan(kind, tag, 0, ics, tns, true, true);
-                }
-                IdSynEle::Cpe => {
-                    let tag = br.read(4)? as u8;
-                    last_elem = Some((ElemKind::Cpe, tag));
-                    if multichannel {
-                        reject_dup(&self.elems, ElemKind::Cpe, tag)?;
-                    }
-                    let (ics_l, tns_l, ics_r, tns_r) =
-                        self.decode_cpe(&mut br, fs_index, core_aot, tag)?;
-                    self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, true);
-                    self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, true);
-                }
-                IdSynEle::Cce => {
-                    self.cces.push(parse_cce(&mut br, fs_index, core_aot)?);
-                }
-                IdSynEle::Dse => skip_dse(&mut br)?,
-                IdSynEle::Pce => {
-                    self.pce = Some(super::channel_map::parse_pce(&mut br)?);
-                }
-                IdSynEle::Fil => {
-                    let cnt = fill_count(&mut br)?;
-                    let fs_sbr = self.sbr_out_rate.unwrap_or(sample_rate.saturating_mul(2));
-                    super::sbr_attach::ingest_fil(
-                        &mut br,
-                        cnt,
-                        last_elem,
-                        fs_sbr,
-                        &mut self.sbr_pool,
-                        &mut self.pending_sbrs,
-                    )?;
-                }
-            }
+        let t_lc = super::prof::stamp();
+        if ld {
+            self.decode_ld_elements(&mut br, fs_index, core_aot, channel_configuration)?;
+        } else {
+            self.decode_lc_elements(
+                &mut br,
+                fs_index,
+                core_aot,
+                sample_rate,
+                channel_configuration,
+                multichannel,
+            )?;
         }
+        self.prof_lc += super::prof::ns(t_lc);
         br.byte_align()?;
         self.last_rdb_bytes = (br.bit_position() / 8) as usize;
         let he = self.sbr_active || !self.pending_sbrs.is_empty();
@@ -263,7 +222,9 @@ impl StreamDecoder {
         if he {
             self.fast_mono = false;
         }
+        let t_fin = super::prof::stamp();
         self.finish_pending(fs_index, multichannel, he)?;
+        self.prof_fin += super::prof::ns(t_fin);
         if was_fast && !he {
             self.fb_pool.retain_seen();
             self.fast_mono = was_fast;
@@ -315,6 +276,7 @@ impl StreamDecoder {
             return Ok(sample_rate);
         }
         let core = sample_rate;
+        let t_sbr = super::prof::stamp();
         let out_rate = super::sbr_attach::apply_and_layout(
             &mut self.sbr_pool,
             &self.elems,
@@ -326,6 +288,7 @@ impl StreamDecoder {
             self.mix_down_mono,
             order,
         )?;
+        self.prof_sbr += super::prof::ns(t_sbr);
         self.fb_pool.retain_seen();
         self.sbr_pool.retain_seen();
         self.fast_mono = was_fast;
@@ -388,6 +351,22 @@ impl StreamDecoder {
             self.frame_ch.push(src.to_vec());
         }
         self.n_ch += 1;
+    }
+}
+
+impl Drop for StreamDecoder {
+    fn drop(&mut self) {
+        if self.prof_frames == 0 {
+            return;
+        }
+        let n = self.prof_frames;
+        eprintln!(
+            "dec_prof frames={n} lc_ms={:.3} fin_ms={:.3} sbr_ms={:.3} scale_ms={:.3}",
+            self.prof_lc as f64 / 1e6,
+            self.prof_fin as f64 / 1e6,
+            self.prof_sbr as f64 / 1e6,
+            self.prof_scale as f64 / 1e6
+        );
     }
 }
 

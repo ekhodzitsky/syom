@@ -144,7 +144,8 @@ pub use container::EncodeContainer;
 pub struct EncodeOptions {
     pub container: EncodeContainer,
     /// ABR target in bits per second of the whole stream (TASK-65/66).
-    /// Per-frame ceiling plus unused bytes after `ID_END` so payload/valid
+    /// Per-frame ceiling plus EXT_FILL `fill_element()` padding before
+    /// `ID_END` so payload/valid
     /// stays within ±3% on ≥10 s non-silent tracks. Silence and `N < 2048`
     /// may undershoot. Not CBR: ADTS `adts_buffer_fullness = 0x7FF` (no
     /// bit reservoir). Must not exceed AAC-LC 6144 bits/channel per
@@ -188,6 +189,16 @@ pub struct EncodeOptions {
     pub he: bool,
     /// HE-AAC v2, see `with_he_v2`.
     pub ps: bool,
+    /// Measurement only (TASK-134): 20-band fine IID (`iid_mode` 4).
+    /// [`Self::with_he_v2`] leaves this off, so the product path stays
+    /// coarse `iid_mode` 1.
+    #[doc(hidden)]
+    pub ps_iid_fine: bool,
+    /// AAC-LD (AOT 23, 512-sample frames). Default off — [`crate::encode`]
+    /// stays LC. LOAS or M4A only; ADTS cannot signal AOT 23. Mono or
+    /// stereo, priming one frame. Not combined with HE, lookahead, quality
+    /// VBR, or the LC-only tools.
+    pub ld: bool,
     /// Quality VBR level `0..=10` (TASK-67). `None` (default) = ABR on
     /// `bitrate_bps`. With a level the LC encoder codes every frame at
     /// one fixed allowed-noise offset — level 5 is the psy model's
@@ -216,6 +227,8 @@ impl Default for EncodeOptions {
             intensity: false,
             he: false,
             ps: false,
+            ps_iid_fine: false,
+            ld: false,
             quality: None,
         }
     }
@@ -308,7 +321,7 @@ impl EncodeOptions {
     /// let opts = EncodeOptions::adts().with_lookahead(true);
     /// let adts = encode_with(&pcm, 48_000, &opts)?;
     /// let dec = decode_with(&adts, &DecodeOptions::unbounded())?;
-    /// assert_eq!(dec.channels[0].len(), 5 * 1024); // +1 overlap-drain frame
+    /// assert_eq!(dec.channels[0].len(), 4096); // source length; the tag trims the drain
     /// # Ok::<(), syom::AacError>(())
     /// ```
     #[inline]
@@ -375,6 +388,8 @@ impl EncodeOptions {
 
 #[path = "options_he.rs"]
 mod he_v2;
+#[path = "options_ld.rs"]
+mod ld;
 #[path = "options_validate.rs"]
 mod validate;
 

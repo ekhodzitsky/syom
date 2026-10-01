@@ -131,10 +131,15 @@ impl Encoder {
         if opts.bitrate_bps == 0 {
             return Err(AacError::encode("encode: bitrate must be > 0"));
         }
-        let max_bps = crate::engine::enc_frame::max_bitrate_bps(sample_rate, channels);
+        let max_bps = if opts.ld {
+            crate::encode::max_ld_bitrate(sample_rate, channels)
+        } else {
+            crate::engine::enc_frame::max_bitrate_bps(sample_rate, channels)
+        };
         if opts.bitrate_bps > max_bps {
+            let profile = if opts.ld { "AAC-LD" } else { "AAC-LC" };
             return Err(AacError::encode(format!(
-                "encode: bitrate {} bps exceeds AAC-LC 6144 bits/channel (max {max_bps} bps)",
+                "encode: bitrate {} bps exceeds {profile} 6144 bits/channel (max {max_bps} bps)",
                 opts.bitrate_bps
             )));
         }
@@ -153,6 +158,16 @@ impl Encoder {
             let he = crate::encode::new_he(sample_rate, channels, opts)?;
             let asc = crate::encode::he_asc(&he, sample_rate, channels)?;
             (Core::He(Box::new(he)), asc)
+        } else if opts.ld {
+            let mut ld = if channels == 1 {
+                crate::engine::enc_ld::LdEncoder::new(sample_rate)
+            } else {
+                crate::engine::enc_ld::LdEncoder::stereo(sample_rate)
+            }
+            .map_err(AacError::from)?;
+            ld.set_bitrate(opts.bitrate_bps);
+            let asc = ld.asc();
+            (Core::Ld(Box::new(ld)), asc)
         } else {
             let lc = crate::encode::new_lc(sample_rate, channels, opts)?;
             let asc = crate::engine::asc::write_lc(lc.fs_index(), channels as u8);
@@ -243,6 +258,7 @@ impl Encoder {
         match self.enc {
             Core::He(_) => return self.feed_he(planes, on_frame),
             Core::Mc(_) => return self.feed_mc(planes, on_frame),
+            Core::Ld(_) => return self.feed_ld(planes, on_frame),
             Core::Lc(_) => {}
         }
         let mut cb = on_frame;
@@ -296,6 +312,7 @@ impl Encoder {
         match self.enc {
             Core::He(_) => return self.finish_he(on_frame),
             Core::Mc(_) => return self.finish_mc(on_frame),
+            Core::Ld(_) => return self.finish_ld(on_frame),
             Core::Lc(_) => {}
         }
         let mut cb = on_frame;
@@ -326,8 +343,8 @@ impl Encoder {
     where
         F: FnMut(EncodedFrame<'_>) -> Result<()>,
     {
-        if self.pending_len > 0 {
-            let tail = self.pending_len;
+        let tail = self.pending_len;
+        if tail > 0 {
             let mut bufs = [[0.0f32; FRAME]; 2];
             for (ch, buf) in bufs.iter_mut().enumerate().take(self.channels) {
                 buf[..tail].copy_from_slice(&self.pending[ch][..tail]);
@@ -337,19 +354,23 @@ impl Encoder {
                 if let Some(au) = self.lc()?.push_frame(&planes)? {
                     self.deliver(&au, FRAME, scratch, cb)?;
                 }
-                if let Some(au) = self.lc()?.flush()? {
-                    self.deliver(&au, tail, scratch, cb)?;
-                }
             } else {
                 self.emit(&bufs, tail, scratch, cb)?;
             }
-        } else if self.lc()?.lookahead_enabled()
-            && let Some(au) = self.lc()?.flush()?
-        {
-            self.deliver(&au, FRAME, scratch, cb)?;
         }
-        for au in self.lc()?.drain_overlap()? {
-            self.deliver(&au, 0, scratch, cb)?;
+        // One-shot codes the last content frame while looking at the silent
+        // drain (`attack(last) || attack(zeros)`). Flushing that frame first
+        // drops the step into silence and picks a different window.
+        let lookahead = self.lc()?.lookahead_enabled();
+        let aus = self.lc()?.drain_overlap()?;
+        let content = if tail > 0 { tail } else { FRAME };
+        for (i, au) in aus.iter().enumerate() {
+            let n = if lookahead && aus.len() > 1 && i == 0 {
+                content
+            } else {
+                0
+            };
+            self.deliver(au, n, scratch, cb)?;
         }
         Ok(())
     }
@@ -360,6 +381,8 @@ mod emit;
 
 #[path = "enc_stream_he.rs"]
 mod he;
+#[path = "enc_stream_ld.rs"]
+mod ld_stream;
 use he::Core;
 
 #[path = "enc_stream_mc.rs"]

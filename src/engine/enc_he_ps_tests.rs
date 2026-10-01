@@ -23,7 +23,7 @@ fn programme(n: usize) -> Vec<f32> {
 
 /// Encode to ADTS (mono core header, implicit SBR + PS).
 pub(crate) fn encode_adts(l: &[f32], r: &[f32], bps: u32, chunk: usize) -> Vec<u8> {
-    let mut enc = PsHeEncoder::new(RATE, bps, false).unwrap();
+    let mut enc = PsHeEncoder::new(RATE, bps, false, false).unwrap();
     let fs = enc.fs_index();
     let mut adts = Vec::new();
     let mut sink = |au: &[u8]| {

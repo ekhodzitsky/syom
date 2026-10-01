@@ -73,7 +73,11 @@ fn signed_zero_subnormal_and_full_scale_encode() {
         let pcm = vec![pcm0];
         let a = oneshot(&pcm).expect("oneshot");
         let b = push(&pcm, 100).expect("push");
-        assert_eq!(a, b, "chunked push must match one-shot");
+        assert_eq!(
+            crate::gapless::strip_id3(&a),
+            b.as_slice(),
+            "chunked push must match one-shot"
+        );
         let again = oneshot(&pcm).expect("repeat");
         assert_eq!(a, again, "deterministic");
         let dec = decode_with(&a, &crate::DecodeOptions::unbounded()).expect("decode");

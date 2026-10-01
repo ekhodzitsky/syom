@@ -176,23 +176,26 @@ pub(super) fn pce_map(
     if pce.sf_index != fs_index {
         return Err(Error::Format("PCE sf_index does not match stream"));
     }
-    let mut used = [false; 16];
-    let n = elems.len().clamp(1, 16);
+    // One flag per decoded element. A fixed 16-slot map panicked when a
+    // raw_data_block carried a 17th element (legal syntax; the plane
+    // ceiling still rejects it below). An empty block keeps the old
+    // "extra element" error: there is a phantom slot nothing consumed.
+    let mut used = vec![false; elems.len()];
     let mut out = Vec::new();
-    pce_list(&mut out, elems, &mut used[..n], &pce.front, List::Front)?;
-    pce_list(&mut out, elems, &mut used[..n], &pce.side, List::Side)?;
-    pce_list(&mut out, elems, &mut used[..n], &pce.back, List::Back)?;
+    pce_list(&mut out, elems, &mut used, &pce.front, List::Front)?;
+    pce_list(&mut out, elems, &mut used, &pce.side, List::Side)?;
+    pce_list(&mut out, elems, &mut used, &pce.back, List::Back)?;
     for &tag in &pce.lfe {
         push_tagged(
             &mut out,
             elems,
-            &mut used[..n],
+            &mut used,
             ElemKind::Lfe,
             tag,
             &[Channel::Lfe],
         )?;
     }
-    if used[..n].iter().any(|&u| !u) {
+    if elems.is_empty() || used.iter().any(|&u| !u) {
         return Err(Error::Format("PCE extra channel element"));
     }
     if out.len() > crate::layout::MAX_PLANES {

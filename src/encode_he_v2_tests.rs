@@ -97,12 +97,12 @@ fn every_container_decodes_to_stereo_on_the_he_timeline_with_the_image() {
             (2, RATE),
             "{container:?}"
         );
-        let at = if container == EncodeContainer::M4a {
-            assert_eq!(dec.channels[0].len(), N, "M4A presentation is N");
+        let at = if container == EncodeContainer::Latm {
+            3018
+        } else {
+            assert_eq!(dec.channels[0].len(), N, "{container:?} presentation is N");
             assert_eq!(dec.priming, Some(3018));
             0
-        } else {
-            3018
         };
         assert_image(
             &dec.channels[0],
@@ -144,7 +144,11 @@ fn push_chunking_and_sinks_match_one_shot() {
                 Ok(())
             })
             .unwrap();
-        assert_eq!(got, want, "chunk {chunk}");
+        assert_eq!(
+            got.as_slice(),
+            crate::gapless::strip_id3(&want),
+            "chunk {chunk}"
+        );
         assert_eq!((fed, info.channels, info.layout), (N, 2, Layout::Mpeg(2)));
         assert_eq!(info.priming, 3018);
         enc.reset().unwrap();
@@ -210,11 +214,8 @@ fn mint_he_v2_goldens() {
     }
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
     let src = pcm();
-    std::fs::write(
-        dir.join("he2_48e.adts"),
-        encode_with(&src, RATE, &opts(EncodeContainer::Adts)).unwrap(),
-    )
-    .unwrap();
+    let adts = encode_with(&src, RATE, &opts(EncodeContainer::Adts)).unwrap();
+    std::fs::write(dir.join("he2_48e.adts"), crate::gapless::strip_id3(&adts)).unwrap();
     std::fs::write(
         dir.join("he2_48em.m4a"),
         encode_with(&src, RATE, &opts(EncodeContainer::M4a)).unwrap(),
@@ -249,11 +250,13 @@ fn libavcodec_decodes_our_he_v2_streams_as_stereo_with_the_same_image() {
             "he2-m4a",
         ),
     ] {
-        assert_eq!(
-            encode_with(&src, RATE, &opts(container)).unwrap(),
-            bytes,
-            "{label} drifted; re-mint"
-        );
+        let fresh = encode_with(&src, RATE, &opts(container)).unwrap();
+        let fresh = if container == EncodeContainer::Adts {
+            crate::gapless::strip_id3(&fresh).to_vec()
+        } else {
+            fresh
+        };
+        assert_eq!(fresh.as_slice(), bytes, "{label} drifted; re-mint");
         let [l, r] = lavc_planes(lavc);
         assert_image(&l, &r, at, &format!("{label} lavc"));
         // syom's own decode agrees with libavcodec's.

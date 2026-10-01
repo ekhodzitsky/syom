@@ -1,0 +1,58 @@
+{
+  "frame_len": 960,
+  "rate": 48000,
+  "vectors": {
+    "lc960-m48": {
+      "channels": 1,
+      "frames": 8,
+      "window_sequences": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "asc_hex": "118c",
+      "au_sizes": [
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29,
+        29
+      ],
+      "expected_core_samples_per_channel": 7680
+    },
+    "lc960-s48": {
+      "channels": 2,
+      "frames": 8,
+      "window_sequences": [
+        0,
+        0,
+        1,
+        2,
+        3,
+        0,
+        0,
+        0
+      ],
+      "asc_hex": "1194",
+      "au_sizes": [
+        54,
+        54,
+        54,
+        25,
+        54,
+        54,
+        54,
+        54
+      ],
+      "expected_core_samples_per_channel": 7680
+    }
+  }
+}

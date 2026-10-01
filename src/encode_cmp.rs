@@ -101,6 +101,10 @@ impl EncodePreflight {
 
 /// ADTS payload bytes (frame length minus 7-byte header), if parseable.
 pub fn adts_payload_bytes(adts: &[u8]) -> Option<usize> {
+    let adts = match crate::gapless::id3_at(adts, u64::MAX) {
+        Ok(crate::gapless::Id3At::Ready { len, .. }) if len <= adts.len() => &adts[len..],
+        _ => adts,
+    };
     let mut pos = 0usize;
     let mut payload = 0usize;
     while pos + 7 <= adts.len() {

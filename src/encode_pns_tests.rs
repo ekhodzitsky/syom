@@ -31,11 +31,12 @@ fn noise(n: usize, amp: f32, seed: u32) -> Vec<f32> {
 
 fn snr_aligned(want: &[f32], got: &[f32]) -> f64 {
     let n = want.len();
-    if got.len() < n + PRIME {
+    let w = &want[PRIME..n.saturating_sub(PRIME)];
+    let start = if got.len() == n { PRIME } else { 2 * PRIME };
+    if start + w.len() > got.len() {
         return 0.0;
     }
-    let w = &want[PRIME..n.saturating_sub(PRIME)];
-    let g = &got[2 * PRIME..2 * PRIME + w.len()];
+    let g = &got[start..start + w.len()];
     let mut ps = 0.0f64;
     let mut pe = 0.0f64;
     for i in 0..w.len().min(g.len()) {
@@ -79,6 +80,7 @@ fn corr(a: &[f32], b: &[f32]) -> f64 {
 }
 
 fn noise_hcb_count(adts: &[u8]) -> usize {
+    let adts = crate::gapless::strip_id3(adts);
     let mut i = 0usize;
     let mut n = 0usize;
     while i + 7 <= adts.len() {
@@ -174,7 +176,7 @@ fn pns_stream_matches_oneshot() {
     };
     enc.feed(&[&pcm[0]], &mut cb).unwrap();
     enc.finish(&mut cb).unwrap();
-    assert_eq!(got, want);
+    assert_eq!(got.as_slice(), crate::gapless::strip_id3(&want));
 }
 
 #[test]

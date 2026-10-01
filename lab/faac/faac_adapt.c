@@ -90,15 +90,21 @@ int faac_encode_lc_adts(const float *interleaved, uint32_t channels,
         int nout;
         const float *chunk;
         float zeros[4096];
+        float scaled[4096];
         if (pos < samples_per_ch) {
             unsigned long remain = samples_per_ch - pos;
             unsigned long per_ch = input_samples / channels;
+            unsigned int k;
             if (per_ch == 0)
                 per_ch = 1024;
             if (remain > per_ch)
                 remain = per_ch;
             nch_samples = (unsigned int)(remain * channels);
-            chunk = interleaved + (size_t)pos * channels;
+            /* FAAC_INPUT_FLOAT passes values unscaled into a PCM-scale
+               pipeline (libfaac frame.c): feed full-scale ±32768. */
+            for (k = 0; k < nch_samples; k++)
+                scaled[k] = interleaved[(size_t)pos * channels + k] * 32768.0f;
+            chunk = scaled;
             pos += remain;
         } else {
             memset(zeros, 0, sizeof(zeros));

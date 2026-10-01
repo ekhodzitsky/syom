@@ -1,14 +1,15 @@
-//! Deterministic elementary math for the encoder decision path.
+//! Deterministic elementary math for encoder decisions and decoder tables.
 //!
 //! IEEE 754 pins `+ - * / sqrt` to exact rounding, so they are bit-identical
 //! on every platform; `powf` / `log2` / `exp2` / `atan` / `sin` / `cos` are
 //! libm calls that may differ by 1 ulp across platforms (observed: macOS
 //! arm64 vs Linux x86_64 flip `atan` and some `sin`/`cos` twiddles), which
-//! can flip a scalefactor or a quantization rounding and drift the encoded
-//! bytes. The encoder therefore routes every transcendental in its decision
-//! path through the replacements below — each is built from exactly-rounded
-//! ops over literals, so the encoder output is byte-identical across
-//! platforms. Accuracy is a few ulp, plenty for the psy / quantization
+//! can flip a scalefactor, a quantization rounding, or a decoded PCM bit.
+//! The encoder routes every transcendental in its decision path through the
+//! f32 replacements below. Decoder IMDCT twiddles use the same f32
+//! [`sincos`]; TNS, QMF, and PS use the f64 functions ([`sincos_f64`],
+//! [`atan_f64`], [`acos_f64`], [`exp10_f64`]). Each is built from exactly-rounded ops over
+//! literals. f32 accuracy is a few ulp, plenty for the psy / quantization
 //! decisions these feed.
 
 use std::f32::consts::{FRAC_2_PI, FRAC_PI_2, FRAC_PI_6, LN_2, LOG2_E, SQRT_2};
@@ -191,6 +192,13 @@ pub fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
     }
     (re, im)
 }
+
+#[path = "det_math_f64.rs"]
+mod wider;
+
+#[cfg(test)]
+pub use wider::exp2_f64;
+pub use wider::{acos_f64, atan_f64, atan2_f64, exp10_f64, sin_f64, sincos_f64};
 
 #[cfg(test)]
 #[path = "det_math_tests.rs"]

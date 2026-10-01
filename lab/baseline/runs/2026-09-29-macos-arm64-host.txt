@@ -1,0 +1,8 @@
+uname=Darwin arm64
+ProductName:		macOS
+ProductVersion:		26.1
+BuildVersion:		25B78
+rustc=rustc 1.97.1 (8bab26f4f 2026-07-14)
+Apple M1 Pro
+10
+17179869184

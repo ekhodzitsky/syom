@@ -1,0 +1,74 @@
+<!doctype html>
+<!-- TASK-20 lab: AAC.js browser-lane probe. Loads the lab-built aurora/aac
+     bundles, decodes an embedded 10 s 48 kHz mono LC ADTS fixture, and writes
+     a JSON result into #result for the WebDriver driver to read. -->
+<html>
+<head><meta charset="utf-8"><title>aacjs browser probe</title></head>
+<body>
+<pre id="result">RUNNING</pre>
+<script src="fixture.js"></script>
+<script src="../build/aurora.js"></script>
+<script src="../build/aac.js"></script>
+<script>
+(function () {
+  var out = { ok: false, userAgent: navigator.userAgent };
+  function done() { document.getElementById('result').textContent = JSON.stringify(out); }
+  try {
+    out.hasAV = typeof AV !== 'undefined';
+    var bin = atob(FIXTURE_B64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+
+    function decodeOnce(cb) {
+      var asset = AV.Asset.fromBuffer(bytes);
+      var floats = 0, nan = 0, errors = [], t0 = performance.now();
+      var h = 0x811c9dc5 >>> 0, view = new DataView(new ArrayBuffer(4));
+      asset.on('error', function (e) { errors.push(String(e && e.message || e)); });
+      asset.on('data', function (c) {
+        floats += c.length;
+        for (var i = 0; i < c.length; i++) {
+          if (c[i] !== c[i]) nan++;
+          view.setFloat32(0, c[i]);
+          var v = view.getUint32(0);
+          for (var k = 0; k < 4; k++) { h ^= (v >>> (k * 8)) & 0xff; h = Math.imul(h, 0x01000193) >>> 0; }
+        }
+      });
+      asset.on('end', function () { cb(null, { floats: floats, nan: nan, hash: h.toString(16), errors: errors, ms: performance.now() - t0 }); });
+      asset.start(true);
+      setTimeout(function () { cb(new Error('timeout')); }, 30000);
+    }
+
+    var times = [], first = null, iters = 12;
+    function step(i) {
+      if (i >= iters) return finish();
+      decodeOnce(function (err, r) {
+        if (err) { out.error = String(err); return done(); }
+        if (!first) first = r;
+        times.push(r.ms);
+        step(i + 1);
+      });
+    }
+    function finish() {
+      var steady = times.slice(4).slice().sort(function (a, b) { return a - b; });
+      var median = steady[Math.floor(steady.length / 2)];
+      out.ok = true;
+      out.floats = first.floats;
+      out.nan = first.nan;
+      out.hash = first.hash;
+      out.errors = first.errors;
+      out.firstIterMs = +times[0].toFixed(2);
+      out.warmupCurveMs = times.map(function (t) { return +t.toFixed(2); });
+      out.steadyMedianMs = +median.toFixed(2);
+      out.steadyRealtimeX = +(10000 / median).toFixed(1);
+      out.memory = (performance && performance.memory) ? performance.memory.usedJSHeapSize : null;
+      done();
+    }
+    step(0);
+  } catch (e) {
+    out.error = String(e && e.stack || e);
+    done();
+  }
+})();
+</script>
+</body>
+</html>

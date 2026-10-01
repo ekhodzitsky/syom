@@ -135,7 +135,11 @@ fn push_adts_raw_and_one_shot_agree() {
     let pcm = lavc_fixture();
     let one = encode_with(&pcm, 48_000, &he(48_000)).unwrap();
     let (aus, samples, info, _) = push_all(&he(48_000), &pcm, 1000);
-    assert_eq!(aus.concat(), one, "push ADTS == one-shot ADTS");
+    assert_eq!(
+        aus.concat().as_slice(),
+        crate::gapless::strip_id3(&one),
+        "push ADTS == one-shot ADTS"
+    );
     assert_eq!(
         samples.iter().sum::<usize>(),
         pcm[0].len(),
@@ -145,13 +149,17 @@ fn push_adts_raw_and_one_shot_agree() {
     assert_eq!(info.priming, PRIMING);
     assert_eq!(info.coded_samples, info.aac_frames * 2048);
     assert_eq!(info.remainder, info.coded_samples - PRIMING - info.samples);
-    assert_eq!(info.bytes as usize, one.len());
+    assert_eq!(info.bytes as usize, crate::gapless::strip_id3(&one).len());
     let (raw, _, _, _) = push_all(&he(48_000).with_container(EncodeContainer::Raw), &pcm, 5000);
     let rewrapped: Vec<u8> = raw
         .iter()
         .flat_map(|au| wrap_adts_au(au, 24_000, 2).unwrap())
         .collect();
-    assert_eq!(rewrapped, one, "raw AUs wrapped at the core rate == ADTS");
+    assert_eq!(
+        rewrapped.as_slice(),
+        crate::gapless::strip_id3(&one),
+        "raw AUs wrapped at the core rate == ADTS"
+    );
     let m4a = encode_with(
         &pcm,
         48_000,
@@ -169,11 +177,38 @@ fn push_adts_raw_and_one_shot_agree() {
         AacError::Unsupported(_)
     ));
     let (la, _, li, _) = push_all(&he(48_000).with_lookahead(true), &pcm, 777);
-    assert_eq!(
-        la.concat(),
-        encode_with(&pcm, 48_000, &he(48_000).with_lookahead(true)).unwrap()
-    );
+    let one_la = encode_with(&pcm, 48_000, &he(48_000).with_lookahead(true)).unwrap();
+    assert_eq!(la.concat(), crate::gapless::strip_id3(&one_la));
     assert_eq!(li.aac_frames, info.aac_frames);
+}
+
+#[test]
+fn he_tail_shorter_than_the_sbr_delay_still_presents() {
+    // 3018 priming + 3127 source = 6145 decoded samples. Three AUs are
+    // 6144, so M4A used to reject the file and ADTS dropped the tail.
+    let n = 3127usize;
+    let pcm = vec![vec![0.0f32; n]];
+    for look in [false, true] {
+        let opts = he(32_000).with_lookahead(look);
+        let adts = encode_with(&pcm, 48_000, &opts).unwrap();
+        let da = decode_with(&adts, &DecodeOptions::unbounded()).unwrap();
+        assert_eq!(
+            da.channels[0].len(),
+            n,
+            "lookahead {look}: tagged ADTS presents the tail"
+        );
+        let bare = crate::gapless::strip_id3(&adts);
+        let padded = decode_with(bare, &DecodeOptions::unbounded()).unwrap();
+        assert!(
+            padded.channels[0].len() as u64 >= PRIMING + n as u64,
+            "lookahead {look}: untagged ADTS dropped the tail ({})",
+            padded.channels[0].len()
+        );
+        let m4a = encode_with(&pcm, 48_000, &opts.with_container(EncodeContainer::M4a)).unwrap();
+        let dm = decode_with(&m4a, &DecodeOptions::unbounded()).unwrap();
+        assert_eq!(dm.channels[0].len(), n, "lookahead {look}");
+        assert_eq!(dm.priming, Some(PRIMING));
+    }
 }
 
 #[test]
@@ -210,14 +245,16 @@ fn m4a_signals_two_rates_and_presents_exactly_n_samples() {
         "M4A presentation is N at the output rate"
     );
     assert_eq!(dm.priming, Some(PRIMING));
+    assert_eq!(da.channels[0].len(), n);
+    assert_eq!(da.priming, Some(PRIMING));
     for ch in 0..2 {
         let (a, m) = (&da.channels[ch], &dm.channels[ch]);
-        let max = m
+        let max = a
             .iter()
-            .enumerate()
-            .map(|(i, &v)| (v - a[i + PRIMING as usize]).abs())
+            .zip(m.iter())
+            .map(|(x, y)| (x - y).abs())
             .fold(0.0f32, f32::max);
-        assert_eq!(max, 0.0, "ch{ch}: M4A != ADTS after the priming shift");
+        assert_eq!(max, 0.0, "ch{ch}: M4A != tagged ADTS");
     }
 }
 
@@ -243,7 +280,7 @@ fn lavc_decodes_our_he_adts_and_m4a() {
     let pcm = lavc_fixture();
     let adts = encode_with(&pcm, 48_000, &he(48_000)).unwrap();
     assert_eq!(
-        adts.as_slice(),
+        crate::gapless::strip_id3(&adts),
         &include_bytes!("goldens/he48e.adts")[..],
         "public path == committed HE golden"
     );

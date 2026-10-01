@@ -15,6 +15,8 @@ pub(super) enum Core {
     He(Box<AnyHe>),
     /// Surround LC (TASK-116): the engine plus PCM pending across feeds.
     Mc(Box<super::mc::McCore>),
+    /// AAC-LD, 512-sample frames.
+    Ld(Box<crate::engine::enc_ld::LdEncoder>),
 }
 
 impl Core {
@@ -23,6 +25,7 @@ impl Core {
             Core::Lc(e) => e.fs_index(),
             Core::He(e) => e.fs_index(),
             Core::Mc(m) => m.enc.fs_index(),
+            Core::Ld(e) => e.fs_index(),
         }
     }
 
@@ -31,7 +34,7 @@ impl Core {
         match self {
             Core::Mc(m) => usize::from(m.enc.channel_configuration()),
             Core::He(e) => e.core_channels(channels),
-            Core::Lc(_) => channels,
+            Core::Lc(_) | Core::Ld(_) => channels,
         }
     }
 
@@ -40,6 +43,7 @@ impl Core {
             Core::Lc(e) => e.reset(),
             Core::He(e) => e.reset(),
             Core::Mc(m) => m.reset(),
+            Core::Ld(e) => e.reset(),
         }
     }
 }
@@ -49,7 +53,7 @@ impl Encoder {
     pub(super) fn lc(&mut self) -> Result<&mut LcEncoder> {
         match &mut self.enc {
             Core::Lc(e) => Ok(e),
-            Core::He(_) | Core::Mc(_) => Err(AacError::Lifecycle {
+            Core::He(_) | Core::Mc(_) | Core::Ld(_) => Err(AacError::Lifecycle {
                 state: crate::LifecycleState::Failed,
             }),
         }

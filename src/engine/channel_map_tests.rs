@@ -431,13 +431,15 @@ fn pce_mismatch_is_format_not_silence() {
         map_planes(&s0, Some(&pce_lc(vec![(true, 0)])), 0, 3),
         "PCE missing channel element",
     );
-    // Eight planes are 7.1 (TASK-62); nine are over the plane ceiling.
-    let nine: Vec<_> = (0..9).map(|t| el(ElemKind::Sce, t, t as usize)).collect();
-    let front: Vec<_> = (0..9).map(|t| (false, t)).collect();
-    assert_fmt(
-        map_planes(&nine, Some(&pce_lc(front)), 0, 3),
-        "PCE layout exceeds 7.1",
-    );
+    // 9 planes and a 17th element are over 7.1 (the 17th used to panic).
+    for n in [9u8, 17] {
+        let many: Vec<_> = (0..n).map(|t| el(ElemKind::Sce, t, t as usize)).collect();
+        let front: Vec<_> = (0..n).map(|t| (false, t)).collect();
+        assert_fmt(
+            map_planes(&many, Some(&pce_lc(front)), 0, 3),
+            "PCE layout exceeds 7.1",
+        );
+    }
 }
 
 pub(super) fn pce_frame(

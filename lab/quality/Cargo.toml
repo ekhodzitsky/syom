@@ -29,3 +29,15 @@ path = "src/curves.rs"
 [[bin]]
 name = "syom_speed"
 path = "src/speed.rs"
+
+[[bin]]
+name = "syom_he_qualify"
+path = "src/he_qual.rs"
+
+[[bin]]
+name = "syom_tune133"
+path = "src/tune133.rs"
+
+[[bin]]
+name = "syom_det133"
+path = "src/det133.rs"

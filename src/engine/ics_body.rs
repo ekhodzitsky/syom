@@ -58,18 +58,19 @@ pub fn parse_ics(
 pub fn parse_ics_into(
     br: &mut BitReader<'_>,
     fs_index: u8,
-    _aot: u8,
+    aot: u8,
     common: Option<&IcsInfo>,
     quant: &mut Vec<i32>,
     spec: &mut Vec<f32>,
     sections: &mut SectionData,
     sf: &mut ScaleFactors,
 ) -> Result<(IcsInfo, Option<super::tns::TnsData>)> {
+    let ld = aot == super::asc::AOT_LD;
     let global_gain = br.read(8)? as u8;
     let ics = if let Some(shared) = common {
         *shared
     } else {
-        IcsInfo::parse(br, fs_index, false)?
+        IcsInfo::parse_mode(br, fs_index, false, ld)?
     };
     sections.parse_into(br, &ics)?;
     sf::parse_into(br, &ics, &sections.sfb_cb, global_gain, sf)?;
@@ -83,19 +84,27 @@ pub fn parse_ics_into(
         None
     };
     let tns_present = br.read_bit()?;
+    // ER syntax (LD): tns_data is read after gain_control_data_present
+    // (esc1_hcr / esc2_rvlc are no-ops without the resilience flags);
+    // LC reads tns_data immediately after its present flag.
+    let gain_present = if ld { br.read_bit()? } else { false };
     let tns = if tns_present {
         Some(super::tns::TnsData::parse(br, &ics)?)
     } else {
         None
     };
-    let gain_present = br.read_bit()?;
+    let gain_present = if ld { gain_present } else { br.read_bit()? };
     if gain_present {
         return Err(Error::Format("gain_control_data is SSR, not LC"));
     }
-    spectrum::parse_quant_into(br, &ics, sections, fs_index, quant)?;
+    // Pulse reconstruction adds to the integer quantisers. Without it the
+    // Huffman read writes the scaled floats directly.
     if let Some(p) = pulse.as_ref() {
-        spectrum::apply_pulse(quant, fs_index, p)?;
+        spectrum::parse_quant_into(br, &ics, sections, fs_index, quant)?;
+        spectrum::apply_pulse(quant, ics.swb_offsets(fs_index)?, p)?;
+        spectrum::rescale_into(quant, &ics, sections, sf, fs_index, spec)?;
+    } else {
+        super::spectrum_scaled::decode_scaled_into(br, &ics, sections, sf, fs_index, spec)?;
     }
-    spectrum::rescale_into(quant, &ics, sections, sf, fs_index, spec)?;
     Ok((ics, tns))
 }

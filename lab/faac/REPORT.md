@@ -34,6 +34,21 @@ as CBR for comparisons.
 - LATM/LOAS, M4A mux: **not** this adapter (ADTS only).
 - MAIN/SSR/LTP object types: not smoked (LC `LOW` only).
 
+## encode-pcm (TASK-95, 2026-09-23)
+
+`encode-pcm RATE CHANNELS BITRATE_PER_CH IN.f32 OUT.adts` encodes planar
+f32le (interleaved inside the driver). Matrix results live in
+`lab/quality/HE_QUALIFY.md`.
+
+**Correction (2026-09-23):** `FAAC_INPUT_FLOAT` passes values unscaled
+into libfaac's PCM-scale pipeline (`libfaac/frame.c`: the 32-bit path
+divides by 256, the float path does not scale). This adapter fed ±1.0
+floats until TASK-95, so every TASK-9 encode above ran ~90 dB down: the
+"finite/actual-bps" numbers stand as byte counts, but the psychoacoustic
+operating point was not full-scale and the level was not checked against
+the source. The adapter now scales by 32768; TASK-95 matrix rows use the
+fixed scaling.
+
 ## Go / no-go
 
 | Lane | Decision |

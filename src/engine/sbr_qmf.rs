@@ -314,6 +314,41 @@ pub const QMF_WINDOW: [f64; 640] = [
     -0.0004875227, -0.0004947518, -0.0005617692, -0.000552528,
 ];
 
+/// Even coefficients of [`QMF_WINDOW`], five taps of 64. `TAP[j][n]` is
+/// `QMF_WINDOW[2 * (n + 64 * j)]`, which is `c[2n]` in the Figure 4.42 sum.
+const ANALYSIS_TAP: [[f64; 64]; 5] = analysis_taps();
+
+const fn analysis_taps_f32() -> [[f32; 64]; 5] {
+    let mut w = [[0.0f32; 64]; 5];
+    let mut j = 0;
+    while j < 5 {
+        let mut n = 0;
+        while n < 64 {
+            w[j][n] = ANALYSIS_TAP[j][n] as f32;
+            n += 1;
+        }
+        j += 1;
+    }
+    w
+}
+
+/// Even window taps rounded to f32. The production analysis fold uses these.
+const ANALYSIS_TAP_F32: [[f32; 64]; 5] = analysis_taps_f32();
+
+const fn analysis_taps() -> [[f64; 64]; 5] {
+    let mut w = [[0.0f64; 64]; 5];
+    let mut j = 0;
+    while j < 5 {
+        let mut n = 0;
+        while n < 64 {
+            w[j][n] = QMF_WINDOW[2 * (n + 64 * j)];
+            n += 1;
+        }
+        j += 1;
+    }
+    w
+}
+
 /// §4.6.18.4.1 / Figure 4.42 — the 32-band complex analysis QMF bank.
 ///
 /// One instance carries the 320-sample input history `x` of one
@@ -322,8 +357,11 @@ pub const QMF_WINDOW: [f64; 640] = [
 /// QMF slot.
 #[derive(Debug, Clone)]
 pub struct AnalysisQmf {
-    /// The Figure 4.42 input history; a higher index is an older sample.
-    x: Vec<f64>,
+    /// The Figure 4.42 input history. Logical sample 0 is at [`Self::base`].
+    /// f32: the core PCM is f32 and the production DFT consumes f32.
+    x: Vec<f32>,
+    /// Physical index of logical sample 0. A multiple of 32.
+    base: usize,
 }
 
 impl Default for AnalysisQmf {
@@ -336,45 +374,154 @@ impl AnalysisQmf {
     /// A fresh analysis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        AnalysisQmf { x: vec![0.0; 320] }
+        AnalysisQmf {
+            x: vec![0.0; 320],
+            base: 0,
+        }
     }
 
     /// Run one Figure 4.42 loop: shift in 32 new time samples (oldest
     /// first within `samples`) and return the 32 complex subband
     /// samples `W[k]` for this slot.
-    pub fn push_slot(&mut self, samples: &[f64]) -> Result<[Complex; 32]> {
+    #[inline]
+    pub fn push_slot(&mut self, samples: &[f32]) -> Result<[Complex; 32]> {
         if samples.len() != 32 {
             return Err(Error::SbrQmfInvalid);
         }
-        // Shift the history by 32 (discarding the oldest 32) and store
-        // the new samples in positions 0..=31. Figure 4.42 fills
-        // `x[31] .. x[0]` from consecutive input samples, so the newest
-        // input sample lands at index 0 (a higher index is older).
-        self.x.copy_within(0..288, 32);
+        // Rotate the history by 32 instead of sliding the 320-sample buffer.
+        // Figure 4.42 fills logical `x[31] .. x[0]` from consecutive input
+        // samples, so the newest input sample lands at logical index 0.
+        self.base = if self.base == 0 { 288 } else { self.base - 32 };
         for (n, s) in samples.iter().enumerate() {
-            self.x[31 - n] = *s;
+            self.x[self.base + 31 - n] = *s;
         }
-        // z[n] = x[n] · c[2n]; u[n] = Σ_{j=0..=4} z[n + 64j].
-        let mut u = [0.0f64; 64];
-        for (n, un) in u.iter_mut().enumerate() {
-            let mut acc = 0.0;
-            for j in 0..5 {
-                let idx = n + j * 64;
-                acc += self.x[idx] * QMF_WINDOW[2 * idx];
-            }
-            *un = acc;
-        }
-        // W[k] via DCT-IV factorization of the Figure 4.42 kernel.
-        Ok(qmf_dct::analysis_modulate(&u))
+        let u = analysis_fold_f32(&self.x, self.base);
+        Ok(qmf_dct::analysis_modulate_f32(&u))
     }
+}
+
+/// `u[n] = Σ_{j=0..=4} x[n + 64j] · c[2(n + 64j)]` on the ring history.
+#[cfg(test)]
+fn analysis_fold(x: &[f64], base: usize) -> [f64; 64] {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") {
+        // SAFETY: AVX-512F was probed. `x` has 320 samples and `base` is a
+        // multiple of 32, so each 8-wide load stays inside the buffer.
+        unsafe { return analysis_fold_avx512(x, base) }
+    }
+    analysis_fold_scalar(x, base)
+}
+
+#[cfg(test)]
+fn analysis_fold_scalar(x: &[f64], base: usize) -> [f64; 64] {
+    let mut u = [0.0f64; 64];
+    for (n, un) in u.iter_mut().enumerate() {
+        let mut acc = 0.0;
+        for j in 0..5 {
+            let i = base + n + j * 64;
+            let i = if i >= 320 { i - 320 } else { i };
+            acc += x[i] * ANALYSIS_TAP[j][n];
+        }
+        *un = acc;
+    }
+    u
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `x.len() == 320` and `base` is a multiple of 32
+/// in `0..320`.
+#[cfg(all(test, target_arch = "x86_64"))]
+#[target_feature(enable = "avx512f")]
+unsafe fn analysis_fold_avx512(x: &[f64], base: usize) -> [f64; 64] {
+    use std::arch::x86_64::{
+        _mm512_add_pd, _mm512_loadu_pd, _mm512_mul_pd, _mm512_setzero_pd, _mm512_storeu_pd,
+    };
+    let mut u = [0.0f64; 64];
+    for n in (0..64).step_by(8) {
+        let mut acc = _mm512_setzero_pd();
+        for j in 0..5 {
+            let i = base + n + j * 64;
+            let i = if i >= 320 { i - 320 } else { i };
+            unsafe {
+                let s = _mm512_loadu_pd(x.as_ptr().add(i));
+                let w = _mm512_loadu_pd(ANALYSIS_TAP[j].as_ptr().add(n));
+                acc = _mm512_add_pd(acc, _mm512_mul_pd(s, w));
+            }
+        }
+        unsafe {
+            _mm512_storeu_pd(u.as_mut_ptr().add(n), acc);
+        }
+    }
+    u
+}
+
+/// `u[n] = Σ_{j=0..=4} x[n + 64j] · c[2(n + 64j)]` on the f32 ring.
+#[inline]
+fn analysis_fold_f32(x: &[f32], base: usize) -> [f32; 64] {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") {
+        // SAFETY: AVX-512F was probed. `x` has 320 samples and `base` is a
+        // multiple of 32, so each 16-wide load stays inside the buffer.
+        unsafe { return analysis_fold_f32_avx512(x, base) }
+    }
+    analysis_fold_f32_scalar(x, base)
+}
+
+fn analysis_fold_f32_scalar(x: &[f32], base: usize) -> [f32; 64] {
+    let mut u = [0.0f32; 64];
+    for (n, un) in u.iter_mut().enumerate() {
+        let mut acc = 0.0f32;
+        for j in 0..5 {
+            let i = base + n + j * 64;
+            let i = if i >= 320 { i - 320 } else { i };
+            acc += x[i] * ANALYSIS_TAP_F32[j][n];
+        }
+        *un = acc;
+    }
+    u
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `x.len() == 320` and `base` is a multiple of 32
+/// in `0..320`.
+#[cfg(target_arch = "x86_64")]
+#[inline]
+#[target_feature(enable = "avx512f")]
+unsafe fn analysis_fold_f32_avx512(x: &[f32], base: usize) -> [f32; 64] {
+    use std::arch::x86_64::{
+        _mm512_add_ps, _mm512_loadu_ps, _mm512_mul_ps, _mm512_setzero_ps, _mm512_storeu_ps,
+    };
+    let mut u = [0.0f32; 64];
+    for n in (0..64).step_by(16) {
+        let mut acc = _mm512_setzero_ps();
+        for j in 0..5 {
+            let i = base + n + j * 64;
+            let i = if i >= 320 { i - 320 } else { i };
+            unsafe {
+                let s = _mm512_loadu_ps(x.as_ptr().add(i));
+                let w = _mm512_loadu_ps(ANALYSIS_TAP_F32[j].as_ptr().add(n));
+                acc = _mm512_add_ps(acc, _mm512_mul_ps(s, w));
+            }
+        }
+        unsafe {
+            _mm512_storeu_ps(u.as_mut_ptr().add(n), acc);
+        }
+    }
+    u
 }
 
 /// §4.6.18.4.2 / Figure 4.43 — the 64-band real-output synthesis QMF
 /// bank (dual-rate SBR output).
 #[derive(Debug, Clone)]
 pub struct SynthesisQmf {
-    /// The Figure 4.43 synthesis history `v`.
-    v: Vec<f64>,
+    /// The Figure 4.43 synthesis history `v`, 1280 samples.
+    /// Stored as f32: the production DCT-IV is already f32, and the
+    /// window multiplies in that width.
+    v: Vec<f32>,
+    /// Physical index of logical sample 0. A multiple of 128.
+    base: usize,
 }
 
 impl Default for SynthesisQmf {
@@ -387,34 +534,181 @@ impl SynthesisQmf {
     /// A fresh synthesis bank with an all-zero history.
     #[must_use]
     pub fn new() -> Self {
-        SynthesisQmf { v: vec![0.0; 1280] }
+        SynthesisQmf {
+            v: vec![0.0; 1280],
+            base: 0,
+        }
     }
 
     /// Run one Figure 4.43 loop: consume the 64 complex subband samples
     /// `X[k]` of one slot and return the 64 real output samples.
-    pub fn push_slot(&mut self, bands: &[Complex]) -> Result<[f64; 64]> {
+    #[inline]
+    pub fn push_slot(&mut self, bands: &[Complex]) -> Result<[f32; 64]> {
         if bands.len() != 64 {
             return Err(Error::SbrQmfInvalid);
         }
-        // Shift v by 128 (discard the oldest 128 samples).
-        self.v.copy_within(0..1152, 128);
-        // v[n] via DCT-IV factorization of the Figure 4.43 kernel.
-        let v = qmf_dct::synthesis_modulate(bands);
-        self.v[..128].copy_from_slice(&v);
-        // Extract g from v, window by c, and sum the ten taps.
-        let mut out = [0.0f64; 64];
-        for (k, o) in out.iter_mut().enumerate() {
-            let mut acc = 0.0;
-            for n in 0..5 {
-                // g[128n + k] = v[256n + k]; w = g·c.
-                acc += self.v[256 * n + k] * QMF_WINDOW[128 * n + k];
-                // g[128n + 64 + k] = v[256n + 192 + k].
-                acc += self.v[256 * n + 192 + k] * QMF_WINDOW[128 * n + 64 + k];
-            }
-            *o = acc;
-        }
-        Ok(out)
+        // Rotate the history by 128 instead of sliding the 1280-sample buffer.
+        self.base = if self.base == 0 {
+            1152
+        } else {
+            self.base - 128
+        };
+        let start = self.base;
+        // The 128 new samples land in the ring. The window reads them there.
+        qmf_dct::synthesis_modulate_f32_into(bands, &mut self.v[start..start + 128]);
+        Ok(synth_window_f32(&self.v, self.base))
     }
+}
+
+const fn qmf_window_f32() -> [f32; 640] {
+    let mut w = [0.0f32; 640];
+    let mut i = 0;
+    while i < 640 {
+        w[i] = QMF_WINDOW[i] as f32;
+        i += 1;
+    }
+    w
+}
+
+/// [`QMF_WINDOW`] rounded to f32. The production synthesis window uses this.
+const QMF_WINDOW_F32: [f32; 640] = qmf_window_f32();
+
+/// Ten-tap window on the f32 ring. `base` is a multiple of 128 and every
+/// 16-wide load stays inside the 1280-sample buffer.
+#[inline]
+fn synth_window_f32(v: &[f32], base: usize) -> [f32; 64] {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") {
+        // SAFETY: AVX-512F was probed. `v` has 1280 samples and `base` is a
+        // multiple of 128, so each 16-wide load computed below stays in range.
+        unsafe { return synth_window_f32_avx512(v, base) }
+    }
+    synth_window_f32_scalar(v, base)
+}
+
+fn synth_window_f32_scalar(v: &[f32], base: usize) -> [f32; 64] {
+    let mut out = [0.0f32; 64];
+    for (k, o) in out.iter_mut().enumerate() {
+        let mut acc = 0.0f32;
+        for n in 0..5 {
+            let i1 = base + 256 * n + k;
+            let i1 = if i1 >= 1280 { i1 - 1280 } else { i1 };
+            let i2 = base + 256 * n + 192 + k;
+            let i2 = if i2 >= 1280 { i2 - 1280 } else { i2 };
+            acc += v[i1] * QMF_WINDOW_F32[128 * n + k];
+            acc += v[i2] * QMF_WINDOW_F32[128 * n + 64 + k];
+        }
+        *o = acc;
+    }
+    out
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `v.len() == 1280` and `base` is a multiple of 128
+/// in `0..1280`.
+#[cfg(target_arch = "x86_64")]
+#[inline]
+#[target_feature(enable = "avx512f")]
+unsafe fn synth_window_f32_avx512(v: &[f32], base: usize) -> [f32; 64] {
+    use std::arch::x86_64::{
+        _mm512_add_ps, _mm512_loadu_ps, _mm512_mul_ps, _mm512_setzero_ps, _mm512_storeu_ps,
+    };
+    let mut acc = [_mm512_setzero_ps(); 4];
+    for n in 0..5 {
+        for (chunk, a) in acc.iter_mut().enumerate() {
+            let k = chunk * 16;
+            let i1 = base + 256 * n + k;
+            let i1 = if i1 >= 1280 { i1 - 1280 } else { i1 };
+            let i2 = base + 256 * n + 192 + k;
+            let i2 = if i2 >= 1280 { i2 - 1280 } else { i2 };
+            unsafe {
+                let s1 = _mm512_loadu_ps(v.as_ptr().add(i1));
+                let w1 = _mm512_loadu_ps(QMF_WINDOW_F32.as_ptr().add(128 * n + k));
+                let s2 = _mm512_loadu_ps(v.as_ptr().add(i2));
+                let w2 = _mm512_loadu_ps(QMF_WINDOW_F32.as_ptr().add(128 * n + 64 + k));
+                *a = _mm512_add_ps(*a, _mm512_mul_ps(s1, w1));
+                *a = _mm512_add_ps(*a, _mm512_mul_ps(s2, w2));
+            }
+        }
+    }
+    let mut out = [0.0f32; 64];
+    for (chunk, a) in acc.iter().enumerate() {
+        unsafe {
+            _mm512_storeu_ps(out.as_mut_ptr().add(chunk * 16), *a);
+        }
+    }
+    out
+}
+
+/// Ten-tap window on the f64 ring history. Kept so the bit-identical
+/// check still has a scalar reference. Logical index `i` is physical
+/// `(base + i) mod 1280`. `base` is a multiple of 128 and every load of
+/// eight samples stays inside the buffer.
+#[cfg(test)]
+fn synth_window(v: &[f64], base: usize) -> [f64; 64] {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") {
+        // SAFETY: AVX-512F was probed. `v` has 1280 samples and `base` is a
+        // multiple of 128, so each 8-wide load computed below stays in range.
+        unsafe { return synth_window_avx512(v, base) }
+    }
+    synth_window_scalar(v, base)
+}
+
+#[cfg(test)]
+fn synth_window_scalar(v: &[f64], base: usize) -> [f64; 64] {
+    let mut out = [0.0f64; 64];
+    for (k, o) in out.iter_mut().enumerate() {
+        let mut acc = 0.0;
+        for n in 0..5 {
+            let i1 = base + 256 * n + k;
+            let i1 = if i1 >= 1280 { i1 - 1280 } else { i1 };
+            let i2 = base + 256 * n + 192 + k;
+            let i2 = if i2 >= 1280 { i2 - 1280 } else { i2 };
+            acc += v[i1] * QMF_WINDOW[128 * n + k];
+            acc += v[i2] * QMF_WINDOW[128 * n + 64 + k];
+        }
+        *o = acc;
+    }
+    out
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `v.len() == 1280` and `base` is a multiple of 128
+/// in `0..1280`.
+#[cfg(all(test, target_arch = "x86_64"))]
+#[target_feature(enable = "avx512f")]
+unsafe fn synth_window_avx512(v: &[f64], base: usize) -> [f64; 64] {
+    use std::arch::x86_64::{
+        _mm512_add_pd, _mm512_loadu_pd, _mm512_mul_pd, _mm512_setzero_pd, _mm512_storeu_pd,
+    };
+    let mut acc = [_mm512_setzero_pd(); 8];
+    for n in 0..5 {
+        for (chunk, a) in acc.iter_mut().enumerate() {
+            let k = chunk * 8;
+            let i1 = base + 256 * n + k;
+            let i1 = if i1 >= 1280 { i1 - 1280 } else { i1 };
+            let i2 = base + 256 * n + 192 + k;
+            let i2 = if i2 >= 1280 { i2 - 1280 } else { i2 };
+            unsafe {
+                let s1 = _mm512_loadu_pd(v.as_ptr().add(i1));
+                let w1 = _mm512_loadu_pd(QMF_WINDOW.as_ptr().add(128 * n + k));
+                let s2 = _mm512_loadu_pd(v.as_ptr().add(i2));
+                let w2 = _mm512_loadu_pd(QMF_WINDOW.as_ptr().add(128 * n + 64 + k));
+                *a = _mm512_add_pd(*a, _mm512_mul_pd(s1, w1));
+                *a = _mm512_add_pd(*a, _mm512_mul_pd(s2, w2));
+            }
+        }
+    }
+    let mut out = [0.0f64; 64];
+    for (chunk, a) in acc.iter().enumerate() {
+        unsafe {
+            _mm512_storeu_pd(out.as_mut_ptr().add(chunk * 8), *a);
+        }
+    }
+    out
 }
 
 /// §4.6.18.4.3 / Figure 4.44 — the 32-channel downsampled synthesis QMF
@@ -519,6 +813,148 @@ mod tests {
         }
     }
 
+    /// The ring window matches the scalar sum on every base, and the
+    /// 8-wide loads never cross the end of the buffer.
+    #[test]
+    fn synth_window_ring_matches_scalar_bits() {
+        let mut state = 0x1234_5678u32;
+        let mut v = vec![0.0f64; 1280];
+        for slot in &mut v {
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            *slot = f64::from(state) / f64::from(u32::MAX) - 0.5;
+        }
+        for base in (0..1280).step_by(128) {
+            for n in 0..5 {
+                for k in (0..64).step_by(8) {
+                    for off in [0usize, 192] {
+                        let i = base + 256 * n + off + k;
+                        let i = if i >= 1280 { i - 1280 } else { i };
+                        assert!(i + 7 < 1280, "base={base} n={n} k={k} off={off} i={i}");
+                    }
+                }
+            }
+            let scalar = super::synth_window_scalar(&v, base);
+            let fast = super::synth_window(&v, base);
+            for (k, (&a, &b)) in scalar.iter().zip(fast.iter()).enumerate() {
+                assert_eq!(a.to_bits(), b.to_bits(), "base={base} k={k}");
+            }
+        }
+    }
+
+    /// The f32 ring window matches its scalar sum, and the 16-wide loads
+    /// stay inside the buffer on every base.
+    #[test]
+    fn synth_window_f32_ring_matches_scalar_bits() {
+        for base in (0..1280).step_by(128) {
+            for n in 0..5 {
+                for k in (0..64).step_by(16) {
+                    for off in [0usize, 192] {
+                        let i = base + 256 * n + off + k;
+                        let i = if i >= 1280 { i - 1280 } else { i };
+                        assert!(i + 15 < 1280, "base={base} n={n} k={k} off={off} i={i}");
+                    }
+                }
+            }
+        }
+        let mut state = 0x1234_5678u32;
+        let mut v = vec![0.0f32; 1280];
+        for slot in &mut v {
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            *slot = (state as f32) / (u32::MAX as f32) - 0.5;
+        }
+        for base in (0..1280).step_by(128) {
+            let scalar = super::synth_window_f32_scalar(&v, base);
+            let fast = super::synth_window_f32(&v, base);
+            for (k, (&a, &b)) in scalar.iter().zip(fast.iter()).enumerate() {
+                assert_eq!(a.to_bits(), b.to_bits(), "base={base} k={k}");
+            }
+        }
+    }
+
+    /// The f32 synthesis slot stays near the widened f64 production slot.
+    /// A bad interleave is O(1); f32 combine rounding is far smaller.
+    #[test]
+    fn synthesis_f32_stays_near_widened_f64() {
+        let u = named_u("random");
+        let mut bands = [Complex::default(); 64];
+        for k in 0..64 {
+            bands[k] = Complex::new(u[k % 32], u[(k * 3) % 64] * 0.25);
+        }
+        let slow = qmf_dct::synthesis_modulate(&bands);
+        let mut fast = [0.0f32; 128];
+        qmf_dct::synthesis_modulate_f32_into(&bands, &mut fast);
+        let mut max = 0.0f64;
+        for n in 0..128 {
+            max = max.max((f64::from(fast[n]) - slow[n]).abs());
+        }
+        assert!(max < 1e-3, "f32 synth abs {max}");
+    }
+
+    /// The analysis ring matches a sliding 320-sample buffer, and the
+    /// 8-wide loads never cross the end of the buffer.
+    #[test]
+    fn analysis_ring_matches_linear_shift_bits() {
+        for base in (0..320).step_by(32) {
+            for n in (0..64).step_by(8) {
+                for j in 0..5 {
+                    let i = base + n + j * 64;
+                    let i = if i >= 320 { i - 320 } else { i };
+                    assert!(i + 7 < 320, "base={base} n={n} j={j} i={i}");
+                }
+            }
+        }
+        let mut state = 0x1234_5678u32;
+        let mut v = vec![0.0f64; 320];
+        for slot in &mut v {
+            state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            *slot = f64::from(state) / f64::from(u32::MAX) - 0.5;
+        }
+        for base in (0..320).step_by(32) {
+            let scalar = super::analysis_fold_scalar(&v, base);
+            let fast = super::analysis_fold(&v, base);
+            for (n, (&a, &b)) in scalar.iter().zip(fast.iter()).enumerate() {
+                assert_eq!(a.to_bits(), b.to_bits(), "base={base} n={n}");
+            }
+        }
+        for base in (0..320).step_by(32) {
+            for n in (0..64).step_by(16) {
+                for j in 0..5 {
+                    let i = base + n + j * 64;
+                    let i = if i >= 320 { i - 320 } else { i };
+                    assert!(i + 15 < 320, "f32 base={base} n={n} j={j} i={i}");
+                }
+            }
+        }
+        let mut ring = AnalysisQmf::new();
+        let mut linear = vec![0.0f32; 320];
+        for _ in 0..24 {
+            let mut samples = [0.0f32; 32];
+            for s in &mut samples {
+                state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                *s = (state as f32) / (u32::MAX as f32) - 0.5;
+            }
+            linear.copy_within(0..288, 32);
+            for (n, s) in samples.iter().enumerate() {
+                linear[31 - n] = *s;
+            }
+            let mut u = [0.0f32; 64];
+            for (n, un) in u.iter_mut().enumerate() {
+                let mut acc = 0.0f32;
+                for j in 0..5 {
+                    let idx = n + j * 64;
+                    acc += linear[idx] * (QMF_WINDOW[2 * idx] as f32);
+                }
+                *un = acc;
+            }
+            let w_lin = qmf_dct::analysis_modulate_f32(&u);
+            let w_ring = ring.push_slot(&samples).unwrap();
+            for k in 0..32 {
+                assert_eq!(w_lin[k].re.to_bits(), w_ring[k].re.to_bits(), "re {k}");
+                assert_eq!(w_lin[k].im.to_bits(), w_ring[k].im.to_bits(), "im {k}");
+            }
+        }
+    }
+
     /// Silence in → silence out, and slot-length validation.
     #[test]
     fn analysis_silence_and_shape() {
@@ -548,10 +984,10 @@ mod tests {
         let slots = 96;
         let mut output = Vec::new();
         for slot in 0..slots {
-            let mut input = [0.0f64; 32];
+            let mut input = [0.0f32; 32];
             for (n, v) in input.iter_mut().enumerate() {
                 let t = (slot * 32 + n) as f64;
-                *v = (2.0 * core::f64::consts::PI * freq * t).sin();
+                *v = (2.0 * core::f64::consts::PI * freq * t).sin() as f32;
             }
             let w = a.push_slot(&input).unwrap();
             let mut x = [Complex::default(); 64];
@@ -568,9 +1004,10 @@ mod tests {
             let mut err = 0.0;
             let mut sig = 0.0;
             for (t, &out) in output.iter().enumerate().skip(1400) {
-                let e = out - ideal(t as f64, delay as f64);
+                let s = f64::from(out);
+                let e = s - ideal(t as f64, delay as f64);
                 err += e * e;
-                sig += out * out;
+                sig += s * s;
             }
             let ratio = err / sig.max(1e-30);
             if ratio < best.0 {
@@ -596,13 +1033,14 @@ mod tests {
         let mut input_all = Vec::new();
         let mut output = Vec::new();
         for slot in 0..slots {
-            let mut input = [0.0f64; 32];
+            let mut input = [0.0f32; 32];
             for (n, v) in input.iter_mut().enumerate() {
                 let t = (slot * 32 + n) as f64;
-                *v = (2.0 * core::f64::consts::PI * freq * t).sin()
-                    + 0.5 * (2.0 * core::f64::consts::PI * 2.3 * freq * t).cos();
+                *v = ((2.0 * core::f64::consts::PI * freq * t).sin()
+                    + 0.5 * (2.0 * core::f64::consts::PI * 2.3 * freq * t).cos())
+                    as f32;
             }
-            input_all.extend_from_slice(&input);
+            input_all.extend(input.iter().map(|&s| f64::from(s)));
             let w = a.push_slot(&input).unwrap();
             output.extend_from_slice(&s.push_slot(&w).unwrap());
         }
@@ -631,21 +1069,22 @@ mod tests {
         );
     }
 
-    /// The analysis bank is linear: analysis(a + b) == analysis(a) +
-    /// analysis(b) slot by slot.
+    /// The analysis bank is linear up to f32 DFT rounding:
+    /// analysis(a + b) ≈ analysis(a) + analysis(b) slot by slot.
+    /// The f64 path is checked against the GEMV at 1e-20.
     #[test]
     fn analysis_is_linear() {
         let mut qa = AnalysisQmf::new();
         let mut qb = AnalysisQmf::new();
         let mut qs = AnalysisQmf::new();
         for slot in 0..8 {
-            let mut a = [0.0f64; 32];
-            let mut b = [0.0f64; 32];
-            let mut sum = [0.0f64; 32];
+            let mut a = [0.0f32; 32];
+            let mut b = [0.0f32; 32];
+            let mut sum = [0.0f32; 32];
             for n in 0..32 {
                 let t = (slot * 32 + n) as f64;
-                a[n] = (0.11 * t).sin();
-                b[n] = (0.031 * t + 1.0).cos();
+                a[n] = (0.11 * t).sin() as f32;
+                b[n] = (0.031 * t + 1.0).cos() as f32;
                 sum[n] = a[n] + b[n];
             }
             let wa = qa.push_slot(&a).unwrap();
@@ -653,7 +1092,11 @@ mod tests {
             let ws = qs.push_slot(&sum).unwrap();
             for k in 0..32 {
                 let d = ws[k] - (wa[k] + wb[k]);
-                assert!(d.norm_sqr() < 1e-18);
+                assert!(
+                    d.norm_sqr() < 1e-8,
+                    "slot={slot} k={k} err={}",
+                    d.norm_sqr().sqrt()
+                );
             }
         }
     }
@@ -687,7 +1130,7 @@ mod tests {
         let m = analysis_m();
         for kind in ["silence", "impulse", "tonal", "random"] {
             let u = named_u(kind);
-            let fast = qmf_dct::analysis_modulate(&u);
+            let fast = qmf_dct::analysis_modulate_f64(&u);
             let slow = qmf_dct::analysis_modulate_ref(&u, m);
             for k in 0..32 {
                 let d = fast[k] - slow[k];
@@ -711,7 +1154,7 @@ mod tests {
             for k in 0..32 {
                 bands[k] = Complex::new(u[k], u[32 + k]);
             }
-            let fast = qmf_dct::synthesis_modulate(&bands);
+            let fast = qmf_dct::synthesis_modulate_f64(&bands);
             let slow = qmf_dct::synthesis_modulate_ref(&bands, n_mat);
             for n in 0..128 {
                 let e = (fast[n] - slow[n]).abs();
@@ -739,19 +1182,46 @@ mod tests {
                 }
                 *un = acc;
             }
-            let fast = qmf_dct::analysis_modulate(&u);
+            let fast = qmf_dct::analysis_modulate_f64(&u);
             let slow = qmf_dct::analysis_modulate_ref(&u, m);
             for k in 0..32 {
                 assert!((fast[k] - slow[k]).norm_sqr() < 1e-20, "slot={slot} k={k}");
             }
             let mut bands = [Complex::default(); 64];
             bands[..32].copy_from_slice(&fast);
-            let vf = qmf_dct::synthesis_modulate(&bands);
+            let vf = qmf_dct::synthesis_modulate_f64(&bands);
             let vs = qmf_dct::synthesis_modulate_ref(&bands, n_mat);
             for n in 0..128 {
                 assert!((vf[n] - vs[n]).abs() < 1e-12, "slot={slot} n={n}");
             }
         }
+    }
+
+    /// The production DFT (f32 on AVX-512) stays near the f64 path.
+    /// A wrong factorization is O(1); f32 rounding on these vectors is far smaller.
+    #[test]
+    fn production_qmf_stays_near_f64() {
+        let mut max_an = 0.0f64;
+        let mut max_sy = 0.0f64;
+        for kind in ["silence", "impulse", "tonal", "random"] {
+            let u = named_u(kind);
+            let fast = qmf_dct::analysis_modulate(&u);
+            let slow = qmf_dct::analysis_modulate_f64(&u);
+            for k in 0..32 {
+                max_an = max_an.max((fast[k] - slow[k]).norm_sqr().sqrt());
+            }
+            let mut bands = [Complex::default(); 64];
+            for k in 0..32 {
+                bands[k] = Complex::new(u[k], u[32 + k]);
+            }
+            let vf = qmf_dct::synthesis_modulate(&bands);
+            let vs = qmf_dct::synthesis_modulate_f64(&bands);
+            for n in 0..128 {
+                max_sy = max_sy.max((vf[n] - vs[n]).abs());
+            }
+        }
+        assert!(max_an < 1e-3, "analysis abs {max_an} (f32 DFT vs f64)");
+        assert!(max_sy < 1e-3, "synthesis abs {max_sy} (f32 DFT vs f64)");
     }
 
     /// Isolated QMF kernel wall: GEMV reference vs DCT-IV, 4096 slots.

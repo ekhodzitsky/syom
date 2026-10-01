@@ -38,14 +38,10 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
 ///
 /// Planes are anything `AsRef<[f32]>`: `&[Vec<f32>]`, `&[&[f32]]`, arrays —
-/// no copy is made to satisfy the type (TASK-55).
-///
-/// One plane per channel (mono, stereo, or surround 3 / 4 / 5 / 6 / 8 planes
-/// in the decoder's plane order), all planes the same length; the
-/// last content block is zero-padded to 1024 samples, then one extra zero
-/// MDCT drains the overlap so the last source samples reconstruct. The
-/// stream carries 1024-sample codec priming. Decoded ADTS length is
-/// `(ceil(N/1024)+1)*1024`; valid duration is N after skipping priming.
+/// no copy is made to satisfy the type (TASK-55). One plane per channel
+/// (mono, stereo, or surround). The last block is padded and one extra MDCT
+/// drains the overlap. A leading `iTunSMPB` tag names the 1024-sample
+/// priming so a matching decode returns N samples.
 #[inline]
 pub fn encode<P: AsRef<[f32]>>(pcm: &[P], sample_rate: u32) -> Result<Vec<u8>> {
     encode_with(pcm, sample_rate, &EncodeOptions::default())
@@ -68,7 +64,12 @@ pub(crate) fn new_he(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
         )));
     }
     if opts.ps {
-        let v2 = PsHeEncoder::new(sample_rate, opts.bitrate_bps, opts.lookahead)?;
+        let v2 = PsHeEncoder::new(
+            sample_rate,
+            opts.bitrate_bps,
+            opts.lookahead,
+            opts.ps_iid_fine,
+        )?;
         return Ok(AnyHe::V2(Box::new(v2)));
     }
     Ok(AnyHe::V1(Box::new(HeEncoder::new(
@@ -90,7 +91,13 @@ pub(crate) fn he_asc(enc: &AnyHe, sample_rate: u32, planes: usize) -> Result<Vec
 
 /// HE v1 one-shot: every access unit, then ADTS (implicit SBR, core rate
 /// in the header) or M4A (explicit two-rate ASC, output-rate timeline).
-fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<Vec<u8>> {
+/// The tuple is `(bytes, ps_data bits, extended-data block bits)`.
+pub(crate) fn encode_he(
+    planes: &[&[f32]],
+    sample_rate: u32,
+    opts: &EncodeOptions,
+) -> Result<(Vec<u8>, u64, u64)> {
+    validate(planes, sample_rate, opts)?;
     let channels = planes.len();
     let mut enc = new_he(sample_rate, channels, opts)?;
     let mut aus: Vec<Vec<u8>> = Vec::new();
@@ -102,9 +109,15 @@ fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Resul
         aus.push(au.to_vec());
         Ok(())
     })?;
+    let (ps_bits, ext_bits) = enc.ps_side_info();
     let asc = he_asc(&enc, sample_rate, channels)?;
-    match opts.container {
-        EncodeContainer::Adts => Ok(wrap_adts(&aus, enc.fs_index(), enc.core_channels(channels))),
+    let bytes = match opts.container {
+        EncodeContainer::Adts => Ok(crate::gapless::prefix_delay(
+            wrap_adts(&aus, enc.fs_index(), enc.core_channels(channels)),
+            info.priming_out,
+            info.remainder_out,
+            info.source,
+        )),
         EncodeContainer::Latm => mux::wrap_latm(&aus, &asc),
         EncodeContainer::M4a => m4a_write::mux_aac(
             &aus,
@@ -118,7 +131,8 @@ fn encode_he(planes: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Resul
         EncodeContainer::Raw => Err(AacError::Unsupported(
             crate::UnsupportedFeature::EncodeRawOneShot,
         )),
-    }
+    }?;
+    Ok((bytes, ps_bits, ext_bits))
 }
 
 /// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
@@ -136,8 +150,11 @@ pub fn encode_with<P: AsRef<[f32]>>(
     let pcm: Vec<&[f32]> = pcm.iter().map(AsRef::as_ref).collect();
     let pcm = pcm.as_slice();
     validate(pcm, sample_rate, opts)?;
+    if opts.ld {
+        return ld_api::encode_ld(pcm, sample_rate, opts);
+    }
     if opts.he {
-        return encode_he(pcm, sample_rate, opts);
+        return Ok(encode_he(pcm, sample_rate, opts)?.0);
     }
     if pcm.len() > 2 {
         return mux::encode_mc(pcm, sample_rate, opts);
@@ -166,7 +183,10 @@ pub fn encode_with<P: AsRef<[f32]>>(
     }
     payloads.extend(enc.drain_overlap()?);
     match opts.container {
-        EncodeContainer::Adts => Ok(wrap_adts(&payloads, enc.fs_index(), channels)),
+        EncodeContainer::Adts => Ok(crate::gapless::prefix_lc(
+            wrap_adts(&payloads, enc.fs_index(), channels),
+            n_samples as u64,
+        )),
         EncodeContainer::Latm => {
             let asc = crate::engine::asc::write_lc(enc.fs_index(), channels as u8);
             mux::wrap_latm(&payloads, &asc)
@@ -185,6 +205,8 @@ pub fn encode_with<P: AsRef<[f32]>>(
     }
 }
 
+#[path = "encode_ld_api.rs"]
+mod ld_api;
 #[path = "encode_mux.rs"]
 mod mux;
 pub use mux::{
@@ -242,7 +264,35 @@ pub(crate) fn check_mode(opts: &EncodeOptions) -> Result<()> {
     if opts.ps && !opts.he {
         return Err(AacError::encode("encode: ps needs he (use with_he_v2)"));
     }
+    if opts.ld {
+        if opts.container == crate::EncodeContainer::Adts {
+            return Err(AacError::encode("encode: AAC-LD cannot be carried in ADTS"));
+        }
+        if opts.he || opts.ps || opts.lookahead || opts.quality.is_some() {
+            return Err(AacError::encode(
+                "encode: AAC-LD is not HE, lookahead, or quality VBR",
+            ));
+        }
+        if opts.ath
+            || opts.tonality
+            || opts.short_tns
+            || opts.short_group
+            || opts.band_refine
+            || opts.pns
+            || opts.intensity
+        {
+            return Err(AacError::encode(
+                "encode: AAC-LD does not use those LC tools",
+            ));
+        }
+    }
     Ok(())
+}
+
+/// Highest LD bitrate that still fits 6144 bits/channel on a 512-sample frame.
+pub(crate) fn max_ld_bitrate(sample_rate: u32, channels: usize) -> u32 {
+    let bits = 6144u64 * channels as u64 * u64::from(sample_rate) / 512;
+    bits.min(u64::from(u32::MAX)) as u32
 }
 
 fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()> {
@@ -256,10 +306,15 @@ fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()
     if opts.bitrate_bps == 0 {
         return Err(AacError::encode("encode: bitrate must be > 0"));
     }
-    let max_bps = crate::engine::enc_frame::max_bitrate_bps(sample_rate, pcm.len());
+    let max_bps = if opts.ld {
+        max_ld_bitrate(sample_rate, pcm.len())
+    } else {
+        crate::engine::enc_frame::max_bitrate_bps(sample_rate, pcm.len())
+    };
     if opts.bitrate_bps > max_bps {
+        let profile = if opts.ld { "AAC-LD" } else { "AAC-LC" };
         return Err(AacError::encode(format!(
-            "encode: bitrate {} bps exceeds AAC-LC 6144 bits/channel (max {max_bps} bps)",
+            "encode: bitrate {} bps exceeds {profile} 6144 bits/channel (max {max_bps} bps)",
             opts.bitrate_bps
         )));
     }
@@ -277,6 +332,9 @@ fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()
 /// Plane counts: 1–2 (LC / HE), or surround 3, 4, 5, 6, 8 — AAC-LC only,
 /// no lookahead (`channel_configuration` 3–7, TASK-116).
 pub(crate) fn check_planes(planes: usize, opts: &EncodeOptions) -> Result<()> {
+    if opts.ld && !matches!(planes, 1 | 2) {
+        return Err(AacError::encode("encode: AAC-LD is mono or stereo"));
+    }
     if (1..=2).contains(&planes) {
         return Ok(());
     }

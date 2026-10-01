@@ -1,0 +1,24 @@
+{
+  "name": "syom-lab-aacjs",
+  "version": "0.0.0",
+  "private": true,
+  "description": "TASK-20 offline lab: AAC.js/Aurora.js browser-JS AAC-LC decoder evaluation. Not a product dependency.",
+  "scripts": {
+    "decode": "node decode.cjs",
+    "bench": "node bench.cjs",
+    "report": "node bench.cjs --all"
+  },
+  "dependencies": {
+    "aac": "0.1.3",
+    "av": "0.4.9"
+  },
+  "devDependencies": {
+    "browserify": "^4.1.10",
+    "browserify-shim": "^3.5.0",
+    "exorcist": "^0.1.6"
+  },
+  "browser": {
+    "./node_modules/av/src/sources/node/file.js": "./build/shims/file.js",
+    "./node_modules/av/src/sources/node/http.js": "./build/shims/http.js"
+  }
+}

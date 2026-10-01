@@ -3,7 +3,7 @@
 //! `impl` below keeps using the encoder's private fields; no new
 //! abstraction boundary.
 
-use super::{LcEncoder, MAX_BITS_PER_CHANNEL, MAX_PAYLOAD_BYTES};
+use super::{LcEncoder, MAX_BITS_PER_CHANNEL};
 use crate::engine::enc_quant::{self, MAX_BANDS};
 use crate::engine::enc_section;
 use crate::engine::enc_short;
@@ -29,8 +29,26 @@ pub fn max_bitrate_bps(sample_rate: u32, channels: usize) -> u32 {
 /// [`crate::engine::enc_alloc::noise_targets`]): negative refines every
 /// band uniformly, positive raises the water level over the quietest
 /// band; bits fall monotonically with the offset.
-const OFFSET_LO: i32 = -60;
+pub(super) const OFFSET_LO: i32 = -60;
 const OFFSET_HI: i32 = 240;
+/// How far a warm start walks before falling back to bisection.
+const NEIGHBOR: i32 = 8;
+
+#[cfg(test)]
+thread_local! {
+    static BUILDS: std::cell::Cell<u32> = const { std::cell::Cell::new(0) };
+}
+
+/// Quantizations since the last [`take_builds`] (test threads only).
+#[cfg(test)]
+pub(super) fn take_builds() -> u32 {
+    BUILDS.with(|c| c.replace(0))
+}
+
+#[cfg(test)]
+fn note_build() {
+    BUILDS.with(|c| c.set(c.get().saturating_add(1)));
+}
 
 impl LcEncoder {
     /// Per-band M/S (and optional IS skip) once per frame before the rate loop.
@@ -102,9 +120,7 @@ impl LcEncoder {
         );
     }
 
-    /// Smallest global sf offset whose frame fits the bit budget (frame
-    /// bits decrease as the offset grows; the smallest fitting offset is
-    /// the finest quantization we can afford).
+    /// Noise offset for this frame. Starts at the previous frame's offset.
     pub(super) fn search_offset(
         &mut self,
         specs: &[[f32; LONG_WINDOW_LEN]; 2],
@@ -114,6 +130,13 @@ impl LcEncoder {
     }
 
     /// [`Self::search_offset`] over `[lo, OFFSET_HI]`.
+    ///
+    /// The previous offset is tried first. A hit walks down a short
+    /// neighborhood; a miss walks up, then the remaining side is bisected.
+    /// Bit counts dip by a few bits, so a start that is not the previous
+    /// frame's offset can stop at a different crossing than a cold
+    /// bisection. The first frame starts at [`OFFSET_LO`], which is that
+    /// cold search.
     pub(super) fn search_offset_from(
         &mut self,
         lo_bound: i32,
@@ -121,28 +144,25 @@ impl LcEncoder {
         spend: usize,
     ) -> i32 {
         let budget = spend.saturating_sub(32);
-        if self.build(specs, lo_bound) <= budget {
-            return lo_bound; // maximum quality fits
-        }
-        if self.build(specs, OFFSET_HI) > budget {
-            return OFFSET_HI; // over budget even at ceiling: cap logic takes over
-        }
-        let (mut lo, mut hi) = (lo_bound, OFFSET_HI);
-        while hi - lo > 1 {
-            let mid = lo + (hi - lo) / 2;
-            if self.build(specs, mid) <= budget {
-                hi = mid;
-            } else {
-                lo = mid;
-            }
-        }
-        hi
+        let lo = lo_bound.clamp(OFFSET_LO, OFFSET_HI);
+        let guess = self.rate_guess;
+        let offset = search_monotonic(lo, OFFSET_HI, guess, |off| self.build(specs, off) <= budget);
+        self.rate_guess = offset;
+        offset
+    }
+
+    /// Test hook: force the next search to ignore the warm start.
+    #[cfg(test)]
+    pub(super) fn pin_rate_guess(&mut self, v: i32) {
+        self.rate_guess = v;
     }
 
     /// Quantize + plan both channels at `offset`; returns total frame bits.
     /// Long windows draw their targets from the per-frame allocation cache
     /// (`enc_frame_alloc.rs`); `specs` are the coded, TNS-filtered spectra.
     pub(super) fn build(&mut self, specs: &[[f32; LONG_WINDOW_LEN]; 2], offset: i32) -> usize {
+        #[cfg(test)]
+        note_build();
         let standalone = self.channels == 1;
         let mut total = 3 + 4 + 3 + self.fill_bits(); // id + tag + FIL + END
         if self.seq.is_eight_short() {
@@ -177,7 +197,6 @@ impl LcEncoder {
             let tq = &mut self.target_q[ch];
             let a = &self.alloc[ch];
             q.coded = a.coded;
-            let peaks = a.peaks;
             crate::engine::enc_alloc::noise_targets(
                 &a.peaks,
                 &a.energy,
@@ -190,25 +209,18 @@ impl LcEncoder {
                 &mut q.coded,
                 tq,
             );
-            // TNS whitens its span flat: every band in it carries residual
-            // energy the decoder's recursion needs — force them coded.
-            if let Some((tns_lo, tns_hi)) = self.tns[ch].band_range() {
-                let span = tq.iter_mut().enumerate().take(tns_hi.min(q.n_bands));
-                for (b, tq_b) in span.skip(tns_lo) {
-                    if !q.coded[b] && peaks[b] > 0.0 {
-                        q.coded[b] = true;
-                        *tq_b = 1.0;
-                    }
-                }
-            }
+            // TNS span bands are coded or dropped by the water level like
+            // any other band. Forcing the span at target 1.0 blew the frame
+            // budget where TNS fired hardest. Peaks were measured once.
+            let peaks = a.peaks;
             Self::quant_one_long(
                 self.offsets,
                 q,
                 tq,
                 spec,
+                &peaks,
                 &mut self.books[ch],
                 &mut self.gains[ch],
-                0,
             );
         }
         if self.pns {
@@ -251,65 +263,19 @@ impl LcEncoder {
         q: &mut crate::engine::enc_quant::QuantChannel,
         tq: &[f32; MAX_BANDS],
         spec: &[f32; LONG_WINDOW_LEN],
+        peaks: &[f32; MAX_BANDS],
         books: &mut [u8; MAX_BANDS],
         gain: &mut u8,
-        offset: i32,
     ) {
-        let mut peaks = [0.0f32; MAX_BANDS];
-        enc_quant::band_peaks(spec, offsets, &mut peaks);
-        enc_quant::raw_scalefactors(&peaks, tq, offset, q);
+        enc_quant::raw_scalefactors(peaks, tq, 0, q);
         *gain = enc_quant::normalize_sf(q);
         enc_quant::quantize_cached(spec, offsets, q);
         *books = enc_section::plan_books(q);
     }
 
-    /// Hard cap: drop the highest coded bands until the frame fits
-    /// `limit_bits` (the bit budget, never above 6144 bits/channel or
-    /// the ADTS payload limit). Quality collapse is legal, an oversize
-    /// frame is not.
-    pub(super) fn drop_bands_until(&mut self, limit_bits: usize) {
-        let cap = limit_bits
-            .min(max_frame_bits(self.channels))
-            .min(MAX_PAYLOAD_BYTES * 8);
-        loop {
-            let mut tmp = std::mem::take(&mut self.payload);
-            self.emit_into(&mut tmp);
-            let bits = tmp.len().saturating_mul(8);
-            self.payload = tmp;
-            if bits <= cap {
-                return;
-            }
-            if self.seq.is_eight_short() {
-                let mut hit = None;
-                for (ch, q) in self.chans_s.iter().enumerate().take(self.channels) {
-                    if let Some(b) = q.coded.iter().rposition(|&c| c) {
-                        hit = Some((ch, b));
-                        break;
-                    }
-                }
-                let Some((ch, b)) = hit else { return };
-                self.chans_s[ch].coded[b] = false;
-                self.books_s[ch] = enc_short::plan_books_short(&self.chans_s[ch]);
-            } else {
-                let mut hit = None;
-                for (ch, q) in self.chans.iter().enumerate().take(self.channels) {
-                    if let Some(b) = q.coded[..q.n_bands].iter().rposition(|&c| c) {
-                        hit = Some((ch, b));
-                        break;
-                    }
-                }
-                let Some((ch, b)) = hit else { return };
-                self.chans[ch].coded[b] = false;
-                self.chans[ch].pns[b] = false;
-                self.chans[ch].intensity[b] = false;
-                self.books[ch][b] = 0;
-                self.books[ch] = enc_section::plan_books(&self.chans[ch]);
-            }
-        }
-    }
-
     /// Emit the `raw_data_block` from the built state into `out`.
-    pub(super) fn emit_into(&self, out: &mut Vec<u8>) {
+    /// Returns the bit length before `END`.
+    pub(super) fn emit_into(&self, out: &mut Vec<u8>) -> usize {
         if self.seq.is_eight_short() {
             enc_short::emit_frame(
                 self.short_offsets,
@@ -320,8 +286,9 @@ impl LcEncoder {
                 &self.tns,
                 self.channels,
                 &self.fill,
+                self.pad_fill,
                 out,
-            );
+            )
         } else {
             enc_section::emit_frame(
                 self.offsets,
@@ -333,54 +300,84 @@ impl LcEncoder {
                 &self.tns,
                 self.channels,
                 &self.fill,
+                self.pad_fill,
                 out,
-            );
-        }
-    }
-
-    /// Pad an undersized frame with unused bytes after `ID_END` so payload
-    /// bits sit in `[97%, 100%]` of `limit`. Returns `(payload, coded_bits)`
-    /// where `coded_bits` is the size before padding — one-frame `credit`
-    /// must use that, or stuffing would starve the next frame's rate loop.
-    /// The decoder stops at END; trailing zeros are unused ADTS bytes.
-    /// All-zero spectra are not padded (silence exception). Not CBR.
-    pub(super) fn fit_budget(&mut self, limit: usize, out: &mut Vec<u8>) -> usize {
-        let limit = limit.min(max_frame_bits(self.channels));
-        self.drop_bands_until(limit);
-        self.emit_into(out);
-        let coded = out.len().saturating_mul(8);
-        if self.quant_all_zero() {
-            return coded;
-        }
-        // Pad to the ABR ceiling, minus stuffing debt from earlier frames
-        // that spent credit above `budget`. Search/drop still use credit;
-        // this only changes unused bytes after ID_END.
-        let budget = self.budget_bits().min(limit);
-        let pad_to = if self.pad_debt > 0 {
-            budget.saturating_sub(self.pad_debt as usize)
-        } else {
-            budget
-        };
-        if coded < pad_to.saturating_mul(97) / 100 {
-            let target = (pad_to / 8).min(MAX_PAYLOAD_BYTES);
-            if out.len() < target {
-                out.resize(target, 0);
-            }
-        }
-        let emitted = out.len().saturating_mul(8) as i64;
-        self.pad_debt = (self.pad_debt + emitted - budget as i64).max(0);
-        coded
-    }
-
-    pub(super) fn quant_all_zero(&self) -> bool {
-        if self.seq.is_eight_short() {
-            self.chans_s[..self.channels]
-                .iter()
-                .all(|q| q.quant.iter().all(|&x| x == 0))
-        } else {
-            self.chans[..self.channels]
-                .iter()
-                .all(|q| q.quant.iter().all(|&x| x == 0))
+            )
         }
     }
 }
+
+/// Offset in `[lo_bound, hi_bound]` that `fits`, trying `guess` first.
+///
+/// When `fits` stays true once it becomes true, the result is the
+/// smallest such offset (or `hi_bound` when nothing fits). A real bit
+/// curve dips by a few bits, so a guess other than the previous frame's
+/// offset can stop at a local crossing. `guess == lo_bound` is a full
+/// bisection.
+pub(crate) fn search_monotonic(
+    lo_bound: i32,
+    hi_bound: i32,
+    guess: i32,
+    mut fits: impl FnMut(i32) -> bool,
+) -> i32 {
+    let guess = guess.clamp(lo_bound, hi_bound);
+    if guess > lo_bound {
+        if fits(guess) {
+            return search_down(lo_bound, guess, &mut fits);
+        }
+        return search_up(guess, hi_bound, &mut fits);
+    }
+    if fits(lo_bound) {
+        return lo_bound;
+    }
+    if !fits(hi_bound) {
+        return hi_bound;
+    }
+    bisect(lo_bound, hi_bound, &mut fits)
+}
+
+fn search_down(lo_bound: i32, guess: i32, fits: &mut impl FnMut(i32) -> bool) -> i32 {
+    let mut hi = guess;
+    let floor = lo_bound.max(guess - NEIGHBOR);
+    while hi > floor {
+        if !fits(hi - 1) {
+            return hi;
+        }
+        hi -= 1;
+    }
+    if hi == lo_bound || fits(lo_bound) {
+        return lo_bound;
+    }
+    bisect(lo_bound, hi, fits)
+}
+
+fn search_up(guess: i32, hi_bound: i32, fits: &mut impl FnMut(i32) -> bool) -> i32 {
+    let mut lo = guess;
+    let ceil = hi_bound.min(guess + NEIGHBOR);
+    while lo < ceil {
+        if fits(lo + 1) {
+            return lo + 1;
+        }
+        lo += 1;
+    }
+    if lo >= hi_bound || !fits(hi_bound) {
+        return hi_bound;
+    }
+    bisect(lo, hi_bound, fits)
+}
+
+fn bisect(mut lo: i32, mut hi: i32, fits: &mut impl FnMut(i32) -> bool) -> i32 {
+    while hi - lo > 1 {
+        let mid = lo + (hi - lo) / 2;
+        if fits(mid) {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    hi
+}
+
+#[cfg(test)]
+#[path = "enc_frame_rate_tests.rs"]
+mod enc_frame_rate_tests;

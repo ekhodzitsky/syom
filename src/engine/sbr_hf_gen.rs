@@ -227,25 +227,34 @@ pub fn prediction_coefficients(
         return Err(Error::SbrFreqBandInvalid);
     }
     // φk(i, j) = Σ_n XLow(k, n - i + tHFAdj) · XLow*(k, n - j + tHFAdj).
-    let phi = |i: usize, j: usize| -> Complex {
-        let mut acc = Complex::default();
-        for n in 0..(n_slots_frame + 6) {
-            let a = x_low[n + T_HF_ADJ - i][k];
-            let b = x_low[n + T_HF_ADJ - j][k];
-            acc += a * b.conj();
-        }
-        acc
-    };
-    let phi01 = phi(0, 1);
-    let phi02 = phi(0, 2);
-    let phi11 = phi(1, 1);
-    let phi12 = phi(1, 2);
-    let phi22 = phi(2, 2);
+    // One pass, each accumulator still summed in increasing `n`.
+    let mut phi01 = Complex::default();
+    let mut phi02 = Complex::default();
+    let mut phi11 = Complex::default();
+    let mut phi12 = Complex::default();
+    let mut phi22 = Complex::default();
+    for n in 0..(n_slots_frame + 6) {
+        let x0 = x_low[n + T_HF_ADJ][k];
+        let x1 = x_low[n + T_HF_ADJ - 1][k];
+        let x2 = x_low[n + T_HF_ADJ - 2][k];
+        phi01 += x0 * x1.conj();
+        phi02 += x0 * x2.conj();
+        phi11 += x1 * x1.conj();
+        phi12 += x1 * x2.conj();
+        phi22 += x2 * x2.conj();
+    }
+    Ok(alphas_from_phi(phi01, phi02, phi11, phi12, phi22))
+}
 
-    // d(k) = φ(2,2)·φ(1,1) − |φ(1,2)|² / (1 + εInv). φ(1,1) / φ(2,2)
-    // are real by construction.
+/// `d(k)` and the magnitude reset. Same arithmetic as the scalar covariance.
+fn alphas_from_phi(
+    phi01: Complex,
+    phi02: Complex,
+    phi11: Complex,
+    phi12: Complex,
+    phi22: Complex,
+) -> (Complex, Complex) {
     let d = phi22.re * phi11.re - phi12.norm_sqr() / (1.0 + EPS_INV);
-
     let alpha1 = if d != 0.0 {
         let numer = phi01 * phi12 - phi02 * phi11.re;
         Complex::new(numer.re / d, numer.im / d)
@@ -258,12 +267,11 @@ pub fn prediction_coefficients(
     } else {
         Complex::default()
     };
-
-    // If either magnitude reaches 4, both coefficients reset to zero.
     if alpha0.norm_sqr() >= 16.0 || alpha1.norm_sqr() >= 16.0 {
-        return Ok((Complex::default(), Complex::default()));
+        (Complex::default(), Complex::default())
+    } else {
+        (alpha0, alpha1)
     }
-    Ok((alpha0, alpha1))
 }
 
 /// §4.6.18.6.3 — generate `XHigh` from `XLow` over the patch mapping.
@@ -314,8 +322,8 @@ pub fn generate_hf_into(
     if x_high.len() < x_low.len() {
         return Err(Error::SbrFreqBandInvalid);
     }
-    for col in x_high.iter_mut().take(x_low.len()) {
-        *col = [Complex::default(); 64];
+    for col in &mut x_high[..x_low.len()] {
+        col.fill(Complex::default());
     }
     let k_x = bands.k_x;
 
@@ -334,38 +342,317 @@ pub fn generate_hf_into(
     };
 
     let mut k_off = 0usize;
-    for (i, (&p_start, &p_num)) in patches.start.iter().zip(patches.num.iter()).enumerate() {
-        let _ = i;
-        for x in 0..p_num {
+    for (&p_start, &p_num) in patches.start.iter().zip(patches.num.iter()) {
+        let mut x = 0usize;
+        while x < p_num {
             let k = k_x as usize + x + k_off;
             let p = p_start + x;
             if k >= 64 || p >= 32 {
                 return Err(Error::SbrFreqBandInvalid);
             }
-            let (a0, a1) = match alphas[p] {
-                Some(a) => a,
-                None => {
-                    let a = prediction_coefficients(x_low, p, n_slots_frame)?;
-                    alphas[p] = Some(a);
-                    a
-                }
+            // Four source bands share one covariance pass and one filter pass.
+            // A short tail, or a band that would not fit, stays on the scalar step.
+            let nband = if x + 4 <= p_num && k + 4 <= 64 && p + 4 <= 32 {
+                4
+            } else {
+                1
             };
-            let bw = *bw_array
-                .get(g_of(k as i32)?)
-                .ok_or(Error::SbrFreqBandInvalid)?;
-            let bw2 = bw * bw;
-            for l in l_range.clone() {
-                let c = usize::try_from(l).map_err(|_| Error::SbrFreqBandInvalid)? + T_HF_ADJ;
-                if c >= x_low.len() || c < 2 {
-                    return Err(Error::SbrFreqBandInvalid);
-                }
-                x_high[c][k] =
-                    x_low[c][p] + (a0 * bw) * x_low[c - 1][p] + (a1 * bw2) * x_low[c - 2][p];
+            if nband == 4 {
+                fill_alphas4(&mut alphas, x_low, p, n_slots_frame)?;
+            } else if alphas[p].is_none() {
+                alphas[p] = Some(prediction_coefficients(x_low, p, n_slots_frame)?);
             }
+            let mut a0b = [Complex::default(); 4];
+            let mut a1b = [Complex::default(); 4];
+            for i in 0..nband {
+                let (a0, a1) = match alphas[p + i] {
+                    Some(a) => a,
+                    None => return Err(Error::SbrFreqBandInvalid),
+                };
+                let bw = *bw_array
+                    .get(g_of((k + i) as i32)?)
+                    .ok_or(Error::SbrFreqBandInvalid)?;
+                let bw2 = bw * bw;
+                a0b[i] = a0 * bw;
+                a1b[i] = a1 * bw2;
+            }
+            apply_hf_bands(x_low, x_high, k, p, &a0b[..nband], &a1b[..nband], &l_range)?;
+            x += nband;
         }
         k_off += p_num;
     }
     Ok(())
+}
+
+/// Resolve four uncached source bands. The vector path runs only when every
+/// lane is still empty, so a band already filled by an earlier patch keeps
+/// the coefficient it was given.
+fn fill_alphas4(
+    alphas: &mut [Option<(Complex, Complex)>; 32],
+    x_low: &[[Complex; 32]],
+    p: usize,
+    n_slots_frame: usize,
+) -> Result<()> {
+    if (0..4).all(|i| alphas[p + i].is_none()) {
+        if let Some(got) = prediction4_fast(x_low, p, n_slots_frame) {
+            for i in 0..4 {
+                alphas[p + i] = Some(got[i]);
+            }
+            return Ok(());
+        }
+    }
+    for i in 0..4 {
+        if alphas[p + i].is_none() {
+            alphas[p + i] = Some(prediction_coefficients(x_low, p + i, n_slots_frame)?);
+        }
+    }
+    Ok(())
+}
+
+/// `(a0·bw)` / `(a1·bw²)` across `k..k+n` for every column in `l_range`.
+/// An empty range performs no checks.
+fn apply_hf_bands(
+    x_low: &[[Complex; 32]],
+    x_high: &mut [[Complex; 64]],
+    k: usize,
+    p: usize,
+    a0b: &[Complex],
+    a1b: &[Complex],
+    l_range: &core::ops::Range<i32>,
+) -> Result<()> {
+    if l_range.is_empty() {
+        return Ok(());
+    }
+    let l0 = usize::try_from(l_range.start).map_err(|_| Error::SbrFreqBandInvalid)?;
+    let l1 = usize::try_from(l_range.end).map_err(|_| Error::SbrFreqBandInvalid)?;
+    let c0 = l0 + T_HF_ADJ;
+    let c1 = l1 + T_HF_ADJ;
+    if c0 < 2 || c1 > x_low.len() {
+        return Err(Error::SbrFreqBandInvalid);
+    }
+    let n = a0b.len();
+    if n == 4 && a1b.len() == 4 && apply_hf4_fast(x_low, x_high, k, p, a0b, a1b, c0, c1) {
+        return Ok(());
+    }
+    for i in 0..n {
+        for c in c0..c1 {
+            x_high[c][k + i] =
+                x_low[c][p + i] + a0b[i] * x_low[c - 1][p + i] + a1b[i] * x_low[c - 2][p + i];
+        }
+    }
+    Ok(())
+}
+
+fn prediction4_fast(
+    x_low: &[[Complex; 32]],
+    p: usize,
+    n_slots_frame: usize,
+) -> Option<[(Complex, Complex); 4]> {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f")
+        && p + 4 <= 32
+        && x_low.len() >= n_slots_frame + 6 + T_HF_ADJ
+    {
+        // SAFETY: AVX-512F is probed and each load stays inside a 32-band column.
+        return Some(unsafe { prediction4_avx512(x_low, p, n_slots_frame) });
+    }
+    let _ = (x_low, p, n_slots_frame);
+    None
+}
+
+fn apply_hf4_fast(
+    x_low: &[[Complex; 32]],
+    x_high: &mut [[Complex; 64]],
+    k: usize,
+    p: usize,
+    a0b: &[Complex],
+    a1b: &[Complex],
+    c0: usize,
+    c1: usize,
+) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") && k + 4 <= 64 && p + 4 <= 32 {
+        // SAFETY: AVX-512F is probed. `c0 >= 2` and `c1 <= x_low.len()`, and
+        // four bands sit inside both the 32-band source and the 64-band sink.
+        unsafe { apply_hf4_avx512(x_low, x_high, k, p, a0b, a1b, c0, c1) };
+        return true;
+    }
+    let _ = (x_low, x_high, k, p, a0b, a1b, c0, c1);
+    false
+}
+
+/// Four complex products, AoS. `re = ar·br − ai·bi`, `im = ar·bi + ai·br`.
+///
+/// # Safety
+///
+/// AVX-512F is available.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn cmul4(
+    x: std::arch::x86_64::__m512d,
+    y: std::arch::x86_64::__m512d,
+) -> std::arch::x86_64::__m512d {
+    use std::arch::x86_64::{
+        _mm512_add_pd, _mm512_mask_blend_pd, _mm512_mul_pd, _mm512_permutexvar_pd,
+        _mm512_setr_epi64, _mm512_sub_pd,
+    };
+    {
+        let swap = _mm512_setr_epi64(1, 0, 3, 2, 5, 4, 7, 6);
+        let re_i = _mm512_setr_epi64(0, 0, 2, 2, 4, 4, 6, 6);
+        let im_i = _mm512_setr_epi64(1, 1, 3, 3, 5, 5, 7, 7);
+        let xs = _mm512_permutexvar_pd(swap, x);
+        let y_re = _mm512_permutexvar_pd(re_i, y);
+        let y_im = _mm512_permutexvar_pd(im_i, y);
+        let re_part = _mm512_mul_pd(x, y_re);
+        let im_part = _mm512_mul_pd(xs, y_im);
+        let diff = _mm512_sub_pd(re_part, im_part);
+        let sum = _mm512_add_pd(re_part, im_part);
+        _mm512_mask_blend_pd(0b1010_1010, diff, sum)
+    }
+}
+
+/// Conjugate: flip the sign bit of each imaginary lane.
+///
+/// # Safety
+///
+/// AVX-512F is available.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn cconj4(v: std::arch::x86_64::__m512d) -> std::arch::x86_64::__m512d {
+    use std::arch::x86_64::{
+        _mm512_castpd_si512, _mm512_castsi512_pd, _mm512_setr_pd, _mm512_xor_si512,
+    };
+    // Integer xor: `_mm512_xor_pd` is marked AVX-512DQ and would not inline.
+    let sign = _mm512_setr_pd(0.0, -0.0, 0.0, -0.0, 0.0, -0.0, 0.0, -0.0);
+    _mm512_castsi512_pd(_mm512_xor_si512(
+        _mm512_castpd_si512(v),
+        _mm512_castpd_si512(sign),
+    ))
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `p + 3 < 32`.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn load4(col: &[Complex; 32], p: usize) -> std::arch::x86_64::__m512d {
+    use std::arch::x86_64::_mm512_loadu_pd;
+    unsafe { _mm512_loadu_pd(col.as_ptr().add(p).cast()) }
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `k + 3 < 64`.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn store4(col: &mut [Complex; 64], k: usize, v: std::arch::x86_64::__m512d) {
+    use std::arch::x86_64::_mm512_storeu_pd;
+    unsafe { _mm512_storeu_pd(col.as_mut_ptr().add(k).cast(), v) }
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `a` holds four complexes.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn load_coeff4(a: &[Complex]) -> std::arch::x86_64::__m512d {
+    use std::arch::x86_64::_mm512_loadu_pd;
+    unsafe { _mm512_loadu_pd(a.as_ptr().cast()) }
+}
+
+/// # Safety
+///
+/// AVX-512F is available.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn unpack4(v: std::arch::x86_64::__m512d) -> [Complex; 4] {
+    use std::arch::x86_64::_mm512_storeu_pd;
+    let mut b = [0.0f64; 8];
+    unsafe { _mm512_storeu_pd(b.as_mut_ptr(), v) };
+    [
+        Complex::new(b[0], b[1]),
+        Complex::new(b[2], b[3]),
+        Complex::new(b[4], b[5]),
+        Complex::new(b[6], b[7]),
+    ]
+}
+
+/// Four independent covariances. Each lane matches [`prediction_coefficients`].
+///
+/// # Safety
+///
+/// AVX-512F is available. `p + 3 < 32` and `x_low` is long enough for the window.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn prediction4_avx512(
+    x_low: &[[Complex; 32]],
+    p: usize,
+    n_slots_frame: usize,
+) -> [(Complex, Complex); 4] {
+    use std::arch::x86_64::{_mm512_add_pd, _mm512_setzero_pd};
+    let mut phi01 = _mm512_setzero_pd();
+    let mut phi02 = _mm512_setzero_pd();
+    let mut phi11 = _mm512_setzero_pd();
+    let mut phi12 = _mm512_setzero_pd();
+    let mut phi22 = _mm512_setzero_pd();
+    for n in 0..(n_slots_frame + 6) {
+        unsafe {
+            let x0 = load4(&x_low[n + T_HF_ADJ], p);
+            let x1 = load4(&x_low[n + T_HF_ADJ - 1], p);
+            let x2 = load4(&x_low[n + T_HF_ADJ - 2], p);
+            phi01 = _mm512_add_pd(phi01, cmul4(x0, cconj4(x1)));
+            phi02 = _mm512_add_pd(phi02, cmul4(x0, cconj4(x2)));
+            phi11 = _mm512_add_pd(phi11, cmul4(x1, cconj4(x1)));
+            phi12 = _mm512_add_pd(phi12, cmul4(x1, cconj4(x2)));
+            phi22 = _mm512_add_pd(phi22, cmul4(x2, cconj4(x2)));
+        }
+    }
+    let (a01, a02, a11, a12, a22) = unsafe {
+        (
+            unpack4(phi01),
+            unpack4(phi02),
+            unpack4(phi11),
+            unpack4(phi12),
+            unpack4(phi22),
+        )
+    };
+    let mut out = [(Complex::default(), Complex::default()); 4];
+    for i in 0..4 {
+        out[i] = alphas_from_phi(a01[i], a02[i], a11[i], a12[i], a22[i]);
+    }
+    out
+}
+
+/// `X[c][k+i] = Xlow[c][p+i] + a0[i]·Xlow[c−1][p+i] + a1[i]·Xlow[c−2][p+i]`.
+///
+/// # Safety
+///
+/// AVX-512F is available. `c0 >= 2`, `c1 <= x_low.len()`, `k + 3 < 64`, `p + 3 < 32`,
+/// and both coefficient slices hold four complexes.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn apply_hf4_avx512(
+    x_low: &[[Complex; 32]],
+    x_high: &mut [[Complex; 64]],
+    k: usize,
+    p: usize,
+    a0b: &[Complex],
+    a1b: &[Complex],
+    c0: usize,
+    c1: usize,
+) {
+    use std::arch::x86_64::_mm512_add_pd;
+    unsafe {
+        let a0 = load_coeff4(a0b);
+        let a1 = load_coeff4(a1b);
+        for c in c0..c1 {
+            let x = load4(&x_low[c], p);
+            let xp = load4(&x_low[c - 1], p);
+            let xp2 = load4(&x_low[c - 2], p);
+            let acc = _mm512_add_pd(x, cmul4(a0, xp));
+            store4(&mut x_high[c], k, _mm512_add_pd(acc, cmul4(a1, xp2)));
+        }
+    }
 }
 
 #[cfg(test)]

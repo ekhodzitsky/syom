@@ -1,7 +1,7 @@
 //! Public channel layout and per-frame Copy metadata (TASK-61).
 //!
-//! No heap: a stable format is an 8-slot `[Option<Channel>; 8]`. Unknown
-//! container facts (`priming` / `remainder` on ADTS) stay [`None`].
+//! No heap: a stable format is an 8-slot `[Option<Channel>; 8]`. Priming
+//! and remainder live on the decode tallies.
 
 /// Product plane ceiling ([`crate::DEFAULT_MAX_CHANNELS`]).
 pub const MAX_PLANES: usize = 8;

@@ -1,0 +1,2401 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC-NOT-LISTENING-EVIDENCE",
+  "n_listeners_submitted": 9,
+  "rows": [
+    {
+      "listener": "L00",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 29.924,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 52.824,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 72.68,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 72.22,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 27.144,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 53.544,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 70.288,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 71.62,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 27.448,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 52.52,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 73.5,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 73.664,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 28.668,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 53.612,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 73.732,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 72.712,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 28.724,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 50.348,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 70.96,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 71.52,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 27.908,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 50.756,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 73.424,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 73.456,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 40.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 26.744,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 51.668,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 72.444,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 72.768,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L00",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 2.0,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L00",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.673,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L00",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.737,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L01",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 97.744,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 26.732,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 51.2,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 70.508,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 71.512,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 96.1,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 28.612,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 51.22,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 70.972,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 73.952,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 96.708,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 27.592,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 53.752,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 73.8,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 72.624,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 95.828,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 28.044,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 53.332,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 71.528,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 74.312,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 95.84,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 26.78,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 53.388,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 73.388,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 72.812,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.272,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 26.216,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 51.264,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 72.176,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 74.3,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 97.748,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 28.224,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 53.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 70.568,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 73.988,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L01",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.867,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L01",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.642,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L01",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.681,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L02",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 98.576,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 28.796,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 50.248,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 70.828,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 71.388,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 96.86,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 28.272,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 51.552,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 72.62,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 72.324,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 96.5,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 26.88,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 52.284,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 72.068,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 74.012,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 95.236,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 27.136,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 53.156,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 72.052,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 74.912,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 95.556,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 29.204,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 52.14,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 71.492,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 74.136,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.536,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 26.092,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 53.752,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 71.432,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 74.596,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 96.92,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 26.668,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 52.708,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 72.876,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 74.132,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L02",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.868,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L02",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.662,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L02",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.748,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L03",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 98.244,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 27.404,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 52.04,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 72.368,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 74.084,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 96.484,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 29.956,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 51.136,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 72.012,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 73.26,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 96.916,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 27.96,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 53.92,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 70.488,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 73.036,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 97.028,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 29.42,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 51.316,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 72.156,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 71.172,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 95.356,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 26.144,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 52.936,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 70.316,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 73.468,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 97.38,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 29.452,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 50.28,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 72.44,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 72.984,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 96.44,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 27.384,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 51.9,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 71.344,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 72.464,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L03",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.891,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L03",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.68,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L03",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.722,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L04",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 98.004,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 26.936,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 50.404,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 71.392,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 72.0,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 96.98,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 27.64,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 52.348,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 73.848,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 71.048,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 95.4,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 29.656,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 53.3,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 72.632,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 73.616,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 98.06,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 29.588,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 50.064,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 73.668,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 71.78,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 97.864,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 29.316,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 52.288,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 73.988,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 74.416,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.88,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 29.528,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 51.188,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 72.832,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 71.48,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 98.952,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 27.364,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 51.084,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 71.624,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 73.508,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L04",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.905,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L04",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.685,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L04",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.723,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L05",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 97.7,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 28.008,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 52.456,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 70.572,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 73.676,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 95.432,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 26.348,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 50.776,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 72.084,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 73.552,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 96.644,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 26.076,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 52.188,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 70.62,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 73.228,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 95.808,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 27.7,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 53.04,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 73.648,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 73.328,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 96.564,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 26.852,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 50.072,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 72.136,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 73.952,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.236,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 29.76,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 52.004,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 71.564,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 73.128,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 98.516,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 28.776,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 52.34,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 72.124,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 71.124,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L05",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.873,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L05",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.642,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L05",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.72,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L06",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 98.384,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 29.872,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 51.504,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 71.232,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 71.588,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 97.852,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 27.632,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 52.536,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 70.32,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 72.352,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 98.548,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 29.944,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 51.156,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 71.696,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 73.32,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 97.584,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 27.076,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 51.98,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 71.908,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 73.548,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 98.068,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 29.768,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 52.148,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 73.032,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 72.476,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.14,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 27.06,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 52.584,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 73.276,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 71.036,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 97.656,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 26.86,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 51.112,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 72.104,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 72.404,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L06",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.903,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L06",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.636,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L06",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.734,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L07",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 95.352,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 28.972,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 53.92,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 72.296,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 74.448,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 95.684,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 28.412,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 53.368,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 72.004,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 72.66,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 98.376,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 26.256,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 52.4,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 71.336,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 74.468,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 96.24,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 28.656,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 51.448,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 72.996,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 71.652,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 97.032,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 27.068,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 51.996,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 71.5,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 74.944,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.52,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 26.376,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 50.7,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 71.708,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 74.844,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 96.976,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 27.308,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 53.692,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 70.636,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 72.372,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L07",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.881,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L07",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.686,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L07",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.706,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L08",
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "score": 96.924,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "score": 28.176,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "score": 52.532,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "score": 72.444,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "score": 73.808,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "score": 95.8,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "score": 28.92,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "score": 50.62,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "score": 72.528,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "score": 74.768,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "score": 98.824,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "score": 26.912,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "score": 50.368,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "score": 71.484,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "score": 72.648,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "score": 95.164,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "score": 26.744,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "score": 51.392,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "score": 72.42,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "score": 71.7,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "score": 95.184,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "score": 27.72,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "score": 53.708,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "score": 73.368,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "score": 74.676,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "score": 96.296,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "score": 27.248,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "score": 52.072,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "score": 70.536,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "score": 72.372,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "score": 97.056,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "score": 27.2,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "score": 53.612,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "score": 70.224,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "score": 71.396,
+      "method": "BS.1534-3"
+    },
+    {
+      "listener": "L08",
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "score": 4.881,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L08",
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "score": 4.61,
+      "method": "BS.1116-3"
+    },
+    {
+      "listener": "L08",
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "score": 4.704,
+      "method": "BS.1116-3"
+    }
+  ]
+}

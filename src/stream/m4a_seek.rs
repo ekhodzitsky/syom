@@ -18,7 +18,7 @@
 use std::io::{self, Read, Seek, SeekFrom};
 
 use crate::error::{AacError, Result};
-use crate::isomp4::{self, load_moov};
+use crate::isomp4::{self, TrackBoxes, load_track_boxes};
 use crate::options::DecodeOptions;
 use crate::stream::{Frame, StreamInfo};
 
@@ -63,11 +63,24 @@ where
     R: Read + Seek,
     F: FnMut(Frame<'_>) -> Result<()>,
 {
-    let (moov, file_len) = load_moov(reader, &opts.memory)?;
-    let track = isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
-        .map_err(map_m4a_parse_err)?;
+    let boxes = load_track_boxes(reader, &opts.memory)?;
+    let gap = match &boxes {
+        TrackBoxes::Flat { moov, .. } | TrackBoxes::Frag { moov, .. } => {
+            crate::gapless::itunsmpb_in(moov)
+        }
+    };
+    let track = match boxes {
+        TrackBoxes::Flat { moov, file_len } => {
+            isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
+                .map_err(map_m4a_parse_err)?
+        }
+        TrackBoxes::Frag {
+            moov, moofs, mdats, ..
+        } => isomp4::frag::track_from_parts(&moov, &moofs, &mdats, &opts.memory)?,
+    };
     play_m4a_track(
         track,
+        gap,
         opts,
         |off, len| {
             let n =

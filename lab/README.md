@@ -18,8 +18,13 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [quality](quality/) | same-bitrate LC encode SNR/rate (TASK-16) | TASK-16 |
 | [footprint](footprint/) | minimal decode / encode consumers, size budgets, MSRV and package policy ([REPORT](footprint/REPORT.md)) | TASK-99 |
 | [wasm](wasm/) | `wasm32-unknown-unknown` smoke run under Node, native reference ([REPORT](wasm/REPORT.md)) | TASK-100 |
+| [consume](consume/) | consumer flows and kover/sluh call-pattern reproductions against the packaged crate ([REPORT](consume/REPORT.md)) | TASK-102 |
 | [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | TASK-14 |
 | [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | TASK-48/49 |
+| [apple](apple/) | Apple AudioToolbox/CoreAudio (no authorized host; cell pending) | TASK-10 |
+| [aacjs](aacjs/) | AAC.js 0.1.3 / Aurora.js 0.4.9 browser-JS LC peer ([PIN](aacjs/PIN.md), [REPORT](aacjs/REPORT.md)) | TASK-20 |
+| [profiles](profiles/) | LD/ELD/USAC feasibility: FDK v2.0.3, libxaac v0.1.13, exhale v1.2.2 ([PIN](profiles/PIN.md), [REPORT](profiles/REPORT.md)) | TASK-97 |
+| [oxideav](oxideav/) | oxideav-aac 0.1.7 (pure-Rust LC + HE v1 encoder peer) ([PIN](oxideav/PIN.md), [REPORT](oxideav/REPORT.md)) | TASK-95 |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 

@@ -1,7 +1,7 @@
 //! SCE finish and CPE pair for [`super::decode::StreamDecoder`].
 
 use super::bits::BitReader;
-use super::cce::{PendingChan, apply_cce_to_pending, apply_independent_pcm};
+use super::cce::{PendingChan, apply_cce_to_pending, apply_independent_pcm, parse_cce};
 use super::channel_map::{ElemKind, Element};
 use super::decode::StreamDecoder;
 use super::error::{Error, Result};
@@ -79,7 +79,8 @@ impl StreamDecoder {
     ) -> Result<(IcsInfo, Option<tns::TnsData>, IcsInfo, Option<tns::TnsData>)> {
         let common_window = br.read_bit()?;
         let (ics_common, ms) = if common_window {
-            let ics = super::ics::IcsInfo::parse(br, fs_index, true)?;
+            let ics =
+                super::ics::IcsInfo::parse_mode(br, fs_index, true, aot == super::asc::AOT_LD)?;
             let ms = MsInfo::parse(br, &ics)?;
             (Some(ics), Some(ms))
         } else {
@@ -224,6 +225,11 @@ impl StreamDecoder {
                     &pending[i + 1].ics,
                     &mut self.pcm_r,
                 )?;
+                if self.fast_mono {
+                    for (l, r) in self.pcm_l.iter_mut().zip(self.pcm_r.iter()) {
+                        *l = 0.5 * (*l + *r);
+                    }
+                }
                 if multichannel {
                     self.fb_pool
                         .swap_pair(pending[i].tag, &mut self.fb_l, &mut self.fb_r);
@@ -299,5 +305,84 @@ impl StreamDecoder {
         if self.spec_r.capacity() == 0 {
             self.spec_r = self.spec_pool.pop().unwrap_or_default();
         }
+    }
+
+    /// LC / HE element loop: 3-bit element IDs up to `ID_END` (the ER AAC LD
+    /// id-less walk lives in `decode_ld`).
+    pub(crate) fn decode_lc_elements(
+        &mut self,
+        br: &mut BitReader<'_>,
+        fs_index: u8,
+        core_aot: u8,
+        sample_rate: u32,
+        channel_configuration: u8,
+        multichannel: bool,
+    ) -> Result<()> {
+        let mut last_elem = None;
+        loop {
+            if br.bits_remaining() < 3 {
+                break;
+            }
+            let id = super::raw_data_block::IdSynEle::from_bits(br.read(3)? as u8);
+            match id {
+                super::raw_data_block::IdSynEle::End => break,
+                super::raw_data_block::IdSynEle::Sce | super::raw_data_block::IdSynEle::Lfe => {
+                    let tag = br.read(4)? as u8;
+                    let kind = if id == super::raw_data_block::IdSynEle::Sce {
+                        ElemKind::Sce
+                    } else {
+                        ElemKind::Lfe
+                    };
+                    last_elem = Some((kind, tag));
+                    if multichannel {
+                        super::fb_pool::reject_dup(&self.elems, kind, tag)?;
+                    }
+                    let (ics, tns) = parse_ics_into(
+                        br,
+                        fs_index,
+                        core_aot,
+                        None,
+                        &mut self.quant,
+                        &mut self.spec_l,
+                        &mut self.sections_l,
+                        &mut self.sf_l,
+                    )?;
+                    self.finish_sce_pns(&ics, fs_index)?;
+                    self.stash_chan(kind, tag, 0, ics, tns, true, true);
+                }
+                super::raw_data_block::IdSynEle::Cpe => {
+                    let tag = br.read(4)? as u8;
+                    last_elem = Some((ElemKind::Cpe, tag));
+                    if multichannel {
+                        super::fb_pool::reject_dup(&self.elems, ElemKind::Cpe, tag)?;
+                    }
+                    let (ics_l, tns_l, ics_r, tns_r) =
+                        self.decode_cpe(br, fs_index, core_aot, tag)?;
+                    self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, true);
+                    self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, true);
+                }
+                super::raw_data_block::IdSynEle::Cce => {
+                    self.cces.push(parse_cce(br, fs_index, core_aot)?);
+                }
+                super::raw_data_block::IdSynEle::Dse => super::skip::skip_dse(br)?,
+                super::raw_data_block::IdSynEle::Pce => {
+                    self.pce = Some(super::channel_map::parse_pce(br)?);
+                }
+                super::raw_data_block::IdSynEle::Fil => {
+                    let cnt = super::skip::fill_count(br)?;
+                    let fs_sbr = self.sbr_out_rate.unwrap_or(sample_rate.saturating_mul(2));
+                    super::sbr_attach::ingest_fil(
+                        br,
+                        cnt,
+                        last_elem,
+                        fs_sbr,
+                        &mut self.sbr_pool,
+                        &mut self.pending_sbrs,
+                    )?;
+                }
+            }
+        }
+        let _ = channel_configuration;
+        Ok(())
     }
 }

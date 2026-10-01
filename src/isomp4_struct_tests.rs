@@ -253,7 +253,10 @@ fn seek_load_moov_co64_matches_slice_index() {
     let data = m4a_co64(8, 7);
     let slice = parse_aac_track(&data).expect("co64 slice");
     let mut cur = Cursor::new(&data);
-    let (moov, file_len) = load_moov(&mut cur, &mem()).expect("load moov");
+    let (moov, file_len) = match load_track_boxes(&mut cur, &mem()).expect("load moov") {
+        TrackBoxes::Flat { moov, file_len } => (moov, file_len),
+        TrackBoxes::Frag { .. } => panic!("flat fixture must not load as fragmented"),
+    };
     assert!(moov.len() < data.len(), "moov must not be the whole file");
     let seek = parse_aac_track_with_len(&moov, file_len, &mem()).expect("co64 seek");
     assert_eq!(slice.frames, seek.frames);

@@ -88,7 +88,11 @@ fn chunked_encode_matches_oneshot_short_tail() {
     let one = encode_with(&pcm, 48_000, &EncodeOptions::adts()).expect("oneshot");
     for chunk in [1usize, 77, 777, 2048] {
         let got = push_encode(&pcm, chunk).unwrap_or_else(|e| panic!("chunk {chunk}: {e}"));
-        assert_eq!(got, one, "chunk {chunk} bytes");
+        assert_eq!(
+            got.as_slice(),
+            crate::gapless::strip_id3(&one),
+            "chunk {chunk} bytes"
+        );
     }
     let dec = decode_with(&one, &DecodeOptions::unbounded()).expect("decode");
     assert!(dec.channels[0].iter().all(|x| x.is_finite()));

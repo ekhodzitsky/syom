@@ -31,10 +31,15 @@ fn snr_db(want: &[f32], got: &[f32]) -> f64 {
 }
 
 fn snr_aligned(want: &[f32], got: &[f32]) -> f64 {
-    snr_db(
-        &want[PRIME..want.len() - PRIME],
-        &got[2 * PRIME..want.len()],
-    )
+    let w = &want[PRIME..want.len() - PRIME];
+    // A tagged decode is already presentation-aligned. An untagged buffer
+    // still carries the 1024-sample delay in front of that window.
+    let start = if got.len() == want.len() {
+        PRIME
+    } else {
+        2 * PRIME
+    };
+    snr_db(w, &got[start..start + w.len()])
 }
 
 fn rms(x: &[f32]) -> f32 {
@@ -101,7 +106,7 @@ fn ath_stream_matches_oneshot() {
     };
     enc.feed(&[&pcm[0]], &mut cb).unwrap();
     enc.finish(&mut cb).unwrap();
-    assert_eq!(got, want);
+    assert_eq!(got.as_slice(), crate::gapless::strip_id3(&want));
 }
 
 #[test]

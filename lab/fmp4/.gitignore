@@ -1,0 +1,7 @@
+# generated artifacts (regenerate: gen_fixtures.sh; bridge via cargo)
+fixtures/
+out/
+dash/
+bridge/target/
+bridge/Cargo.lock
+__pycache__/

@@ -177,6 +177,23 @@ fn two_band_one_step_picks_higher_error() {
     assert!(dpcm_ok(&q.sf, &q.coded, n));
 }
 
+/// The gain table is `det_math::exp2`, not libm, for every wire scalefactor.
+#[test]
+fn quant_gain_table_matches_det_math_for_every_scalefactor() {
+    for sf in 0..256 {
+        let want = crate::engine::det_math::exp2(-0.1875 * (sf - super::SF_OFFSET) as f32);
+        assert_eq!(
+            super::bits::quant_gain(sf).to_bits(),
+            want.to_bits(),
+            "sf {sf}"
+        );
+    }
+    for sf in [-8, 256, 300] {
+        let want = crate::engine::det_math::exp2(-0.1875 * (sf - super::SF_OFFSET) as f32);
+        assert_eq!(super::bits::quant_gain(sf).to_bits(), want.to_bits());
+    }
+}
+
 /// TASK-83: the one-pass cost table equals walking `spectral_bits` book by
 /// book, for every magnitude class (LAV 1, 2, 4, 7, 12, escapes, clip).
 #[test]

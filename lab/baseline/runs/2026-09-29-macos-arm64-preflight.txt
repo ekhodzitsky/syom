@@ -1,0 +1,56 @@
+preflight fixture=lc_adts lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 1 ch 13312 samples checksum=0x6dcdd6fd8cb3abf3
+  rusty_aac 0.5.0: comparable 48000 Hz 1 ch 13312 samples checksum=0xa2df332f7923c4e8
+  oxideav-aac 0.1.7: comparable 48000 Hz 1 ch 13312 samples checksum=0xa98b5f7621a390b6
+  symphonia 0.6.1: comparable 48000 Hz 1 ch 13312 samples checksum=0x5b3c68257470430e
+  timed: syom, rusty_aac, oxideav-aac, symphonia
+preflight fixture=lc_m4a lane=planar_split
+  syom 0.6.0: comparable 44100 Hz 1 ch 11025 samples checksum=0x29573d571d053fc8
+  rusty_aac 0.5.0: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: non-comparable mismatched output: 44100 Hz 1 ch 12288 samples (expected 44100 Hz 1 ch 11025 samples) [44100 Hz 1 ch 12288 samples]
+  timed: syom
+preflight fixture=he_adts lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 2 ch 18432 samples checksum=0xeba03394dabed461
+  rusty_aac 0.5.0: non-comparable mismatched output: 24000 Hz 1 ch 9216 samples (expected 48000 Hz 2 ch 18432 samples) [24000 Hz 1 ch 9216 samples]
+  oxideav-aac 0.1.7: non-comparable mismatched output: 48000 Hz 1 ch 18432 samples (expected 48000 Hz 2 ch 18432 samples) [48000 Hz 1 ch 18432 samples]
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 9216 samples (expected 48000 Hz 2 ch 18432 samples) [24000 Hz 1 ch 9216 samples]
+  timed: syom
+preflight fixture=he_m4a lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 2 ch 16320 samples checksum=0x4e3edb8a13abeb25
+  rusty_aac 0.5.0: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 9216 samples (expected 48000 Hz 2 ch 16320 samples) [24000 Hz 1 ch 9216 samples]
+  timed: syom
+preflight fixture=ps_adts lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 2 ch 53248 samples checksum=0xff951025c5592a5f
+  rusty_aac 0.5.0: non-comparable mismatched output: 24000 Hz 1 ch 26624 samples (expected 48000 Hz 2 ch 53248 samples) [24000 Hz 1 ch 26624 samples]
+  oxideav-aac 0.1.7: comparable 48000 Hz 2 ch 53248 samples checksum=0xdfa7f55f20898f4d
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 26624 samples (expected 48000 Hz 2 ch 53248 samples) [24000 Hz 1 ch 26624 samples]
+  timed: syom, oxideav-aac
+preflight fixture=mc_adts lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 6 ch 20480 samples checksum=0xec2c071bde11d4c0
+  oxideav-aac 0.1.7: comparable 48000 Hz 6 ch 20480 samples checksum=0x3494378f82770083
+  symphonia 0.6.1: non-comparable decoder not constructed
+  timed: syom, oxideav-aac
+preflight fixture=lc_adts_speech lane=speech_downmix
+  syom 0.6.0: comparable 48000 Hz 1 ch 13312 samples checksum=0x6dcdd6fd8cb3abf3
+  timed: syom
+preflight fixture=lecture_m4a lane=planar_split
+  syom 0.6.0: comparable 48000 Hz 2 ch 12000 samples checksum=0x2c30e5f57ae10001
+  rusty_aac 0.5.0: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: non-comparable no packets decoded
+  timed: syom
+preflight fixture=lc_adts_discard lane=discard_output
+  syom 0.6.0: comparable 48000 Hz 1 ch 13312 samples checksum=0x6dcdd6fd8cb3abf3
+  rusty_aac 0.5.0: comparable 48000 Hz 1 ch 13312 samples checksum=0xa2df332f7923c4e8
+  oxideav-aac 0.1.7: comparable 48000 Hz 1 ch 13312 samples checksum=0xa98b5f7621a390b6
+  symphonia 0.6.1: comparable 48000 Hz 1 ch 13312 samples checksum=0x5b3c68257470430e
+  timed: syom, rusty_aac, oxideav-aac, symphonia
+encode-preflight fixture=enc_lc_mono
+  syom 0.6.0: non-matched-rate achieved 142413 bps vs requested 128000 (Δ 11.3%); ADTS 5035 B payload 4937 B ach 142413 bps (not an equal-rate cell)
+  timed: syom
+encode-preflight fixture=enc_lc_stereo
+  syom 0.6.0: non-matched-rate achieved 142096 bps vs requested 128000 (Δ 11.0%); ADTS 5024 B payload 4926 B ach 142096 bps (not an equal-rate cell)
+  timed: syom

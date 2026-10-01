@@ -212,9 +212,7 @@ fn encoder_bank_matches_decoder_core_bank_grid_and_scale() {
         let mut dec_e = [0.0f64; 32];
         let mut n_dec = 0usize;
         for chunk in core.chunks_exact(32) {
-            let s = dec
-                .push_slot(&chunk.iter().map(|&x| f64::from(x)).collect::<Vec<_>>())
-                .unwrap();
+            let s = dec.push_slot(chunk).unwrap();
             n_dec += 1;
             if n_dec > 16 {
                 for (k, e) in dec_e.iter_mut().enumerate() {

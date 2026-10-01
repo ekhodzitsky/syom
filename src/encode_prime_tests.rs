@@ -41,8 +41,9 @@ fn oxideav_samples(adts: &[u8]) -> usize {
 fn syom_adts(n: usize, at: usize) -> (Vec<u8>, Vec<f32>) {
     let pcm = impulse(n, at);
     let adts = encode(&pcm, 48_000).expect("encode");
-    let dec = decode_with(&adts, &DecodeOptions::unbounded()).expect("syom");
-    (adts, dec.channels[0].clone())
+    let raw = crate::gapless::strip_id3(&adts).to_vec();
+    let dec = decode_with(&raw, &DecodeOptions::unbounded()).expect("syom");
+    (raw, dec.channels[0].clone())
 }
 
 #[test]
@@ -111,7 +112,11 @@ fn lookahead_drain_preserves_the_last_impulse() {
     let pcm = impulse(2048, 2047);
     let opts = EncodeOptions::adts().with_lookahead(true);
     let adts = encode_with(&pcm, 48_000, &opts).unwrap();
-    let dec = decode_with(&adts, &DecodeOptions::unbounded()).unwrap();
+    let dec = decode_with(
+        crate::gapless::strip_id3(&adts),
+        &DecodeOptions::unbounded(),
+    )
+    .unwrap();
     assert_eq!(dec.channels[0].len(), 3 * 1024);
     let (i, a) = peak(&dec.channels[0]);
     assert!(a > 0.2, "lookahead last impulse {a}");
@@ -134,7 +139,7 @@ fn encode_info_counts_input_not_decoded_valid_samples() {
     assert_eq!(info.sample_rate, 48_000);
     assert_eq!(info.channels, 1);
     let one = encode_with(&pcm, 48_000, &opts).unwrap();
-    let dec = decode_with(&one, &DecodeOptions::unbounded()).unwrap();
+    let dec = decode_with(crate::gapless::strip_id3(&one), &DecodeOptions::unbounded()).unwrap();
     assert_eq!(dec.channels[0].len(), 3 * 1024);
     assert_ne!(
         info.samples as usize,
@@ -195,5 +200,5 @@ fn push_matches_oneshot_omission() {
         Ok(())
     })
     .unwrap();
-    assert_eq!(push, one);
+    assert_eq!(push.as_slice(), crate::gapless::strip_id3(&one));
 }

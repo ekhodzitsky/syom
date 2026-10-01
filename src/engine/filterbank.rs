@@ -8,6 +8,8 @@ use std::sync::LazyLock;
 
 const N_L: usize = 2048;
 const N_S: usize = 256;
+/// AAC-LD frame length in PCM samples (512-line transform).
+const LD_FRAME_LEN: usize = super::swb::LD_WINDOW_LEN;
 
 fn to_array<const N: usize>(v: Vec<f64>) -> [f32; N] {
     let mut a = [0.0f32; N];
@@ -21,6 +23,30 @@ static SINE_LONG: LazyLock<[f32; 1024]> = LazyLock::new(|| to_array(sine_left(10
 static SINE_SHORT: LazyLock<[f32; 128]> = LazyLock::new(|| to_array(sine_left(128)));
 static KBD_LONG: LazyLock<[f32; 1024]> = LazyLock::new(|| to_array(kbd_left(1024, 4.0)));
 static KBD_SHORT: LazyLock<[f32; 128]> = LazyLock::new(|| to_array(kbd_left(128, 6.0)));
+static SINE_LONG_REV: LazyLock<[f32; 1024]> = LazyLock::new(|| reverse(&SINE_LONG));
+static KBD_LONG_REV: LazyLock<[f32; 1024]> = LazyLock::new(|| reverse(&KBD_LONG));
+
+fn reverse(src: &[f32; 1024]) -> [f32; 1024] {
+    let mut out = [0.0f32; 1024];
+    for (i, slot) in out.iter_mut().enumerate() {
+        *slot = src[1023 - i];
+    }
+    out
+}
+
+/// AAC-LD window halves (window length 1024, frame 512): sine slope, and the
+/// low-overlap shape — 192 zeros, a 128-sample sine slope, 192 ones
+/// (ISO/IEC 14496-3 LD windowing; same geometry in FDK and libxaac).
+static SINE_LD: LazyLock<[f32; 512]> = LazyLock::new(|| to_array(sine_left(512)));
+static LOW_OVERLAP_LD: LazyLock<[f32; 512]> = LazyLock::new(|| {
+    let rise = sine_left(128);
+    let mut out = [0.0f32; 512];
+    for (d, s) in out[192..320].iter_mut().zip(rise) {
+        *d = s as f32;
+    }
+    out[320..].fill(1.0);
+    out
+});
 
 fn bessel_i0(x: f64) -> f64 {
     let half_x = x / 2.0;
@@ -65,6 +91,13 @@ fn sine_left(half: usize) -> Vec<f64> {
         .collect()
 }
 
+fn half_rev(shape: WindowShape) -> &'static [f32] {
+    match shape {
+        WindowShape::Sine => SINE_LONG_REV.as_slice(),
+        WindowShape::Kbd => KBD_LONG_REV.as_slice(),
+    }
+}
+
 fn half(n: usize, shape: WindowShape) -> &'static [f32] {
     match (n, shape) {
         (N_L, WindowShape::Sine) => SINE_LONG.as_slice(),
@@ -79,6 +112,36 @@ fn half(n: usize, shape: WindowShape) -> &'static [f32] {
 /// right half of an OnlyLong window is this reversed).
 pub(crate) fn window_left(n: usize, shape: WindowShape) -> &'static [f32] {
     half(n, shape)
+}
+
+/// Full 1024-point LD analysis window. Left half is [`half_ld`]; the right
+/// half is that half reversed, matching synthesis in [`Filterbank::synthesize_ld_into`].
+/// Encoder analysis window. `Kbd` is the low-overlap shape.
+pub(crate) fn ld_analysis_window(shape: WindowShape) -> &'static [f32; 1024] {
+    match shape {
+        WindowShape::Sine => &LD_SINE_FULL,
+        WindowShape::Kbd => &LD_LOW_OVERLAP_FULL,
+    }
+}
+
+static LD_SINE_FULL: LazyLock<[f32; 1024]> = LazyLock::new(|| full_ld(&SINE_LD));
+static LD_LOW_OVERLAP_FULL: LazyLock<[f32; 1024]> = LazyLock::new(|| full_ld(&LOW_OVERLAP_LD));
+
+fn full_ld(half: &[f32; 512]) -> [f32; 1024] {
+    let mut w = [0.0f32; 1024];
+    for i in 0..512 {
+        w[i] = half[i];
+        w[512 + i] = half[511 - i];
+    }
+    w
+}
+
+/// LD window left half; on the LD path `Kbd` is the low-overlap shape.
+fn half_ld(shape: WindowShape) -> &'static [f32; 512] {
+    match shape {
+        WindowShape::Sine => &SINE_LD,
+        WindowShape::Kbd => &LOW_OVERLAP_LD,
+    }
 }
 
 /// Per-channel overlap-add state.
@@ -121,15 +184,75 @@ impl Filterbank {
         ics: &IcsInfo,
         dst: &mut Vec<f32>,
     ) -> Result<()> {
+        if ics.ld {
+            return self.synthesize_ld_into(spec, ics, dst);
+        }
+        if ics.window_sequence == WindowSequence::OnlyLong {
+            return self.synthesize_only_long(spec, ics, dst);
+        }
         self.windowed(spec, ics)?;
         let half_n = LONG_WINDOW_LEN;
         dst.resize(half_n, 0.0);
         let (left, right) = self.scratch.split_at(half_n);
-        for ((d, o), (&s, &next)) in dst
-            .iter_mut()
-            .zip(self.overlap.iter_mut())
-            .zip(left.iter().zip(right.iter()))
-        {
+        super::filterbank_simd::overlap_add(dst, &mut self.overlap, left, right);
+        self.prev_shape = Some(ics.window_shape);
+        Ok(())
+    }
+
+    /// OnlyLong folds the window multiply into the overlap-add. The product
+    /// is rounded before the add, matching the two-step scalar path.
+    fn synthesize_only_long(
+        &mut self,
+        spec: &[f32],
+        ics: &IcsInfo,
+        dst: &mut Vec<f32>,
+    ) -> Result<()> {
+        if spec.len() != LONG_WINDOW_LEN {
+            return Err(Error::FilterbankInvalid);
+        }
+        imdct_into_f32(spec, &mut self.scratch);
+        let right = ics.window_shape;
+        let left = self.prev_shape.unwrap_or(WindowShape::Sine);
+        dst.resize(LONG_WINDOW_LEN, 0.0);
+        super::filterbank_simd::window_overlap(
+            &self.scratch,
+            &mut self.overlap,
+            dst,
+            half(N_L, left),
+            half_rev(right),
+        );
+        self.prev_shape = Some(right);
+        Ok(())
+    }
+
+    /// AAC-LD: one 512-line frame. The left half of the window carries the
+    /// previous frame's shape, the right half this frame's (FDK startup uses
+    /// the frame's own shape on both sides). Overlap state lives in the
+    /// first 512 / 1024 entries of the LC-sized arrays.
+    fn synthesize_ld_into(
+        &mut self,
+        spec: &[f32],
+        ics: &IcsInfo,
+        dst: &mut Vec<f32>,
+    ) -> Result<()> {
+        if spec.len() != LD_FRAME_LEN {
+            return Err(Error::FilterbankInvalid);
+        }
+        let (scratch, overlap) = (&mut self.scratch, &mut self.overlap);
+        imdct_into_f32(spec, &mut scratch[..2 * LD_FRAME_LEN]);
+        let right = ics.window_shape;
+        let wl = half_ld(self.prev_shape.unwrap_or(right));
+        let wr = half_ld(right);
+        for i in 0..LD_FRAME_LEN {
+            scratch[i] *= wl[i];
+            scratch[LD_FRAME_LEN + i] *= wr[LD_FRAME_LEN - 1 - i];
+        }
+        dst.resize(LD_FRAME_LEN, 0.0);
+        for ((d, o), (&s, &next)) in dst.iter_mut().zip(overlap.iter_mut()).zip(
+            scratch[..LD_FRAME_LEN]
+                .iter()
+                .zip(scratch[LD_FRAME_LEN..2 * LD_FRAME_LEN].iter()),
+        ) {
             *d = s + *o;
             *o = next;
         }
@@ -141,10 +264,13 @@ impl Filterbank {
         let left = self.prev_shape.unwrap_or(WindowShape::Sine);
         let right = ics.window_shape;
         match ics.window_sequence {
-            WindowSequence::OnlyLong | WindowSequence::LongStart | WindowSequence::LongStop => {
+            WindowSequence::LongStart | WindowSequence::LongStop => {
                 self.long_windowed(spec, left, right, ics.window_sequence)
             }
             WindowSequence::EightShort => self.short_windowed(spec, left, right),
+            // OnlyLong is synthesize_only_long. A second window here would
+            // drift from that path.
+            WindowSequence::OnlyLong => Err(Error::FilterbankInvalid),
         }
     }
 
@@ -201,12 +327,6 @@ fn apply_long_window(z: &mut [f32], left: WindowShape, right: WindowShape, seq: 
     let sh_l = half(N_S, left);
     let sh_r = half(N_S, right);
     match seq {
-        WindowSequence::OnlyLong => {
-            for i in 0..half_l {
-                z[i] *= lh[i];
-                z[half_l + i] *= rh[half_l - 1 - i];
-            }
-        }
         WindowSequence::LongStart => {
             for i in 0..half_l {
                 z[i] *= lh[i];
@@ -227,6 +347,6 @@ fn apply_long_window(z: &mut [f32], left: WindowShape, right: WindowShape, seq: 
                 z[half_l + i] *= rh[half_l - 1 - i];
             }
         }
-        WindowSequence::EightShort => {}
+        WindowSequence::OnlyLong | WindowSequence::EightShort => {}
     }
 }

@@ -2,6 +2,14 @@ libavcodec/avc_driver
 libavcodec/*.o
 fdk/fdk_driver
 fdk/*.o
+faac/faac_driver
+faac/*.o
+faad2/faad_driver
+faad2/*.o
+profiles/profiles_driver
+profiles/*.o
+target/
+__pycache__/
 build/
 prefix/
 ffmpeg-*.tar.*

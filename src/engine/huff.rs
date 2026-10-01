@@ -2,8 +2,18 @@
 
 use super::bits::BitReader;
 use super::error::{Error, Result};
-use super::{huff_esc, huff_pair, huff_quad};
+use super::{huff_esc as esc, huff_pair as pair, huff_quad as quad};
 use std::sync::LazyLock;
+
+/// One codebook symbol: integer tuple plus `invquant` of those integers.
+/// Unsigned books store positive magnitudes; signs are applied at read time.
+/// 32-byte alignment keeps the pair on one cache line.
+#[repr(C, align(32))]
+#[derive(Clone, Copy)]
+struct Sym {
+    q: [i32; 4],
+    mag: [f32; 4],
+}
 
 /// Binary prefix tree. `0` in `left`/`right` means no child (root is node 0).
 struct HuffTree {
@@ -13,10 +23,21 @@ struct HuffTree {
     /// 12-bit prefix → (symbol, nbits). `nbits == 0` ⇒ code longer than 12.
     lut_sym: [i16; 4096],
     lut_len: [u8; 4096],
+    syms: Vec<Sym>,
+    width: u8,
+    sign_bits: bool,
+    escape: bool,
 }
 
 impl HuffTree {
-    fn from_tables(len: &[u8], code: &[u16]) -> Self {
+    fn from_tables(
+        len: &[u8],
+        code: &[u16],
+        expand: fn(usize) -> [i32; 4],
+        width: u8,
+        sign_bits: bool,
+        escape: bool,
+    ) -> Self {
         let mut left = vec![0u16];
         let mut right = vec![0u16];
         let mut leaf = vec![-1i16];
@@ -56,15 +77,33 @@ impl HuffTree {
                 }
             }
         }
+        let mut syms = Vec::with_capacity(len.len());
+        for i in 0..len.len() {
+            let q = expand(i);
+            syms.push(Sym {
+                mag: [
+                    super::spectrum::invquant(q[0]),
+                    super::spectrum::invquant(q[1]),
+                    super::spectrum::invquant(q[2]),
+                    super::spectrum::invquant(q[3]),
+                ],
+                q,
+            });
+        }
         Self {
             left,
             right,
             leaf,
             lut_sym,
             lut_len,
+            syms,
+            width,
+            sign_bits,
+            escape,
         }
     }
 
+    #[inline(always)]
     fn decode(&self, br: &mut BitReader<'_>) -> Result<usize> {
         if let Some(p) = br.try_peek12() {
             let p = p as usize;
@@ -92,117 +131,238 @@ impl HuffTree {
             }
         }
     }
-}
 
-fn book(n: u8) -> Result<&'static HuffTree> {
-    match n {
-        1 => Ok(&TREE1),
-        2 => Ok(&TREE2),
-        3 => Ok(&TREE3),
-        4 => Ok(&TREE4),
-        5 => Ok(&TREE5),
-        6 => Ok(&TREE6),
-        7 => Ok(&TREE7),
-        8 => Ok(&TREE8),
-        9 => Ok(&TREE9),
-        10 => Ok(&TREE10),
-        11 => Ok(&TREE11),
-        _ => Err(Error::InvalidCodebook(n)),
+    #[inline(always)]
+    fn load(&self, idx: usize) -> Sym {
+        debug_assert!(idx < self.syms.len());
+        // SAFETY: `decode` returns a symbol index inserted by `from_tables`.
+        unsafe { *self.syms.get_unchecked(idx) }
     }
 }
 
-macro_rules! tree {
-    ($name:ident, $len:expr, $code:expr) => {
-        static $name: LazyLock<HuffTree> = LazyLock::new(|| HuffTree::from_tables($len, $code));
-    };
+fn expand_signed_quad(idx: usize) -> [i32; 4] {
+    [
+        (idx / 27) as i32 - 1,
+        ((idx / 9) % 3) as i32 - 1,
+        ((idx / 3) % 3) as i32 - 1,
+        (idx % 3) as i32 - 1,
+    ]
 }
 
-tree!(TREE1, &huff_quad::H1_LEN, &huff_quad::H1_CODE);
-tree!(TREE2, &huff_quad::H2_LEN, &huff_quad::H2_CODE);
-tree!(TREE3, &huff_quad::H3_LEN, &huff_quad::H3_CODE);
-tree!(TREE4, &huff_quad::H4_LEN, &huff_quad::H4_CODE);
-tree!(TREE5, &huff_pair::H5_LEN, &huff_pair::H5_CODE);
-tree!(TREE6, &huff_pair::H6_LEN, &huff_pair::H6_CODE);
-tree!(TREE7, &huff_pair::H7_LEN, &huff_pair::H7_CODE);
-tree!(TREE8, &huff_pair::H8_LEN, &huff_pair::H8_CODE);
-tree!(TREE9, &huff_pair::H9_LEN, &huff_pair::H9_CODE);
-tree!(TREE10, &huff_pair::H10_LEN, &huff_pair::H10_CODE);
-tree!(TREE11, &huff_esc::H11_LEN, &huff_esc::H11_CODE);
+fn expand_unsigned_quad(idx: usize) -> [i32; 4] {
+    [
+        (idx / 27) as i32,
+        ((idx / 9) % 3) as i32,
+        ((idx / 3) % 3) as i32,
+        (idx % 3) as i32,
+    ]
+}
+
+fn expand_signed_pair(idx: usize) -> [i32; 4] {
+    const DIM: usize = 9;
+    const LAV: i32 = 4;
+    [(idx / DIM) as i32 - LAV, (idx % DIM) as i32 - LAV, 0, 0]
+}
+
+fn expand_upair<const DIM: usize>(idx: usize) -> [i32; 4] {
+    [(idx / DIM) as i32, (idx % DIM) as i32, 0, 0]
+}
+
+static BOOKS: LazyLock<[HuffTree; 11]> = LazyLock::new(|| {
+    [
+        HuffTree::from_tables(
+            &quad::H1_LEN,
+            &quad::H1_CODE,
+            expand_signed_quad,
+            4,
+            false,
+            false,
+        ),
+        HuffTree::from_tables(
+            &quad::H2_LEN,
+            &quad::H2_CODE,
+            expand_signed_quad,
+            4,
+            false,
+            false,
+        ),
+        HuffTree::from_tables(
+            &quad::H3_LEN,
+            &quad::H3_CODE,
+            expand_unsigned_quad,
+            4,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &quad::H4_LEN,
+            &quad::H4_CODE,
+            expand_unsigned_quad,
+            4,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H5_LEN,
+            &pair::H5_CODE,
+            expand_signed_pair,
+            2,
+            false,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H6_LEN,
+            &pair::H6_CODE,
+            expand_signed_pair,
+            2,
+            false,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H7_LEN,
+            &pair::H7_CODE,
+            expand_upair::<8>,
+            2,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H8_LEN,
+            &pair::H8_CODE,
+            expand_upair::<8>,
+            2,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H9_LEN,
+            &pair::H9_CODE,
+            expand_upair::<13>,
+            2,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &pair::H10_LEN,
+            &pair::H10_CODE,
+            expand_upair::<13>,
+            2,
+            true,
+            false,
+        ),
+        HuffTree::from_tables(
+            &esc::H11_LEN,
+            &esc::H11_CODE,
+            expand_upair::<17>,
+            2,
+            true,
+            true,
+        ),
+    ]
+});
+
+fn book(n: u8) -> Result<&'static HuffTree> {
+    let i = usize::from(n).wrapping_sub(1);
+    BOOKS.get(i).ok_or(Error::InvalidCodebook(n))
+}
+
+/// Codebook opened once per band. The no-pulse path writes floats from here.
+pub(crate) struct SpectralBook {
+    tree: &'static HuffTree,
+}
+
+impl SpectralBook {
+    pub(crate) fn open(cb: u8) -> Result<Self> {
+        Ok(Self { tree: book(cb)? })
+    }
+
+    /// One tuple as signed `invquant` values. `n` is 2 or 4. Sign and escape
+    /// bits of a tuple that spills past the band are still consumed.
+    #[inline(always)]
+    pub(crate) fn pull(&self, br: &mut BitReader<'_>) -> Result<(usize, [f32; 4])> {
+        let (_, mag) = read_tuple(self.tree, br)?;
+        Ok((usize::from(self.tree.width), mag))
+    }
+
+    pub(crate) fn fill(&self, br: &mut BitReader<'_>, gain: f32, dst: &mut [f32]) -> Result<()> {
+        let plain = !self.tree.sign_bits && !self.tree.escape;
+        if self.tree.width == 4 {
+            if plain {
+                fill_width::<4, true>(self.tree, br, gain, dst)
+            } else {
+                fill_width::<4, false>(self.tree, br, gain, dst)
+            }
+        } else if plain {
+            fill_width::<2, true>(self.tree, br, gain, dst)
+        } else {
+            fill_width::<2, false>(self.tree, br, gain, dst)
+        }
+    }
+}
+
+#[inline(always)]
+fn read_tuple(tree: &HuffTree, br: &mut BitReader<'_>) -> Result<([i32; 4], [f32; 4])> {
+    let mut sym = tree.load(tree.decode(br)?);
+    let n = usize::from(tree.width);
+    if tree.sign_bits {
+        for i in 0..n {
+            if sym.q[i] != 0 && br.read_bit()? {
+                sym.q[i] = -sym.q[i];
+                sym.mag[i] = -sym.mag[i];
+            }
+        }
+    }
+    if tree.escape {
+        for i in 0..n {
+            if sym.q[i].abs() == 16 {
+                decode_esc(br, &mut sym.q[i])?;
+                sym.mag[i] = super::spectrum::invquant(sym.q[i]);
+            }
+        }
+    }
+    Ok((sym.q, sym.mag))
+}
+
+#[inline(always)]
+fn next_mag<const PLAIN: bool>(tree: &HuffTree, br: &mut BitReader<'_>) -> Result<[f32; 4]> {
+    if PLAIN {
+        Ok(tree.load(tree.decode(br)?).mag)
+    } else {
+        Ok(read_tuple(tree, br)?.1)
+    }
+}
+
+fn fill_width<const W: usize, const PLAIN: bool>(
+    tree: &HuffTree,
+    br: &mut BitReader<'_>,
+    gain: f32,
+    dst: &mut [f32],
+) -> Result<()> {
+    let mut i = 0usize;
+    while i + W <= dst.len() {
+        let mag = next_mag::<PLAIN>(tree, br)?;
+        for (slot, &m) in dst[i..i + W].iter_mut().zip(mag[..W].iter()) {
+            *slot = m * gain;
+        }
+        i += W;
+    }
+    if i < dst.len() {
+        let mag = next_mag::<PLAIN>(tree, br)?;
+        for (slot, &m) in dst[i..].iter_mut().zip(mag.iter()) {
+            *slot = m * gain;
+        }
+    }
+    Ok(())
+}
 
 /// Decode one n-tuple from codebook `cb` (1..=11) into `out` (length 2 or 4).
 /// Returns the number of coefficients written.
 pub fn decode_tuple(br: &mut BitReader<'_>, cb: u8, out: &mut [i32]) -> Result<usize> {
-    let idx = book(cb)?.decode(br)?;
-    match cb {
-        1 | 2 => {
-            signed_quad(idx, 1, out);
-            Ok(4)
-        }
-        3 | 4 => {
-            unsigned_quad(idx, 2, out);
-            apply_signs(br, out, 4)?;
-            Ok(4)
-        }
-        5 | 6 => {
-            signed_pair(idx, 4, out);
-            Ok(2)
-        }
-        7 | 8 => {
-            unsigned_pair(idx, 8, out);
-            apply_signs(br, out, 2)?;
-            Ok(2)
-        }
-        9 | 10 => {
-            unsigned_pair(idx, 13, out);
-            apply_signs(br, out, 2)?;
-            Ok(2)
-        }
-        11 => {
-            unsigned_pair(idx, 17, out);
-            // §4.6.3.3: signs for each non-zero, then escape_sequence
-            // for each magnitude-16. lavc writes the same order.
-            apply_signs(br, out, 2)?;
-            decode_esc(br, &mut out[0])?;
-            decode_esc(br, &mut out[1])?;
-            Ok(2)
-        }
-        _ => Err(Error::InvalidCodebook(cb)),
-    }
-}
-
-fn signed_quad(idx: usize, _lav: i32, out: &mut [i32]) {
-    // (2*lav+1)^4 = 81; offset lav=1 → values −1..=1
-    out[0] = (idx / 27) as i32 - 1;
-    out[1] = ((idx / 9) % 3) as i32 - 1;
-    out[2] = ((idx / 3) % 3) as i32 - 1;
-    out[3] = (idx % 3) as i32 - 1;
-}
-
-fn unsigned_quad(idx: usize, _lav: i32, out: &mut [i32]) {
-    out[0] = (idx / 27) as i32;
-    out[1] = ((idx / 9) % 3) as i32;
-    out[2] = ((idx / 3) % 3) as i32;
-    out[3] = (idx % 3) as i32;
-}
-
-fn signed_pair(idx: usize, lav: i32, out: &mut [i32]) {
-    let dim = (2 * lav + 1) as usize;
-    out[0] = (idx / dim) as i32 - lav;
-    out[1] = (idx % dim) as i32 - lav;
-}
-
-fn unsigned_pair(idx: usize, dim: usize, out: &mut [i32]) {
-    out[0] = (idx / dim) as i32;
-    out[1] = (idx % dim) as i32;
-}
-
-fn apply_signs(br: &mut BitReader<'_>, out: &mut [i32], n: usize) -> Result<()> {
-    for v in out.iter_mut().take(n) {
-        if *v != 0 && br.read_bit()? {
-            *v = -*v;
-        }
-    }
-    Ok(())
+    let tree = book(cb)?;
+    let (q, _) = read_tuple(tree, br)?;
+    let n = usize::from(tree.width);
+    out[..n].copy_from_slice(&q[..n]);
+    Ok(n)
 }
 
 /// §4.6.3.3 escape_sequence: book 11 magnitude 16 is a flag.

@@ -60,3 +60,45 @@ the cross-architecture tripwire.
 
 Limits: synthetic references plus one short natural clip; no listening;
 the ambience band error comes from the broadband (not band-wise) gain.
+
+## TASK-134 — fine IID grid (2026-09-27) — NO-GO
+
+**NO-GO.** `iid_mode` 4 does not halve mean |ILD| versus mode 1 on
+ambience or mix-st, so the product path stays coarse `iid_mode` 1.
+Side info was inside the cap (at most +0.079 kbps) and was not the
+reason.
+
+Same cells and broadband ILD/ICC as `syom_he_qualify` (signed error =
+decoded − source, after the declared 3018-sample lag refined by ±128).
+Neutral decode: ffmpeg 7.0.2. Whole-stream target 24/32/48 kbps; actual
+ADTS kbps stays matched (largest gap 25.97 vs 26.10 on ambience at 24k).
+`ps kbps` is `ps_data()` bits over source seconds; `ext kbps` is the
+on-wire extended-data block (size field + byte payload), which is what
+the rate loop spends. PS bits do not depend on the target rate.
+
+Mean |ILD| is the mean of the three rates. Halving would need ambience
+≤ 0.019 dB and mix-st ≤ 2.365 dB.
+
+| clip | mode | actual k (24/32/48) | ILD err (24/32/48) | mean \|ILD\| | ICC err (24/32/48) | ps kbps | ext kbps |
+|---|---:|---|---|---:|---|---:|---:|
+| ambience | 1 | 25.97 / 34.17 / 50.56 | −0.025 / −0.062 / −0.029 | 0.039 | +0.034 / +0.035 / +0.034 | 1.758 | 2.012 |
+| ambience | 4 | 26.10 / 34.18 / 50.56 | +0.085 / +0.051 / +0.083 | 0.073 | +0.012 / +0.012 / +0.012 | 1.837 | 2.084 |
+| mix-st | 1 | 26.04 / 34.11 / 50.47 | −4.737 / −4.722 / −4.733 | 4.730 | −0.013 / −0.012 / −0.013 | 1.691 | 1.952 |
+| mix-st | 4 | 26.04 / 34.11 / 50.48 | −4.656 / −4.641 / −4.652 | 4.650 | −0.017 / −0.016 / −0.016 | 1.734 | 1.976 |
+| tremolo | 1 | 26.37 / 34.59 / 51.43 | +0.062 / +0.062 / +0.062 | 0.062 | 0.000 / 0.000 / 0.000 | 1.127 | 1.284 |
+| tremolo | 4 | 26.37 / 34.59 / 51.43 | +0.062 / +0.062 / +0.062 | 0.062 | 0.000 / 0.000 / 0.000 | 1.127 | 1.284 |
+
+Side-info delta (mode 4 − mode 1): ambience +0.079 ps / +0.072 ext kbps,
+mix-st +0.043 / +0.024, tremolo +0.000 / +0.000. All ≤ 0.3 kbps.
+
+Reading: mix-st's −4.7 dB image shift barely moves (the loss is the
+mono downmix, not the coarse grid). Ambience is already inside 0.1 dB
+on mode 1 after the TASK-133 core tune (the older HE_QUALIFY.md row of
+about −0.3 dB is not this build) and the fine grid does not tighten it.
+Tremolo's constant ~2 dB pan lands on the same grid point either way,
+so the payload is unchanged. ICC on ambience improves (0.034 → 0.012)
+but that was not an adopt gate.
+
+`EncodeOptions::with_he_v2` does not set the hidden `ps_iid_fine` flag.
+Mode 4 remains reachable for this measurement
+(`cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_he_qualify -- iid`).

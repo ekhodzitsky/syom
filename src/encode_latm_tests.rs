@@ -118,12 +118,17 @@ fn latm_adts_and_raw_decode_to_the_same_pcm_and_overhead_is_documented() {
             (da.sample_rate, da.channels.len()),
             (dl.sample_rate, dl.channels.len())
         );
-        assert_eq!(
-            da.channels, dl.channels,
-            "identical access units → identical PCM"
-        );
+        let skip = da.priming.unwrap_or(0) as usize;
+        for (a, lch) in da.channels.iter().zip(&dl.channels) {
+            assert_eq!(
+                a.as_slice(),
+                &lch[skip..skip + a.len()],
+                "identical access units → identical PCM"
+            );
+        }
+        let adts_au = crate::gapless::strip_id3(&adts);
         let n = loas_frames(&loas).len();
-        let per_frame = (loas.len() as f64 - (adts.len() - 7 * n) as f64) / n as f64;
+        let per_frame = (loas.len() as f64 - (adts_au.len() - 7 * n) as f64) / n as f64;
         println!(
             "{}: LATM framing {per_frame:.1} B/frame vs ADTS 7 B ({} vs {} B total)",
             if opts.he { "HE" } else { "LC" },

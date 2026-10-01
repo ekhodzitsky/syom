@@ -3,12 +3,13 @@
 use super::bits::BitReader;
 use super::error::{Error, Result};
 use super::ics::{IcsInfo, WindowSequence};
-use super::swb::{long_offsets, short_offsets};
 
 /// Table 4.103 without PQF, long windows, fs 0..=11.
 const MAX_BANDS_LONG: [u8; 12] = [31, 31, 34, 40, 42, 51, 46, 46, 42, 42, 42, 39];
 /// Table 4.103 without PQF, short windows.
 const MAX_BANDS_SHORT: [u8; 12] = [9, 9, 10, 14, 14, 14, 14, 14, 14, 14, 14, 14];
+/// ER AAC LD (512-line long windows), fs 0..=11.
+const MAX_BANDS_LD: [u8; 12] = [31, 31, 31, 31, 32, 37, 31, 31, 31, 31, 31, 31];
 
 /// Long-window order ceiling (Table 4.54).
 pub const MAX_TNS_ORDER: usize = 12;
@@ -104,10 +105,12 @@ fn max_order(seq: WindowSequence) -> u8 {
     if seq.is_eight_short() { 7 } else { 12 }
 }
 
-fn max_bands(fs_index: u8, seq: WindowSequence) -> Result<u8> {
+pub(crate) fn max_bands(fs_index: u8, seq: WindowSequence, ld: bool) -> Result<u8> {
     let idx = fs_index as usize;
     let table = if seq.is_eight_short() {
         &MAX_BANDS_SHORT
+    } else if ld {
+        &MAX_BANDS_LD
     } else {
         &MAX_BANDS_LONG
     };
@@ -144,7 +147,8 @@ fn decode_lpc(
     }
     for (slot, &c) in tmp2.iter_mut().take(order).zip(coef.iter().take(order)) {
         let t = sign_extend(c, coef_res2);
-        *slot = (t as f64 / if t >= 0 { iqfac } else { iqfac_m }).sin();
+        let ang = t as f64 / if t >= 0 { iqfac } else { iqfac_m };
+        *slot = super::det_math::sin_f64(ang);
     }
     #[cfg(test)]
     if tns_lavc_tests::single_precision() {
@@ -202,13 +206,9 @@ fn ar_filter(spec: &mut [f32], start: usize, size: usize, inc: i32, lpc: &[f64])
 /// §4.6.9.3 `tns_decode_frame` on a window-major spectrum.
 pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Result<()> {
     let win_len = ics.window_len();
-    let offsets = if ics.window_sequence.is_eight_short() {
-        short_offsets(fs_index)?
-    } else {
-        long_offsets(fs_index)?
-    };
+    let offsets = ics.swb_offsets(fs_index)?;
     let tns_max_order = max_order(ics.window_sequence) as usize;
-    let tns_max_bands = max_bands(fs_index, ics.window_sequence)? as usize;
+    let tns_max_bands = max_bands(fs_index, ics.window_sequence, ics.ld)? as usize;
     let max_sfb = ics.max_sfb as usize;
     for (w, win) in tns.windows.iter().take(tns.n_windows as usize).enumerate() {
         let mut bottom = ics.num_swb as usize;

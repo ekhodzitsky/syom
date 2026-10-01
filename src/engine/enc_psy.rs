@@ -1,5 +1,5 @@
 //! Minimal psychoacoustic model: per-band energies, a Bark-domain spreading
-//! matrix (computed once per encoder), flat 18 dB signal-to-mask ratio.
+//! matrix (computed once per encoder), flat 27 dB signal-to-mask ratio.
 //!
 //! Output is a per-band quantization-precision target: bands whose energy
 //! clears the masked threshold get full precision, fully masked bands are
@@ -12,8 +12,10 @@ use super::det_math;
 use super::enc_quant::MAX_BANDS;
 use super::swb::LONG_WINDOW_LEN;
 
-/// Flat signal-to-mask ratio (18 dB).
-const SMR: f32 = 63.1;
+/// Flat signal-to-mask ratio (27 dB; TASK-133 sweep of 15–30 dB on the
+/// TASK-95 deficit cells: 24–27 dB closed the low-rate speech gap to
+/// fdk-aac, 27 dB also kept the tremolo and guard classes ahead).
+const SMR: f32 = 501.19;
 /// Spreading slopes: 25 dB/Bark upward from the masker, 60 dB/Bark down,
 /// only within ±8 Bark.
 const SPREAD_UP_DB: f32 = 25.0;
@@ -104,6 +106,11 @@ impl Psy {
         Self::with_transform(offsets, sample_rate, 256)
     }
 
+    /// AAC-LD: 512 lines, 1024-point transform.
+    pub fn new_ld(offsets: &[u16], sample_rate: u32) -> Self {
+        Self::with_transform(offsets, sample_rate, 1024)
+    }
+
     /// Terhardt absolute-threshold floor (default off). When on, a band
     /// must also clear ATH energy at its center; silence stays uncoded.
     pub fn enable_ath(&mut self, on: bool) {
@@ -121,7 +128,6 @@ impl Psy {
     }
 
     /// Leave every band whose first bin is ≥ `bin` uncoded (0 = off).
-    #[cfg_attr(not(test), allow(dead_code))]
     pub fn set_cutoff_bin(&mut self, bin: usize) {
         self.cutoff_bin = bin;
     }
@@ -177,7 +183,7 @@ impl Psy {
     }
 
     /// Analyze one channel's MDCT spectrum: a band is coded when its energy
-    /// clears the masked threshold (18 dB SMR after spreading) and a −60 dB
+    /// clears the masked threshold (27 dB SMR after spreading) and a −60 dB
     /// relative-to-loudest floor. With ATH on, also the Terhardt floor at
     /// the band center. `target_q` is the precision **cap** per coded band
     /// (`max_q`); the actual precision comes from the allowed noise via
@@ -191,6 +197,31 @@ impl Psy {
         max_q: f32,
         coded: &mut [bool],
         target_q: &mut [f32],
+    ) {
+        self.analyze_in(spec, offsets, max_q, coded, target_q, true);
+    }
+
+    /// [`Self::analyze`] without `Σ √|x|`. Long-window LC recomputes that
+    /// sum on the post-TNS spectrum; the mask itself does not read it.
+    pub(crate) fn analyze_mask(
+        &mut self,
+        spec: &[f32],
+        offsets: &[u16],
+        max_q: f32,
+        coded: &mut [bool],
+        target_q: &mut [f32],
+    ) {
+        self.analyze_in(spec, offsets, max_q, coded, target_q, false);
+    }
+
+    fn analyze_in(
+        &mut self,
+        spec: &[f32],
+        offsets: &[u16],
+        max_q: f32,
+        coded: &mut [bool],
+        target_q: &mut [f32],
+        sum_sqrt: bool,
     ) {
         for (b, e) in self.energy.iter_mut().enumerate().take(self.n_bands) {
             let lo = usize::from(offsets[b]);
@@ -215,7 +246,11 @@ impl Psy {
             coded[b] = self.energy[b] > floor && below_cutoff;
             let lo = usize::from(offsets[b]);
             let hi = usize::from(offsets[b + 1]);
-            self.sum_sqrt[b] = spec[lo..hi].iter().map(|&x| x.abs().sqrt()).sum();
+            self.sum_sqrt[b] = if sum_sqrt {
+                spec[lo..hi].iter().map(|&x| x.abs().sqrt()).sum()
+            } else {
+                0.0
+            };
             self.noise[b] = if self.tonality && coded[b] {
                 floor / (0.25 + 0.75 * band_tonality(&spec[lo..hi]))
             } else {
@@ -227,35 +262,46 @@ impl Psy {
 }
 
 /// Attack detector: per-channel high-passed sub-block energy surge vs a
-/// running mean.
+/// leaky reference weighted to the recent past.
 ///
 /// Samples are first differenced (`y[n] = x[n] − x[n−1]`, a first-order
 /// high-pass) so sustained low-frequency tones don't dominate the energy
 /// budget and the surge ratio stays meaningful at any tone level. Each
 /// 1024-sample frame is split into 8 sub-blocks of 128 samples; a sub-block
-/// whose energy exceeds [`ATTACK_RATIO`] × the mean energy of the previous
-/// 16 sub-blocks (two frames) flags a transient. An all-silent history has
-/// mean 0, so any sub-block above [`ATTACK_FLOOR`] flags — an onset from
-/// digital silence is an attack — while the very first sub-block ever seen
-/// never flags (nothing to compare against; stream-start pre-echo lands in
-/// the priming frame anyway). Only `+` / `*` / `−` on f32: platform-
-/// deterministic by IEEE 754.
+/// whose energy exceeds [`ATTACK_RATIO`] × the reference flags a transient.
+/// The reference is a leaky accumulator fed the previous sub-block's energy
+/// (`acc = 0.65·acc + 0.35·e_prev`, the fdk-aac `block_switch` scheme), not
+/// a flat two-frame mean: a smooth periodic swell (tremolo/AM) keeps pace
+/// with its own recent past and stays long-windowed, while a click from a
+/// quiet background still clears the ratio (TASK-133 — the flat mean fired
+/// on every 8 Hz AM lobe and the short-window cluster cost ~14 dB LF SNR).
+/// A sub-block below [`ATTACK_FLOOR`] never flags, and the first sub-block
+/// ever seen never flags (a zero reference would flag any onset — an onset
+/// from digital silence is still an attack once one sub-block of history
+/// exists). Only `+` / `*` / `−` on f32:
+/// platform-deterministic by IEEE 754.
 pub struct AttackDetector {
-    /// Ring of recent sub-block energies (oldest at `pos` while `len` is full).
-    hist: [f32; 16],
+    /// Leaky reference energy (fed the previous sub-block's energy).
+    acc: f32,
+    /// Previous sub-block's high-passed energy.
+    prev_energy: f32,
     /// Last sample of the previous frame (high-pass state).
     prev_sample: f32,
-    pos: usize,
-    len: usize,
+    /// Sub-blocks seen (the first sub-block ever seen never flags).
+    seen: usize,
 }
 
 /// 128-sample sub-blocks per 1024-sample frame.
 pub const SUB_BLOCK_LEN: usize = LONG_WINDOW_LEN / 8;
-/// Surge ratio flagging an attack (~9 dB over the running mean).
+/// Surge ratio flagging an attack (~9 dB over the leaky reference).
 const ATTACK_RATIO: f32 = 8.0;
 /// Absolute high-passed sub-block energy floor: below this the sub-block is
 /// silence to the detector (~−70 dBFS for transient content).
 const ATTACK_FLOOR: f32 = 1e-6;
+/// Leaky reference decay and previous-sub-block weight (fdk-aac uses
+/// 0.7/0.3 in fixed point; tuned on the TASK-133 dev clips).
+const ACC_DECAY: f32 = 0.65;
+const ACC_PREV: f32 = 0.35;
 
 impl Default for AttackDetector {
     fn default() -> Self {
@@ -266,19 +312,19 @@ impl Default for AttackDetector {
 impl AttackDetector {
     pub fn new() -> Self {
         Self {
-            hist: [0.0; 16],
+            acc: 0.0,
+            prev_energy: 0.0,
             prev_sample: 0.0,
-            pos: 0,
-            len: 0,
+            seen: 0,
         }
     }
 
-    /// Feed one frame of 1024 time-domain samples; `true` when any
-    /// sub-block surges. Sub-blocks are scored in order and each joins the
-    /// history immediately, so a slow swell that keeps pace with its own
-    /// running mean does not flag.
+    /// Feed one frame; `true` when any sub-block surges. LC passes 1024
+    /// samples (8×128). LD passes 512 (4×128). The reference absorbs each
+    /// sub-block's predecessor before the comparison, so a slow swell that
+    /// keeps pace with its own recent past does not flag.
     pub fn push(&mut self, cur: &[f32]) -> bool {
-        debug_assert_eq!(cur.len(), LONG_WINDOW_LEN);
+        debug_assert!(cur.len().is_multiple_of(SUB_BLOCK_LEN));
         let mut attack = false;
         let mut prev = self.prev_sample;
         for sb in cur.chunks_exact(SUB_BLOCK_LEN) {
@@ -288,15 +334,12 @@ impl AttackDetector {
                 e += d * d;
                 prev = x;
             }
-            if self.len > 0 && e > ATTACK_FLOOR {
-                let mean: f32 = self.hist.iter().take(self.len).sum::<f32>() / self.len as f32;
-                if e > ATTACK_RATIO * mean {
-                    attack = true;
-                }
+            self.acc = ACC_DECAY * self.acc + ACC_PREV * self.prev_energy;
+            if self.seen > 0 && e > ATTACK_FLOOR && e > ATTACK_RATIO * self.acc {
+                attack = true;
             }
-            self.hist[self.pos] = e;
-            self.pos = (self.pos + 1) % self.hist.len();
-            self.len = (self.len + 1).min(self.hist.len());
+            self.prev_energy = e;
+            self.seen += 1;
         }
         self.prev_sample = prev;
         attack

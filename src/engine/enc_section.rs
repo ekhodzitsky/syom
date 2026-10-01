@@ -56,14 +56,35 @@ pub(super) fn best_book(
     lo: usize,
     hi: usize,
 ) -> Option<(u8, u32)> {
-    let mut best: Option<(u8, u32)> = None;
-    for cb in 1..BOOKS {
-        let bits = range_book_bits(coded, bits, lo, hi, cb);
-        if bits == UNREPRESENTABLE {
+    // One pass, same saturating sums and the same strict-`<` tie break
+    // (the lower book index wins) as walking `range_book_bits` per book.
+    let mut tot = [0u32; BOOKS];
+    let mut live = [true; BOOKS];
+    for b in lo..hi {
+        if !coded[b] {
             continue;
         }
-        if best.is_none_or(|(_, b)| bits < b) {
-            best = Some((cb as u8, bits));
+        let row = &bits[b];
+        for cb in 1..BOOKS {
+            if !live[cb] {
+                continue;
+            }
+            let cost = row[cb];
+            if cost == UNREPRESENTABLE {
+                live[cb] = false;
+            } else {
+                tot[cb] = tot[cb].saturating_add(cost);
+            }
+        }
+    }
+    let mut best: Option<(u8, u32)> = None;
+    for cb in 1..BOOKS {
+        if !live[cb] {
+            continue;
+        }
+        let cost = tot[cb];
+        if best.is_none_or(|(_, b)| cost < b) {
+            best = Some((cb as u8, cost));
         }
     }
     best
@@ -276,6 +297,7 @@ pub fn emit_channel_body(
 }
 
 /// Emit a long-family (`OnlyLong` / `LongStart` / `LongStop`) `raw_data_block`.
+/// Returns the bit length before `END` (ABR padding sizes against it).
 #[allow(clippy::too_many_arguments)]
 pub fn emit_frame(
     offsets: &[u16],
@@ -287,8 +309,9 @@ pub fn emit_frame(
     tns: &[EncTns],
     channels: usize,
     fill: &[u8],
+    pad_fill: usize,
     out: &mut Vec<u8>,
-) {
+) -> usize {
     let mut w = BitWriter::from_vec(std::mem::take(out));
     if channels == 1 {
         w.write(0, 3); // SCE
@@ -311,8 +334,11 @@ pub fn emit_frame(
     if !fill.is_empty() {
         let _ = super::enc_sbr_bits::write_fill_element(&mut w, fill); // HE FIL
     }
+    super::enc_pad::write_pad_fill(&mut w, pad_fill); // ABR stuffing
+    let end_at = w.bit_len() as usize;
     w.write(7, 3); // END
     *out = w.finish();
+    end_at
 }
 
 #[cfg(test)]

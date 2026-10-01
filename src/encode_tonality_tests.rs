@@ -41,10 +41,13 @@ fn snr_db(want: &[f32], got: &[f32]) -> f64 {
 }
 
 fn snr_aligned(want: &[f32], got: &[f32]) -> f64 {
-    snr_db(
-        &want[PRIME..want.len() - PRIME],
-        &got[2 * PRIME..want.len()],
-    )
+    let w = &want[PRIME..want.len() - PRIME];
+    let start = if got.len() == want.len() {
+        PRIME
+    } else {
+        2 * PRIME
+    };
+    snr_db(w, &got[start..start + w.len()])
 }
 
 #[test]
@@ -103,7 +106,7 @@ fn tonality_stream_matches_oneshot() {
     };
     enc.feed(&[&pcm[0]], &mut cb).unwrap();
     enc.finish(&mut cb).unwrap();
-    assert_eq!(got, want);
+    assert_eq!(got.as_slice(), crate::gapless::strip_id3(&want));
 }
 
 #[test]

@@ -4,8 +4,10 @@
 //! (TASK-67: one fixed offset, no target rate, no padding, only the
 //! 6144 bits/channel cap).
 
-use super::LcEncoder;
 use super::rate::max_frame_bits;
+use super::{LcEncoder, MAX_PAYLOAD_BYTES};
+use crate::engine::enc_section;
+use crate::engine::enc_short;
 use crate::engine::error::{Error, Result};
 use crate::engine::swb::LONG_WINDOW_LEN;
 
@@ -68,5 +70,100 @@ impl LcEncoder {
         }
         self.prev_seq = self.seq;
         Ok(())
+    }
+
+    /// Hard cap: drop the highest coded bands until the frame fits
+    /// `limit_bits` (the bit budget, never above 6144 bits/channel or
+    /// the ADTS payload limit). Quality collapse is legal, an oversize
+    /// frame is not.
+    pub(super) fn drop_bands_until(&mut self, limit_bits: usize) {
+        let cap = limit_bits
+            .min(max_frame_bits(self.channels))
+            .min(MAX_PAYLOAD_BYTES * 8);
+        loop {
+            let mut tmp = std::mem::take(&mut self.payload);
+            self.emit_into(&mut tmp);
+            let bits = tmp.len().saturating_mul(8);
+            self.payload = tmp;
+            if bits <= cap {
+                return;
+            }
+            if self.seq.is_eight_short() {
+                let mut hit = None;
+                for (ch, q) in self.chans_s.iter().enumerate().take(self.channels) {
+                    if let Some(b) = q.coded.iter().rposition(|&c| c) {
+                        hit = Some((ch, b));
+                        break;
+                    }
+                }
+                let Some((ch, b)) = hit else { return };
+                self.chans_s[ch].coded[b] = false;
+                self.books_s[ch] = enc_short::plan_books_short(&self.chans_s[ch]);
+            } else {
+                let mut hit = None;
+                for (ch, q) in self.chans.iter().enumerate().take(self.channels) {
+                    if let Some(b) = q.coded[..q.n_bands].iter().rposition(|&c| c) {
+                        hit = Some((ch, b));
+                        break;
+                    }
+                }
+                let Some((ch, b)) = hit else { return };
+                self.chans[ch].coded[b] = false;
+                self.chans[ch].pns[b] = false;
+                self.chans[ch].intensity[b] = false;
+                self.books[ch][b] = 0;
+                self.books[ch] = enc_section::plan_books(&self.chans[ch]);
+            }
+        }
+    }
+
+    /// Pad an undersized frame with EXT_FILL `fill_element()`s before
+    /// `ID_END` so payload bits sit in `[97%, 100%]` of `limit` (zero
+    /// bytes after `ID_END` are rejected by fdk-aac — TASK-121). Returns
+    /// the size before padding — one-frame `credit` must use that, or
+    /// stuffing would starve the next frame's rate loop. All-zero spectra
+    /// are not padded (silence exception). Not CBR.
+    pub(super) fn fit_budget(&mut self, limit: usize, out: &mut Vec<u8>) -> usize {
+        let limit = limit.min(max_frame_bits(self.channels));
+        self.drop_bands_until(limit);
+        let end_at = self.emit_into(out);
+        let coded = out.len().saturating_mul(8);
+        if self.quant_all_zero() {
+            return coded;
+        }
+        // Pad to the ABR ceiling, minus stuffing debt from earlier frames
+        // that spent credit above `budget`. Search/drop still use credit;
+        // this only changes EXT_FILL payload before ID_END.
+        let budget = self.budget_bits().min(limit);
+        let pad_to = if self.pad_debt > 0 {
+            budget.saturating_sub(self.pad_debt as usize)
+        } else {
+            budget
+        };
+        if coded < pad_to.saturating_mul(97) / 100 {
+            let target = (pad_to / 8).min(MAX_PAYLOAD_BYTES);
+            let room = target.saturating_mul(8).saturating_sub(end_at + 3);
+            let pad = crate::engine::enc_pad::pad_fill_for_room(room);
+            if pad > 0 {
+                self.pad_fill = pad;
+                self.emit_into(out);
+                self.pad_fill = 0;
+            }
+        }
+        let emitted = out.len().saturating_mul(8) as i64;
+        self.pad_debt = (self.pad_debt + emitted - budget as i64).max(0);
+        coded
+    }
+
+    pub(super) fn quant_all_zero(&self) -> bool {
+        if self.seq.is_eight_short() {
+            self.chans_s[..self.channels]
+                .iter()
+                .all(|q| q.quant.iter().all(|&x| x == 0))
+        } else {
+            self.chans[..self.channels]
+                .iter()
+                .all(|q| q.quant.iter().all(|&x| x == 0))
+        }
     }
 }

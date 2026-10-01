@@ -107,6 +107,87 @@ fn fast_matches_naive_short() {
     );
 }
 
+const N_LD: usize = 1024;
+
+fn ld_sine_window() -> &'static [f32; 1024] {
+    super::super::filterbank::ld_analysis_window(WindowShape::Sine)
+}
+
+#[test]
+fn fast_matches_naive_ld() {
+    let sig = test_signal(N_LD);
+    let a = mdct_naive(&sig, N_LD);
+    let b = mdct_fast_f64(&sig);
+    let err = a
+        .iter()
+        .zip(b.iter())
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f64::max);
+    assert!(err < 1e-3, "fast LD MDCT drifted from the naive sum: {err}");
+}
+
+fn ld_ics() -> super::super::ics::IcsInfo {
+    super::super::ics::IcsInfo {
+        window_sequence: super::super::ics::WindowSequence::OnlyLong,
+        window_shape: WindowShape::Sine,
+        max_sfb: 0,
+        num_windows: 1,
+        num_window_groups: 1,
+        window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
+        num_swb: 0,
+        ld: true,
+    }
+}
+
+/// Analysis-window + forward MDCT, then the decoder's LD filterbank.
+fn ld_decode_frames(padded: &[f32], frames: usize) -> Vec<f32> {
+    let w = ld_sine_window();
+    let ics = ld_ics();
+    let mut fb = super::super::filterbank::Filterbank::new();
+    let mut out = Vec::new();
+    for frame in 0..frames {
+        let off = frame * 512;
+        let mut time = vec![0.0f32; N_LD];
+        for i in 0..N_LD {
+            time[i] = padded[off + i] * w[i];
+        }
+        let mut spec = vec![0.0f32; 512];
+        mdct_into_f32(&time, &mut spec);
+        let mut pcm = Vec::new();
+        fb.synthesize_into(&spec, &ics, &mut pcm).unwrap();
+        out.extend_from_slice(&pcm);
+    }
+    out
+}
+
+#[test]
+fn ld_sine_window_roundtrips_through_the_decoder() {
+    // 512 zeros of encoder priming, then the source. Reconstruction of the
+    // source starts at decode sample 512 (FDK encoder `nDelay`).
+    let mut padded = vec![0.0f32; 512 + 2048];
+    for i in 0..1536 {
+        padded[512 + i] = 0.2 * (i as f32 * 0.07).sin() + 0.1 * (i as f32 * 0.013).cos();
+    }
+    let out = ld_decode_frames(&padded, 4);
+    let mut err = 0.0f32;
+    for i in 0..1024 {
+        err = err.max((out[512 + i] - padded[512 + i]).abs());
+    }
+    assert!(err < 2e-3, "LD TDAC error {err}");
+
+    let mut impulse = vec![0.0f32; 512 + 2048];
+    impulse[512] = 1.0;
+    let out = ld_decode_frames(&impulse, 4);
+    assert!(
+        (out[512] - 1.0).abs() < 2e-3,
+        "impulse at decode {}: {}",
+        512,
+        out[512]
+    );
+    let leaked = out[513..1536].iter().fold(0.0f32, |m, s| m.max(s.abs()));
+    assert!(leaked < 2e-3, "impulse leaked {leaked}");
+}
+
 #[test]
 fn tdac_reconstructs_input_short() {
     // Eight-short hop is 128: each output sample is the overlap of two

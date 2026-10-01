@@ -22,6 +22,7 @@ fn long_ics(max_sfb: u8) -> IcsInfo {
         num_window_groups: 1,
         window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
         num_swb: 49,
+        ld: false,
     }
 }
 
@@ -33,11 +34,11 @@ fn pulse_adds_amplitude_on_zero_bin() -> Result<(), Error> {
         n: 1,
         pulses: [(0, 3), (0, 0), (0, 0), (0, 0)],
     };
-    spectrum::apply_pulse(&mut quant, 3, &pulse)?;
+    spectrum::apply_pulse(&mut quant, super::swb::long_offsets(3)?, &pulse)?;
     // k starts at swb 0 offset 0, plus offset 0 → bin 0; quant[0] was 0 so subtract amp.
     assert_eq!(quant[0], -3);
     quant[0] = 2;
-    spectrum::apply_pulse(&mut quant, 3, &pulse)?;
+    spectrum::apply_pulse(&mut quant, super::swb::long_offsets(3)?, &pulse)?;
     assert_eq!(quant[0], 5);
     assert!(spectrum::invquant(9000).abs() > 1.0);
     assert!(spectrum::sf_gain(300) > 0.0);

@@ -77,7 +77,7 @@ fn sink_bytes_and_info_match_one_shot_and_push_for_every_mode() {
     ] {
         let mut sink = Vec::new();
         let info = encode_write(&mut sink, &planes, 48_000, &opts).unwrap();
-        assert_eq!(info.bytes as usize, sink.len());
+        assert_eq!(info.bytes as usize, crate::gapless::strip_id3(&sink).len());
         assert_eq!(info.samples, pcm[0].len() as u64);
         if opts.container == EncodeContainer::Raw {
             let mut enc = Encoder::new(48_000, 2, &opts).unwrap();
@@ -146,4 +146,19 @@ fn m4a_sink_and_bad_pcm_are_typed_before_any_write() {
         AacError::InvalidPcm(_)
     ));
     assert!(sink.is_empty());
+}
+
+#[test]
+fn unequal_planes_are_rejected_before_any_write() {
+    let long = vec![0.0f32; 3000];
+    let short = vec![0.0f32; 1000];
+    for planes in [vec![long.clone(), short.clone()], vec![short, long]] {
+        let mut sink = Vec::new();
+        let e = encode_write(&mut sink, &planes, 48_000, &EncodeOptions::adts()).unwrap_err();
+        assert!(
+            matches!(e, AacError::InvalidPcm(crate::PcmReject::PlaneLength)),
+            "{e}"
+        );
+        assert!(sink.is_empty(), "rejected before the first chunk");
+    }
 }

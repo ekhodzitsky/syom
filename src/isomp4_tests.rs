@@ -61,6 +61,24 @@ fn read_box_64bit_and_until_eof_and_undersize() {
 }
 
 #[test]
+fn read_box_largesize_past_the_buffer_is_an_error() {
+    // 2^32 is a complete largesize. On a 32-bit target it does not fit in
+    // `usize`; truncating before the bounds check would report a 0-byte box.
+    let mut data = vec![0, 0, 0, 1];
+    data.extend_from_slice(b"free");
+    data.extend_from_slice(&(1u64 << 32).to_be_bytes());
+    data.extend_from_slice(&[0u8; 8]);
+    match read_box(&data, 0) {
+        Err(_) => {}
+        Ok(Some((hdr, _))) => panic!(
+            "largesize 2^32 must not become a box ending at {}",
+            hdr.content_end
+        ),
+        Ok(None) => panic!("header is complete"),
+    }
+}
+
+#[test]
 fn sniff_m4a_rejects_short_and_tiny_size() {
     assert!(!sniff_is_m4a(&[]));
     assert!(!sniff_is_m4a(b"1234"));
@@ -236,6 +254,7 @@ fn presentation_and_remainder_use_checked_arithmetic() {
         media_timescale: 3,
         media_duration: 0,
         has_elst: true,
+        edit_open_end: false,
     };
     assert!(
         huge.presentation_samples().is_none(),
@@ -252,6 +271,7 @@ fn presentation_and_remainder_use_checked_arithmetic() {
         media_timescale: 48_000,
         media_duration: 2048,
         has_elst: true,
+        edit_open_end: false,
     };
     assert_eq!(swapped.presentation_samples(), Some(30720));
     assert!(

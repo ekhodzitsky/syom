@@ -49,7 +49,7 @@ fn encode_sink(pcm: &[Vec<f32>]) -> Result<(Vec<u8>, EncodeInfo)> {
         push.extend_from_slice(f.au);
         Ok(())
     })?;
-    assert_eq!(push, one);
+    assert_eq!(push.as_slice(), crate::gapless::strip_id3(&one));
     Ok((one, info))
 }
 
@@ -106,7 +106,7 @@ fn stream_and_encode_signatures_hold() -> Result<()> {
     assert_eq!(info.channels, 1);
     let pcm = vec![vec![0.0f32; 2048]];
     let (adts, enc) = encode_sink(&pcm)?;
-    assert_eq!(adts[0], 0xff);
+    assert_eq!(crate::gapless::strip_id3(&adts)[0], 0xff);
     assert_eq!(enc.samples, 2048);
     assert_eq!(enc.priming, 1024);
     assert_eq!(enc.remainder, 0);

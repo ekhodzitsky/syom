@@ -3,9 +3,8 @@
 //! Duration is not a memory cap: a 2 h 5.1 split collection is ~7.7 GiB of
 //! planar f32 while `speech()` still mixes to one plane. A lifetime
 //! compressed-byte counter on `Decoder::feed` also blocks indefinite
-//! bounded streaming. These numbers are the contract for TASK-24
-//! (one-shot collection and M4A tables) and TASK-25 (streaming workspace).
-//! They are not yet enforced on the decode/feed path.
+//! bounded streaming. Decode, `Decoder::feed` and the M4A/fMP4 index call
+//! the fences listed below.
 //!
 //! Call sites:
 //! - finite compressed bytes: `decode` / `decode_with` / `decode_streaming` /
@@ -14,7 +13,10 @@
 //!   declared AU length (`InputScope::StreamingFeed`) — no lifetime total
 //! - decoded PCM: one-shot plane `reserve`/`resize` in `decode_with`
 //! - channels: first-frame lock in `stream/pump.rs` / `stream/m4a.rs`
-//! - metadata/index: `isomp4` `stsz`/`stts`/`stsc`/`stco` before `Vec` alloc
+//! - metadata/index: `isomp4` `stsz`/`stts`/`stsc`/`stco` before `Vec` alloc;
+//!   fMP4 push (`stream/fmp4.rs`) buffers the init `moov` and each `moof`
+//!   whole under this budget — the resident `feed` cap there is
+//!   `max(metadata, buffered)`, one box payload / one AU plus headers
 //! - workspace: `Decoder` filterbank + SBR/PS + input buffer (TASK-25)
 
 use crate::options::DEFAULT_MAX_INPUT_BYTES;

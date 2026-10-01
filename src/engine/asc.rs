@@ -2,7 +2,10 @@
 //!
 //! LC core (AOT 2). Explicit AOT 5/29: core rate, then extension rate, then
 //! inner LC. Implicit HE: `0x2b7` + `sbrPresentFlag` + extension rate, then
-//! optional `0x548` PS.
+//! optional `0x548` PS. ER AAC LD (AOT 23) GA syntax (resilience flags +
+//! `epConfig`) parses for 512-sample frames (TASK-128); the signal core
+//! decodes those payloads (TASK-129). A 480-sample `frameLengthFlag` is
+//! rejected with the other 960-style frame lengths.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::{BitReader, BitWriter};
@@ -12,6 +15,8 @@ use super::error::{Error, Result};
 const AOT_LC: u8 = 2;
 const AOT_SBR: u8 = 5;
 const AOT_PS: u8 = 29;
+/// ER AAC LD (low delay), 512-sample frames (TASK-128, TASK-129).
+pub(crate) const AOT_LD: u8 = 23;
 
 /// Serialize a bare LC ASC: AOT 2 + rate index + channels + 3 zero GA bits
 /// (`frameLengthFlag` / `dependsOnCoreCoder` / `extensionFlag`). Two bytes
@@ -65,10 +70,10 @@ pub fn push_he(w: &mut BitWriter, core_fs_index: u8, out_fs_index: u8, channel_c
     w.write(0, 3);
 }
 
-/// Parsed `AudioSpecificConfig` (LC core, optional SBR/PS).
+/// Parsed `AudioSpecificConfig` (LC core, optional SBR/PS; LD config).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AudioSpecificConfig {
-    /// Inner GA `audioObjectType` (2 = LC) after unwrapping SBR/PS.
+    /// Inner GA `audioObjectType` (2 = LC, 23 = LD) after unwrapping SBR/PS.
     pub aot: u8,
     /// Table 1.18 index for the **core** rate (SWB tables).
     pub sampling_frequency_index: u8,
@@ -118,19 +123,37 @@ impl AudioSpecificConfig {
             if inner != AOT_LC {
                 return Err(Error::UnsupportedAot(inner));
             }
-            let pce = parse_ga(reader, channel_configuration, sampling_frequency_index)?;
+            let pce = parse_ga(
+                reader,
+                channel_configuration,
+                sampling_frequency_index,
+                inner,
+            )?;
             (inner, pce)
         } else {
-            if outer_aot != AOT_LC {
+            if outer_aot != AOT_LC && outer_aot != AOT_LD {
                 return Err(Error::UnsupportedAot(outer_aot));
             }
-            let pce = parse_ga(reader, channel_configuration, sampling_frequency_index)?;
-            parse_implicit_sbr(
+            let pce = parse_ga(
                 reader,
-                &mut sbr_present,
-                &mut ps_present,
-                &mut output_sample_rate,
+                channel_configuration,
+                sampling_frequency_index,
+                outer_aot,
             )?;
+            if outer_aot == AOT_LD {
+                // ER syntax: epConfig follows GASpecificConfig; 2/3 signal
+                // error protection, which is out of scope.
+                if reader.read(2)? > 1 {
+                    return Err(Error::Format("ASC epConfig error protection"));
+                }
+            } else {
+                parse_implicit_sbr(
+                    reader,
+                    &mut sbr_present,
+                    &mut ps_present,
+                    &mut output_sample_rate,
+                )?;
+            }
             (outer_aot, pce)
         };
         if sbr_present {
@@ -216,6 +239,7 @@ fn parse_ga(
     reader: &mut BitReader<'_>,
     channel_configuration: u8,
     sf_index: u8,
+    aot: u8,
 ) -> Result<Option<PceChannelMap>> {
     let frame_length_flag = reader.read_bit()?;
     if frame_length_flag {
@@ -232,6 +256,11 @@ fn parse_ga(
         None
     };
     if extension_flag {
+        if aot == AOT_LD {
+            // ER GA resilience flags (VCB11/RVLC/HCR): consume so framing
+            // stays aligned; the payload tools they gate fail at the core.
+            let _ = reader.read(3)?;
+        }
         let extension_flag3 = reader.read_bit()?;
         if extension_flag3 {
             return Err(Error::Format("ASC extensionFlag3 is Media"));

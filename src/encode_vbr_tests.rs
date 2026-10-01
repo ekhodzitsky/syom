@@ -39,12 +39,16 @@ fn q(level: u8) -> EncodeOptions {
 
 /// (payload bytes per ADTS frame) — headers are 7 bytes, no CRC.
 fn frame_payloads(adts: &[u8]) -> Vec<usize> {
+    let adts = crate::gapless::strip_id3(adts);
     let mut out = Vec::new();
     let mut at = 0;
     while at + 7 <= adts.len() {
         let len = ((usize::from(adts[at + 3]) & 3) << 11)
             | (usize::from(adts[at + 4]) << 3)
             | (usize::from(adts[at + 5]) >> 5);
+        if len < 7 || at + len > adts.len() {
+            break;
+        }
         out.push(len - 7);
         at += len;
     }
@@ -52,7 +56,11 @@ fn frame_payloads(adts: &[u8]) -> Vec<usize> {
 }
 
 fn snr(want: &[f32], got: &[f32]) -> f64 {
-    let g = &got[1024..1024 + want.len()];
+    let g = if got.len() == want.len() {
+        got
+    } else {
+        &got[1024..1024 + want.len()]
+    };
     let (mut ps, mut pe) = (0.0f64, 0.0f64);
     for (a, b) in want.iter().zip(g) {
         ps += f64::from(*a).powi(2);
@@ -160,8 +168,8 @@ fn push_matches_one_shot_and_lookahead_composes() {
                 Ok(())
             })
             .unwrap();
-        assert_eq!(got, one);
-        assert_eq!(info.bytes as usize, one.len());
+        assert_eq!(got.as_slice(), crate::gapless::strip_id3(&one));
+        assert_eq!(info.bytes as usize, got.len());
         assert_eq!(info.priming, 1024);
         assert_eq!(encode_with(&pcm, SR, &opts).unwrap(), one, "deterministic");
     }

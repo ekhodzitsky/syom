@@ -1,0 +1,14 @@
+{
+  "probe": "task-10-apple-aac",
+  "date_utc": "2026-09-22T11:28:21Z",
+  "uname": "Linux 7.0.0-31-generic x86_64",
+  "sw_vers": "absent",
+  "afconvert": "absent",
+  "audio_toolbox_framework": "absent",
+  "core_audio_framework": "absent",
+  "qaac": "absent",
+  "refalac": "absent",
+  "wine": "absent",
+  "java": "absent",
+  "apple_aac_executable": false
+}

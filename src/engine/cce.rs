@@ -13,7 +13,6 @@ use super::ics::IcsInfo;
 use super::ics_body::parse_ics;
 use super::section::{SectionData, ZERO_HCB};
 use super::sf::{self, ScaleFactors};
-use super::swb::{long_offsets, short_offsets};
 use super::tns::TnsData;
 
 /// One CCE target (SCE or CPE).
@@ -28,7 +27,6 @@ pub struct CceTarget {
 /// Fully parsed CCE, including the coupling-channel spectrum and gains.
 #[derive(Debug, Clone)]
 pub struct CcePayload {
-    #[allow(dead_code)]
     pub tag: u8,
     pub independent: bool,
     #[allow(dead_code)]
@@ -167,11 +165,7 @@ pub fn apply_dependent(
         return Err(Error::Format("CCE window mismatch"));
     }
     let ics = &cce.ics;
-    let offsets = if ics.window_sequence.is_eight_short() {
-        short_offsets(fs_index)?
-    } else {
-        long_offsets(fs_index)?
-    };
+    let offsets = ics.swb_offsets(fs_index)?;
     let win_len = ics.window_len();
     let mut wbase = 0usize;
     let mut idx = 0usize;

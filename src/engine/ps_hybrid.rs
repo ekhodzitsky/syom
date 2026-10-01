@@ -282,7 +282,7 @@ impl PsHybrid {
                     } else {
                         2.0 * core::f64::consts::PI * q as f64 / q_cnt as f64 * (m as f64 - 6.0)
                     };
-                    let (s, c) = arg.sin_cos();
+                    let (s, c) = super::det_math::sincos_f64(arg);
                     *f = if type_a {
                         Complex::new(g[m] * c, g[m] * s)
                     } else {

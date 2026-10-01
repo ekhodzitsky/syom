@@ -234,6 +234,43 @@ fn loop_one(name: &str) {
     }
 }
 
+fn command_trim(cmd: &str, args: &[&str]) -> Option<String> {
+    let out = std::process::Command::new(cmd).args(args).output().ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(out.stdout).ok()?;
+    let line = text.lines().next()?.trim();
+    if line.is_empty() {
+        None
+    } else {
+        Some(line.to_string())
+    }
+}
+
+fn cpu_model() -> String {
+    if let Some(model) = command_trim("sysctl", &["-n", "machdep.cpu.brand_string"]) {
+        return model;
+    }
+    if let Ok(text) = std::fs::read_to_string("/proc/cpuinfo") {
+        for line in text.lines() {
+            if let Some(rest) = line.split_once(':')
+                && line.starts_with("model name")
+            {
+                let name = rest.1.trim();
+                if !name.is_empty() {
+                    return name.to_string();
+                }
+            }
+        }
+    }
+    "unknown".to_string()
+}
+
+fn rustc_version() -> String {
+    command_trim("rustc", &["--version"]).unwrap_or_else(|| "unknown".to_string())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if let Some(i) = args.iter().position(|a| a == "--loop") {
@@ -243,8 +280,14 @@ fn main() {
 
     println!("# TASK-15 matched-output baseline");
     println!();
-    println!("host=Linux x86_64; cpu=AMD Ryzen AI 9 HX 370; rustc=1.97.1;");
-    println!("build=profile.bench thin-LTO cg=1; threads=1; governor=performance;");
+    println!(
+        "host={} {}; cpu={}; rustc={};",
+        std::env::consts::OS,
+        std::env::consts::ARCH,
+        cpu_model(),
+        rustc_version()
+    );
+    println!("build=profile.bench thin-LTO cg=1; threads=1;");
     println!("reps={REPS} after {WARM} warmup; times=nanoseconds wall;");
     println!("preflight=syom::decode_cmp::run_preflight; lane=planar_split unless named.");
     println!();

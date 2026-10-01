@@ -6,7 +6,8 @@
 
 use super::{HE_PRIMING_OUT, HeEncoder, HeInfo};
 use crate::engine::enc_frame::MAX_BITS_PER_CHANNEL;
-use crate::engine::enc_sbr_qmf::{BANDS, EncAnalysisQmf};
+use crate::engine::enc_sbr_prep::SbrPrep;
+use crate::engine::enc_sbr_qmf::{BANDS, EncAnalysisQmf, EncSlot, core_cutoff_hz};
 use crate::{DecodeOptions, EncodeOptions, ProbeProfile, decode_with, encode_with, probe};
 
 const SR: u32 = 48_000;
@@ -111,6 +112,32 @@ fn hf_lf(x: &[f32]) -> (f64, f64) {
 
 fn db(a: f64, b: f64) -> f64 {
     10.0 * (a.max(1e-30) / b.max(1e-30)).log10()
+}
+
+/// Mean |level error| (dB) per QMF band over the v1 SBR range — the
+/// per-band twin of `hf_lf`'s aggregate (TASK-133: the improved LC holds
+/// the aggregate HF *level*, so the HE gate moved to per-band fidelity).
+fn hf_band_err(x: &[f32], src: &[f32]) -> f64 {
+    let mut qx = EncAnalysisQmf::new();
+    let mut qs = EncAnalysisQmf::new();
+    let mut ex = [0.0f64; BANDS];
+    let mut es = [0.0f64; BANDS];
+    for (cx, cs) in x.chunks_exact(64).zip(src.chunks_exact(64)) {
+        let sx = qx.push_slot(cx).unwrap();
+        let ss = qs.push_slot(cs).unwrap();
+        for b in 18..41 {
+            ex[b] += f64::from(sx.band_energy(b, b + 1));
+            es[b] += f64::from(ss.band_energy(b, b + 1));
+        }
+    }
+    let (mut err, mut n) = (0.0f64, 0usize);
+    for b in 18..41 {
+        if es[b] > 0.0 {
+            err += db(ex[b], es[b]).abs();
+            n += 1;
+        }
+    }
+    err / n as f64
 }
 
 #[test]
@@ -221,10 +248,17 @@ fn rate_accounting_holds_the_whole_stream_ceiling() {
 
 #[test]
 fn he_keeps_more_hf_energy_than_lc_at_the_same_rate() {
-    // HE_ENC.md screening gate: decoded HF (above k0) vs the original,
-    // HE ≥ LC + 6 dB at 24 / 32 / 48 kbps.
+    // HE_ENC.md screening gate: decoded HF (above k0) vs the original.
+    // TASK-133: the retuned LC core holds the aggregate HF *level* on the
+    // voice clip (coarse quantization of noise-like bands preserves energy),
+    // so the HE ≥ LC gate runs on per-band HF fidelity of a white-noise
+    // probe, where a bit-starved LC cannot hold the spectrum.
     let pcm = stereo(SR as usize * 2);
     let (hf_src, lf_src) = hf_lf(&pcm[0]);
+    let mut s = 0x2468_ACE0u32;
+    let noise: Vec<Vec<f32>> = (0..2)
+        .map(|_| (0..SR as usize * 2).map(|_| 0.6 * lcg(&mut s)).collect())
+        .collect();
     for bps in [24_000u32, 32_000, 48_000] {
         let he = decode_with(&he_adts(&pcm, bps), &DecodeOptions::audio()).unwrap();
         let lc_stream =
@@ -233,12 +267,20 @@ fn he_keeps_more_hf_energy_than_lc_at_the_same_rate() {
         let (hf_he, lf_he) = hf_lf(&he.channels[0]);
         let (hf_lc, lf_lc) = hf_lf(&lc.channels[0]);
         let (g_he, g_lc) = (db(hf_he, hf_src), db(hf_lc, hf_src));
+        let he_n = decode_with(&he_adts(&noise, bps), &DecodeOptions::audio()).unwrap();
+        let lc_n = encode_with(&noise, SR, &EncodeOptions::adts().with_bitrate_bps(bps)).unwrap();
+        let lc_n = decode_with(&lc_n, &DecodeOptions::audio()).unwrap();
+        let err_he = hf_band_err(&he_n.channels[0], &noise[0]);
+        let err_lc = hf_band_err(&lc_n.channels[0], &noise[0]);
         println!(
-            "{bps} bps: HF vs source HE {g_he:+.1} dB, LC {g_lc:+.1} dB; LF HE {:+.1} dB, LC {:+.1} dB",
+            "{bps} bps: HF vs source HE {g_he:+.1} dB, LC {g_lc:+.1} dB; LF HE {:+.1} dB, LC {:+.1} dB; noise HF band err HE {err_he:.1} dB, LC {err_lc:.1} dB",
             db(lf_he, lf_src),
             db(lf_lc, lf_src)
         );
-        assert!(g_he >= g_lc + 6.0, "{bps}: HE {g_he} dB vs LC {g_lc} dB");
+        assert!(
+            err_he + 4.0 <= err_lc,
+            "{bps}: HE noise HF band err {err_he:.1} dB vs LC {err_lc:.1} dB"
+        );
         assert!(
             g_he.abs() <= 3.0,
             "{bps}: HE HF level {g_he} dB off the source"
@@ -308,6 +350,39 @@ fn burst_delay_and_final_samples_are_accounted() {
     assert!(info.remainder_out < 2048 * 3);
 }
 
+/// Lengths whose coded tail already covers priming + source stay at one
+/// drain frame. 3127 samples need 6145 decoded samples and three AUs
+/// only provide 6144, so finish adds exactly one silent AU.
+#[test]
+fn sbr_delay_deficit_gains_exactly_one_silent_au() {
+    for lookahead in [false, true] {
+        for n in [2048usize, 4096] {
+            let pcm = [vec![0.0f32; n]];
+            let (_, info) = encode_he(&pcm, 24_000, lookahead, n);
+            assert_eq!(
+                info.aus,
+                info.core_content.div_ceil(1024) + 1,
+                "n={n} lookahead={lookahead} already covers the tail"
+            );
+            assert_eq!(
+                info.remainder_out,
+                info.aus * 2048 - HE_PRIMING_OUT - n as u64
+            );
+        }
+        let n = 3127usize;
+        let pcm = [vec![0.0f32; n]];
+        let (_, info) = encode_he(&pcm, 24_000, lookahead, 1000);
+        let need = HE_PRIMING_OUT + n as u64;
+        assert_eq!(
+            info.aus,
+            info.core_content.div_ceil(1024) + 2,
+            "lookahead={lookahead}"
+        );
+        assert_eq!(info.remainder_out, info.aus * 2048 - need);
+        assert!(info.remainder_out < 2048);
+    }
+}
+
 /// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_he_golden`, then
 /// `ffmpeg -y -i src/goldens/he48e.adts -f s16le src/goldens/he48e.lavc.s16`.
 /// Tests never spawn ffmpeg; the committed s16 is the oracle.
@@ -320,6 +395,87 @@ fn mint_lavc_he_golden() {
     let stream = he_adts(&pcm, 48_000);
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
     std::fs::write(dir.join("he48e.adts"), stream).expect("write golden");
+}
+
+fn slot_band(k: usize, amp: f32) -> EncSlot {
+    let mut s = EncSlot {
+        re: [0.0; BANDS],
+        im: [0.0; BANDS],
+    };
+    s.re[k] = amp;
+    s
+}
+
+/// 20 dB skirt rule: a formant keeps its own band, a second channel's
+/// peak raises the cutoff, flat energy and silence stay at k0.
+#[test]
+fn formant_cutoff_drops_skirts_and_flat_noise_keeps_k0() -> Result<(), &'static str> {
+    let rate = 48_000u32;
+    let kx = 12usize;
+    let peaked = vec![slot_band(1, 1.0); 32];
+    // Band 2 at −40 dB stays under the 20 dB threshold (750 Hz is band 1's top).
+    let mut skirt = slot_band(1, 1.0);
+    skirt.re[2] = 0.01;
+    let skirt_slots = vec![skirt; 32];
+    assert_eq!(core_cutoff_hz(&[&peaked], kx, rate), 750);
+    assert_eq!(core_cutoff_hz(&[&skirt_slots], kx, rate), 750);
+    // −14 dB (amplitude 0.2) stays inside the 20 dB window → band 2.
+    let mut near = slot_band(1, 1.0);
+    near.re[2] = 0.2;
+    let near_slots = vec![near; 32];
+    assert_eq!(core_cutoff_hz(&[&near_slots], kx, rate), 1_125);
+    let mut flat = EncSlot {
+        re: [0.0; BANDS],
+        im: [0.0; BANDS],
+    };
+    for k in 0..kx {
+        flat.re[k] = 1.0;
+    }
+    let flat_slots = vec![flat; 32];
+    assert_eq!(core_cutoff_hz(&[&flat_slots], kx, rate), 4_500);
+    let silent = vec![
+        EncSlot {
+            re: [0.0; BANDS],
+            im: [0.0; BANDS],
+        };
+        32
+    ];
+    assert_eq!(core_cutoff_hz(&[&silent], kx, rate), 4_500);
+    let hi = vec![slot_band(8, 1.0); 32];
+    assert_eq!(core_cutoff_hz(&[&peaked, &hi], kx, rate), 3_375);
+
+    let mut pcm = vec![0.0f32; 2048];
+    for (i, s) in pcm.iter_mut().enumerate() {
+        let ph = 2.0 * std::f32::consts::PI * 500.0 * i as f32 / rate as f32;
+        *s = 0.2 * ph.sin();
+    }
+    let mut prep = SbrPrep::new();
+    let mut core = Vec::new();
+    let mut slots = Vec::new();
+    prep.push(&pcm, &mut core, |s| slots.push(*s))
+        .map_err(|_| "prep")?;
+    let hz = core_cutoff_hz(&[&slots], kx, rate);
+    assert!(hz <= 1_125, "500 Hz tone cutoff {hz} Hz (QMF leakage)");
+    Ok(())
+}
+
+/// A tone then noise must not take its cutoff from the tail of the push.
+#[test]
+fn shaped_cutoff_is_per_frame_not_per_push() {
+    let n = SR as usize / 2;
+    let mut l = vec![0.0f32; n];
+    for (i, s) in l.iter_mut().enumerate().take(n / 2) {
+        let ph = 2.0 * std::f32::consts::PI * 400.0 * i as f32 / SR as f32;
+        *s = 0.3 * ph.sin();
+    }
+    let mut seed = 0xA5A5_5A5Au32;
+    for s in l.iter_mut().skip(n / 2) {
+        *s = 0.2 * lcg(&mut seed);
+    }
+    let pcm = vec![l.clone(), l];
+    let (one, _) = encode_he(&pcm, 24_000, false, n);
+    let (fine, _) = encode_he(&pcm, 24_000, false, 64);
+    assert_eq!(one, fine, "push size changed the shaped core");
 }
 
 /// Two decoder lineages on our HE bits: the committed stream is

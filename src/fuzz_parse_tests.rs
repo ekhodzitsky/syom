@@ -17,6 +17,7 @@ const SEEDS: &[&[u8]] = &[
     include_bytes!("goldens/latm48.latm"),
     include_bytes!("goldens/sine441.m4a"),
     include_bytes!("goldens/he48.adts"),
+    include_bytes!("goldens/fmp4_lc.mp4"),
     include_bytes!("../corpus/fuzz/empty.bin"),
     include_bytes!("../corpus/fuzz/adts-truncated.bin"),
     include_bytes!("../corpus/fuzz/adts-len-too-small.bin"),
@@ -24,6 +25,7 @@ const SEEDS: &[&[u8]] = &[
     include_bytes!("../corpus/fuzz/asc-main-aot.bin"),
     include_bytes!("../corpus/fuzz/latm-truncated.bin"),
     include_bytes!("../corpus/fuzz/m4a-truncated.bin"),
+    include_bytes!("../corpus/fuzz/fmp4-truncated.bin"),
 ];
 
 fn parsers(data: &[u8]) {

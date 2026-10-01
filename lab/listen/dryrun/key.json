@@ -1,0 +1,234 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC-NOT-LISTENING-EVIDENCE",
+  "map": [
+    {
+      "item": 0,
+      "file": "item00/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-cv-ar"
+    },
+    {
+      "item": 0,
+      "file": "item00/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-cv-ar"
+    },
+    {
+      "item": 0,
+      "file": "item00/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-cv-ar"
+    },
+    {
+      "item": 0,
+      "file": "item00/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-cv-ar"
+    },
+    {
+      "item": 0,
+      "file": "item00/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-cv-ar"
+    },
+    {
+      "item": 1,
+      "file": "item01/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-cv-ja"
+    },
+    {
+      "item": 1,
+      "file": "item01/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-cv-ja"
+    },
+    {
+      "item": 1,
+      "file": "item01/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-cv-ja"
+    },
+    {
+      "item": 1,
+      "file": "item01/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-cv-ja"
+    },
+    {
+      "item": 1,
+      "file": "item01/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-cv-ja"
+    },
+    {
+      "item": 2,
+      "file": "item02/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-fma-percussion"
+    },
+    {
+      "item": 2,
+      "file": "item02/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-fma-percussion"
+    },
+    {
+      "item": 2,
+      "file": "item02/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-fma-percussion"
+    },
+    {
+      "item": 2,
+      "file": "item02/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-fma-percussion"
+    },
+    {
+      "item": 2,
+      "file": "item02/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-fma-percussion"
+    },
+    {
+      "item": 3,
+      "file": "item03/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-librispeech-1580"
+    },
+    {
+      "item": 3,
+      "file": "item03/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-librispeech-1580"
+    },
+    {
+      "item": 3,
+      "file": "item03/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-librispeech-1580"
+    },
+    {
+      "item": 3,
+      "file": "item03/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-librispeech-1580"
+    },
+    {
+      "item": 3,
+      "file": "item03/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-librispeech-1580"
+    },
+    {
+      "item": 4,
+      "file": "item04/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-librispeech-1995"
+    },
+    {
+      "item": 4,
+      "file": "item04/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-librispeech-1995"
+    },
+    {
+      "item": 4,
+      "file": "item04/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-librispeech-1995"
+    },
+    {
+      "item": 4,
+      "file": "item04/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-librispeech-1995"
+    },
+    {
+      "item": 4,
+      "file": "item04/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-librispeech-1995"
+    },
+    {
+      "item": 5,
+      "file": "item05/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-librispeech-2094"
+    },
+    {
+      "item": 5,
+      "file": "item05/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-librispeech-2094"
+    },
+    {
+      "item": 5,
+      "file": "item05/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-librispeech-2094"
+    },
+    {
+      "item": 5,
+      "file": "item05/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-librispeech-2094"
+    },
+    {
+      "item": 5,
+      "file": "item05/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-librispeech-2094"
+    },
+    {
+      "item": 6,
+      "file": "item06/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-librivox-war"
+    },
+    {
+      "item": 6,
+      "file": "item06/c01.meta.json",
+      "codec": "lp35",
+      "source_id": "nat-librivox-war"
+    },
+    {
+      "item": 6,
+      "file": "item06/c02.meta.json",
+      "codec": "lp7k",
+      "source_id": "nat-librivox-war"
+    },
+    {
+      "item": 6,
+      "file": "item06/c03.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-librivox-war"
+    },
+    {
+      "item": 6,
+      "file": "item06/c04.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-librivox-war"
+    },
+    {
+      "item": 7,
+      "file": "item07/c00.meta.json",
+      "codec": "hidden_ref",
+      "source_id": "nat-musopen-chopin"
+    },
+    {
+      "item": 7,
+      "file": "item07/c01.meta.json",
+      "codec": "syom-lc",
+      "source_id": "nat-musopen-chopin"
+    },
+    {
+      "item": 7,
+      "file": "item07/c02.meta.json",
+      "codec": "lavc9-native-aac",
+      "source_id": "nat-musopen-chopin"
+    }
+  ]
+}

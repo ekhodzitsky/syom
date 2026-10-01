@@ -53,7 +53,11 @@ fn raw_rewrap_adts_matches_one_shot_causal_and_lookahead() {
             adts.extend_from_slice(&wrap_adts_au(au, 48_000, 1).unwrap());
         }
         let want = encode_with(&pcm, 48_000, &EncodeOptions::adts().with_lookahead(look)).unwrap();
-        assert_eq!(adts, want, "lookahead={look} rewrap != one-shot ADTS");
+        assert_eq!(
+            adts.as_slice(),
+            crate::gapless::strip_id3(&want),
+            "lookahead={look} rewrap != one-shot ADTS"
+        );
         let refs: Vec<&[u8]> = aus.iter().map(Vec::as_slice).collect();
         let m4a = mux_raw_lc_m4a(&refs, 48_000, 1, 3000).unwrap();
         let want_m4a =

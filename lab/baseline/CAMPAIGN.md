@@ -52,4 +52,4 @@ prefixes. Minimized corpus stays in `corpus/fuzz/*.bin`.
 
 ## Coverage (AC#4)
 
-See [COVERAGE.md](COVERAGE.md): **93.55% library lines** (tests excluded).
+See [COVERAGE.md](COVERAGE.md): **93.88% library lines** (tests excluded, 2026-09-29).

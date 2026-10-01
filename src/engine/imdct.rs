@@ -12,11 +12,15 @@ static FORCE_SCALAR: AtomicBool = AtomicBool::new(false);
 #[allow(dead_code)] // read only on x86_64
 static FORCE_NO_AVX: AtomicBool = AtomicBool::new(false);
 
-#[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
 #[path = "imdct_simd.rs"]
 mod kernels;
 
+#[cfg(target_arch = "x86_64")]
+#[path = "imdct_avx512.rs"]
+mod avx512k;
+
 #[derive(Clone, Copy)]
+#[repr(C)]
 struct C {
     re: f32,
     im: f32,
@@ -54,22 +58,10 @@ pub(crate) fn bitrev_table(n: usize) -> Vec<u16> {
 }
 
 /// Twiddles `e^{+i·2πk/len}` per stage (shared with the forward MDCT, which
-/// negates the imaginary half for the forward FFT).
+/// negates the imaginary half for the forward FFT). [`super::det_math::sincos`]
+/// keeps the bits identical on every host.
 pub(crate) fn twiddle_table(n: usize) -> (Vec<f32>, Vec<f32>) {
-    let mut re = Vec::with_capacity(n);
-    let mut im = Vec::with_capacity(n);
-    let mut len = 2usize;
-    while len <= n {
-        let half = len / 2;
-        let ang = 2.0 * std::f32::consts::PI / len as f32;
-        for k in 0..half {
-            let a = ang * k as f32;
-            re.push(a.cos());
-            im.push(a.sin());
-        }
-        len *= 2;
-    }
-    (re, im)
+    super::det_math::twiddle_table(n)
 }
 
 /// Unnormalized inverse radix-2 FFT, SoA + precomputed twiddles. With the
@@ -150,15 +142,35 @@ fn ifft_soa_ex(
     wide: bool,
 ) {
     let n = re.len();
-    for (i, &rev) in bitrev.iter().enumerate() {
-        let j = rev as usize;
-        if i < j {
-            re.swap(i, j);
-            im.swap(i, j);
-        }
+    kernels::bitrev_swap(re, im, bitrev);
+    #[cfg(target_arch = "x86_64")]
+    if wide
+        && std::is_x86_feature_detected!("avx512f")
+        && !FORCE_NO_AVX.load(Ordering::Relaxed)
+        && im.len() == n
+        && n.is_power_of_two()
+        && tw_re.len() >= n.saturating_sub(1)
+        && tw_im.len() >= n.saturating_sub(1)
+    {
+        // SAFETY: AVX-512F is probed, n is a power of two, and the twiddle
+        // table covers every stage. Lanes use the scalar mul/add/sub order.
+        unsafe { avx512k::ifft_stages_avx512(re, im, tw_re, tw_im) };
+        return;
     }
     #[cfg(target_arch = "x86_64")]
-    let avx = wide && kernels::avx_ok() && !FORCE_NO_AVX.load(Ordering::Relaxed);
+    if wide
+        && kernels::avx_ok()
+        && !FORCE_NO_AVX.load(Ordering::Relaxed)
+        && im.len() == n
+        && n.is_power_of_two()
+        && tw_re.len() >= n.saturating_sub(1)
+        && tw_im.len() >= n.saturating_sub(1)
+    {
+        // SAFETY: AVX is probed, n is a power of two, and the twiddle
+        // table covers every stage (bitrev_table / twiddle_table).
+        unsafe { kernels::ifft_stages_avx(re, im, tw_re, tw_im) };
+        return;
+    }
     #[cfg(target_arch = "x86_64")]
     let wide = wide && kernels::sse2_ok();
     #[cfg(not(any(target_arch = "aarch64", target_arch = "x86_64")))]
@@ -172,16 +184,6 @@ fn ifft_soa_ex(
         let half = len / 2;
         for i in (0..n).step_by(len) {
             let mut k = 0usize;
-            #[cfg(target_arch = "x86_64")]
-            if avx {
-                while k + 8 <= half {
-                    // SAFETY: AVX probed; k+7 < half.
-                    unsafe {
-                        kernels::butterfly8(re, im, i, k, half, off, tw_re, tw_im);
-                    }
-                    k += 8;
-                }
-            }
             #[cfg(any(target_arch = "aarch64", target_arch = "x86_64"))]
             if wide {
                 while k + 4 <= half {
@@ -261,6 +263,7 @@ pub fn imdct_into_f32(spec: &[f32], out: &mut [f32]) {
     }
     match n {
         256 => PLAN_256.apply_into(spec, out),
+        1024 => PLAN_1024.apply_into(spec, out),
         2048 => PLAN_2048.apply_into(spec, out),
         _ => naive_f32(spec, out),
     }
@@ -308,6 +311,7 @@ struct Plan {
 }
 
 static PLAN_256: LazyLock<Plan> = LazyLock::new(|| Plan::new(256));
+static PLAN_1024: LazyLock<Plan> = LazyLock::new(|| Plan::new(1024));
 static PLAN_2048: LazyLock<Plan> = LazyLock::new(|| Plan::new(2048));
 
 impl Plan {
@@ -318,9 +322,10 @@ impl Plan {
         let mut post = Vec::with_capacity(n4);
         for k in 0..n4 {
             let a = two_pi_n * (k as f32 + 0.125);
-            let c = C::new(a.cos(), a.sin());
-            pre.push(c);
-            post.push(c);
+            let (s, c) = super::det_math::sincos(a);
+            let cpx = C::new(c, s);
+            pre.push(cpx);
+            post.push(cpx);
         }
         let (tw_re, tw_im) = twiddle_table(n4);
         Self {
@@ -338,49 +343,49 @@ impl Plan {
             2048 => {
                 let mut re = [0.0f32; 512];
                 let mut im = [0.0f32; 512];
-                self.apply_soa(spec, out, &mut re, &mut im);
+                kernels::apply_soa(self, spec, out, &mut re, &mut im);
+            }
+            1024 => {
+                let mut re = [0.0f32; 256];
+                let mut im = [0.0f32; 256];
+                kernels::apply_soa(self, spec, out, &mut re, &mut im);
             }
             256 => {
                 let mut re = [0.0f32; 64];
                 let mut im = [0.0f32; 64];
-                self.apply_soa(spec, out, &mut re, &mut im);
+                kernels::apply_soa(self, spec, out, &mut re, &mut im);
             }
             _ => naive_f32(spec, out),
         }
     }
+}
 
-    fn apply_soa(&self, spec: &[f32], out: &mut [f32], re: &mut [f32], im: &mut [f32]) {
-        let n = self.n;
-        let n2 = n / 2;
-        let n4 = n / 4;
-        for k in 0..n4 {
-            let z = C::new(spec[n2 - 2 * k - 1], spec[2 * k]).mul(self.pre[k]);
-            re[k] = z.re;
-            im[k] = z.im;
+/// Pre, twiddle, and post tables of the 2048-point plan (host bit probe).
+#[cfg(test)]
+type PlanTables = (Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>);
+
+#[cfg(test)]
+pub(crate) fn probe_plan_2048() -> PlanTables {
+    let p = &*PLAN_2048;
+    let split = |cs: &[C]| {
+        let mut re = Vec::with_capacity(cs.len());
+        let mut im = Vec::with_capacity(cs.len());
+        for c in cs {
+            re.push(c.re);
+            im.push(c.im);
         }
-        ifft_soa(re, im, &self.bitrev, &self.tw_re, &self.tw_im);
-        for k in 0..n4 {
-            let z = C::new(re[k], im[k]).mul(self.post[k]);
-            re[k] = z.re;
-            im[k] = z.im;
-        }
-        let scale = 2.0 / n as f32;
-        let half = n4 / 2;
-        for p in 0..half {
-            let i = p * 2;
-            out[i] = scale * im[half + p];
-            out[n2 + i] = scale * re[half + p];
-        }
-        for p in 0..half {
-            let i = p * 2 + 1;
-            out[i] = -scale * re[half - 1 - p];
-            out[n2 + i] = -scale * im[half - 1 - p];
-        }
-        for n_i in 0..n4 {
-            out[n2 - 1 - n_i] = -out[n_i];
-            out[n - 1 - n_i] = out[n2 + n_i];
-        }
-    }
+        (re, im)
+    };
+    let (pre_re, pre_im) = split(&p.pre);
+    let (post_re, post_im) = split(&p.post);
+    (
+        pre_re,
+        pre_im,
+        p.tw_re.clone(),
+        p.tw_im.clone(),
+        post_re,
+        post_im,
+    )
 }
 
 #[cfg(test)]

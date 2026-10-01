@@ -78,7 +78,8 @@ fn mint_lavc_transient_golden() {
     let pcm = transient_fixture();
     let adts = encode(&pcm, 48_000).expect("encode");
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
-    std::fs::write(dir.join("enc48t.adts"), adts).expect("write golden");
+    std::fs::write(dir.join("enc48t.adts"), crate::gapless::strip_id3(&adts))
+        .expect("write golden");
 }
 
 #[test]
@@ -87,9 +88,10 @@ fn lavc_matches_our_decode_of_our_transient_adts() {
     let lavc = include_bytes!("goldens/enc48t.lavc.s16");
     let pcm = transient_fixture();
     let fresh = encode(&pcm, 48_000).expect("encode");
+    let fresh = crate::gapless::strip_id3(&fresh);
     // The transient golden must actually exercise block switching: each
     // castanet click walks LongStart → EightShort → LongStop.
-    let (long, start, short, stop) = window_sequence_counts(&fresh);
+    let (long, start, short, stop) = window_sequence_counts(fresh);
     eprintln!("transient golden sequences long/start/short/stop: {long}/{start}/{short}/{stop}");
     assert!(
         long > 0 && start >= 3 && short >= 3 && stop >= 3,
@@ -97,12 +99,12 @@ fn lavc_matches_our_decode_of_our_transient_adts() {
     );
     // Layer 1 — byte-exactness tripwire (see the enc48 oracle).
     assert_eq!(
-        fresh.as_slice(),
+        fresh,
         &adts[..],
         "encoder output drifted from the committed transient golden; re-mint"
     );
     // Layer 2 — lavc decode equivalence.
-    assert_decode_matches_lavc_pub(&fresh, lavc);
+    assert_decode_matches_lavc_pub(fresh, lavc);
 }
 
 /// Offline mint: `MINT_GOLDENS=1 cargo test --lib mint_lavc_lookahead_golden`,
@@ -120,7 +122,8 @@ fn mint_lavc_lookahead_golden() {
     let opts = EncodeOptions::adts().with_lookahead(true);
     let adts = encode_with(&pcm, 48_000, &opts).expect("encode");
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/goldens");
-    std::fs::write(dir.join("enc48l.adts"), adts).expect("write golden");
+    std::fs::write(dir.join("enc48l.adts"), crate::gapless::strip_id3(&adts))
+        .expect("write golden");
 }
 
 #[test]
@@ -130,8 +133,9 @@ fn lavc_matches_our_decode_of_our_lookahead_adts() {
     let pcm = transient_fixture();
     let opts = EncodeOptions::adts().with_lookahead(true);
     let fresh = encode_with(&pcm, 48_000, &opts).expect("encode");
+    let fresh = crate::gapless::strip_id3(&fresh);
     // The lookahead golden must actually exercise block switching.
-    let (long, start, short, stop) = window_sequence_counts(&fresh);
+    let (long, start, short, stop) = window_sequence_counts(fresh);
     eprintln!("lookahead golden sequences long/start/short/stop: {long}/{start}/{short}/{stop}");
     assert!(
         long > 0 && start >= 3 && short >= 3 && stop >= 3,
@@ -139,10 +143,10 @@ fn lavc_matches_our_decode_of_our_lookahead_adts() {
     );
     // Layer 1 — byte-exactness tripwire (see the enc48 oracle).
     assert_eq!(
-        fresh.as_slice(),
+        fresh,
         &adts[..],
         "encoder output drifted from the committed lookahead golden; re-mint"
     );
     // Layer 2 — lavc decode equivalence (measured 1 LSB s16 / ~71-74 dB).
-    assert_decode_matches_lavc_pub(&fresh, lavc);
+    assert_decode_matches_lavc_pub(fresh, lavc);
 }

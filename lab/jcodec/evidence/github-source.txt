@@ -1,0 +1,11 @@
+# GitHub jcodec/jcodec state observed 2026-09-22 (api.github.com)
+
+HEAD (master): 4ba922aca445c4df59f99e183c79d0538e5cb53f  committer date 2025-05-14  "Lenient Parsing of SL (fixes #517)"
+  -> matches doc-2 observed HEAD
+
+Tags: newest v0.2.3 (22e2dcc1cabe1c15a2a3eabc5ac21150b7585a1a); NO v0.2.4/v0.2.5 tag exists.
+Nearest commit before the 0.2.5 Maven publish (2019-06-16): 05b2e96dc7970fff12b7226ed057d77c39b6b7ae (2019-05-08)
+
+Verification commands:
+  curl -fsSL 'https://api.github.com/repos/jcodec/jcodec/commits?per_page=1'
+  curl -fsSL 'https://api.github.com/repos/jcodec/jcodec/tags?per_page=10'

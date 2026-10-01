@@ -1,0 +1,16 @@
+[package]
+name = "syom-lab-frame960-probe"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated TASK-63 probe: syom behavior on 960-frame AAC vectors. Not a workspace member."
+
+[workspace]
+
+[dependencies]
+syom = { path = "../../.." }
+
+[[bin]]
+name = "frame960_probe"
+path = "src/main.rs"

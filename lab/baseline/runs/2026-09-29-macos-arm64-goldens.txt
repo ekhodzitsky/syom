@@ -1,0 +1,20 @@
+warning: `syom` (lib test) generated 2 warnings (run `cargo fix --lib -p syom --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.61s
+     Running unittests src/lib.rs (target/debug/deps/syom-5f1eeacd83c0cf6d)
+
+running 11 tests
+test encode_transient_tests::lavc_matches_our_decode_of_our_lookahead_adts ... ok
+test encode_transient_tests::lavc_matches_our_decode_of_our_transient_adts ... ok
+test engine::enc_mc::enc_mc_tests::libavcodec_decodes_our_surround_streams_with_isolated_planes ... ok
+test encode_tests::lavc_matches_our_decode_of_our_adts ... ok
+test encode_tests::lavc_matches_our_decode_of_our_m4a ... ok
+test encode_mc_tests::libavcodec_decodes_our_surround_m4a_and_latm ... ok
+test engine::enc_he::enc_he_tests::lavc_matches_our_decode_of_our_he_adts ... ok
+test encode_latm_tests::lavc_decodes_our_loas_lc_and_he ... ok
+test encode_he_tests::lavc_decodes_our_he_adts_and_m4a ... ok
+test encode_he_v2_tests::libavcodec_decodes_our_he_v2_streams_as_stereo_with_the_same_image ... ok
+test platform_tests::encoder_goldens_match_auto_and_scalar_fft ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 1072 filtered out; finished in 1.26s
+
+GOLDEN_EXIT:0

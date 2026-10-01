@@ -22,10 +22,15 @@ pub const QUANT_ROUND: f32 = 0.4054;
 /// the rounded `sf_for_peak` never lands on the `QUANT_MAX` clip plateau.
 pub const QUANT_SAFE: f32 = 7600.0;
 
-/// Quantized magnitude from a cached `|x|^0.75`.
+/// `floor(pow34 * gain + QUANT_ROUND)` via trunc when that sum is ≥ 0.
 #[inline]
 fn quant_mag(pow34: f32, gain: f32) -> i32 {
-    ((pow34 * gain + QUANT_ROUND).floor() as i32).min(QUANT_MAX)
+    let v = pow34 * gain + QUANT_ROUND;
+    if v >= 0.0 {
+        (v as i32).min(QUANT_MAX)
+    } else {
+        (v.floor() as i32).min(QUANT_MAX)
+    }
 }
 
 /// Fill `mag` with `|x|^0.75` (det_math: two exactly-rounded sqrts).
@@ -242,14 +247,14 @@ pub fn quantize_cached(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChann
             *bits = [UNREPRESENTABLE; BOOKS];
             continue;
         }
-        // Deterministic gain + |x|^0.75 (det_math): libm exp2/powf are not
-        // bit-identical across platforms and would drift the encoded bytes.
-        let gain = det_math::exp2(-0.1875f32 * (sf - SF_OFFSET) as f32);
-        let src = spec[lo..hi].iter().zip(out.mag[lo..hi].iter());
-        for (q, (&x, &m)) in out.quant[lo..hi].iter_mut().zip(src) {
-            let mag = quant_mag(m, gain);
-            *q = if x < 0.0 { -mag } else { mag };
-        }
+        // det_math gain: libm exp2 is not bit-identical across platforms.
+        let gain = quant_gain(sf);
+        bits::write_quants(
+            &mut out.quant[lo..hi],
+            &spec[lo..hi],
+            &out.mag[lo..hi],
+            gain,
+        );
         *zero = out.quant[lo..hi].iter().all(|&v| v == 0);
         fill_bits(bits, &out.quant[lo..hi]);
     }
@@ -262,7 +267,7 @@ pub fn requant_band(spec: &[f32; 1024], offsets: &[u16], out: &mut QuantChannel,
     }
     let lo = usize::from(offsets[b]);
     let hi = usize::from(offsets[b + 1]);
-    let gain = det_math::exp2(-0.1875f32 * (out.sf[b] - SF_OFFSET) as f32);
+    let gain = quant_gain(out.sf[b]);
     for (q, &x) in out.quant[lo..hi].iter_mut().zip(spec[lo..hi].iter()) {
         let mag = quant_mag(det_math::pow_three_quarter(x), gain);
         *q = if x < 0.0 { -mag } else { mag };
@@ -362,7 +367,7 @@ pub fn quantize_short_cached(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out
                 out.bits[idx] = [UNREPRESENTABLE; BOOKS];
                 continue;
             }
-            let gain = det_math::exp2(-0.1875f32 * (out.sf[idx] - SF_OFFSET) as f32);
+            let gain = quant_gain(out.sf[idx]);
             let mut tmp = [0i32; LONG_WINDOW_LEN];
             let mut n = 0usize;
             for k in 0..glen {
@@ -387,7 +392,7 @@ pub fn quantize_short_cached(spec: &[f32; LONG_WINDOW_LEN], offsets: &[u16], out
 #[path = "enc_quant_bits.rs"]
 mod bits;
 pub use bits::dpcm_ok;
-use bits::fill_bits;
+use bits::{fill_bits, quant_gain};
 
 #[cfg(test)]
 #[path = "enc_quant_tests.rs"]

@@ -24,8 +24,10 @@ use std::io::{Seek, SeekFrom, Write};
 /// let pcm = vec![0.0f32; 3000];
 /// let mut sink = Vec::new();
 /// let info = encode_write(&mut sink, &[&pcm[..]], 48_000, &EncodeOptions::adts())?;
-/// assert_eq!(info.bytes as usize, sink.len());
+/// assert!(sink.starts_with(b"ID3"));
 /// assert_eq!(info.samples, 3000);
+/// assert_eq!(info.priming, 1024);
+/// assert_eq!(info.remainder, 72);
 /// # Ok::<(), syom::AacError>(())
 /// ```
 pub fn encode_write<W: std::io::Write, P: AsRef<[f32]>>(
@@ -35,16 +37,30 @@ pub fn encode_write<W: std::io::Write, P: AsRef<[f32]>>(
     opts: &EncodeOptions,
 ) -> Result<crate::EncodeInfo> {
     let planes: Vec<&[f32]> = pcm.iter().map(AsRef::as_ref).collect();
-    let mut enc = crate::Encoder::new(sample_rate, planes.len(), opts)?;
     let n = planes.first().map_or(0, |p| p.len());
+    if planes.iter().any(|p| p.len() != n) {
+        return Err(AacError::InvalidPcm(crate::PcmReject::PlaneLength));
+    }
+    let mut enc = crate::Encoder::new(sample_rate, planes.len(), opts)?;
+    // The tag is the first output byte, but only after PCM checks inside
+    // `feed` succeed. A rejected buffer leaves the sink empty.
+    let mut tag = (n > 0 && opts.container == EncodeContainer::Adts && !opts.ld)
+        .then(|| crate::gapless::tag_bytes(n as u64, opts.he));
     let mut at = 0usize;
     while at < n {
         let end = (at + 4096).min(n);
         let chunk: Vec<&[f32]> = planes.iter().map(|p| &p[at..end]).collect();
-        enc.feed(&chunk, |f| sink.write_all(f.au).map_err(AacError::Io))?;
+        enc.feed(&chunk, |f| write_au(&mut sink, &mut tag, f.au))?;
         at = end;
     }
-    enc.finish(|f| sink.write_all(f.au).map_err(AacError::Io))
+    enc.finish(|f| write_au(&mut sink, &mut tag, f.au))
+}
+
+fn write_au<W: Write>(sink: &mut W, tag: &mut Option<Vec<u8>>, au: &[u8]) -> Result<()> {
+    if let Some(tag) = tag.take() {
+        sink.write_all(&tag).map_err(AacError::Io)?;
+    }
+    sink.write_all(au).map_err(AacError::Io)
 }
 
 /// Wrap one `raw_data_block` in an ADTS frame (no CRC, fullness `0x7FF`).
@@ -207,7 +223,13 @@ pub fn encode_write_m4a<W: Write + Seek, P: AsRef<[f32]>>(
         sample_rate,
         valid_samples: info.samples,
         priming: info.priming,
-        frame_len: if opts.he { 2048 } else { FRAME as u32 },
+        frame_len: if opts.ld {
+            512
+        } else if opts.he {
+            2048
+        } else {
+            FRAME as u32
+        },
     };
     let moov = m4a_write::moov_bytes(&plan, &sizes, media_offset)?;
     m4a_write::u32_field(
@@ -275,7 +297,12 @@ pub(super) fn encode_mc(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) 
         return Err(AacError::encode("encode: surround layout"));
     };
     match opts.container {
-        EncodeContainer::Adts => Ok(super::wrap_adts(&aus, fs, usize::from(cfg))),
+        EncodeContainer::Adts => Ok(crate::gapless::prefix_delay(
+            super::wrap_adts(&aus, fs, usize::from(cfg)),
+            info.priming,
+            info.remainder,
+            info.samples,
+        )),
         EncodeContainer::Latm => wrap_latm(&aus, enc.asc()),
         _ => crate::m4a_write::mux_aac(
             &aus,

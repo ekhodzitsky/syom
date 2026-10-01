@@ -20,14 +20,26 @@ pub(crate) struct PsHeEncoder {
 
 impl PsHeEncoder {
     /// `bitrate_bps` is whole-stream (mono core + SBR + PS).
-    pub(crate) fn new(out_rate: u32, bitrate_bps: u32, lookahead: bool) -> Result<Self> {
+    /// `fine_iid` selects Table 8.26 / `iid_mode` 4; `false` is mode 1.
+    pub(crate) fn new(
+        out_rate: u32,
+        bitrate_bps: u32,
+        lookahead: bool,
+        fine_iid: bool,
+    ) -> Result<Self> {
         let mut he = HeEncoder::new(out_rate, 1, bitrate_bps, lookahead)?;
-        he.enable_ps()?;
+        he.enable_ps(fine_iid)?;
+        let mut ana = PsAnalysis::new();
+        ana.set_iid_fine(fine_iid);
         Ok(Self {
             he,
-            ana: PsAnalysis::new(),
+            ana,
             pend: [Vec::with_capacity(PS_BLOCK), Vec::with_capacity(PS_BLOCK)],
         })
+    }
+
+    pub(crate) fn ps_side_info(&self) -> (u64, u64) {
+        self.he.ps_side_info()
     }
 
     pub(crate) fn fs_index(&self) -> u8 {
@@ -135,6 +147,13 @@ impl AnyHe {
         match self {
             AnyHe::V1(e) => e.finish(on_au),
             AnyHe::V2(e) => e.finish(on_au),
+        }
+    }
+
+    pub(crate) fn ps_side_info(&self) -> (u64, u64) {
+        match self {
+            AnyHe::V1(_) => (0, 0),
+            AnyHe::V2(e) => e.ps_side_info(),
         }
     }
 }

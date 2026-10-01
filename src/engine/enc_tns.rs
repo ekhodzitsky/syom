@@ -18,10 +18,13 @@
 //!   the *original* spectrum, `[first_coded, last_coded+1)` clamped to
 //!   `tns_max_bands` — never the whole table. A whitening filter is
 //!   unity-gain on average (Σ log|A| = 0), so it *boosts* the quiet
-//!   sidelobe bands around a notch it carves; any band inside the filter
-//!   span the quantizer drops would inject that boosted residual error
-//!   straight into the decoder's recursion. The build therefore force-codes
-//!   every band in the span (`enc_frame_rate`), and the span is emitted as
+//!   sidelobe bands around a notch it carves. Bands inside the span are
+//!   coded or dropped by the rate loop's water level like any other band;
+//!   a dropped band feeds zeros into the decoder's recursion, whose tail
+//!   decays within a few bins (force-coding the span at a coarse target —
+//!   the pre-TASK-133 rule — cost more bits than the shaping bought and
+//!   collapsed the frame budget exactly where TNS fired hardest, TASK-133
+//!   measurements). The span is emitted as
 //!   up to two filters: an order-0 spacer (no-op — skips the uncovered top
 //!   bands) plus the active filter. Direction upward, `coef_res = 4` bits,
 //!   no coefficient compression.
@@ -52,6 +55,10 @@ use super::enc_quant::MAX_BANDS;
 use super::ics::WindowSequence;
 use super::swb::LONG_WINDOW_LEN;
 
+#[path = "enc_tns_lpc.rs"]
+mod lpc;
+use lpc::{analysis_filter, autocorrelate};
+
 #[path = "enc_tns_short.rs"]
 mod short;
 pub use short::{EncTnsShort, decide_short};
@@ -69,9 +76,7 @@ const K_MIN: f64 = 0.1;
 /// Prediction-gain gate (linear, ≈ 2 dB): TNS is emitted only when the
 /// quantized filter whitens the covered range by at least this factor.
 const PG_MIN: f64 = 1.585;
-/// `tns_max_bands` without PQF, long windows — mirror of the decoder's
-/// private `MAX_BANDS_LONG` ([`super::tns`], Table 4.103). Index 12
-/// (7350 Hz) has no entry there (its parse errors), so TNS stays off.
+/// `tns_max_bands` without PQF, long windows (Table 4.103). Index 12 has no entry.
 const TNS_MAX_BANDS_LONG: [u8; 12] = [31, 31, 34, 40, 42, 51, 46, 46, 42, 42, 42, 39];
 
 /// One channel's TNS decision for a frame; `on == false` emits only the
@@ -118,10 +123,9 @@ impl EncTns {
         self.on || self.short.is_on()
     }
 
-    /// The active filter's scalefactor band span when on — every band in
-    /// it must be coded (the residual carries real energy across the whole
-    /// whitened span; a dropped band feeds zeros into the decoder's
-    /// recursion).
+    /// The active filter's scalefactor band span when on. Bands in the span
+    /// take the rate loop's water level like any other band (TASK-133: no
+    /// force-coding).
     pub fn band_range(&self) -> Option<(usize, usize)> {
         if self.on {
             Some((usize::from(self.start), usize::from(self.end)))
@@ -154,7 +158,12 @@ impl EncTns {
             return;
         }
         w.write_bit(self.on);
-        if !self.on {
+        self.emit_body(w);
+    }
+
+    /// `tns_data()` after the present flag (no-op when off).
+    pub(crate) fn emit_body(&self, w: &mut BitWriter) {
+        if self.short.is_on() || !self.on {
             return;
         }
         w.write(if self.spacer > 0 { 2 } else { 1 }, 2); // n_filt
@@ -171,19 +180,6 @@ impl EncTns {
             w.write(u32::from(c), 4);
         }
     }
-}
-
-/// Autocorrelation of `x` at lags 0..=MAX_ORDER (f64 sums, fixed order).
-fn autocorrelate(x: &[f32]) -> [f64; MAX_ORDER + 1] {
-    let mut r = [0.0f64; MAX_ORDER + 1];
-    for (lag, slot) in r.iter_mut().enumerate() {
-        let mut acc = 0.0f64;
-        for i in 0..x.len() - lag {
-            acc += f64::from(x[i]) * f64::from(x[i + lag]);
-        }
-        *slot = acc;
-    }
-    r
 }
 
 /// Levinson–Durbin on `r`: reflection coefficients (`k[0]` is k₁). `None`
@@ -259,21 +255,6 @@ fn step_up(kq: &[f32]) -> [f64; MAX_ORDER] {
         a[m - 1] = k;
     }
     a
-}
-
-/// Analysis (whitening) filter, upward direction: `e[n] = x[n] + Σ aₖ·x[n−k]`.
-/// The decoder's `ar_filter` computes `y = x − Σ aₖ·y[n−k]`, i.e.
-/// X = Y·A(z); this applies A(z). f64 accumulator, fixed op order.
-fn analysis_filter(x: &mut [f32], orig: &[f32], a: &[f64]) {
-    for (n, slot) in x.iter_mut().enumerate() {
-        let mut e = f64::from(orig[n]);
-        for (j, &ak) in a.iter().enumerate() {
-            if n > j {
-                e += ak * f64::from(orig[n - j - 1]);
-            }
-        }
-        *slot = e as f32;
-    }
 }
 
 /// Decide TNS for one long-family channel spectrum, filtering it in place

@@ -145,6 +145,12 @@ void fdk_enc_free(FdkEnc *enc) {
 
 int fdk_encode_lc_adts(const float *const *planes, int channels, int samples,
                        uint32_t rate, uint32_t bitrate_bps, FdkEnc *out) {
+    return fdk_encode_pcm_adts(planes, channels, samples, rate, bitrate_bps, 2, out);
+}
+
+int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
+                        uint32_t rate, uint32_t bitrate_bps, int aot,
+                        FdkEnc *out) {
     HANDLE_AACENCODER enc = NULL;
     AACENC_InfoStruct info;
     AACENC_BufDesc in_desc, out_desc;
@@ -161,18 +167,19 @@ int fdk_encode_lc_adts(const float *const *planes, int channels, int samples,
     int off = 0, i, c, frame, rc = -1;
 
     memset(out, 0, sizeof(*out));
-    out->aot = 2;
+    out->aot = aot;
     out->afterburner = 0;
     out->transmux = 2;
-    if (channels < 1 || channels > 2) {
-        snprintf(out->error, sizeof(out->error), "unsupported channel mode");
+    if (channels < 1 || channels > 2 || (aot != 2 && aot != 5 && aot != 29) ||
+        (aot == 29 && channels != 2)) {
+        snprintf(out->error, sizeof(out->error), "unsupported channel mode/aot");
         return -1;
     }
     if (aacEncOpen(&enc, 0, (UINT)channels) != AACENC_OK) {
         snprintf(out->error, sizeof(out->error), "aacEncOpen");
         return -1;
     }
-    if (aacEncoder_SetParam(enc, AACENC_AOT, 2) != AACENC_OK ||
+    if (aacEncoder_SetParam(enc, AACENC_AOT, (UINT)aot) != AACENC_OK ||
         aacEncoder_SetParam(enc, AACENC_SAMPLERATE, rate) != AACENC_OK ||
         aacEncoder_SetParam(enc, AACENC_CHANNELMODE, channels == 1 ? MODE_1 : MODE_2) !=
             AACENC_OK ||

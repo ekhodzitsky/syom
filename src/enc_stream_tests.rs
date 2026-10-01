@@ -1,7 +1,10 @@
-//! Push `Encoder`: byte-identity with one-shot encode for any chunking,
-//! tail-flush parity, tallies, error paths, callback abort.
+//! Push `Encoder`: byte-identity with one-shot encode, tail flush, tallies, errors.
 
 use crate::{AacError, EncodeContainer, EncodeInfo, EncodeOptions, Encoder, Result, encode_with};
+
+fn bare(b: &[u8]) -> &[u8] {
+    crate::gapless::strip_id3(b)
+}
 
 /// Deterministic stereo fixture: a 440 Hz sine in L, LCG noise in R.
 fn fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
@@ -18,13 +21,11 @@ fn fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
     vec![l, r]
 }
 
-/// Streaming-encode `pcm` fed in `chunk`-sample pieces; returns the
-/// concatenated ADTS bytes and the final tallies.
+/// Streaming-encode `pcm` in `chunk`-sample pieces (ADTS bytes and tallies).
 fn stream_encode(pcm: &[Vec<f32>], rate: u32, chunk: usize) -> Result<(Vec<u8>, EncodeInfo)> {
     stream_encode_with(pcm, rate, chunk, &EncodeOptions::adts())
 }
 
-/// `stream_encode` under explicit options (lookahead parity tests).
 fn stream_encode_with(
     pcm: &[Vec<f32>],
     rate: u32,
@@ -56,10 +57,10 @@ fn byte_identity_with_one_shot_any_chunking() -> Result<()> {
     let want = encode_with(&pcm, 48_000, &EncodeOptions::adts())?;
     for chunk in [1, 7, 1024, 4097, 10_000] {
         let (got, info) = stream_encode(&pcm, 48_000, chunk)?;
-        assert_eq!(got, want, "chunk {chunk}: streaming != one-shot bytes");
+        assert_eq!(got.as_slice(), bare(&want), "{chunk}");
         assert_eq!(info.samples, 10_000, "chunk {chunk}: samples tally");
         assert_eq!(info.aac_frames, 11, "chunk {chunk}: content+drain");
-        assert_eq!(info.bytes as usize, want.len(), "chunk {chunk}: byte tally");
+        assert_eq!(info.bytes as usize, bare(&want).len(), "{chunk}");
     }
     Ok(())
 }
@@ -70,7 +71,7 @@ fn byte_identity_mono() -> Result<()> {
     let want = encode_with(&pcm, 44_100, &EncodeOptions::adts())?;
     for chunk in [3, 1024, 5_000] {
         let (got, _) = stream_encode(&pcm, 44_100, chunk)?;
-        assert_eq!(got, want, "mono chunk {chunk}: streaming != one-shot");
+        assert_eq!(got.as_slice(), bare(&want), "mono {chunk}");
     }
     Ok(())
 }
@@ -83,12 +84,12 @@ fn exact_multiple_still_emits_overlap_drain() -> Result<()> {
     assert_eq!(info.remainder, 0);
     assert_eq!(info.priming, 1024);
     assert_eq!(info.coded_samples, 4 * 1024);
-    assert_eq!(adts, encode_with(&pcm, 48_000, &EncodeOptions::adts())?);
+    let one = encode_with(&pcm, 48_000, &EncodeOptions::adts())?;
+    assert_eq!(adts.as_slice(), bare(&one));
     Ok(())
 }
 
-/// Fixture with a click early in a frame (the lookahead case) riding on
-/// the standard sine/noise bed.
+/// Click early in a frame on the sine/noise bed (lookahead case).
 fn click_fixture(rate: u32, n: usize) -> Vec<Vec<f32>> {
     let mut pcm = fixture(rate, n);
     let mut lcg = 0x1234_5678u32;
@@ -113,10 +114,10 @@ fn lookahead_byte_identity_with_one_shot_any_chunking() -> Result<()> {
     );
     for chunk in [1, 7, 1024, 4097, 10_000] {
         let (got, info) = stream_encode_with(&pcm, 48_000, chunk, &opts)?;
-        assert_eq!(got, want, "chunk {chunk}: lookahead streaming != one-shot");
+        assert_eq!(got.as_slice(), bare(&want), "look {chunk}");
         assert_eq!(info.samples, 10_000, "chunk {chunk}: samples tally");
         assert_eq!(info.aac_frames, 11, "chunk {chunk}: content+drain");
-        assert_eq!(info.bytes as usize, want.len(), "chunk {chunk}: byte tally");
+        assert_eq!(info.bytes as usize, bare(&want).len(), "{chunk}");
     }
     Ok(())
 }
@@ -149,7 +150,24 @@ fn lookahead_trails_by_one_frame_and_flushes_at_finish() -> Result<()> {
     let opts = EncodeOptions::adts().with_lookahead(true);
     let (got, info) = stream_encode_with(&full, 48_000, 1024, &opts)?;
     assert_eq!(info.aac_frames, 4);
-    assert_eq!(got, encode_with(&full, 48_000, &opts)?);
+    let one = encode_with(&full, 48_000, &opts)?;
+    assert_eq!(got.as_slice(), bare(&one));
+    Ok(())
+}
+
+#[test]
+fn lookahead_level_step_into_silence_matches_one_shot() -> Result<()> {
+    // A constant into the silent drain must still match one-shot lookahead.
+    let opts = EncodeOptions::adts().with_lookahead(true);
+    for n in [2048usize, 2500, 4096] {
+        let pcm = vec![vec![0.5f32; n]; 2];
+        let want = encode_with(&pcm, 48_000, &opts)?;
+        for chunk in [n, 1024, 100] {
+            let (got, info) = stream_encode_with(&pcm, 48_000, chunk, &opts)?;
+            assert_eq!(got.as_slice(), bare(&want), "n={n} chunk={chunk}");
+            assert_eq!(info.samples, n as u64, "n={n} chunk={chunk}");
+        }
+    }
     Ok(())
 }
 
@@ -204,8 +222,7 @@ fn constructor_error_paths() -> Result<()> {
         );
         assert!(!e.to_string().is_empty(), "stable Display");
     }
-    // The M4A rejection names the one-shot escape hatch, like the push
-    // Decoder's ISOBMFF error names decode_streaming.
+    // M4A is rejected on the push encoder; one-shot is the escape hatch.
     let e = Encoder::new(48_000, 2, &EncodeOptions::m4a())
         .err()
         .ok_or(AacError::NotAac)?;
@@ -364,7 +381,8 @@ fn finished_is_sticky_until_reset() -> Result<()> {
         out.extend_from_slice(f.au);
         Ok(())
     })?;
-    assert_eq!(out, encode_with(&pcm, 48_000, &opts)?);
+    let one = encode_with(&pcm, 48_000, &opts)?;
+    assert_eq!(out.as_slice(), bare(&one));
     assert_eq!(info2.aac_frames, info.aac_frames);
     Ok(())
 }
@@ -388,7 +406,8 @@ fn reset_clears_held_lookahead_state() -> Result<()> {
         out.extend_from_slice(f.au);
         Ok(())
     })?;
-    assert_eq!(out, encode_with(&pcm, 48_000, &opts)?);
+    let one = encode_with(&pcm, 48_000, &opts)?;
+    assert_eq!(out.as_slice(), bare(&one));
     Ok(())
 }
 
@@ -413,7 +432,8 @@ fn reset_does_not_leak_rate_credit_into_next_session() -> Result<()> {
         out.extend_from_slice(f.au);
         Ok(())
     })?;
-    assert_eq!(out, encode_with(&quiet, 48_000, &EncodeOptions::adts())?);
+    let one = encode_with(&quiet, 48_000, &EncodeOptions::adts())?;
+    assert_eq!(out.as_slice(), bare(&one));
     Ok(())
 }
 
@@ -434,7 +454,7 @@ fn reset_same_pcm_is_byte_exact_twice() -> Result<()> {
             out.extend_from_slice(f.au);
             Ok(())
         })?;
-        assert_eq!(out, want, "pass {pass}");
+        assert_eq!(out.as_slice(), bare(&want), "pass {pass}");
     }
     Ok(())
 }
@@ -472,7 +492,9 @@ fn two_encoders_reset_are_reentrant() -> Result<()> {
         ob.extend_from_slice(f.au);
         Ok(())
     })?;
-    assert_eq!(oa, encode_with(&a_pcm, 48_000, &opts)?);
-    assert_eq!(ob, encode_with(&b_pcm, 44_100, &opts)?);
+    let oa_one = encode_with(&a_pcm, 48_000, &opts)?;
+    let ob_one = encode_with(&b_pcm, 44_100, &opts)?;
+    assert_eq!(oa.as_slice(), bare(&oa_one));
+    assert_eq!(ob.as_slice(), bare(&ob_one));
     Ok(())
 }

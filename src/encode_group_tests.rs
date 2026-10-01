@@ -53,6 +53,7 @@ fn err_around_click(decoded: &[f32], pcm: &[f32]) -> f64 {
 
 /// Grouping + section + scale-factor bits of every EightShort frame.
 fn short_syntax_bits(adts: &[u8]) -> (usize, Vec<u8>) {
+    let adts = crate::gapless::strip_id3(adts);
     let mut i = 0usize;
     let mut bits = 0usize;
     let mut groups = Vec::new();

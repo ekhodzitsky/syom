@@ -9,7 +9,9 @@
 //! * video / subtitle / hint tracks — ignored (the first usable `soun` track
 //!   with an `mp4a` sample entry wins, mirroring symphonia's default-track
 //!   pick; broken or non-AAC sound tracks are skipped);
-//! * fragmented MP4 (`moof` / `mvex`) — rejected with a clean error;
+//! * fragmented MP4 (`moof` / `mvex`) — bounded fMP4 (one unencrypted AAC
+//!   track) is parsed by [`frag`] (TASK-124); the flat sample-table path
+//!   here still rejects fragmentation boxes;
 //! * encrypted content — `enca` sample entries are rejected with a clean
 //!   error; CENC-style files hide the `esds` inside a `sinf` wrapper that is
 //!   never descended into, so such tracks carry no usable esds and are
@@ -68,6 +70,11 @@ pub(crate) struct AacTrack {
     /// True when a supported one-entry `elst` is present (duration 0 still
     /// trims to nothing). Missing `edts`/`elst` plays the whole decode.
     pub has_elst: bool,
+    /// fMP4 only (DASH init segments declare a priming edit before the media
+    /// duration is known): a zero `elst.segment_duration` caps nothing and
+    /// plays to the end of the fragments. Flat M4A keeps duration 0 = trim
+    /// to nothing.
+    pub edit_open_end: bool,
 }
 
 impl AacTrack {
@@ -96,6 +103,9 @@ impl AacTrack {
             self.media_timescale,
             "elst media_time",
         )?;
+        if self.edit_open_end && self.edit_duration == 0 {
+            return Ok((skip, None));
+        }
         let play = convert_exact(
             self.edit_duration,
             sample_rate,
@@ -109,7 +119,6 @@ impl AacTrack {
     /// with checked movie→media timescale. `None` if a timescale is missing
     /// or the multiply overflows.
     #[must_use]
-    #[cfg(test)]
     pub(crate) fn presentation_samples(&self) -> Option<u64> {
         if self.movie_timescale == 0 {
             return None;
@@ -123,12 +132,30 @@ impl AacTrack {
     /// presentation is unknown or the counts underflow (coded vs presentation
     /// must not be swapped).
     #[must_use]
-    #[cfg(test)]
     pub(crate) fn remainder_samples(&self) -> Option<u64> {
         let valid = self.presentation_samples()?;
         self.media_duration
             .checked_sub(self.edit_start)?
             .checked_sub(valid)
+    }
+
+    /// Tail reported on a finished decode. A flat edit uses the container
+    /// counts. An open fragment edit (DASH `segment_duration` 0) has no
+    /// container cap, so the tail is whatever of `total_samples` was not
+    /// emitted after priming.
+    pub(crate) fn unplayed_tail(&self, skip: u64, samples_out: u64) -> Option<u64> {
+        if !self.has_elst {
+            return None;
+        }
+        if self.edit_open_end {
+            Some(
+                self.total_samples
+                    .saturating_sub(skip)
+                    .saturating_sub(samples_out),
+            )
+        } else {
+            self.remainder_samples()
+        }
     }
 }
 
@@ -193,17 +220,58 @@ fn read_box(data: &[u8], pos: usize) -> Result<Option<(BoxHdr, FourCc)>> {
             "isomp4: box size {size} smaller than its header"
         )));
     }
-    let end = pos
-        .checked_add(size as usize)
-        .filter(|&e| e <= data.len())
-        .ok_or_else(|| AacError::format("isomp4: box extends past end of input"))?;
+    // Stay in u64 until the end is known to fit the slice. Casting `size`
+    // to `usize` first truncates on 32-bit targets (wasm32 included): a
+    // largesize of 2^32 becomes 0, `content_end` does not advance, and the
+    // child walker loops.
+    let end_u = (pos as u64)
+        .checked_add(size)
+        .ok_or_else(|| AacError::format("isomp4: box size overflow"))?;
+    if end_u > data.len() as u64 {
+        return Err(AacError::format("isomp4: box extends past end of input"));
+    }
+    let end = usize::try_from(end_u).map_err(|_| AacError::format("isomp4: box exceeds usize"))?;
+    let content_start = (pos as u64)
+        .checked_add(head_len)
+        .ok_or_else(|| AacError::format("isomp4: box size overflow"))?;
+    let content_start = usize::try_from(content_start)
+        .map_err(|_| AacError::format("isomp4: box exceeds usize"))?;
     Ok(Some((
         BoxHdr {
-            content_start: pos + head_len as usize,
+            content_start,
             content_end: end,
         },
         typ,
     )))
+}
+
+/// Top-level box read for the fMP4 whole-slice walk: a partial header or a
+/// declared size beyond the buffer is stream truncation, typed
+/// [`AacError::Truncated`] (`read_box` itself stays Format-class for the
+/// flat path's `NotAac` collapse).
+fn read_top_box(data: &[u8], pos: usize) -> Result<(BoxHdr, FourCc)> {
+    let truncated = || AacError::Truncated {
+        at: Some(pos as u64),
+    };
+    let avail = data.len() - pos;
+    if avail < 8 {
+        return Err(truncated());
+    }
+    let size32 = u32::from_be_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]);
+    let size = match size32 {
+        1 => {
+            let Some(ext) = data.get(pos.saturating_add(8)..pos.saturating_add(16)) else {
+                return Err(truncated());
+            };
+            u64::from_be_bytes(ext.try_into().map_err(|_| truncated())?)
+        }
+        0 => avail as u64, // to-end-of-input box
+        s => u64::from(s),
+    };
+    if size > avail as u64 {
+        return Err(truncated());
+    }
+    read_box(data, pos)?.ok_or_else(truncated)
 }
 
 /// Iterate the child boxes of `data[start..end]`.
@@ -398,18 +466,22 @@ struct SoundMdia {
     duration: u64,
 }
 
+/// `base + index * stride`, or an overflow error. The add stays checked
+/// so a raised index budget cannot panic on a 32-bit target.
+fn table_pos(base: usize, index: usize, stride: usize, what: &'static str) -> Result<usize> {
+    index
+        .checked_mul(stride)
+        .and_then(|span| base.checked_add(span))
+        .ok_or_else(|| AacError::format(format!("isomp4: {what} overflow")))
+}
+
 /// Parse one `stts` box body: total sample count is Σ entry.sample_count.
 fn parse_stts(data: &[u8], mem: &MemoryBudgets) -> Result<u64> {
     let count = read_u32(data, 4)? as usize;
     fence_entries(mem, count as u64, 8)?;
     let mut total = 0u64;
     for i in 0..count {
-        let sample_count = read_u32(
-            data,
-            8 + i
-                .checked_mul(8)
-                .ok_or_else(|| AacError::format("isomp4: stts overflow"))?,
-        )?;
+        let sample_count = read_u32(data, table_pos(8, i, 8, "stts")?)?;
         total = total
             .checked_add(u64::from(sample_count))
             .ok_or_else(|| AacError::format("isomp4: stts total overflow"))?;
@@ -418,8 +490,11 @@ fn parse_stts(data: &[u8], mem: &MemoryBudgets) -> Result<u64> {
 }
 
 fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
+    let end = pos
+        .checked_add(4)
+        .ok_or_else(|| AacError::format("isomp4: truncated table"))?;
     let b = data
-        .get(pos..pos + 4)
+        .get(pos..end)
         .ok_or_else(|| AacError::format("isomp4: truncated table"))?;
     let arr: [u8; 4] = b
         .try_into()
@@ -429,7 +504,10 @@ fn read_u32(data: &[u8], pos: usize) -> Result<u32> {
 
 fn read_u64(data: &[u8], pos: usize) -> Result<u64> {
     let hi = u64::from(read_u32(data, pos)?);
-    let lo = u64::from(read_u32(data, pos + 4)?);
+    let lo_at = pos
+        .checked_add(4)
+        .ok_or_else(|| AacError::format("isomp4: truncated table"))?;
+    let lo = u64::from(read_u32(data, lo_at)?);
     Ok((hi << 32) | lo)
 }
 
@@ -495,12 +573,7 @@ fn parse_stsz(data: &[u8], file_len: u64, mem: &MemoryBudgets) -> Result<Vec<u32
         })
     })?;
     for i in 0..count {
-        sizes.push(read_u32(
-            data,
-            12 + i
-                .checked_mul(4)
-                .ok_or_else(|| AacError::format("isomp4: stsz overflow"))?,
-        )?);
+        sizes.push(read_u32(data, table_pos(12, i, 4, "stsz")?)?);
     }
     Ok(sizes)
 }
@@ -517,11 +590,9 @@ fn parse_stsc(data: &[u8], mem: &MemoryBudgets) -> Result<Vec<(u32, u32)>> {
         })
     })?;
     for i in 0..count {
-        let base = 8 + i
-            .checked_mul(12)
-            .ok_or_else(|| AacError::format("isomp4: stsc overflow"))?;
+        let base = table_pos(8, i, 12, "stsc")?;
         let first_chunk = read_u32(data, base)?;
-        let samples_per_chunk = read_u32(data, base + 4)?;
+        let samples_per_chunk = read_u32(data, table_pos(base, 1, 4, "stsc")?)?;
         // sample_description_index (base + 8) is read but only the first
         // entry's mp4a is ever used; a mid-file switch is rejected later by
         // the byte-range walk producing garbage — ffmpeg never emits it.
@@ -547,19 +618,12 @@ fn parse_stco(data: &[u8], wide: bool, mem: &MemoryBudgets) -> Result<Vec<u64>> 
     })?;
     for i in 0..count {
         let off = if wide {
-            let base = 8 + i
-                .checked_mul(8)
-                .ok_or_else(|| AacError::format("isomp4: co64 overflow"))?;
+            let base = table_pos(8, i, 8, "co64")?;
             let hi = read_u32(data, base)? as u64;
-            let lo = read_u32(data, base + 4)? as u64;
+            let lo = read_u32(data, table_pos(base, 1, 4, "co64")?)? as u64;
             (hi << 32) | lo
         } else {
-            read_u32(
-                data,
-                8 + i
-                    .checked_mul(4)
-                    .ok_or_else(|| AacError::format("isomp4: stco overflow"))?,
-            )? as u64
+            read_u32(data, table_pos(8, i, 4, "stco")?)? as u64
         };
         out.push(off);
     }
@@ -1007,6 +1071,7 @@ pub(crate) fn parse_aac_track_with_len(
         media_timescale,
         media_duration,
         has_elst,
+        edit_open_end: false,
     })
 }
 
@@ -1183,7 +1248,10 @@ pub fn sniff_is_isobmff(data: &[u8]) -> bool {
 
 #[path = "isomp4_io.rs"]
 mod io;
-pub(crate) use io::load_moov;
+pub(crate) use io::{TrackBoxes, load_track_boxes};
+
+#[path = "isomp4_frag.rs"]
+pub(crate) mod frag;
 
 #[cfg(test)]
 #[path = "isomp4_struct_tests.rs"]

@@ -75,3 +75,68 @@ synthetic (harmonics with vibrato over a noise floor).
 
 Reproduce: `cd lab/quality && cargo run --release --bin syom_speed -- 21 > new.txt`,
 the same on the baseline checkout, then `python3 speed_ci.py base.txt new.txt`.
+
+## Rate-loop reuse (2026-09-29)
+
+Same machine and pin (`taskset -c 4`). Harness `syom_speed`, 5 warm-up
+runs and 7 measured reps per cell — shorter than the 63-rep protocol
+above, so the intervals are wider. Baseline is the tree immediately
+before this change; candidate is the tree that contains it.
+`speed_ci.py`, 10 000 resamples, seed 83.
+
+What changed, without moving a bit on the locked signals:
+
+1. Scalefactor gain is a 256-entry table of `det_math::exp2`. The
+   exponent is a multiple of 1/16, so the table matches that function
+   bit for bit (`quant_gain_table_matches_det_math_for_every_scalefactor`).
+2. Long-window band peaks are the allocation cache, measured once on
+   the spectrum the quantizer sees.
+3. An all-zero band returns a closed-form Huffman cost, and a band
+   whose peak fits a smaller book does not walk the larger books. The
+   one-pass table still matches `spectral_bits`.
+4. The ABR search starts at the previous frame's noise offset and
+   walks at most eight steps, then bisects the side that remains.
+   Bit counts dip by a few bits, so an arbitrary start can stop at a
+   different crossing than a cold bisection. The encoder feeds only
+   the previous frame's result (the first frame starts at the low
+   bound, which is the cold search). That path matches a cold
+   bisection on the encoder goldens and on the low-rate noise
+   trajectory tests.
+
+| cell | base ms | cand ms | speedup | 95% CI of ratio | bytes/hash |
+|---|---:|---:|---:|---|---|
+| lecture-st-lc128 | 5.89 | 4.71 | +20.0% | [+18.8%, +23.3%] | identical |
+| lecture-st-lc64 | 6.94 | 5.45 | +21.4% | [+15.8%, +28.2%] | identical |
+| lecture-st-q5 | 5.73 | 4.55 | +20.6% | [+15.8%, +27.9%] | identical |
+| lecture-mono-lc128 | 3.28 | 2.64 | +19.4% | [+14.0%, +29.7%] | identical |
+| lecture-mono-lc64 | 4.00 | 3.02 | +24.5% | [+4.9%, +28.0%] | identical |
+| lecture-mono-q5 | 3.15 | 2.38 | +24.6% | [+10.4%, +34.0%] | identical |
+| music-st-lc128 | 38.43 | 20.28 | +47.2% | [+45.7%, +49.8%] | identical |
+| music-st-lc64 | 32.95 | 14.08 | +57.3% | [+56.9%, +59.2%] | identical |
+| music-st-q5 | 20.41 | 16.73 | +18.1% | [+14.9%, +23.1%] | identical |
+| noise-st-lc128 | 40.97 | 23.16 | +43.5% | [+38.5%, +44.8%] | identical |
+| noise-st-lc64 | 32.78 | 15.04 | +54.1% | [+50.7%, +54.7%] | identical |
+| noise-st-q5 | 17.01 | 14.98 | +11.9% | [+6.8%, +16.1%] | identical |
+| click-mono-lc128 | 9.50 | 9.66 | -1.7% | [-12.2%, +9.0%] | identical |
+| click-mono-lc64 | 8.17 | 7.68 | +6.1% | [+3.1%, +17.2%] | identical |
+| click-mono-q5 | 4.16 | 3.75 | +9.8% | [+9.2%, +19.4%] | identical |
+
+median gain over cells: +20.6% (15 cells)
+
+Every cell is byte-identical (size + FNV-1a), and the committed encoder
+goldens (`enc48*`, `he48e*`, `he2_48e*`, `enc_mc*`, lookahead) still
+match. Busy ABR (music and noise at 64 and 128 kbps) is +43% to +57%:
+the search settles and stops re-quantizing. Lecture and quality VBR
+rarely leave one offset, so their +18% to +25% is the cheaper
+quantizer. `click-mono-lc128` is −1.7% and its interval includes zero
+(seven reps; the offset jumps on every attack, so the warm start has
+little to reuse).
+
+Debug `cargo test` does not assert a wall clock. It counts quantizer
+builds: a steady tone at most four per frame after the first, 64 kbps
+noise under eight, and the payload scratch stays inside the ADTS
+ceiling. The gain table is 256 `f32` values for the life of the
+process. The 128 KiB stack test still passes.
+
+The 63-rep table above is the TASK-83 result and is not this baseline.
+Its absolute milliseconds are from an older encoder.

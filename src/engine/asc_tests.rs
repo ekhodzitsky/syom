@@ -211,6 +211,127 @@ fn embedded_pce_rejects_object_type_and_rate_and_dup_tag() {
     );
 }
 
+/// LD ASC writer: AOT 23 + GA flags + ER resilience/epConfig tail.
+fn write_ld(fs_index: u8, ch: u8, extension: bool, ep_config: u8) -> Vec<u8> {
+    let mut w = BitWriter::new();
+    w.write(23, 5);
+    w.write(u32::from(fs_index), 4);
+    w.write(u32::from(ch), 4);
+    w.write_bit(false); // frameLengthFlag
+    w.write_bit(false); // dependsOnCoreCoder
+    w.write_bit(extension);
+    if extension {
+        w.write(0, 3); // section/scalefactor/spectral resilience
+        w.write_bit(false); // extensionFlag3
+    }
+    w.write(u32::from(ep_config), 2);
+    w.finish()
+}
+
+#[test]
+fn ld_aot23_config_parses_with_er_ga_bits() -> Result<()> {
+    // FDK's LD LOAS layout: extensionFlag 1, resilience 000, ext3 0, epConfig 0.
+    let (asc, bits) = AudioSpecificConfig::parse(&write_ld(3, 1, true, 0))?;
+    assert_eq!(asc.aot, 23);
+    assert_eq!(asc.sampling_frequency_index, 3);
+    assert_eq!(asc.sample_rate, 48_000);
+    assert_eq!(asc.output_sample_rate, 48_000);
+    assert_eq!(asc.channel_configuration, 1);
+    assert!(!asc.sbr_present);
+    assert!(!asc.ps_present);
+    assert_eq!(bits, 22);
+
+    let (plain, bits) = AudioSpecificConfig::parse(&write_ld(3, 2, false, 0))?;
+    assert_eq!(plain.aot, 23);
+    assert_eq!(plain.channel_configuration, 2);
+    assert_eq!(bits, 18);
+    Ok(())
+}
+
+#[test]
+fn ld_config_rejects_480_frames_ep_config_and_ext3() {
+    // frameLengthFlag 1 = 480-sample LD grid: Unsupported, same as LC 960.
+    let mut w = BitWriter::new();
+    w.write(23, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write_bit(true);
+    w.write(0, 4);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::UnsupportedFrameLength)
+    ));
+    assert!(matches!(
+        AudioSpecificConfig::parse(&write_ld(3, 1, false, 2)),
+        Err(Error::Format(_))
+    ));
+    // extensionFlag3 set
+    let mut w = BitWriter::new();
+    w.write(23, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write_bit(false);
+    w.write_bit(false);
+    w.write_bit(true);
+    w.write(0, 3);
+    w.write_bit(true);
+    w.write(0, 2);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::Format("ASC extensionFlag3 is Media"))
+    ));
+}
+
+#[test]
+fn ld_config_does_not_turn_into_sbr_and_er_profiles_stay_unsupported() {
+    // A trailing 0x2b7 sync extension must not flip LD into HE.
+    let mut bytes = write_ld(3, 1, false, 0);
+    let mut w = BitWriter::new();
+    w.write(0x2b7, 11);
+    w.write(5, 5);
+    w.write_bit(true);
+    w.write(3, 4);
+    bytes.extend_from_slice(&w.finish());
+    let (asc, bits) = AudioSpecificConfig::parse(&bytes).unwrap();
+    assert_eq!(asc.aot, 23);
+    assert!(!asc.sbr_present);
+    assert_eq!(bits, 18);
+    // Explicit SBR wrap of LD, ELD, USAC, ER-LC: still typed rejects.
+    let mut w = BitWriter::new();
+    w.write(5, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(6, 4);
+    w.write(23, 5);
+    w.write(0, 3);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::UnsupportedAot(23))
+    ));
+    let mut w = BitWriter::new();
+    w.write(31, 5);
+    w.write(7, 6); // AOT 39 (ELD)
+    w.write(3, 4);
+    w.write(1, 4);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::UnsupportedAot(39))
+    ));
+    let mut w = BitWriter::new();
+    w.write(31, 5);
+    w.write(10, 6); // AOT 42 (USAC)
+    w.write(3, 4);
+    w.write(2, 4);
+    assert!(matches!(
+        AudioSpecificConfig::parse(&w.finish()),
+        Err(Error::UnsupportedAot(42))
+    ));
+    assert!(matches!(
+        AudioSpecificConfig::parse(&unhex("8b98")),
+        Err(Error::UnsupportedAot(17))
+    ));
+}
+
 #[test]
 fn sbr_present_flag_zero_stays_lc() -> Result<()> {
     // 0x2b7 + AOT5 + sbrPresentFlag=0 must not become HE (LC padding).

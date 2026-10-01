@@ -79,8 +79,57 @@ int main(int argc, char **argv) {
         faac_enc_free(&enc);
         return rc == 0 ? 0 : 1;
     }
+    if (argc == 7 && strcmp(argv[1], "encode-pcm") == 0) {
+        /* planar f32le in, interleaved for libfaac */
+        uint32_t rate = (uint32_t)atoi(argv[2]);
+        uint32_t ch = (uint32_t)atoi(argv[3]);
+        uint32_t bps = (uint32_t)atoi(argv[4]);
+        const char *out_path = argv[6];
+        FILE *fi = fopen(argv[5], "rb"), *f;
+        float *pcm = NULL, *planar = NULL;
+        long bytes;
+        uint32_t samples, i;
+        uint32_t c;
+        FaacEnc enc;
+        int rc;
+        if (!fi || rate == 0 || (ch != 1 && ch != 2) || bps == 0) {
+            fprintf(stderr, "encode-pcm RATE CHANNELS BITRATE_PER_CH IN.f32 OUT.adts\n");
+            return 2;
+        }
+        fseek(fi, 0, SEEK_END);
+        bytes = ftell(fi);
+        rewind(fi);
+        samples = (uint32_t)(bytes / 4 / ch);
+        planar = malloc((size_t)samples * ch * sizeof(float));
+        pcm = malloc((size_t)samples * ch * sizeof(float));
+        if (!planar || !pcm ||
+            fread(planar, 4, (size_t)samples * ch, fi) != (size_t)samples * ch) {
+            fprintf(stderr, "read %s\n", argv[5]);
+            fclose(fi);
+            return 2;
+        }
+        fclose(fi);
+        for (c = 0; c < ch; c++)
+            for (i = 0; i < samples; i++)
+                pcm[(size_t)i * ch + c] = planar[(size_t)c * samples + i];
+        rc = faac_encode_lc_adts(pcm, ch, samples, rate, bps, &enc);
+        print_enc(&enc, rc);
+        if (rc == 0) {
+            f = fopen(out_path, "wb");
+            if (!f || fwrite(enc.adts, 1, enc.adts_len, f) != enc.adts_len) {
+                fprintf(stderr, "write %s\n", out_path);
+                rc = 2;
+            }
+            if (f)
+                fclose(f);
+        }
+        free(planar);
+        free(pcm);
+        faac_enc_free(&enc);
+        return rc == 0 ? 0 : 1;
+    }
     fprintf(stderr,
-            "usage:\n  %s id\n  %s encode-sine RATE CHANNELS BITRATE_PER_CH OUT.adts\n",
-            argv[0], argv[0]);
+            "usage:\n  %s id\n  %s encode-sine RATE CHANNELS BITRATE_PER_CH OUT.adts\n  %s encode-pcm RATE CHANNELS BITRATE_PER_CH IN.f32 OUT.adts\n",
+            argv[0], argv[0], argv[0]);
     return 2;
 }

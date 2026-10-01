@@ -24,6 +24,7 @@ fn long_ics() -> IcsInfo {
         num_window_groups: 1,
         window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
         num_swb: 49,
+        ld: false,
     }
 }
 

@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "errors": [],
+  "label": "SYNTHETIC-NOT-LISTENING-EVIDENCE",
+  "items": 8,
+  "mushra_items": 7,
+  "bs1116_items": 1,
+  "valid_listeners": 8,
+  "excluded_listeners": 1,
+  "n_qualification": 69,
+  "n_exploratory": 20,
+  "session_burden_min": 17.5,
+  "noninferior_mushra": true,
+  "syom_minus_lavc": {
+    "n": 8,
+    "mean": -1.135,
+    "sd": 0.719,
+    "ci95": [
+      -1.737,
+      -0.534
+    ],
+    "margin": 3.0,
+    "noninferior": true,
+    "superior": false
+  },
+  "not_listening_evidence": true
+}

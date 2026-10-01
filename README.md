@@ -1,217 +1,101 @@
 # syom
 
-just aac.
+AAC to planar `f32`.
 
-Pure-Rust **AAC-LC / HE-AAC** codec. Zero crates on the product path.
-Decode ADTS, LATM/LOAS, and M4A/ISOBMFF `mp4a`; **encode** AAC-LC to ADTS
-or M4A. PCM is planar `f32` at the bitstream's native sample rate
-(HE = 2× core).
-
+[![crates.io](https://img.shields.io/crates/v/syom.svg)](https://crates.io/crates/syom)
+[![docs.rs](https://img.shields.io/docsrs/syom)](https://docs.rs/syom)
+[![ci](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml/badge.svg)](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![deps](https://img.shields.io/badge/deps-zero-success.svg)](Cargo.toml)
 
-## Why
+An AAC codec in Rust. AAC-LC, HE-AAC v1/v2, and AAC-LD. ADTS, LATM/LOAS,
+M4A, and bounded fragmented MP4. Encode defaults to AAC-LC at 128 kbps,
+ADTS or M4A. HE and LD are opt-in. Output is planar `f32` at the
+bitstream rate (HE is twice the core rate). The product path pulls no
+crates. ffmpeg is an offline oracle, not a runtime dependency.
 
-[symphonia](https://github.com/pdeljanov/Symphonia) is a multi-format
-pipeline. [rusty_aac](https://crates.io/crates/rusty_aac) 0.5 is LC (SBR
-signalled, not reconstructed). [oxideav-aac](https://crates.io/crates/oxideav-aac)
-0.1.7 decodes ADTS LC with SBR/PS (no ISOBMFF demux). **syom is the AAC
-crate**: one call, LC + HE v1/v2, duration/rate caps, no extra dependencies.
+## Examples
+
+```rust
+fn main() -> syom::Result<()> {
+    let pcm: Vec<f32> = (0..48_000).map(|i| 0.3 * (i as f32 * 0.06).sin()).collect();
+    let adts = syom::encode(&[&pcm], 48_000)?;
+    let back = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;
+    assert_eq!((back.channels.len(), back.sample_rate), (1, 48_000));
+    Ok(())
+}
+```
+
+`decode` is the speech default (mono mix, 2 h). `DecodeOptions::audio()`
+keeps the coded channels. From a path: `syom::read`. Push decode and
+encode: `Decoder::feed`, `Encoder::feed`. The
+[guide](https://docs.rs/syom/latest/syom/guide/) has one compiling
+example per task.
+
+| task | section |
+|---|---|
+| one-call encode / decode, speech vs full fidelity | 1 |
+| borrowed PCM, `Read` / `Write` / `Seek` | 2 |
+| priming, tail, exact length | 3 |
+| push `Encoder` / `Decoder`, bounded memory | 4 |
+| raw access units and `AudioSpecificConfig` | 5 |
+| probe, sample-exact M4A seek | 6 |
+| LC, quality VBR, HE v1/v2, surround | 7 |
+| limits and typed errors | 8 |
+| profiles and containers | 9 |
+| behaviour changes since 0.6.0 | 10 |
+
+## Decode and encode
+
+| | ADTS | M4A | LATM/LOAS | fMP4 |
+|---|---|---|---|---|
+| AAC-LC decode | yes | yes | yes | yes |
+| HE-AAC v1/v2 decode | yes | yes | yes | yes |
+| AAC-LD decode (512) | no | yes | yes | no |
+| LC encode | yes | yes | yes | no |
+| HE v1/v2 encode | yes | yes | yes | no |
+| AAC-LD encode | no | yes | yes | no |
+
+LC encode is the default; M/S is per-band. `with_he`, `with_he_v2`, and
+`with_ld` are opt-in. ADTS cannot signal AAC-LD. Surround LC is 3–8 planes
+(`channel_configuration` 3–7). No resample.
+
+## Compared with rusty_aac, Symphonia, oxideav-aac
 
 | | syom | rusty_aac 0.5 | symphonia 0.6 | oxideav-aac 0.1.7 |
 |---|---|---|---|---|
-| AAC-LC | yes | yes | yes | yes (ADTS) |
-| HE-AAC v1/v2 (SBR/PS) decode | yes | signalled | LC core only | ADTS SBR/PS |
-| HE-AAC v1 encode | opt-in (`with_he`) | no | no | advertised |
-| ADTS / M4A / LATM | yes | ADTS + AU | via formats | ADTS only |
-| Default deps | **none** | none | several | oxideav-core |
+| Job | AAC codec | LC decoder | media pipeline | ADTS decoder |
+| Default deps | none | none | several | oxideav-core |
+| HE-AAC v1/v2 decode | yes | signalled | LC core | ADTS |
+| AAC-LD | yes | no | no | no |
+| M4A / LATM / fMP4 | yes | no | M4A, no fMP4 | no |
+| LC / HE / LD encode | LC; HE and LD opt-in | no | no | no |
 | Output | planar `f32`, native rate | interleaved f32 | packets | interleaved i16 |
-| Duration / rate caps | yes (`speech` / `unbounded`) | no | no | — |
-| One-call `decode(&[u8])` | yes | no | no | `decode_all` |
+| Duration / RAM caps | yes | no | no | no |
+| One call `decode(&[u8])` | yes | no | no | `decode_all` |
 
-Wall-time tables in [BENCH.md](BENCH.md) are **historical unequal-work
-rows** (speech mix vs discarded or LC-core output). They are not a
-matched-PCM leaderboard; see that file and `syom::decode_cmp`.
+## Speed
+
+Linux x86_64, AMD Ryzen AI 9 HX 370, rustc 1.97.1, `taskset -c 0`,
+profile.bench (thin LTO), 20 reps after 4 warmup, 2026-10-01. Same
+bitstream and the same output shape. Sample checksums differ. A peer
+that cannot produce that shape is left blank. Older rows of a different
+protocol: [BENCH.md](BENCH.md).
+
+| Workload | syom | symphonia 0.6.1 | rusty_aac 0.5.0 | oxideav-aac 0.1.7 |
+|---|---|---|---|---|
+| LC ADTS, 48 kHz mono, 13312 samples | **72.2 µs** | 123 µs | 179 ms | 175 ms |
+| HE-AAC v2 ADTS, 48 kHz stereo, 53248 samples | **4.61 ms** | | | 369 ms |
+| LC 5.1 ADTS, 48 kHz, 20480 samples | **640 µs** | | | 1.67 s |
 
 ## Install
 
 ```toml
 [dependencies]
-syom = "0.6"
+syom = "0.7"
 ```
 
-Requires **Rust 1.88** or newer (edition 2024; CI tests 1.88 and 1.97.1).
+rustc **1.88**.
 
-## Quick start
+[guide](https://docs.rs/syom/latest/syom/guide/) | [BENCH.md](BENCH.md) | [CHANGELOG](CHANGELOG.md)
 
-```rust
-# fn main() -> syom::Result<()> {
-let pcm: Vec<f32> = (0..48_000).map(|i| 0.3 * (i as f32 * 0.06).sin()).collect();
-let adts = syom::encode(&[&pcm[..]], 48_000)?;              // AAC-LC, 128 kbps, ADTS
-let back = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;
-assert_eq!((back.channels.len(), back.sample_rate), (1, 48_000));
-# Ok(())
-# }
-```
-
-`syom::decode` alone is the **speech** default (mono mix, 2 h cap);
-`DecodeOptions::audio()` keeps the coded channels. The
-[guide](https://docs.rs/syom/latest/syom/guide/) has a compiling example
-per task:
-
-| task | guide section |
-|---|---|
-| one-call encode / decode, speech vs full fidelity | 1 |
-| borrowed PCM, `Read` / `Write` / `Seek` sinks and sources | 2 |
-| priming, tail and exact length (ADTS vs M4A) | 3 |
-| push `Encoder` / `Decoder` with bounded memory | 4 |
-| raw access units and `AudioSpecificConfig` | 5 |
-| probing without decoding, sample-exact M4A seeking | 6 |
-| LC / quality VBR / HE v1 / HE v2 / surround | 7 |
-| limits, budgets and typed errors | 8 |
-| supported and unsupported profiles and containers | 9 |
-| behaviour changes since 0.6.0 | 10 |
-
-Details:
-
-```rust
-fn main() -> syom::Result<()> {
-    assert!(syom::decode(&[]).is_err());
-    assert!(!syom::sniff_aac(b"ID3"));
-    assert!(matches!(
-        syom::probe(&[]).unwrap_err(),
-        syom::AacError::NeedMore { .. }
-    ));
-    let speech = syom::DecodeOptions::speech();
-    assert_eq!(speech.channel_mode, syom::ChannelMode::Mono);
-    let audio = syom::DecodeOptions::audio();
-    assert_eq!(audio.channel_mode, syom::ChannelMode::Split);
-    let _ = syom::DecodeOptions::unbounded();
-    Ok(())
-}
-```
-
-Errors are matchable without scraping `Display` (`AacError` is
-`#[non_exhaustive]` — keep a `_` arm):
-
-```rust
-fn kind(e: syom::AacError) -> &'static str {
-    match e {
-        syom::AacError::NotAac => "not-aac",
-        syom::AacError::Unsupported(_) => "unsupported",
-        syom::AacError::Truncated { .. } => "truncated",
-        syom::AacError::NeedMore { .. } => "need-more",
-        syom::AacError::Malformed(_) => "malformed",
-        syom::AacError::Limit { .. } | syom::AacError::TooLong { .. } => "limit",
-        syom::AacError::InvalidPcm(_) | syom::AacError::InvalidLimits(_) => "invalid",
-        syom::AacError::Lifecycle { .. } => "lifecycle",
-        _ => "other",
-    }
-}
-assert_eq!(kind(syom::decode(&[]).unwrap_err()), "not-aac");
-```
-
-`probe` / `probe_with` inspect container, profile, rates, and layout
-without decoding PCM. ADTS/LATM duration is unknown (VBR); M4A `elst`
-is exact. Then `decode` as usual.
-
-From a path: `syom::read("clip.m4a")?` (speech-mono, 2 h). Keep coded
-layout with lecture caps: `decode_with(bytes, &DecodeOptions::audio())`.
-No duration/rate ceiling: `DecodeOptions::unbounded()`.
-Streaming `Frame::meta` (`Copy`) names planes (5.1 = FL FR FC LFE BL BR)
-and core vs output rate; ADTS priming stays `None`.
-
-Encoding: `syom::encode(&planes, 48_000)?` gives an ADTS stream (AAC-LC,
-128 kbps; HE-AAC v1 via `with_he`, HE-AAC v2 (parametric stereo, about
-16–40 kbps) via `with_he_v2`; mono, stereo, or surround with 3, 4, 5, 6 or 8 planes in the
-decode order — 5.1 is FL FR FC LFE BL BR, 7.1 adds SL SR — as
-`channel_configuration` 3–7 in ADTS, M4A and LATM; `bitrate_bps` is
-whole-stream, surround has no HE, lookahead or PCE output); planes are `&[Vec<f32>]`, `&[&[f32]]` or any
-`AsRef<[f32]>` (no copy). `bitrate_bps` is an ABR target (payload/valid
-±3% on ≥10 s non-silent tracks; leftover budget is unused bytes after
-`ID_END`; silence may undershoot) with
-`adts_buffer_fullness = 0x7FF` (no CBR reservoir). `encode_with` takes
-`EncodeOptions`:
-`EncodeContainer::Adts` (default), `Latm` (LOAS, config in every frame)
-or `M4a`, `with_bitrate_bps`,
-`with_lookahead` (one-frame attack lookahead: better pre-echo suppression
-on early-in-frame onsets, one extra frame of latency, default off), and
-`with_ath` (Terhardt absolute-threshold floor, default off; TASK-68
-no-go as 0.x default), and `with_tonality` (Johnston SFM `target_q`
-scale, default off; TASK-69 no-go as 0.x default), `with_short_tns`
-(per-window short TNS, default off; TASK-72 no-go as 0.x default), and
-`with_short_group` (short-window grouping, default off; TASK-71 no-go as
-0.x default), and `with_band_refine` (leftover-bit band scalefactor
-refine, default off; TASK-74 no-go as 0.x default), and `with_pns`
-(perceptual noise substitution, default off; TASK-75 no-go as 0.x
-default), and `with_intensity` (intensity stereo, default off; TASK-76
-no-go as 0.x default), and `with_he` (HE-AAC v1: SBR on an LC core at
-half the input rate; 16–48 kHz input, mono/stereo, `bitrate_bps` is the
-whole-stream budget; ADTS signals SBR implicitly, M4A / `Encoder::asc`
-carry the explicit two-rate config; priming 3018 output samples; default
-off — `encode` stays LC).
-`syom::write("clip.m4a", &planes, 48_000, ...)` via `write_with`.
-`encode_write(sink, &planes, 48_000, &opts)?` streams ADTS frames into
-any `std::io::Write` without collecting the output;
-`encode_write_m4a` does the same for M4A on a `Write + Seek` sink
-(valid only after it returns `Ok`).
-`with_quality(0..=10)` switches to quality VBR (fixed allowed noise, no
-target rate; LC only; 6 dB per level, level 5 = the psy target).
-Presets (settings, not claims; `lab/quality/CURVES.md`):
-`EncodeOptions::default()` LC 128 kbps causal, `high_quality()` LC
-192 kbps, `low_rate()` HE-AAC v1 48 kbps for full-band content.
-The encoder is LC with block switching (an attack detector walks
-OnlyLong → LongStart → EightShort → LongStop on transients), KBD
-analysis, a Bark-spreading psy model (18 dB SMR) whose masked thresholds
-set every band's quantizer step (noise-to-mask allocation; under a bit
-shortage a water level drops the quietest noise-like bands first),
-**per-band** M/S, long-frame TNS, and an ABR rate loop. Optional
-`with_lookahead(true)` is off by default. Committed lavc goldens
-(`src/goldens/enc48{,m,t,l}.*`) show ffmpeg decodes the output within
-≤ 2 LSB s16 / ≥ 55 dB (typically 1 LSB / ~80 dB). Tests never spawn
-ffmpeg.
-
-Streaming: `Decoder::new(opts)` + `feed(chunk, |frame| ...)` for ADTS/LATM
-byte streams (frames may straddle chunks; M4A is rejected — `moov` needs
-random access), `Decoder::from_asc(asc, opts)` + `decode_au(payload, cb)`
-when a demuxer already has AudioSpecificConfig and complete access units,
-`decode_read` / `decode_read_streaming` for a generic `std::io::Read`
-(ADTS/LOAS), `decode_seek` / `decode_seek_streaming` for seekable M4A
-(`moov` plus one access unit; `mdat` is not slurped),
-`M4aSeek::seek` for presentation-sample access with codec preroll,
-or `decode_streaming(bytes, &opts, cb)` for any in-memory container.
-Each callback gets one AAC `Frame` of borrowed planar f32 (valid
-for the callback only; return `Err` to abort) and `finish` yields
-`StreamInfo` tallies. A parser, limit, or callback error **fails** the
-instance; a successful `finish` **finishes** it; further `feed`/`finish`
-error until `reset()`, which keeps prepared workspace capacity
-(filterbank slots, spectral/PCM planes, encoder KBD/psy) and does not
-use a global cache. After warmup, speech and stereo borrowed-frame
-callbacks do not allocate. `finish` takes `&mut self`. Peak PCM RAM is
-one frame. Encode has the mirror shape: `Encoder::new` plus `feed` takes PCM
-chunks of any size and fires per ADTS-wrapped access unit (byte-exact
-with one-shot `encode_with`; M4A rejected — `stco` needs finish-time
-sizes), `finish` encodes the zero-padded tail and yields `EncodeInfo`.
-The same open / failed / finished / `reset` contract applies; counters
-include a frame already handed to a callback that then returned an error.
-
-Channels: mono, stereo, and multichannel AAC-LC 3.0 / 4.0 / 5.0 / 5.1 / 7.1
-(`channel_configuration` 3–7) plus in-band PCE streams. Split mode emits one
-plane per channel in the libavcodec layout order — 5.1 is FL FR FC LFE BL BR,
-7.1 is FL FR FC LFE BL BR SL SR (the ISO "outside front" pair is the side
-pair) — or PCE declaration order (front, side, back, LFE) for PCE streams.
-Configurations 8–15 (6.1, 7.1 back/top) are a typed `Unsupported` error.
-Speech mono is the arithmetic mean of the non-LFE planes (stereo reduces to
-`0.5·(L+R)`).
-
-Correctness vs FFmpeg libavcodec native s16: max abs ≤ 1 LSB, SNR ≥ 70 dB
-on committed goldens (LC lecture / 44.1 / ADTS / TNS / PNS, LC 3.0–7.1,
-HE ADTS / M4A, LATM; plus encoder output decoded by lavc). Runtime does
-not spawn ffmpeg.
-
-No resample.
-
-## License
-
-MIT. AAC-LC engine is original (ISO/IEC 14496-3 / 13818-7). See
-[NOTICE](NOTICE) for the AAC patent disclaimer (Via LA).
+No resample. MIT. AAC patents: [NOTICE](NOTICE).

@@ -5,7 +5,7 @@ use std::io::{self, Read, Seek, SeekFrom};
 use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
-use crate::isomp4::{self, AacTrack, load_moov};
+use crate::isomp4::{self, AacTrack, TrackBoxes, load_track_boxes};
 use crate::options::{ChannelMode, DecodeOptions};
 use crate::stream::{Frame, StreamInfo};
 
@@ -32,7 +32,14 @@ pub fn preroll_aus(sbr: bool) -> u64 {
 }
 
 fn samples_per_au(asc: &AudioSpecificConfig) -> u64 {
-    let core = 1024u64;
+    // LC core is 1024; HE output is 2048 because `output_sample_rate` is 2×.
+    // ER AAC LD is one 512-sample frame. The 480-sample grid is rejected
+    // when the ASC is parsed.
+    let core: u64 = if asc.aot == crate::engine::asc::AOT_LD {
+        512
+    } else {
+        1024
+    };
     let sr = u64::from(asc.sample_rate.max(1));
     core.saturating_mul(u64::from(asc.output_sample_rate)) / sr
 }
@@ -79,9 +86,15 @@ impl<R: Read + Seek> M4aSeek<R> {
     /// Parse `moov` and sit at presentation 0 (elst skip still to apply).
     pub fn open(mut reader: R, opts: DecodeOptions) -> Result<Self> {
         opts.validate()?;
-        let (moov, file_len) = load_moov(&mut reader, &opts.memory)?;
-        let track = isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
-            .map_err(map_m4a_parse_err)?;
+        let track = match load_track_boxes(&mut reader, &opts.memory)? {
+            TrackBoxes::Flat { moov, file_len } => {
+                isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
+                    .map_err(map_m4a_parse_err)?
+            }
+            TrackBoxes::Frag {
+                moov, moofs, mdats, ..
+            } => isomp4::frag::track_from_parts(&moov, &moofs, &mdats, &opts.memory)?,
+        };
         let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
         let out_rate = asc.output_sample_rate;
         if out_rate == 0 || out_rate > opts.max_sample_rate {
@@ -102,7 +115,13 @@ impl<R: Read + Seek> M4aSeek<R> {
             u32::from(asc.channel_configuration).max(1)
         };
         opts.memory.check_output(n_ch, track.total_samples)?;
-        let preroll = preroll_aus(asc.sbr_present);
+        // LD overlap is one 512-sample frame. LC mono/stereo needs two
+        // (measured); HE/PS replays from the start because of in-band SBR.
+        let preroll = if asc.aot == crate::engine::asc::AOT_LD {
+            1
+        } else {
+            preroll_aus(asc.sbr_present)
+        };
         let mut s = Self {
             reader,
             track,
@@ -199,7 +218,7 @@ impl<R: Read + Seek> M4aSeek<R> {
         let intra = coded % spf;
         // HE/PS: SBR headers live in-band (TASK-39). 3.0–5.1: coupling /
         // per-element overlap was not shown to settle in 2 AUs on mc51.
-        // LC mono/stereo: 2 AUs (measured).
+        // LC mono/stereo: 2 AUs (measured). LD: 1 AU, the low-delay overlap.
         let start = if self.asc.sbr_present || self.asc.channel_configuration > 2 {
             0
         } else {
@@ -355,12 +374,7 @@ impl<R: Read + Seek> M4aSeek<R> {
             aac_frames,
             samples: samples_out,
             priming: self.track.has_elst.then_some(self.skip),
-            remainder: self.track.has_elst.then_some(
-                self.track
-                    .total_samples
-                    .saturating_sub(self.skip)
-                    .saturating_sub(samples_out),
-            ),
+            remainder: self.track.unplayed_tail(self.skip, samples_out),
         })
     }
 }

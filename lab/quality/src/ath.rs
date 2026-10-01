@@ -4,8 +4,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::Instant;
-use syom::{DecodeOptions, EncodeOptions, decode_with, encode_with};
-use syom_lab_score::{Outcome, Pair, score_encode_pair};
+use syom::{decode_with, encode_with, DecodeOptions, EncodeOptions};
+use syom_lab_score::{score_encode_pair, Outcome, Pair};
 
 const RATE: u32 = 48_000;
 const N: usize = 48_000;

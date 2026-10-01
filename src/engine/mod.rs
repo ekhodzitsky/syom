@@ -12,13 +12,16 @@ pub(crate) mod channel_map;
 pub mod crc;
 pub mod decode;
 pub(crate) mod decode_cpe;
+pub(crate) mod decode_ld;
 pub(crate) mod det_math;
 pub(crate) mod enc_alloc;
 pub(crate) mod enc_frame;
 pub(crate) mod enc_group;
 pub(crate) mod enc_huff;
 pub(crate) mod enc_is;
+pub(crate) mod enc_ld;
 pub(crate) mod enc_ms;
+pub(crate) mod enc_pad;
 pub(crate) mod enc_pns;
 pub(crate) mod enc_psy;
 pub(crate) mod enc_quant;
@@ -40,6 +43,7 @@ pub(crate) mod error;
 pub mod extension_payload;
 pub(crate) mod fb_pool;
 pub mod filterbank;
+pub(crate) mod filterbank_simd;
 pub(crate) mod heap;
 pub mod huff;
 pub mod huff_esc;
@@ -52,6 +56,7 @@ pub mod latm;
 pub(crate) mod latm_write;
 pub(crate) mod mdct;
 pub mod pns;
+pub(crate) mod prof;
 pub mod ps_data;
 pub mod ps_decoder;
 pub mod ps_decorr;
@@ -82,6 +87,7 @@ pub mod sf;
 pub mod sf_tab;
 pub mod skip;
 pub mod spectrum;
+pub(crate) mod spectrum_scaled;
 pub mod stereo;
 pub mod swb;
 pub mod tns;
@@ -148,3 +154,7 @@ mod golden_tests;
 #[cfg(test)]
 #[path = "extension_payload_tests.rs"]
 mod extension_payload_tests;
+
+#[cfg(test)]
+#[path = "pcm_host_probe.rs"]
+mod pcm_host_probe;

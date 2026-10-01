@@ -9,6 +9,7 @@ use crate::engine::channel_map::PceChannelMap;
 use crate::engine::error::Error as EngineError;
 use crate::engine::latm::{LOAS_SYNC, MuxCfg};
 use crate::error::{AacError, Result, UnsupportedFeature};
+use crate::gapless::Delay;
 use crate::isomp4::{convert_units, find_moov_slice, parse_aac_meta, sniff_is_isobmff};
 use crate::layout::{self, Channel, FrameMeta, Layout, mpeg_channels};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
@@ -23,13 +24,16 @@ pub enum ProbeContainer {
 }
 
 /// Codec profile from the header or ASC. ADTS implicit HE stays [`Self::Lc`]
-/// (SBR is in-band, not in the 7-byte header).
+/// (SBR is in-band, not in the 7-byte header). [`Self::Ld`] is ER AAC LD
+/// (AOT 23, 512-sample frames). A 480-sample `frameLengthFlag` stays
+/// [`AacError::Unsupported`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ProbeProfile {
     Lc,
     HeAac,
     HeAacV2,
+    Ld,
 }
 
 /// How sure we are about presentation length.
@@ -41,7 +45,9 @@ pub enum ProbeDuration {
     Unknown,
 }
 
-/// Encoder delay / unplayed tail. ADTS and LATM have no container trim.
+/// Encoder delay and unplayed tail. An ADTS `iTunSMPB` tag and an M4A
+/// edit list report [`Self::Exact`]. Untagged ADTS and LATM stay
+/// [`Self::Unknown`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ProbeTrim {
@@ -83,8 +89,9 @@ pub fn probe(data: &[u8]) -> Result<Probe> {
 pub fn probe_with(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
     mem.validate()
         .map_err(|e| AacError::invalid_limits(format!("{} budget is 0", e.kind)))?;
+    let (data, peeled, delay) = peel_id3(data, mem)?;
     if sniff_is_adts(data) {
-        return probe_adts(data, mem);
+        return probe_adts(data, mem, delay);
     }
     if sniff_is_latm(data) {
         return probe_latm(data, mem);
@@ -92,10 +99,26 @@ pub fn probe_with(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
     if sniff_is_isobmff(data) {
         return probe_m4a(data, mem);
     }
-    if data.len() < 8 {
-        return Err(need_more(data.len(), 8));
+    // A leading ID3 that is incomplete, or a tag whose payload is not AAC,
+    // stays NotAac. A short untagged prefix still asks for more bytes.
+    if peeled || data.len() >= 8 {
+        return Err(AacError::NotAac);
     }
-    Err(AacError::NotAac)
+    Err(need_more(data.len(), 8))
+}
+
+/// One leading ID3 tag. Incomplete or non-v2.3/v2.4 `ID3` is [`AacError::NotAac`].
+fn peel_id3<'a>(data: &'a [u8], mem: &MemoryBudgets) -> Result<(&'a [u8], bool, Option<Delay>)> {
+    if data.len() < 3 || &data[..3] != b"ID3" {
+        return Ok((data, false, None));
+    }
+    let budget = mem.max_input_bytes.min(mem.max_buffered_input_bytes);
+    match crate::gapless::id3_at(data, budget)? {
+        crate::gapless::Id3At::Ready { len, delay } if len <= data.len() => {
+            Ok((&data[len..], true, delay))
+        }
+        _ => Err(AacError::NotAac),
+    }
 }
 
 fn need_more(have: usize, need: usize) -> AacError {
@@ -105,7 +128,7 @@ fn need_more(have: usize, need: usize) -> AacError {
     }
 }
 
-fn probe_adts(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
+fn probe_adts(data: &[u8], mem: &MemoryBudgets, delay: Option<Delay>) -> Result<Probe> {
     if data.len() < ADTS_HEADER_BYTES_NO_CRC {
         return Err(need_more(data.len(), ADTS_HEADER_BYTES_NO_CRC));
     }
@@ -133,13 +156,36 @@ fn probe_adts(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
     }
     let rate = hdr.sample_rate();
     let layout = layout::mpeg_layout(cfg);
+    let (duration, trim) = match delay.filter(|d| tag_fits(d, data)) {
+        Some(d) => (
+            ProbeDuration::Exact { samples: d.source },
+            ProbeTrim::Exact {
+                priming: d.priming,
+                remainder: d.remainder,
+            },
+        ),
+        None => (ProbeDuration::Unknown, ProbeTrim::Unknown),
+    };
     Ok(Probe {
         container: ProbeContainer::Adts,
         profile: ProbeProfile::Lc,
         meta: FrameMeta::from_labels(layout, rate, rate, labels),
-        duration: ProbeDuration::Unknown,
-        trim: ProbeTrim::Unknown,
+        duration,
+        trim,
     })
+}
+
+/// The tag names a whole LC (1024) or HE (2048) frame grid, and `data`
+/// is exactly those frames. A prefix or a stale tag stays unknown.
+fn tag_fits(d: &Delay, data: &[u8]) -> bool {
+    let Some(frames) = crate::gapless::exact_adts_frames(data) else {
+        return false;
+    };
+    let sum = d
+        .priming
+        .saturating_add(d.source)
+        .saturating_add(d.remainder);
+    frames > 0 && (frames.saturating_mul(1024) == sum || frames.saturating_mul(2048) == sum)
 }
 
 fn probe_latm(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
@@ -172,10 +218,53 @@ fn probe_latm(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
 }
 
 fn probe_m4a(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
+    if crate::isomp4::frag::is_fragmented(data) {
+        return probe_fmp4(data, mem);
+    }
     let moov = find_moov_slice(data, mem)?;
     let track = parse_aac_meta(moov, mem)?;
     let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
     let (duration, trim) = m4a_timing(&track, asc.output_sample_rate)?;
+    from_asc(ProbeContainer::M4a, &asc, mem, duration, trim)
+}
+
+/// Bounded fMP4 (TASK-124): the init `moov` carries ASC, rates and the
+/// optional priming edit; the coded length lives in the fragments, so
+/// duration stays `Unknown` unless the edit caps it.
+fn probe_fmp4(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
+    let moov = find_moov_slice(data, mem)?;
+    let init = crate::isomp4::frag::parse_init(moov, mem)?;
+    let (asc, _) = AudioSpecificConfig::parse(&init.asc).map_err(AacError::from)?;
+    let out_rate = asc.output_sample_rate;
+    let (duration, trim) = if init.has_elst {
+        let priming = convert_units(
+            init.edit_start,
+            out_rate,
+            init.media_timescale,
+            "elst media_time",
+        )?;
+        let duration = if init.edit_duration == 0 {
+            ProbeDuration::Unknown // DASH init: written before the duration
+        } else {
+            ProbeDuration::Exact {
+                samples: convert_units(
+                    init.edit_duration,
+                    out_rate,
+                    init.movie_timescale,
+                    "elst duration",
+                )?,
+            }
+        };
+        (
+            duration,
+            ProbeTrim::Exact {
+                priming,
+                remainder: 0,
+            },
+        )
+    } else {
+        (ProbeDuration::Unknown, ProbeTrim::Unknown)
+    };
     from_asc(ProbeContainer::M4a, &asc, mem, duration, trim)
 }
 
@@ -235,6 +324,8 @@ fn from_asc(
         ProbeProfile::HeAacV2
     } else if asc.sbr_present {
         ProbeProfile::HeAac
+    } else if asc.aot == crate::engine::asc::AOT_LD {
+        ProbeProfile::Ld
     } else {
         ProbeProfile::Lc
     };

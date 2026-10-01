@@ -33,6 +33,11 @@ fn native_cell_is_64_bit() {
 }
 
 fn assert_encode_eq(got: &[u8], golden: &[u8], label: &str) {
+    let got = if golden.first() == Some(&0xff) {
+        crate::gapless::strip_id3(got)
+    } else {
+        got
+    };
     assert_eq!(
         got, golden,
         "{label} drifted from committed golden — do not remint to hide ISA drift"

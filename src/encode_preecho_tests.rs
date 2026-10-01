@@ -29,7 +29,8 @@ fn sine(n: usize, hz: f32, amp: f32) -> Vec<f32> {
 }
 
 fn pre_onset_energy(decoded: &[f32], click_abs: usize) -> f64 {
-    let click_dec = click_abs + FRAME;
+    // Tagged decode is presentation-aligned: the click stays at its source index.
+    let click_dec = click_abs;
     let lo = click_dec.saturating_sub(PRE);
     decoded[lo..click_dec]
         .iter()
@@ -98,7 +99,7 @@ fn late_click_tail_still_present() {
     let pcm = click_pcm(14, 5, 700, 0.9);
     let adts = encode_with(&pcm, RATE, &EncodeOptions::adts()).unwrap();
     let dec = decode_with(&adts, &DecodeOptions::unbounded()).unwrap();
-    let click_dec = 5 * FRAME + 700 + FRAME;
+    let click_dec = 5 * FRAME + 700;
     let peak = dec.channels[0][click_dec..click_dec + 64]
         .iter()
         .fold(0.0f32, |m, x| m.max(x.abs()));

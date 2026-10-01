@@ -38,8 +38,11 @@ peak live 121 KiB / 363 allocs; HE 576 KiB / 1889; PS 1.21 MiB / 11056.
 Streaming retained workspace ~37–40 KiB (plateau).
 
 Kernel `perf_event_paranoid=4` blocks function profiles on this host.
-aarch64 and in-process lavc/FDK wall cells are missing (adapters exist
-in `lab/`, not linked here). C peers stay `c-peers-unavailable`.
+A rerun of this same harness on the current tree, Linux x86_64 and
+macOS aarch64, is in
+[lab/baseline/HOSTS-2026-09-29.md](lab/baseline/HOSTS-2026-09-29.md).
+In-process lavc/FDK wall cells are still not linked. C peers stay
+`c-peers-unavailable`.
 
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).

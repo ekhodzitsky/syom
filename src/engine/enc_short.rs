@@ -131,61 +131,8 @@ pub fn channel_build(
     channel_body_bits_short(books, q, *gain, standalone, tns)
 }
 
-/// Total frame bits of the built short state (element overhead included).
-pub fn frame_bits(
-    chans: &[QuantShort],
-    books: &[[u8; MAX_FLAT_SHORT]],
-    gains: &[u8],
-    channels: usize,
-    ms_overhead: usize,
-) -> usize {
-    let mut total = 3 + 4 + 3 + 7; // element id + tag + END + align ceiling
-    if channels == 2 {
-        total += 1 + 15 + ms_overhead; // common_window + ics_info (short) + ms_mask
-    }
-    for ch in 0..channels {
-        total += channel_body_bits_short(
-            &books[ch],
-            &chans[ch],
-            gains[ch],
-            channels == 1,
-            &EncTns::off(),
-        );
-    }
-    total
-}
-
-/// Hard cap, short frames: drop the highest coded (window, band) until the
-/// frame fits `cap` bits.
-#[allow(dead_code)]
-pub fn drop_bands_until(
-    chans: &mut [QuantShort],
-    books: &mut [[u8; MAX_FLAT_SHORT]],
-    gains: &[u8],
-    channels: usize,
-    cap: usize,
-    ms_overhead: usize,
-) {
-    loop {
-        let total = frame_bits(chans, books, gains, channels, ms_overhead);
-        if total <= cap {
-            return;
-        }
-        let mut hit: Option<(usize, usize)> = None;
-        for (ch, q) in chans.iter().enumerate().take(channels) {
-            let n = q.n_groups * q.n_sfb;
-            if let Some(b) = q.coded[..n].iter().rposition(|&c| c) {
-                hit = Some((ch, b));
-                break;
-            }
-        }
-        let Some((ch, b)) = hit else { return };
-        chans[ch].coded[b] = false;
-        books[ch] = plan_books_short(&chans[ch]);
-    }
-}
-
 /// Emit the short-frame `raw_data_block` from the built state.
+/// Returns the bit length before `END` (ABR padding sizes against it).
 #[allow(clippy::too_many_arguments)]
 pub fn emit_frame(
     offsets: &[u16],
@@ -196,8 +143,9 @@ pub fn emit_frame(
     tns: &[EncTns],
     channels: usize,
     fill: &[u8],
+    pad_fill: usize,
     out: &mut Vec<u8>,
-) {
+) -> usize {
     let mut w = BitWriter::from_vec(std::mem::take(out));
     if channels == 1 {
         w.write(0, 3); // SCE
@@ -225,8 +173,11 @@ pub fn emit_frame(
     if !fill.is_empty() {
         let _ = super::enc_sbr_bits::write_fill_element(&mut w, fill); // HE FIL
     }
+    super::enc_pad::write_pad_fill(&mut w, pad_fill); // ABR stuffing
+    let end_at = w.bit_len() as usize;
     w.write(7, 3); // END
     *out = w.finish();
+    end_at
 }
 
 /// Short-window section-header cost (4-bit cb + 3-bit increments, escape 7).

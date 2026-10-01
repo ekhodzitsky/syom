@@ -496,22 +496,44 @@ pub fn adjust_into(
         let col = (i + T_HF_ADJ as i32) as usize;
         let smooth_gain = li != p.l_a && li != l_a_prev && h_sl != 0;
         f_index_sine = (st.index_sine + c) % 4;
+        let noise_killed = li == p.l_a || li == l_a_prev;
+        if h_sl == 0 && column_plain(&s_index, &s_m_boost, l, m_cnt, noise_killed) {
+            let grow = &g_temp[(c + h_sl) * m_cnt..(c + h_sl) * m_cnt + m_cnt];
+            let qrow = &q_temp[(c + h_sl) * m_cnt..(c + h_sl) * m_cnt + m_cnt];
+            let noise0 = (st.index_noise + c * m_cnt + 1) % 512;
+            apply_plain_column(
+                &mut x_high[col],
+                k_x.max(0) as usize,
+                grow,
+                qrow,
+                noise0,
+                noise_killed,
+            );
+            if m_cnt > 0 {
+                f_index_noise = (st.index_noise + (c + 1) * m_cnt) % 512;
+            }
+            continue;
+        }
         let (sin_re, sin_im) = PHI_SIN[f_index_sine];
         for m in 0..m_cnt {
             let k = (k_x as usize) + m;
             let g_filt = if smooth_gain {
-                (0..=h_sl)
-                    .map(|j| g_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j])
-                    .sum::<f64>()
+                let mut acc = 0.0;
+                for j in 0..=h_sl {
+                    acc += g_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j];
+                }
+                acc
             } else {
                 g_temp[(c + h_sl) * m_cnt + m]
             };
             let q_filt = if li == p.l_a || li == l_a_prev || s_m_boost[ix(l, m)] != 0.0 {
                 0.0
             } else if h_sl != 0 {
-                (0..=h_sl)
-                    .map(|j| q_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j])
-                    .sum::<f64>()
+                let mut acc = 0.0;
+                for j in 0..=h_sl {
+                    acc += q_temp[(c + h_sl - j) * m_cnt + m] * H_SMOOTH[j];
+                }
+                acc
             } else {
                 q_temp[(c + h_sl) * m_cnt + m]
             };
@@ -584,6 +606,123 @@ pub fn adjust_into(
 
     st.scratch = sc;
     Ok(())
+}
+
+/// No sinusoid in the envelope, and noise is either off for every band or
+/// present on every band. The per-band branches then do not change the formula.
+#[allow(clippy::ptr_arg)]
+fn column_plain(
+    s_index: &Vec<bool>,
+    s_boost: &[f64],
+    l: usize,
+    m_cnt: usize,
+    noise_killed: bool,
+) -> bool {
+    let base = l * m_cnt;
+    for m in 0..m_cnt {
+        if s_index[base + m] {
+            return false;
+        }
+        if !noise_killed && s_boost[base + m] != 0.0 {
+            return false;
+        }
+    }
+    true
+}
+
+/// `Y = G·X` or `Y = G·X + Q·noise`, four bands at a time when AVX-512F is up.
+/// `hSL = 0`, so `G` and `Q` are the current column with no smoothing sum.
+fn apply_plain_column(
+    col: &mut [Complex; 64],
+    kx: usize,
+    g: &[f64],
+    q: &[f64],
+    noise0: usize,
+    noise_killed: bool,
+) {
+    let m_cnt = g.len();
+    if kx.saturating_add(m_cnt) > 64 || q.len() != m_cnt {
+        apply_plain_scalar(col, kx, g, q, noise0, noise_killed);
+        return;
+    }
+    #[cfg(target_arch = "x86_64")]
+    if std::is_x86_feature_detected!("avx512f") {
+        // SAFETY: AVX-512F is probed and `kx + m_cnt <= 64`.
+        unsafe { apply_plain_avx512(col, kx, g, q, noise0, noise_killed) };
+        return;
+    }
+    apply_plain_scalar(col, kx, g, q, noise0, noise_killed);
+}
+
+fn apply_plain_scalar(
+    col: &mut [Complex; 64],
+    kx: usize,
+    g: &[f64],
+    q: &[f64],
+    mut noise: usize,
+    noise_killed: bool,
+) {
+    for m in 0..g.len() {
+        let x = col[kx + m];
+        let gv = g[m];
+        if noise_killed {
+            col[kx + m] = Complex::new(x.re * gv, x.im * gv);
+        } else {
+            if noise == 512 {
+                noise = 0;
+            }
+            let (vr, vi) = NOISE_TABLE[noise];
+            let qv = q[m];
+            col[kx + m] = Complex::new(x.re * gv + qv * vr, x.im * gv + qv * vi);
+            noise += 1;
+        }
+    }
+}
+
+/// # Safety
+///
+/// AVX-512F is available. `kx + g.len() <= 64` and `q.len() == g.len()`.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx512f")]
+unsafe fn apply_plain_avx512(
+    col: &mut [Complex; 64],
+    kx: usize,
+    g: &[f64],
+    q: &[f64],
+    mut noise: usize,
+    noise_killed: bool,
+) {
+    use std::arch::x86_64::{
+        _mm256_loadu_pd, _mm512_add_pd, _mm512_castpd256_pd512, _mm512_loadu_pd, _mm512_mul_pd,
+        _mm512_permutexvar_pd, _mm512_setr_epi64, _mm512_storeu_pd,
+    };
+    let m_cnt = g.len();
+    let mut m = 0usize;
+    let dup = _mm512_setr_epi64(0, 0, 1, 1, 2, 2, 3, 3);
+    while m + 4 <= m_cnt {
+        if !noise_killed && noise + 4 > 512 {
+            break;
+        }
+        unsafe {
+            let x = _mm512_loadu_pd(col.as_ptr().add(kx + m).cast());
+            let gv = _mm512_castpd256_pd512(_mm256_loadu_pd(g.as_ptr().add(m)));
+            let gp = _mm512_permutexvar_pd(dup, gv);
+            let mut y = _mm512_mul_pd(x, gp);
+            if !noise_killed {
+                let qv = _mm512_castpd256_pd512(_mm256_loadu_pd(q.as_ptr().add(m)));
+                let qp = _mm512_permutexvar_pd(dup, qv);
+                let np = NOISE_TABLE.as_ptr().cast::<f64>().add(noise * 2);
+                let nv = _mm512_loadu_pd(np);
+                y = _mm512_add_pd(y, _mm512_mul_pd(nv, qp));
+                noise += 4;
+            }
+            _mm512_storeu_pd(col.as_mut_ptr().add(kx + m).cast(), y);
+        }
+        m += 4;
+    }
+    if m < m_cnt {
+        apply_plain_scalar(col, kx + m, &g[m..], &q[m..], noise % 512, noise_killed);
+    }
 }
 
 #[cfg(test)]

@@ -1,0 +1,14 @@
+[package]
+name = "syom-lab-consume"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Consumer-flow integration cells against the packaged syom crate (TASK-102). Not a workspace member."
+
+# run.py repopulates vendor/syom from `cargo package` output: the consumers
+# below always build against the packaged crate, never the working tree.
+[dependencies]
+syom = { path = "vendor/syom" }
+
+[workspace]

@@ -29,12 +29,17 @@ fn truncated_and_garbage_never_panic_and_fail() {
         include_bytes!("../corpus/fuzz/asc-main-aot.bin"),
         include_bytes!("../corpus/fuzz/latm-truncated.bin"),
         include_bytes!("../corpus/fuzz/m4a-truncated.bin"),
+        include_bytes!("../corpus/fuzz/fmp4-truncated.bin"),
         include_bytes!("goldens/sine48.adts").split_at(8).0,
         include_bytes!("goldens/he48.adts").split_at(12).0,
         include_bytes!("goldens/ps48.adts").split_at(16).0,
         include_bytes!("goldens/mc51.adts").split_at(20).0,
         include_bytes!("goldens/latm48.latm").split_at(6).0,
         include_bytes!("goldens/sine441.m4a").split_at(24).0,
+        include_bytes!("goldens/ld64m.loas").split_at(2).0,
+        include_bytes!("goldens/ld64m.loas").split_at(8).0,
+        include_bytes!("goldens/ld64mus.loas").split_at(16).0,
+        include_bytes!("goldens/ld48.loas").split_at(24).0,
     ];
     for (i, bytes) in junk.iter().enumerate() {
         no_panic(&format!("junk-{i}"), || {
@@ -97,6 +102,66 @@ fn tiny_duration_cap_is_toolong_not_hang() {
         Err(AacError::TooLong { .. }) | Err(AacError::Limit { .. }) => {}
         other => panic!("expected duration fence, got {other:?}"),
     }
+}
+
+#[test]
+fn ld_mutations_stay_finite_and_do_not_panic() {
+    let src = include_bytes!("goldens/ld64m.loas");
+    let mut state = 0x4C44_0131u32;
+    let mut next = || {
+        state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        state
+    };
+    for i in 0..64 {
+        let mut buf = src.to_vec();
+        let idx = (next() as usize) % buf.len();
+        buf[idx] ^= 1 << (next() % 8);
+        no_panic(&format!("ld-flip-{i}"), || {
+            if let Ok(pcm) = decode_with(&buf, &DecodeOptions::speech()) {
+                assert!(pcm.channels.len() <= 8, "flip {i} channel count");
+                for plane in &pcm.channels {
+                    assert!(plane.len() <= 200_000, "flip {i} grew to {}", plane.len());
+                    assert!(
+                        plane.iter().all(|s| s.is_finite()),
+                        "flip {i} non-finite pcm"
+                    );
+                }
+            }
+        });
+    }
+}
+
+#[test]
+fn ld_rejected_syntax_is_typed_not_an_lc_frame() {
+    let mut w = crate::engine::bits::BitWriter::new();
+    w.write(23, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write_bit(true); // 480-sample grid
+    w.write(0, 2);
+    let asc = w.finish();
+    assert!(matches!(
+        Decoder::from_asc(&asc, DecodeOptions::unbounded()),
+        Err(AacError::Unsupported(UnsupportedFeature::FrameLength960))
+    ));
+
+    let mut w = crate::engine::bits::BitWriter::new();
+    w.write(23, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(0, 5); // GA flags 0 + epConfig 0
+    let mut dec = Decoder::from_asc(&w.finish(), DecodeOptions::unbounded()).unwrap();
+    let mut au = crate::engine::bits::BitWriter::new();
+    au.write(0, 4); // tag
+    au.write(0, 8); // global_gain
+    au.write(0, 1); // reserved
+    au.write(2, 2); // EIGHT_SHORT
+    au.write(0, 1); // shape
+    match dec.decode_au(&au.finish(), |_| Ok(())) {
+        Err(AacError::Malformed(_)) => {}
+        other => panic!("LD short window: {other:?}"),
+    }
+    assert!(dec.is_failed());
 }
 
 #[test]
@@ -169,6 +234,39 @@ fn he_ps_mc_truncated_prefix_fails() {
             );
         });
     }
+}
+
+#[test]
+fn fmp4_truncation_and_mid_fragment_are_typed_truncated() {
+    let lc = include_bytes!("goldens/fmp4_lc.mp4");
+    let seed = include_bytes!("../corpus/fuzz/fmp4-truncated.bin");
+    let moof = nth4(lc, b"moof", 0);
+    let mdat = nth4(lc, b"mdat", 0);
+    // The fourcc sits 4 bytes into the header; +20 lands inside the box.
+    let cuts: [(&str, &[u8]); 3] = [
+        ("fuzz-seed", seed),
+        ("mid-moof", &lc[..moof + 20]),
+        ("mid-mdat", &lc[..mdat + 20]),
+    ];
+    for (label, bytes) in cuts {
+        no_panic(label, || {
+            assert!(
+                matches!(
+                    decode_with(bytes, &DecodeOptions::speech()),
+                    Err(AacError::Truncated { .. })
+                ),
+                "{label} must be Truncated"
+            );
+        });
+    }
+}
+
+fn nth4(data: &[u8], needle: &[u8; 4], n: usize) -> usize {
+    data.windows(4)
+        .enumerate()
+        .filter_map(|(i, w)| (w == needle).then_some(i))
+        .nth(n)
+        .unwrap_or_else(|| panic!("missing {needle:?} #{n}"))
 }
 
 #[test]

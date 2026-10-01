@@ -11,6 +11,7 @@ mod encode;
 pub mod encode_cmp;
 mod engine;
 mod error;
+mod gapless;
 pub mod guide;
 mod isomp4;
 mod layout;
@@ -19,6 +20,8 @@ mod m4a_write;
 pub mod mem_iso;
 mod options;
 mod probe;
+#[doc(hidden)]
+pub mod ps_measure;
 mod sniff;
 mod stream;
 
@@ -62,6 +65,10 @@ mod decode_tests;
 #[cfg(test)]
 #[path = "decode_budget_tests.rs"]
 mod decode_budget_tests;
+
+#[cfg(test)]
+#[path = "decode_speech_tests.rs"]
+mod decode_speech_tests;
 
 #[cfg(test)]
 #[path = "docs_tests.rs"]
@@ -120,6 +127,9 @@ mod encode_he_tests;
 #[cfg(test)]
 #[path = "encode_latm_tests.rs"]
 mod encode_latm_tests;
+#[cfg(test)]
+#[path = "encode_ld_api_tests.rs"]
+mod encode_ld_api_tests;
 #[cfg(test)]
 #[path = "encode_tests.rs"]
 mod encode_tests;
@@ -202,8 +212,16 @@ mod encode_is_tests;
 mod encode_he_arch_tests;
 
 #[cfg(test)]
+#[path = "encode_ld_arch_tests.rs"]
+mod encode_ld_arch_tests;
+
+#[cfg(test)]
 #[path = "decode_mc_tests.rs"]
 mod decode_mc_tests;
+
+#[cfg(test)]
+#[path = "decode_ld_tests.rs"]
+mod decode_ld_tests;
 
 #[cfg(test)]
 #[path = "stream_tests.rs"]
@@ -226,12 +244,28 @@ mod stream_latm_tests;
 mod stream_m4a_tests;
 
 #[cfg(test)]
+#[path = "stream_ld_tests.rs"]
+mod stream_ld_tests;
+
+#[cfg(test)]
 #[path = "stream_m4a_seek_tests.rs"]
 mod stream_m4a_seek_tests;
 
 #[cfg(test)]
 #[path = "stream_au_tests.rs"]
 mod stream_au_tests;
+
+#[cfg(test)]
+#[path = "stream_fmp4_tests.rs"]
+mod stream_fmp4_tests;
+
+#[cfg(test)]
+#[path = "stream_fmp4_push_tests.rs"]
+mod stream_fmp4_push_tests;
+
+#[cfg(test)]
+#[path = "stream_fmp4_qualify_tests.rs"]
+mod stream_fmp4_qualify_tests;
 
 #[cfg(test)]
 #[path = "stream_read_tests.rs"]
@@ -272,3 +306,7 @@ mod encode_mc_tests;
 #[cfg(test)]
 #[path = "encode_he_v2_tests.rs"]
 mod encode_he_v2_tests;
+
+#[cfg(test)]
+#[path = "gapless_tests.rs"]
+mod gapless_tests;

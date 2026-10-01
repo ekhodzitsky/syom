@@ -1,7 +1,8 @@
-//! Streaming decode: a resumable push [`Decoder`] for ADTS and LATM/LOAS
-//! byte streams, [`Decoder::from_asc`] / [`Decoder::decode_au`] for raw
-//! access units, plus [`decode_streaming`] for complete in-memory buffers
-//! of any supported container (ADTS, LATM/LOAS, M4A/ISOBMFF).
+//! Streaming decode: a resumable push [`Decoder`] for ADTS, LATM/LOAS and
+//! bounded fragmented-MP4 (init `moov` + `moof`/`mdat`) byte streams,
+//! [`Decoder::from_asc`] / [`Decoder::decode_au`] for raw access units, plus
+//! [`decode_streaming`] for complete in-memory buffers of any supported
+//! container (ADTS, LATM/LOAS, M4A/ISOBMFF, fMP4).
 //!
 //! Peak PCM memory is one AAC frame: decoded planes are borrowed by the
 //! frame callback and never accumulated by the decoder itself. The push
@@ -38,7 +39,9 @@ use crate::error::{AacError, Result};
 use crate::isomp4::sniff_is_isobmff;
 use crate::options::{ChannelMode, DecodeOptions};
 
+mod adts_gap;
 mod au;
+mod fmp4;
 mod frame;
 mod m4a;
 mod m4a_pos;
@@ -58,12 +61,15 @@ enum Container {
     Latm,
     /// ASC + complete `raw_data_block()` via [`Decoder::decode_au`].
     Au,
+    /// Bounded fragmented MP4 (init `moov` + `moof`/`mdat`, TASK-125).
+    Fmp4,
 }
 
-/// Resumable push decoder for ADTS and LATM/LOAS byte streams, or raw
+/// Resumable push decoder for ADTS and LATM/LOAS byte streams, bounded
+/// fragmented MP4 (init `moov` + `moof`/`mdat` fragments, TASK-125), or raw
 /// access units after [`Decoder::from_asc`]. Peak PCM RAM is O(frame).
-/// M4A/ISOBMFF input is rejected on `feed` (`moov` needs random access;
-/// use [`decode_streaming`] on the full slice).
+/// Flat M4A/ISOBMFF input is rejected on `feed` (`moov` needs random
+/// access; use [`decode_streaming`] on the full slice).
 ///
 /// Bytes are buffered until the container is sniffable (~8 bytes) and until
 /// a whole compressed frame has arrived; partial trailing frames are
@@ -80,12 +86,18 @@ pub struct Decoder {
     opts: DecodeOptions,
     buf: Vec<u8>,
     pos: usize,
+    /// Absolute stream offset of `buf[0]` (fMP4 box/sample addressing).
+    abs_base: u64,
     container: Container,
     dec: Box<StreamDecoder>,
     /// Sticky LATM `StreamMuxConfig()`; persists across feeds.
     mux: Option<MuxCfg>,
     /// Parsed ASC when this instance is in raw-AU mode.
     au: Option<AudioSpecificConfig>,
+    /// fMP4 push state (init facts, per-fragment table, edit window).
+    fmp4: fmp4::Fmp4Push,
+    /// ADTS `iTunSMPB` skip. Inactive unless a matching tag was accepted.
+    gap: adts_gap::AdtsGap,
     /// Mono fast-path target, cleared per frame.
     mono_scratch: Vec<f32>,
     /// `(sample_rate, channels)` locked by the first emitted frame.
@@ -117,10 +129,13 @@ impl Decoder {
             opts,
             buf: Vec::new(),
             pos: 0,
+            abs_base: 0,
             container: Container::Unknown,
             dec,
             mux: None,
             au: None,
+            fmp4: fmp4::Fmp4Push::default(),
+            gap: adts_gap::AdtsGap::default(),
             mono_scratch: Vec::new(),
             locked: None,
             max_samples: 0,
@@ -181,9 +196,12 @@ impl Decoder {
         self.dec.reset();
         self.buf.clear();
         self.pos = 0;
+        self.abs_base = 0;
         self.container = Container::Unknown;
         self.mux = None;
         self.au = None;
+        self.fmp4.reset();
+        self.gap = adts_gap::AdtsGap::default();
         self.mono_scratch.clear();
         self.locked = None;
         self.max_samples = 0;
@@ -215,11 +233,12 @@ impl Decoder {
     {
         self.ensure_open()?;
         self.opts.validate()?;
-        let cap = usize::try_from(self.opts.memory.max_buffered_input_bytes).unwrap_or(usize::MAX);
-        let cap = cap.max(1);
         let mut cb = on_frame;
         let mut off = 0usize;
         while off < bytes.len() {
+            // fMP4 cap widens after sniff; a once-per-feed snapshot stays
+            // at the ADTS buffered cap and rejects a legal moov.
+            let cap = self.feed_cap();
             let mut buf = std::mem::take(&mut self.buf);
             self.compact(&mut buf);
             let used = buf.len();
@@ -256,10 +275,28 @@ impl Decoder {
         Ok(bytes.len())
     }
 
+    /// Resident-buffer cap. fMP4 buffers its init `moov` / each `moof`
+    /// whole, so there the cap is the metadata budget (the contract's "one
+    /// box payload" bound); ADTS/LATM cap at the partial-AU budget.
+    fn feed_cap(&self) -> usize {
+        let base = usize::try_from(self.opts.memory.max_buffered_input_bytes)
+            .unwrap_or(usize::MAX)
+            .max(1);
+        if matches!(self.container, Container::Fmp4) {
+            let meta = usize::try_from(self.opts.memory.max_metadata_bytes)
+                .unwrap_or(usize::MAX)
+                .max(1);
+            base.max(meta)
+        } else {
+            base
+        }
+    }
+
     fn compact(&mut self, buf: &mut Vec<u8>) {
         if self.pos == 0 {
             return;
         }
+        self.abs_base += self.pos as u64;
         if self.pos >= buf.len() {
             buf.clear();
             self.pos = 0;
@@ -292,36 +329,6 @@ impl Decoder {
         }
     }
 
-    /// One-shot over a complete slice (ADTS/LATM): sniffs and pumps without
-    /// copying the input into the push buffer. Equivalent to one `feed` of
-    /// the whole slice plus `finish`.
-    fn decode_slice<F>(mut self, data: &[u8], on_frame: F) -> Result<StreamInfo>
-    where
-        F: FnMut(Frame<'_>) -> Result<()>,
-    {
-        self.opts.validate()?;
-        let mut cb = on_frame;
-        self.pump(data, None, None, &mut cb, true)?;
-        self.tallies()
-    }
-
-    /// One-shot mono over a complete slice: decode straight into `dst`,
-    /// skipping the per-frame scratch + callback copy. Caller guarantees
-    /// [`ChannelMode::Mono`]; `est_frames` pre-sizes `dst` after frame 1.
-    fn decode_slice_mono(
-        mut self,
-        data: &[u8],
-        est_frames: Option<usize>,
-        dst: &mut Vec<f32>,
-    ) -> Result<StreamInfo> {
-        fn ignore(_: Frame<'_>) -> Result<()> {
-            Ok(())
-        }
-        self.opts.validate()?;
-        self.pump(data, Some(dst), est_frames, &mut ignore, true)?;
-        self.tallies()
-    }
-
     /// Terminal tallies; [`AacError::NotAac`] when nothing decodable was seen.
     fn tallies(&self) -> Result<StreamInfo> {
         if self.emitted == 0 {
@@ -332,6 +339,11 @@ impl Decoder {
             });
         }
         let (sample_rate, channels) = self.locked.unwrap_or((0, 0));
+        let (priming, remainder) = match self.container {
+            Container::Fmp4 => self.fmp4_trim(),
+            Container::Adts => self.gap.report(self.samples_decoded),
+            _ => (None, None),
+        };
         Ok(StreamInfo {
             sample_rate,
             core_rate: self.dec.last_core_rate(),
@@ -339,8 +351,8 @@ impl Decoder {
             layout: self.dec.last_meta().layout,
             aac_frames: self.aac_frames,
             samples: self.samples_out,
-            priming: None,
-            remainder: None,
+            priming,
+            remainder,
         })
     }
 }

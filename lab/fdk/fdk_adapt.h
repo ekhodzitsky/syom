@@ -32,6 +32,10 @@ typedef struct {
 int fdk_decode_adts(const uint8_t *data, size_t len, FdkPcm *out);
 int fdk_encode_lc_adts(const float *const *planes, int channels, int samples,
                        uint32_t rate, uint32_t bitrate_bps, FdkEnc *out);
+/* aot: 2 = AAC-LC, 5 = HE-AAC v1 (SBR), 29 = HE-AAC v2 (SBR+PS, stereo). */
+int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
+                        uint32_t rate, uint32_t bitrate_bps, int aot,
+                        FdkEnc *out);
 void fdk_enc_free(FdkEnc *enc);
 const char *fdk_engine_id(void);
 

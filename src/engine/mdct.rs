@@ -23,6 +23,8 @@ struct Plan {
 }
 
 static PLAN_2048: LazyLock<Plan> = LazyLock::new(|| Plan::new(2048));
+/// AAC-LD analysis: 1024 windowed samples → 512 coefficients (TASK-132 stage 1).
+static PLAN_1024: LazyLock<Plan> = LazyLock::new(|| Plan::new(1024));
 static PLAN_256: LazyLock<Plan> = LazyLock::new(|| Plan::new(256));
 
 impl Plan {
@@ -128,6 +130,8 @@ fn naive_f32(time: &[f32], spec: &mut [f32]) {
 pub fn mdct_into_f32(time: &[f32], spec: &mut [f32]) {
     if time.len() == 2048 && spec.len() == 1024 {
         PLAN_2048.apply(time, spec);
+    } else if time.len() == 1024 && spec.len() == 512 {
+        PLAN_1024.apply(time, spec);
     } else if time.len() == 256 && spec.len() == 128 {
         PLAN_256.apply(time, spec);
     } else {

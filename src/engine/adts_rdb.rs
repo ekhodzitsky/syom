@@ -96,10 +96,15 @@ impl StreamDecoder {
         } else {
             let rate =
                 self.decode_adts_blocks(aot, fs, sr, ch, n, hdr.protection_absent, payload)?;
+            let t_sc = super::prof::stamp();
             for plane in &mut self.frame_ch {
                 for v in plane.iter_mut() {
                     *v *= INV_S16;
                 }
+            }
+            self.prof_scale += super::prof::ns(t_sc);
+            if super::prof::on() {
+                self.prof_frames = self.prof_frames.saturating_add(1);
             }
             Ok(rate)
         }

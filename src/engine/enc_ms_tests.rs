@@ -240,6 +240,7 @@ fn emit_parses_back_bit_exact() -> Result<()> {
         num_window_groups: 1,
         window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
         num_swb: n_bands as u8,
+        ld: false,
     };
     let parsed = MsInfo::parse(&mut br, &ics)?;
     assert_eq!(parsed.mask, MsMask::PerBand);
@@ -310,6 +311,27 @@ fn per_band_never_worse_than_whole_pair() -> Result<()> {
     // A/B against the whole-pair fallback. Whole-pair must either code the
     // quiet right HF via M/S (All) or forgo the shared-sine side collapse
     // (Off); per-band gets both.
+    // Quality VBR pads nothing, so payload length is the coded length
+    // (ABR pads undersized frames to the ceiling with EXT_FILL since
+    // TASK-121, which equalizes transport size and hides the difference).
+    let encode_coded = |per_band: bool, frames: &[(Vec<f32>, Vec<f32>)]| -> Result<usize> {
+        let mut enc = LcEncoder::new(48_000, 2, 128_000)?.with_quality(Some(5));
+        enc.set_ms_per_band(per_band);
+        frames.iter().try_fold(0usize, |acc, (l, r)| {
+            Ok(acc + enc.encode_frame(&[l, r])?.len())
+        })
+    };
+    let tonal: Vec<_> = (0..8).map(|t| ab_frame(t, 0.2, true)).collect();
+    let bw = encode_coded(false, &tonal)?;
+    let bp = encode_coded(true, &tonal)?;
+    eprintln!("asymmetric tonal split: whole-pair {bw} B, per-band {bp} B");
+    assert!(bp < bw, "per-band {bp} B should beat whole-pair {bw} B");
+    // Noisy content saturates the 128k budget on both sides, so the only
+    // structural byte difference is the per-band mask tax
+    // ((n_bands − 2) bits/frame vs the 2-bit whole-pair mask); quality
+    // stays within psy noise of the whole-pair fallback.
+    let n_bands = long_offsets(3)?.len() - 1;
+    let noisy: Vec<_> = (0..10).map(|t| ab_frame(t, 0.3, false)).collect();
     let encode_all = |per_band: bool, frames: &[(Vec<f32>, Vec<f32>)]| -> Result<Vec<Vec<u8>>> {
         let mut enc = LcEncoder::new(48_000, 2, 128_000)?;
         enc.set_ms_per_band(per_band);
@@ -318,25 +340,6 @@ fn per_band_never_worse_than_whole_pair() -> Result<()> {
             .map(|(l, r)| enc.encode_frame(&[l, r]))
             .collect()
     };
-    // Tonal content fits under the 128k budget; ABR unused bytes after
-    // ID_END equalize transport size, so compare coded length (trailing
-    // zeros stripped). Per-band must be strictly smaller here.
-    let coded_len = |p: &[u8]| p.iter().rposition(|&b| b != 0).map_or(0, |i| i + 1);
-    let tonal: Vec<_> = (0..8).map(|t| ab_frame(t, 0.2, true)).collect();
-    let whole = encode_all(false, &tonal)?;
-    let per_band = encode_all(true, &tonal)?;
-    let (bw, bp): (usize, usize) = (
-        whole.iter().map(|p| coded_len(p)).sum(),
-        per_band.iter().map(|p| coded_len(p)).sum(),
-    );
-    eprintln!("asymmetric tonal split @128k: whole-pair {bw} B, per-band {bp} B");
-    assert!(bp < bw, "per-band {bp} B should beat whole-pair {bw} B");
-    // Noisy content saturates the 128k budget on both sides, so the only
-    // structural byte difference is the per-band mask tax
-    // ((n_bands − 2) bits/frame vs the 2-bit whole-pair mask); quality
-    // stays within psy noise of the whole-pair fallback.
-    let n_bands = long_offsets(3)?.len() - 1;
-    let noisy: Vec<_> = (0..10).map(|t| ab_frame(t, 0.3, false)).collect();
     let whole = encode_all(false, &noisy)?;
     let per_band = encode_all(true, &noisy)?;
     let (bw, bp): (usize, usize) = (

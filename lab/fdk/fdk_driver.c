@@ -51,6 +51,13 @@ int main(int argc, char **argv) {
         rc = fdk_decode_adts(buf, n, &pcm);
         if (rc != 0)
             printf("{\"ok\":false,\"lane\":\"%s\",\"error\":\"%s\"}\n", pcm.lane, pcm.error);
+        else if (pcm.error[0])
+            printf("{\"ok\":true,\"lane\":\"%s\",\"engine\":\"%s\",\"rate\":%u,\"channels\":%u,"
+                   "\"samples\":%llu,\"aot\":%d,\"delay\":%d,\"partial_error\":\"%s\","
+                   "\"checksum\":\"0x%016llx\"}\n",
+                   pcm.lane, fdk_engine_id(), pcm.sample_rate, pcm.channels,
+                   (unsigned long long)pcm.samples, pcm.aot, pcm.delay, pcm.error,
+                   (unsigned long long)pcm.checksum);
         else
             printf("{\"ok\":true,\"lane\":\"%s\",\"engine\":\"%s\",\"rate\":%u,\"channels\":%u,"
                    "\"samples\":%llu,\"aot\":%d,\"delay\":%d,\"checksum\":\"0x%016llx\"}\n",
@@ -108,7 +115,52 @@ int main(int argc, char **argv) {
             free(planes[c]);
         return 0;
     }
-    fprintf(stderr, "usage: %s id | decode-adts FILE | encode-sine RATE CH BPS OUT\n",
+    if (argc == 8 && strcmp(argv[1], "encode-pcm") == 0) {
+        /* planar f32le: CH planes of N samples each, N = file_bytes/4/CH */
+        uint32_t rate = (uint32_t)atoi(argv[2]);
+        int ch = atoi(argv[3]);
+        uint32_t bps = (uint32_t)atoi(argv[4]);
+        int aot = atoi(argv[5]);
+        size_t raw_n = 0, n;
+        uint8_t *raw = read_all(argv[6], &raw_n);
+        const char *path = argv[7];
+        float *planes[2] = {NULL, NULL};
+        FdkEnc enc;
+        FILE *f;
+        int c;
+        if (!raw || rate == 0 || (ch != 1 && ch != 2) || bps == 0 ||
+            raw_n % ((size_t)ch * 4) != 0) {
+            fprintf(stderr, "encode-pcm RATE CH BITRATE_BPS AOT IN.f32 OUT.adts\n");
+            free(raw);
+            return 2;
+        }
+        n = raw_n / 4 / (size_t)ch;
+        for (c = 0; c < ch; c++)
+            planes[c] = (float *)(raw + (size_t)c * n * 4);
+        if (fdk_encode_pcm_adts((const float *const *)planes, ch, (int)n, rate,
+                                bps, aot, &enc) != 0) {
+            printf("{\"ok\":false,\"lane\":\"encode\",\"error\":\"%s\"}\n", enc.error);
+            free(raw);
+            return 1;
+        }
+        f = fopen(path, "wb");
+        if (!f || fwrite(enc.adts, 1, enc.adts_len, f) != enc.adts_len) {
+            fprintf(stderr, "write %s\n", path);
+            if (f)
+                fclose(f);
+            fdk_enc_free(&enc);
+            free(raw);
+            return 2;
+        }
+        fclose(f);
+        printf("{\"ok\":true,\"lane\":\"encode\",\"engine\":\"%s\",\"adts_bytes\":%zu,"
+               "\"delay\":%d,\"aot\":%d,\"afterburner\":%d,\"bitrate_bps\":%u}\n",
+               fdk_engine_id(), enc.adts_len, enc.delay, enc.aot, enc.afterburner, bps);
+        fdk_enc_free(&enc);
+        free(raw);
+        return 0;
+    }
+    fprintf(stderr, "usage: %s id | decode-adts FILE | encode-sine RATE CH BPS OUT | encode-pcm RATE CH BPS AOT IN.f32 OUT\n",
             argv[0]);
     return 2;
 }

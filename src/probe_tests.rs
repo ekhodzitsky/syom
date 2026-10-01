@@ -3,8 +3,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use crate::{
-    AacError, BudgetKind, DecodeOptions, Layout, MemoryBudgets, ProbeContainer, ProbeDuration,
-    ProbeProfile, ProbeTrim, decode, decode_with, probe, probe_with,
+    AacError, BudgetKind, DecodeOptions, Decoder, Layout, MemoryBudgets, ProbeContainer,
+    ProbeDuration, ProbeProfile, ProbeTrim, UnsupportedFeature, decode, decode_with, probe,
+    probe_with,
 };
 
 const SINE: &[u8] = include_bytes!("goldens/sine48.adts");
@@ -19,6 +20,17 @@ const LATM: &[u8] = include_bytes!("goldens/latm48.latm");
 
 fn need_more(e: &AacError) -> bool {
     matches!(e, AacError::NeedMore { .. })
+}
+
+/// First LOAS frames of the FDK v2.0.3 LD cells (lab/profiles/REPORT.md;
+/// target/tmp/profiles/cells/ld48.loas, ld96s.loas): AOT 23, 48 kHz.
+const LD48_LOAS: &str = "56e04e2000b989002788c1442dad0cdd2885a891324892e448ea913855d300a021e211ef9f42f30ecff0cf63e68d56d88bc120eec77bb2e31d4c8dcdd9d9e993ab299d9d9d9d9d9d859d1d058505200000";
+const LD96S_LOAS: &str = "56e0802000b99100148f01170fffffffcdda21ba752ae4992e23572e478c892d574c0280878847be49401d6112672d484fc3fda365be29b9e27b9e2339b39fd381286045292922d332998f2e96640cb515a6633254d6a2b5363331a2b514a24aa15401a04210269d40e3eb54ec9225aae9805010f108f7cfa1a0012353b74f6e5e6000";
+
+fn unhex(s: &str) -> Vec<u8> {
+    (0..s.len() / 2)
+        .map(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).unwrap())
+        .collect()
 }
 
 #[test]
@@ -135,6 +147,66 @@ fn not_aac_and_unsupported_profile() {
     assert!(matches!(
         probe(&main).unwrap_err(),
         AacError::Unsupported(_)
+    ));
+}
+
+#[test]
+fn loas_ld_probe_reports_ld_profile_rates_and_layout() {
+    let mono = unhex(LD48_LOAS);
+    assert!(crate::sniff_is_latm(&mono));
+    assert!(crate::sniff_aac(&mono));
+    let p = probe(&mono).unwrap();
+    assert_eq!(p.container, ProbeContainer::Latm);
+    assert_eq!(p.profile, ProbeProfile::Ld);
+    assert_eq!(p.meta.core_rate, 48_000);
+    assert_eq!(p.meta.output_rate, 48_000);
+    assert_eq!(p.meta.layout, Layout::Mpeg(1));
+    assert!(matches!(p.duration, ProbeDuration::Unknown));
+
+    let stereo = unhex(LD96S_LOAS);
+    let p = probe(&stereo).unwrap();
+    assert_eq!(p.profile, ProbeProfile::Ld);
+    assert_eq!(p.meta.core_rate, 48_000);
+    assert_eq!(p.meta.layout, Layout::Mpeg(2));
+}
+
+#[test]
+fn loas_ld_payload_decodes_one_512_frame() {
+    // One FDK LOAS frame: 512 samples at 48 kHz, not an LC fallback
+    // and not a typed reject (TASK-129).
+    let ld = unhex(LD48_LOAS);
+    let pcm = decode_with(&ld, &DecodeOptions::unbounded()).unwrap();
+    assert_eq!((pcm.sample_rate, pcm.channels.len()), (48_000, 1));
+    assert_eq!(pcm.channels[0].len(), 512);
+    let mut dec = Decoder::new(DecodeOptions::unbounded());
+    let mut n = 0usize;
+    dec.feed(&ld, |f| {
+        n += f.samples;
+        Ok(())
+    })
+    .unwrap();
+    let info = dec.finish(|_| Ok(())).unwrap();
+    assert_eq!(n, 512);
+    assert_eq!(info.sample_rate, 48_000);
+    assert!(!dec.is_failed());
+}
+
+#[test]
+fn adts_cannot_signal_ld_and_er_profiles_stay_typed() {
+    // The ADTS profile field is 2 bits (AOT − 1): AOT 23 is unsignalable
+    // there (FDK rejects ADTS carriage too, lab/profiles/REPORT.md). The
+    // ER-era profiles ADTS can spell must fail typed, never fall back to LC.
+    let mut ssr = SINE[..7].to_vec();
+    ssr[2] = (ssr[2] & 0x3F) | 0x80; // profile 2 -> AOT 3 (SSR)
+    assert!(matches!(
+        probe(&ssr).unwrap_err(),
+        AacError::Unsupported(UnsupportedFeature::AudioObjectType(3))
+    ));
+    let mut ltp = SINE[..7].to_vec();
+    ltp[2] |= 0xC0; // profile 3 -> AOT 4 (LTP)
+    assert!(matches!(
+        probe(&ltp).unwrap_err(),
+        AacError::Unsupported(UnsupportedFeature::AudioObjectType(4))
     ));
 }
 

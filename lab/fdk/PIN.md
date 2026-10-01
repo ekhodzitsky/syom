@@ -23,7 +23,7 @@ make -C lab/fdk FDK_PREFIX=<prefix>
 | Param | Decode | Encode |
 |---|---|---|
 | Transport | `TT_MP4_ADTS` | `AACENC_TRANSMUX=2` (ADTS) |
-| AOT | from bitstream | `2` (AAC-LC) |
+| AOT | from bitstream | `2` (AAC-LC); `5` / `29` (HE v1/v2) via `encode-pcm` (TASK-95) |
 | Channels | stream info | `MODE_1` / `MODE_2` |
 | Bitrate | n/a | caller bps (default 128000) |
 | Afterburner | n/a | **off** (`AACENC_AFTERBURNER=0`) |
@@ -31,8 +31,9 @@ make -C lab/fdk FDK_PREFIX=<prefix>
 | Threads | FDK internal | FDK internal |
 
 HE v1/v2: decoder may reconstruct SBR when the library is built with SBR;
-this adapter reports `aot` from stream info. Encoder AOT 5/29 (HE) and
-low-delay AOTs 23/39 are **unsupported cells** in this lab (LC-only encode).
+this adapter reports `aot` from stream info. Encoder AOT 5/29 (HE v1/v2)
+is wired as `encode-pcm RATE CH BPS AOT IN.f32 OUT.adts` (TASK-95);
+low-delay AOTs 23/39 remain **unsupported cells** in this lab.
 
 M4A demux is outside codec timing (same rule as TASK-6).
 

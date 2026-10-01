@@ -1,0 +1,14 @@
+[package]
+name = "syom-lab-oxideav"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "Isolated oxideav-aac 0.1.7 competitor adapter (TASK-95). Not a workspace member."
+
+[dependencies]
+oxideav-aac = "=0.1.7"
+
+[[bin]]
+name = "oxideav_driver"
+path = "src/main.rs"

@@ -38,6 +38,8 @@ pub enum UnsupportedFeature {
     RawAccessUnit,
     /// Mid-stream AudioSpecificConfig change (call [`crate::Decoder::reset`]).
     AscChange,
+    /// Bounded fMP4 outside the envelope (lab/fmp4/REPORT.md §2).
+    FragmentedMp4(&'static str),
 }
 
 /// Malformed syntax (CRC, Huffman, lengths). Truncation is [`AacError::Truncated`].
@@ -247,6 +249,7 @@ impl fmt::Display for UnsupportedFeature {
                     "aac: AudioSpecificConfig changed mid-stream; call reset()"
                 )
             }
+            Self::FragmentedMp4(reason) => write!(f, "aac: fragmented MP4: {reason}"),
         }
     }
 }

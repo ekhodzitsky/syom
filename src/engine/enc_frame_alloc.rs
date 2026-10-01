@@ -17,7 +17,7 @@ impl LcEncoder {
         for (ch, spec) in specs.iter().enumerate().take(self.channels) {
             let a = &mut self.alloc[ch];
             self.psy
-                .analyze(spec, self.offsets, TARGET_Q, &mut a.coded, &mut a.cap);
+                .analyze_mask(spec, self.offsets, TARGET_Q, &mut a.coded, &mut a.cap);
             let (energy, noise, _) = self.psy.bands();
             a.noise = *noise;
             a.energy = *energy;

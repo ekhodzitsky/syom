@@ -51,4 +51,15 @@ impl super::EncodeOptions {
         self.ps = on;
         self
     }
+
+    /// TASK-134 measurement. Does not change [`Self::with_he_v2`]: `false`
+    /// (the default) writes coarse `iid_mode` 1. `true` writes 20-band
+    /// fine IID (`iid_mode` 4) on an HE v2 encode.
+    #[doc(hidden)]
+    #[inline]
+    #[must_use]
+    pub fn with_ps_iid_fine(mut self, on: bool) -> Self {
+        self.ps_iid_fine = on;
+        self
+    }
 }

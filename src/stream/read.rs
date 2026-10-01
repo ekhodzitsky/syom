@@ -1,5 +1,7 @@
-//! ADTS/LOAS from a generic [`std::io::Read`]. M4A needs random access
-//! ([`crate::decode_streaming`] on a slice, or TASK-57).
+//! ADTS/LOAS from a generic [`std::io::Read`]. Flat M4A needs random access
+//! ([`crate::decode_streaming`] on a slice, or TASK-57; bounded fMP4 streams
+//! through [`Decoder::feed`] since TASK-125). Also the one-shot slice
+//! drivers behind `decode_streaming` / `decode_with`.
 
 use std::io::{self, Read};
 
@@ -9,6 +11,37 @@ use crate::options::DecodeOptions;
 use super::{Decoder, Frame, StreamInfo};
 
 impl Decoder {
+    /// One-shot over a complete slice (ADTS/LATM): sniffs and pumps without
+    /// copying the input into the push buffer. Equivalent to one `feed` of
+    /// the whole slice plus `finish`.
+    pub(super) fn decode_slice<F>(mut self, data: &[u8], on_frame: F) -> Result<StreamInfo>
+    where
+        F: FnMut(Frame<'_>) -> Result<()>,
+    {
+        self.opts.validate()?;
+        let mut cb = on_frame;
+        self.pump(data, None, None, &mut cb, true)?;
+        self.tallies()
+    }
+
+    /// One-shot mono over a complete slice: decode straight into `dst`,
+    /// skipping the per-frame scratch + callback copy. Caller guarantees
+    /// [`ChannelMode::Mono`](crate::options::ChannelMode); `est_frames`
+    /// pre-sizes `dst` after frame 1.
+    pub(super) fn decode_slice_mono(
+        mut self,
+        data: &[u8],
+        est_frames: Option<usize>,
+        dst: &mut Vec<f32>,
+    ) -> Result<StreamInfo> {
+        fn ignore(_: Frame<'_>) -> Result<()> {
+            Ok(())
+        }
+        self.opts.validate()?;
+        self.pump(data, Some(dst), est_frames, &mut ignore, true)?;
+        self.tallies()
+    }
+
     /// Pull bytes from `reader` and [`Decoder::feed`] them. Short reads are
     /// normal. [`io::ErrorKind::Interrupted`] is retried. Other I/O errors
     /// fail the instance ([`AacError::Io`]). Does not [`Decoder::finish`]:
@@ -45,8 +78,8 @@ impl Decoder {
     }
 }
 
-/// Stream-decode ADTS or LOAS from `reader`. Same lifecycle as a push
-/// [`Decoder`]: `feed_read` then [`Decoder::finish`]. M4A is
+/// Stream-decode ADTS, LOAS or bounded fMP4 from `reader`. Same lifecycle
+/// as a push [`Decoder`]: `feed_read` then [`Decoder::finish`]. Flat M4A is
 /// [`AacError::Unsupported`].
 ///
 /// ```

@@ -524,6 +524,26 @@ fn write_fill_data(writer: &mut BitWriter, cnt: u32) -> Result<u32> {
 // ===================================================================
 
 fn parse_dynamic_range(reader: &mut BitReader<'_>, cnt: u32) -> Result<ExtensionPayload> {
+    let drc = read_dynamic_range(reader)?;
+    if drc.byte_length() != cnt {
+        // The dispatching FIL `cnt` and the derived Table 4.52 `n`
+        // must agree byte-for-byte — Table 4.52 normatively
+        // returns the byte count to the caller. A mismatch
+        // indicates a malformed bitstream.
+        return Err(Error::ExtensionPayloadInvalid);
+    }
+    Ok(ExtensionPayload::DynamicRange(drc))
+}
+
+/// ER AAC LD AU tail: `dynamic_range_info()` without a FIL `cnt` fence —
+/// the payload is self-delimiting; the fields are parsed and dropped
+/// (DRC is never applied, like the LC FIL path).
+pub(crate) fn skip_dynamic_range(reader: &mut BitReader<'_>) -> Result<()> {
+    let _ = read_dynamic_range(reader)?;
+    Ok(())
+}
+
+fn read_dynamic_range(reader: &mut BitReader<'_>) -> Result<DynamicRangeInfo> {
     let pce_tag_present = read_bit(reader)?;
     let pce_tag = if pce_tag_present {
         let pce_instance_tag = read_u8(reader, 4)?;
@@ -591,14 +611,7 @@ fn parse_dynamic_range(reader: &mut BitReader<'_>, cnt: u32) -> Result<Extension
         prog_ref_level,
         bands,
     };
-    if drc.byte_length() != cnt {
-        // The dispatching FIL `cnt` and the derived Table 4.52 `n`
-        // must agree byte-for-byte — Table 4.52 normatively
-        // returns the byte count to the caller. A mismatch
-        // indicates a malformed bitstream.
-        return Err(Error::ExtensionPayloadInvalid);
-    }
-    Ok(ExtensionPayload::DynamicRange(drc))
+    Ok(drc)
 }
 
 #[cfg(test)]
