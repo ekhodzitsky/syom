@@ -34,13 +34,21 @@ fn synth_oracle_regenerates_without_ffmpeg() {
         "historical gaps must stay explicit"
     );
     // Regeneration is the python verifier's sha256_of(settings) path.
-    let out = Command::new("python3")
-        .arg(repo_root().join("scripts/verify_oracle_provenance.py"))
-        .env_remove("MINT_GOLDENS")
-        .env("PATH", "/usr/bin:/bin")
-        .output()
-        .unwrap();
-    assert!(out.status.success());
+    // Linux keeps a minimal PATH so a shell-out to ffmpeg would fail.
+    // That path cannot start CPython on Windows; leave PATH alone there.
+    let mut cmd = Command::new("python3");
+    cmd.arg(repo_root().join("scripts/verify_oracle_provenance.py"))
+        .env_remove("MINT_GOLDENS");
+    if cfg!(not(windows)) {
+        cmd.env("PATH", "/usr/bin:/bin");
+    }
+    let out = cmd.output().unwrap();
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(out.status.success(), "{text}");
 }
 
 #[test]

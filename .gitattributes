@@ -1,0 +1,5 @@
+# Byte fixtures. A Windows checkout must not turn LF into CRLF.
+src/goldens/** -text
+src/goldens/* -text
+src/engine/goldens/** -text
+src/engine/goldens/* -text

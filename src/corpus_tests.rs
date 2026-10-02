@@ -43,9 +43,11 @@ fn verifier_detects_modified_bytes() {
     std::fs::write(&flipped, &bytes).unwrap();
     let orig = std::fs::read_to_string(repo_root().join("corpus/manifest.json")).unwrap();
     // Point the sine48 row at the flipped copy; digest stays the committed one.
+    // Forward slashes: a Windows path's backslashes are not valid JSON escapes.
+    let flipped_json = flipped.to_string_lossy().replace('\\', "/");
     let patched = orig.replace(
         "\"path\": \"src/goldens/sine48.adts\"",
-        &format!("\"path\": \"{}\"", flipped.display()),
+        &format!("\"path\": \"{flipped_json}\""),
     );
     let man = dir.join("manifest.json");
     std::fs::write(&man, patched.as_bytes()).unwrap();
