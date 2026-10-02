@@ -35,7 +35,7 @@ tar xzf libxaac-0.1.13.tar.gz
 curl -fLO https://gitlab.com/ecodis/exhale/-/archive/v1.2.2/exhale-v1.2.2.tar.gz
 echo 'a46a085e3f8049ece2cba5ab3dd80e85fd198e81277b5292ca198a25a80088f1  exhale-v1.2.2.tar.gz' | sha256sum -c
 tar xzf exhale-v1.2.2.tar.gz
-L=lab/profiles/build   # from the repo root
+L=$(git rev-parse --show-toplevel)/lab/profiles/build
 $L/build_fdk.sh fdk-aac-2.0.3        # 170 CMake-listed TUs -> fdk-prefix/{lib,include}
 $L/build_exhale.sh exhale-v1.2.2     # -> exhale-v1.2.2/bin/exhale
 $L/build_xaac_dec.sh libxaac-0.1.13  # -> libxaacdec.a + xaacdec (testbench, see REPORT gap)
