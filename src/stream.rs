@@ -72,10 +72,11 @@ enum Container {
 /// access; use [`decode_streaming`] on the full slice).
 ///
 /// Bytes are buffered until the container is sniffable (~8 bytes) and until
-/// a whole compressed frame has arrived; partial trailing frames are
-/// dropped by [`Decoder::finish`], matching one-shot decode. Whether input
-/// is undecodable is likewise decided at `finish` ([`AacError::NotAac`];
-/// LATM/LOAS keeps its decode-class error), not mid-`feed`.
+/// a whole compressed frame has arrived. [`Decoder::finish`] drops a partial
+/// trailing ADTS or LATM frame. A partial fMP4 box, or a fragment that still
+/// owes samples, is [`AacError::Truncated`]. ADTS that never decoded is
+/// [`AacError::NotAac`] at `finish`; LATM/LOAS keeps its decode-class error.
+/// Flat M4A is rejected on `feed`.
 ///
 /// Lifecycle: **open** → `feed` / `finish`; a parser, limit, or callback
 /// error moves to **failed**; a successful `finish` moves to **finished**.
@@ -306,9 +307,11 @@ impl Decoder {
         self.pos = 0;
     }
 
-    /// End of input: flush, drop a partial trailing frame, and report
-    /// tallies. Errors [`AacError::NotAac`] when nothing decodable was seen.
-    /// On success the decoder is **finished**; on error it is **failed**.
+    /// End of input: flush and report tallies. A partial trailing ADTS or
+    /// LATM frame is dropped. A partial fMP4 box or an unfinished fragment
+    /// is [`AacError::Truncated`]. Errors [`AacError::NotAac`] when nothing
+    /// decodable was seen. On success the decoder is **finished**; on error
+    /// it is **failed**.
     pub fn finish<F>(&mut self, on_frame: F) -> Result<StreamInfo>
     where
         F: FnMut(Frame<'_>) -> Result<()>,

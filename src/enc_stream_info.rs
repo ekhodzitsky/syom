@@ -13,7 +13,7 @@
 pub struct EncodeInfo {
     /// Input sample rate.
     pub sample_rate: u32,
-    /// Channels per frame (1 or 2).
+    /// Channels per frame: 1–2, or surround 3, 4, 5, 6, or 8.
     pub channels: usize,
     /// AAC frames emitted, including the overlap-drain frame of zeros.
     pub aac_frames: u64,
@@ -21,17 +21,17 @@ pub struct EncodeInfo {
     pub samples: u64,
     /// Bytes handed to the callback (ADTS headers included).
     pub bytes: u64,
-    /// Encoder delay in decoded samples: 1024 (LC) or 3018 (HE v1: LC
-    /// priming, halfband and SBR chain at the output rate). Skip this many
-    /// decoded samples for valid audio.
+    /// Encoder delay in decoded samples: 1024 (LC), 512 (AAC-LD), or 3018
+    /// (HE v1 and v2, output rate). Skip this many decoded samples for
+    /// valid audio.
     pub priming: u64,
-    /// Unplayed decoded tail after the source: LC
-    /// `ceil(samples/1024)*1024 - samples`; HE `coded − priming − samples`.
+    /// Unplayed decoded tail after the source. LC and AAC-LD pad up to the
+    /// frame (1024 or 512); HE is `coded − priming − samples`.
     pub remainder: u64,
-    /// Decoded length before container trim: `aac_frames * 1024` (LC) or
-    /// `aac_frames * 2048` (HE, output rate).
+    /// Decoded length before container trim: `aac_frames` times 1024 (LC),
+    /// 512 (AAC-LD), or 2048 (HE, output rate).
     pub coded_samples: u64,
-    /// MPEG layout of the coded planes (`1` mono / `2` stereo).
+    /// MPEG layout of the coded planes (`channel_configuration` 1–7).
     pub layout: crate::Layout,
 }
 

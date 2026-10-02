@@ -1,5 +1,5 @@
-//! One-shot encode: planar f32 → AAC-LC (default) or HE-AAC v1
-//! ([`EncodeOptions::with_he`]) in ADTS or M4A.
+//! One-shot encode: planar f32 → AAC-LC (default), HE-AAC, or AAC-LD
+//! under [`EncodeOptions`] (ADTS, M4A, or LOAS).
 //!
 //! The default encoder writes AAC-LC (no SBR/PS), mono, stereo or surround
 //! (3, 4, 5, 6, 8 planes = `channel_configuration` 3–7, TASK-116), with block

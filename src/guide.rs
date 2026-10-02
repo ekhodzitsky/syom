@@ -48,7 +48,7 @@
 //! # 3. Timing: priming, tail, exact length
 //!
 //! An AAC encoder delays the signal (LC 1024 samples, HE 3018 output
-//! samples) and pads the last frame. A one-shot ADTS encode stores that
+//! samples, AAC-LD 512) and pads the last frame. A one-shot ADTS encode stores that
 //! delay in a leading `iTunSMPB` tag. Decode returns the source length
 //! and reports both edges when the decoded sample count matches the tag.
 //! `probe` reports the same tag once the frames in the buffer fill it.

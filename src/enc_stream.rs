@@ -8,8 +8,8 @@
 //! the zero-padded tail frame, exactly like one-shot [`crate::encode_with`]
 //! — same frame sequence, same bytes. M4A is rejected at construction
 //! (`stco` / sample sizes need the finished totals; use
-//! [`crate::encode_with`] with [`EncodeContainer::M4a`]), mirroring how the
-//! push [`crate::Decoder`] rejects ISOBMFF input.
+//! [`crate::encode_with`] with [`EncodeContainer::M4a`]). The push decoder
+//! accepts fragmented MP4 and still rejects flat M4A.
 //!
 //! With [`EncodeOptions::lookahead`] on, the callback trails the input by
 //! one frame (the attack detector sees the next frame before a frame is
@@ -63,14 +63,14 @@ pub struct EncodedFrame<'a> {
     /// remainder at [`Encoder::finish`] (that frame is zero-padded to 1024
     /// in the bitstream, like one-shot encode).
     pub samples: usize,
-    /// Container bytes: ADTS frame, or the raw `raw_data_block` when the
-    /// encoder was built with [`EncodeContainer::Raw`].
+    /// Container bytes: an ADTS or LOAS frame, or the raw `raw_data_block`
+    /// when the encoder was built with [`EncodeContainer::Raw`].
     pub au: &'a [u8],
     /// Elementary `raw_data_block` (no ADTS header). Same lifetime as `au`.
     pub payload: &'a [u8],
 }
 
-/// Resumable push encoder: planar f32 chunks in, ADTS frames out.
+/// Resumable push encoder: planar f32 chunks in, ADTS, LOAS, or raw units out.
 ///
 /// Byte-exact with one-shot [`crate::encode_with`] on the same PCM, for any
 /// feed chunking. Peak RAM is one frame of PCM plus the current access
@@ -84,7 +84,7 @@ pub struct Encoder {
     channels: usize,
     /// ADTS, LATM/LOAS or raw framing of each delivered unit.
     framing: EncodeContainer,
-    /// `AudioSpecificConfig` (2-byte LC / 4-byte HE) and its bit count.
+    /// `AudioSpecificConfig` (2-byte LC, 3-byte AAC-LD, or 4-byte HE) and its bit count.
     asc: Vec<u8>,
     asc_bits: u32,
     /// Raw access unit the callback's `payload` borrows when the frame
@@ -196,7 +196,7 @@ impl Encoder {
     }
 
     /// `AudioSpecificConfig` for this encoder (stable; not input-sized):
-    /// 2-byte LC, or the 4-byte explicit two-rate HE v1 config.
+    /// 2-byte LC, 3-byte AAC-LD, or a 4-byte explicit HE v1 or v2 config.
     #[must_use]
     pub fn asc(&self) -> &[u8] {
         &self.asc

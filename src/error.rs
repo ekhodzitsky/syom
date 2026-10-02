@@ -12,9 +12,9 @@ pub type Result<T> = std::result::Result<T, AacError>;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum UnsupportedFeature {
-    /// `audioObjectType` other than LC/SBR/PS.
+    /// `audioObjectType` other than LC, SBR, PS, or LD.
     AudioObjectType(u8),
-    /// `frameLengthFlag == 1` (960-line).
+    /// `frameLengthFlag == 1` (960-line, or the 480-sample LD grid).
     FrameLength960,
     /// `channel_configuration` 8–15 (6.1, 7.1 back/top, reserved); 1–7 and PCE decode.
     ChannelConfiguration(u8),

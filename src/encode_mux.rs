@@ -251,9 +251,10 @@ pub(crate) fn wrap_latm(payloads: &[Vec<u8>], asc: &[u8]) -> Result<Vec<u8>> {
 }
 
 /// Wrap one raw access unit in a LOAS `AudioSyncStream` frame whose
-/// `StreamMuxConfig` carries `asc` ([`crate::Encoder::asc`]: 2-byte LC or
-/// 4-byte HE). Every frame is a sync point. An `AudioMuxElement` above
-/// 8191 bytes is an error (LC and HE v1 frames never reach it).
+/// `StreamMuxConfig` carries `asc` ([`crate::Encoder::asc`]: 2-byte LC,
+/// 3-byte AAC-LD, or 4-byte HE). Every frame is a sync point. An
+/// `AudioMuxElement` above 8191 bytes is an error (LC and HE v1 frames
+/// never reach it).
 ///
 /// ```
 /// use syom::{EncodeOptions, Encoder, wrap_loas_au};
