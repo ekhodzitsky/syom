@@ -641,7 +641,7 @@ dependencies = [
 
 [[package]]
 name = "syom"
-version = "0.7.0"
+version = "0.7.1"
 dependencies = [
  "criterion",
  "oxideav-aac",
