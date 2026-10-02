@@ -393,13 +393,13 @@ fn fill_alphas4(
     p: usize,
     n_slots_frame: usize,
 ) -> Result<()> {
-    if (0..4).all(|i| alphas[p + i].is_none()) {
-        if let Some(got) = prediction4_fast(x_low, p, n_slots_frame) {
-            for i in 0..4 {
-                alphas[p + i] = Some(got[i]);
-            }
-            return Ok(());
+    if (0..4).all(|i| alphas[p + i].is_none())
+        && let Some(got) = prediction4_fast(x_low, p, n_slots_frame)
+    {
+        for i in 0..4 {
+            alphas[p + i] = Some(got[i]);
         }
+        return Ok(());
     }
     for i in 0..4 {
         if alphas[p + i].is_none() {
@@ -460,6 +460,7 @@ fn prediction4_fast(
     None
 }
 
+#[allow(clippy::too_many_arguments)]
 fn apply_hf4_fast(
     x_low: &[[Complex; 32]],
     x_high: &mut [[Complex; 64]],
@@ -631,6 +632,7 @@ unsafe fn prediction4_avx512(
 /// and both coefficient slices hold four complexes.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
+#[allow(clippy::too_many_arguments)]
 unsafe fn apply_hf4_avx512(
     x_low: &[[Complex; 32]],
     x_high: &mut [[Complex; 64]],

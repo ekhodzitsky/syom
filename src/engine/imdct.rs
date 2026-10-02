@@ -114,6 +114,7 @@ pub(crate) fn fft_scalar() -> FftModeGuard {
 
 /// Force SSE2 (no AVX) until the guard drops. On aarch64 this is NEON 4-wide.
 #[cfg(test)]
+#[cfg_attr(not(target_arch = "x86_64"), allow(dead_code))]
 pub(crate) fn fft_sse2_only() -> FftModeGuard {
     let g = take_fft_mode();
     FORCE_SCALAR.store(false, Ordering::SeqCst);

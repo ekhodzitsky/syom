@@ -232,7 +232,7 @@
 //!
 //! # 10. Behaviour changes since 0.6.0
 //!
-//! - Minimum Rust is 1.88 (was 1.97).
+//! - Minimum Rust is 1.89 (was 1.97).
 //! - 3, 4, 5, 6 or 8 planes now encode as surround; they used to be an
 //!   error. 7 planes and more than 8 still are.
 //! - Channel configurations 8–15 are a typed error on decode; they used to

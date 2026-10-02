@@ -15,6 +15,7 @@ use std::sync::OnceLock;
 // `_mm512_xor_ps` / `_mm512_xor_pd` are marked AVX-512DQ in this toolchain.
 // From an AVX-512F function that is an out-of-line call plus `vzeroupper`.
 // `vpxorq` is AVX-512F and has the same bits.
+#[cfg(target_arch = "x86_64")]
 macro_rules! xor512_ps {
     ($a:expr, $b:expr) => {{
         std::arch::x86_64::_mm512_castsi512_ps(std::arch::x86_64::_mm512_xor_si512(
@@ -23,6 +24,7 @@ macro_rules! xor512_ps {
         ))
     }};
 }
+#[cfg(target_arch = "x86_64")]
 macro_rules! xor512_pd {
     ($a:expr, $b:expr) => {{
         std::arch::x86_64::_mm512_castsi512_pd(std::arch::x86_64::_mm512_xor_si512(
@@ -131,6 +133,7 @@ fn fft_stages_scalar(re: &mut [f64], im: &mut [f64], plan: &FftPlan) {
 }
 
 /// One radix-2 butterfly. Mul then add/sub, never FMA.
+#[allow(clippy::too_many_arguments)]
 #[inline(always)]
 fn butterfly_scalar(
     re: &mut [f64],
@@ -163,6 +166,7 @@ fn butterfly_scalar(
 /// are inside `re` and `im`. `tw_re`/`tw_im` cover `off + k + 3`.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx")]
+#[allow(clippy::too_many_arguments)]
 unsafe fn butterfly4_f64(
     re: &mut [f64],
     im: &mut [f64],
@@ -237,6 +241,7 @@ unsafe fn fft_stages_avx(re: &mut [f64], im: &mut [f64], plan: &FftPlan) {
 /// `off + k + 7`.
 #[cfg(target_arch = "x86_64")]
 #[target_feature(enable = "avx512f")]
+#[allow(clippy::too_many_arguments)]
 unsafe fn butterfly8_f64(
     re: &mut [f64],
     im: &mut [f64],

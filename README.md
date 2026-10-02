@@ -94,7 +94,7 @@ protocol: [BENCH.md](BENCH.md).
 syom = "0.7"
 ```
 
-rustc **1.88**.
+rustc **1.89**.
 
 [guide](https://docs.rs/syom/latest/syom/guide/) | [BENCH.md](BENCH.md) | [CHANGELOG](CHANGELOG.md)
 

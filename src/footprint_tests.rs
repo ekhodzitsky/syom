@@ -29,11 +29,11 @@ fn product_dependencies_are_empty() {
 }
 
 #[test]
-fn msrv_is_1_88_and_the_dev_pin_is_1_97() {
-    // TASK-99: the declared minimum is what the code needs (let chains);
-    // development and CI stay pinned for stable fmt / clippy output.
+fn msrv_is_1_89_and_the_dev_pin_is_1_97() {
+    // The declared minimum is the x86_64 AVX-512 intrinsics (stable in
+    // 1.89). Development and CI stay on 1.97.1 for stable fmt and clippy.
     let cargo = cargo_toml();
-    assert!(cargo.contains("rust-version = \"1.88\""));
+    assert!(cargo.contains("rust-version = \"1.89\""));
     assert!(
         cargo.contains("\"!/src/**/*_tests.rs\""),
         "package include list"

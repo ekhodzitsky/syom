@@ -3,7 +3,9 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use crate::engine::imdct::{fft_scalar, fft_sse2_only};
+use crate::engine::imdct::fft_scalar;
+#[cfg(target_arch = "x86_64")]
+use crate::engine::imdct::fft_sse2_only;
 use crate::{DecodeOptions, EncodeOptions, decode_with, encode, encode_with};
 
 fn finite_nonempty(bytes: &[u8], label: &str) {

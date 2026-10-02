@@ -22,8 +22,6 @@ jobs:
             host: linux-arm64
           - os: macos-latest
             host: macos-arm64
-          - os: macos-13
-            host: macos-x64
           - os: windows-latest
             host: windows-x64
     steps:
@@ -62,7 +60,7 @@ jobs:
       - name: clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: tests
-        run: cargo test --workspace --lib
+        run: cargo test --workspace --lib --tests
       - name: doc tests
         run: cargo test --doc
       - name: package audit
@@ -70,12 +68,12 @@ jobs:
         run: python scripts/check-package.py
 
   msrv:
-    name: msrv 1.88
+    name: msrv 1.89
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "1.88"
+          toolchain: "1.89"
       - name: library tests on the declared minimum
-        run: cargo +1.88 test --lib
+        run: cargo +1.89 test --lib --tests

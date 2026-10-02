@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Minimum supported Rust is **1.89** (was 1.88). The x86_64 paths use
+  stable AVX-512 intrinsics from 1.89. CI runs the library and integration
+  tests on that compiler.
+
 ## [0.7.0] - 2026-10-01
 
 ### Added

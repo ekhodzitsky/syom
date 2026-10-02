@@ -203,25 +203,27 @@ pub(super) fn apply_soa(
     re: &mut [f32],
     im: &mut [f32],
 ) {
-    let n = plan.n;
-    let n2 = n / 2;
-    let n4 = n / 4;
     #[cfg(target_arch = "x86_64")]
-    if spec.len() == n2
-        && out.len() == n
-        && re.len() == n4
-        && im.len() == n4
-        && plan.pre.len() == n4
-        && plan.post.len() == n4
     {
-        // SAFETY: lengths match Plan::apply_into (n is 256, 1024, or 2048).
-        unsafe { prerot_sse(spec, &plan.pre, re, im) };
-        super::ifft_soa(re, im, &plan.bitrev, &plan.tw_re, &plan.tw_im);
-        unsafe {
-            postrot_sse(&plan.post, re, im);
-            permute_unchecked(out, re, im, n);
+        let n = plan.n;
+        let n2 = n / 2;
+        let n4 = n / 4;
+        if spec.len() == n2
+            && out.len() == n
+            && re.len() == n4
+            && im.len() == n4
+            && plan.pre.len() == n4
+            && plan.post.len() == n4
+        {
+            // SAFETY: lengths match Plan::apply_into (n is 256, 1024, or 2048).
+            unsafe { prerot_sse(spec, &plan.pre, re, im) };
+            super::ifft_soa(re, im, &plan.bitrev, &plan.tw_re, &plan.tw_im);
+            unsafe {
+                postrot_sse(&plan.post, re, im);
+                permute_unchecked(out, re, im, n);
+            }
+            return;
         }
-        return;
     }
     apply_soa_scalar(plan, spec, out, re, im);
 }

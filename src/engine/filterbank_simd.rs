@@ -159,7 +159,7 @@ mod tests {
         }
         let mut overlap = overlap0;
         let mut dst = vec![0.0f32; 1024];
-        window_overlap(&mut scratch, &mut overlap, &mut dst, &left, &rev);
+        window_overlap(&scratch, &mut overlap, &mut dst, &left, &rev);
         for i in 0..1024 {
             assert_eq!(dst[i].to_bits(), dst_ref[i].to_bits(), "dst {i}");
             assert_eq!(

@@ -497,7 +497,7 @@ pub fn adjust_into(
         let smooth_gain = li != p.l_a && li != l_a_prev && h_sl != 0;
         f_index_sine = (st.index_sine + c) % 4;
         let noise_killed = li == p.l_a || li == l_a_prev;
-        if h_sl == 0 && column_plain(&s_index, &s_m_boost, l, m_cnt, noise_killed) {
+        if h_sl == 0 && column_plain(s_index, s_m_boost, l, m_cnt, noise_killed) {
             let grow = &g_temp[(c + h_sl) * m_cnt..(c + h_sl) * m_cnt + m_cnt];
             let qrow = &q_temp[(c + h_sl) * m_cnt..(c + h_sl) * m_cnt + m_cnt];
             let noise0 = (st.index_noise + c * m_cnt + 1) % 512;

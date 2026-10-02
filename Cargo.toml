@@ -2,7 +2,7 @@
 name = "syom"
 version = "0.7.0"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.89"
 license = "MIT"
 authors = ["Evgeny Khodzitsky"]
 description = "AAC to planar f32. LC, HE-AAC, AAC-LD. ADTS, M4A, LATM. Zero deps."

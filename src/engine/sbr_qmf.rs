@@ -417,10 +417,10 @@ fn analysis_fold_scalar(x: &[f64], base: usize) -> [f64; 64] {
     let mut u = [0.0f64; 64];
     for (n, un) in u.iter_mut().enumerate() {
         let mut acc = 0.0;
-        for j in 0..5 {
+        for (j, tap) in ANALYSIS_TAP.iter().enumerate() {
             let i = base + n + j * 64;
             let i = if i >= 320 { i - 320 } else { i };
-            acc += x[i] * ANALYSIS_TAP[j][n];
+            acc += x[i] * tap[n];
         }
         *un = acc;
     }
@@ -440,12 +440,12 @@ unsafe fn analysis_fold_avx512(x: &[f64], base: usize) -> [f64; 64] {
     let mut u = [0.0f64; 64];
     for n in (0..64).step_by(8) {
         let mut acc = _mm512_setzero_pd();
-        for j in 0..5 {
+        for (j, tap) in ANALYSIS_TAP.iter().enumerate() {
             let i = base + n + j * 64;
             let i = if i >= 320 { i - 320 } else { i };
             unsafe {
                 let s = _mm512_loadu_pd(x.as_ptr().add(i));
-                let w = _mm512_loadu_pd(ANALYSIS_TAP[j].as_ptr().add(n));
+                let w = _mm512_loadu_pd(tap.as_ptr().add(n));
                 acc = _mm512_add_pd(acc, _mm512_mul_pd(s, w));
             }
         }
@@ -472,10 +472,10 @@ fn analysis_fold_f32_scalar(x: &[f32], base: usize) -> [f32; 64] {
     let mut u = [0.0f32; 64];
     for (n, un) in u.iter_mut().enumerate() {
         let mut acc = 0.0f32;
-        for j in 0..5 {
+        for (j, tap) in ANALYSIS_TAP_F32.iter().enumerate() {
             let i = base + n + j * 64;
             let i = if i >= 320 { i - 320 } else { i };
-            acc += x[i] * ANALYSIS_TAP_F32[j][n];
+            acc += x[i] * tap[n];
         }
         *un = acc;
     }
@@ -496,12 +496,12 @@ unsafe fn analysis_fold_f32_avx512(x: &[f32], base: usize) -> [f32; 64] {
     let mut u = [0.0f32; 64];
     for n in (0..64).step_by(16) {
         let mut acc = _mm512_setzero_ps();
-        for j in 0..5 {
+        for (j, tap) in ANALYSIS_TAP_F32.iter().enumerate() {
             let i = base + n + j * 64;
             let i = if i >= 320 { i - 320 } else { i };
             unsafe {
                 let s = _mm512_loadu_ps(x.as_ptr().add(i));
-                let w = _mm512_loadu_ps(ANALYSIS_TAP_F32[j].as_ptr().add(n));
+                let w = _mm512_loadu_ps(tap.as_ptr().add(n));
                 acc = _mm512_add_ps(acc, _mm512_mul_ps(s, w));
             }
         }

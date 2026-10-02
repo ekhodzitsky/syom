@@ -314,18 +314,21 @@ fn grouped_short_book11_matches_integer_rescale() -> Result<(), super::Error> {
         num_swb: 14,
         ld: false,
     };
-    let mut sections = SectionData::default();
-    sections.sfb_cb = vec![
-        vec![11],
-        vec![0],
-        vec![0],
-        vec![0],
-        vec![0],
-        vec![0],
-        vec![0],
-    ];
-    let mut sf = ScaleFactors::default();
-    sf.sf = vec![vec![137]; 7];
+    let sections = SectionData {
+        sfb_cb: vec![
+            vec![11],
+            vec![0],
+            vec![0],
+            vec![0],
+            vec![0],
+            vec![0],
+            vec![0],
+        ],
+    };
+    let sf = ScaleFactors {
+        sf: vec![vec![137]; 7],
+        ..ScaleFactors::default()
+    };
 
     let (l0, c0) = (super::huff_esc::H11_LEN[0], super::huff_esc::H11_CODE[0]);
     let (l1, c1) = (super::huff_esc::H11_LEN[1], super::huff_esc::H11_CODE[1]);
