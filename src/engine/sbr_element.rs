@@ -27,11 +27,10 @@
 //! in-order `bs_amp_res` mutation.
 //!
 //! The extended-data block (`bs_extended_data` … `sbr_extension`) is
-//! recognized and its size is consumed, but the only standardized
-//! `sbr_extension` payload (PS, `bs_extension_id == EXTENSION_ID_PS`)
-//! is not yet decoded — its bits are skipped as fill so the element
-//! parse stays byte-aligned. The raw extension bytes are surfaced for a
-//! later PS pass.
+//! recognized and its size is consumed. A PS payload
+//! (`bs_extension_id == EXTENSION_ID_PS`) is captured as raw bits,
+//! including the trailing sub-byte, and decoded later by the SBR
+//! decoder. This parser does not interpret the body.
 //!
 //! All of this is fixed-/variable-width syntax driven by the grid and
 //! the band tables; the Huffman content lives in [`crate::engine::sbr_huffman`].
@@ -43,8 +42,8 @@ use crate::engine::sbr_grid::{SbrDtdf, SbrGrid, SbrInvf};
 use crate::engine::{Error, Result};
 
 /// `bs_extension_id` value that signals a Parametric Stereo payload
-/// inside `sbr_extension()` (§4.4.2.8 / Table 4.A.x). PS itself is not
-/// decoded here yet.
+/// inside `sbr_extension()` (§4.4.2.8). This parser captures the body;
+/// the SBR decoder interprets it.
 pub const EXTENSION_ID_PS: u8 = 2;
 
 /// One channel's fully-parsed SBR side info.

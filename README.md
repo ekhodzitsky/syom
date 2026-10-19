@@ -25,7 +25,8 @@ fn main() -> syom::Result<()> {
 }
 ```
 
-`decode` is the speech default (mono mix, 2 h). `DecodeOptions::audio()`
+`decode` is the speech default (mono mix, 2 h at up to 48 kHz; higher
+rates keep that sample budget). `DecodeOptions::audio()`
 keeps the coded channels. From a path: `syom::read`. Push decode and
 encode: `Decoder::feed`, `Encoder::feed`. The
 [guide](https://docs.rs/syom/latest/syom/guide/) has one compiling
@@ -50,14 +51,17 @@ example per task.
 |---|---|---|---|---|
 | AAC-LC decode | yes | yes | yes | yes |
 | HE-AAC v1/v2 decode | yes | yes | yes | yes |
-| AAC-LD decode (512) | no | yes | yes | no |
+| AAC-LD decode (512) | no | yes | yes | yes |
 | LC encode | yes | yes | yes | no |
 | HE v1/v2 encode | yes | yes | yes | no |
 | AAC-LD encode | no | yes | yes | no |
 
 LC encode is the default; M/S is per-band. `with_he`, `with_he_v2`, and
-`with_ld` are opt-in. ADTS cannot signal AAC-LD. Surround LC is 3–8 planes
-(`channel_configuration` 3–7). No resample.
+`with_ld` are opt-in. ADTS cannot signal AAC-LD. Fragmented MP4 uses the
+same ASC path as M4A, so AAC-LD decodes there too; there is no separate
+LD fMP4 golden. Surround LC is 3, 4, 5, 6, or 8 planes
+(`channel_configuration` 3–7). Seven planes have no layout.
+No resample.
 
 ## Compared with rusty_aac, Symphonia, oxideav-aac
 
@@ -91,7 +95,7 @@ protocol: [BENCH.md](BENCH.md).
 
 ```toml
 [dependencies]
-syom = "0.7"
+syom = "0.8"
 ```
 
 rustc **1.89**.

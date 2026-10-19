@@ -12,6 +12,7 @@ pub(crate) mod channel_map;
 pub mod crc;
 pub mod decode;
 pub(crate) mod decode_cpe;
+pub(crate) mod decode_finish;
 pub(crate) mod decode_ld;
 pub(crate) mod det_math;
 pub(crate) mod enc_alloc;
@@ -54,8 +55,10 @@ pub mod ics_body;
 pub mod imdct;
 pub mod latm;
 pub(crate) mod latm_write;
+pub(crate) mod ltp;
 pub(crate) mod mdct;
 pub mod pns;
+pub(crate) mod pred;
 pub(crate) mod prof;
 pub mod ps_data;
 pub mod ps_decoder;
@@ -88,9 +91,12 @@ pub mod sf_tab;
 pub mod skip;
 pub mod spectrum;
 pub(crate) mod spectrum_scaled;
+pub(crate) mod ssr;
+pub(crate) mod ssr_pqf;
 pub mod stereo;
 pub mod swb;
 pub mod tns;
+pub(crate) mod tools;
 
 pub(crate) use error::Error;
 pub use error::Result;
@@ -106,6 +112,10 @@ mod ics_tests;
 #[cfg(test)]
 #[path = "tools_tests.rs"]
 mod tools_tests;
+
+#[cfg(test)]
+#[path = "profile_tests.rs"]
+mod profile_tests;
 
 #[cfg(test)]
 #[path = "channel_map_tests.rs"]

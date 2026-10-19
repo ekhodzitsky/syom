@@ -24,22 +24,17 @@ fn read_exact<R: Read>(r: &mut R, buf: &mut [u8]) -> Result<()> {
     }
 }
 
-/// Extra LC mono/stereo overlap AUs (measured). HE/PS and 3.0–5.1 replay
-/// from AU 0 (see [`M4aSeek::seek`]).
+/// Extra LC mono/stereo overlap AUs (measured). HE/PS and any
+/// `channel_configuration` above stereo replay from AU 0 (see [`M4aSeek::seek`]).
 #[must_use]
 pub fn preroll_aus(sbr: bool) -> u64 {
     if sbr { 0 } else { 2 }
 }
 
 fn samples_per_au(asc: &AudioSpecificConfig) -> u64 {
-    // LC core is 1024; HE output is 2048 because `output_sample_rate` is 2×.
-    // ER AAC LD is one 512-sample frame. The 480-sample grid is rejected
-    // when the ASC is parsed.
-    let core: u64 = if asc.aot == crate::engine::asc::AOT_LD {
-        512
-    } else {
-        1024
-    };
+    // LC is 1024 or 960; HE output is twice the core when the ASC rate is.
+    // ER AAC LD is one 512- or 480-sample frame.
+    let core = u64::from(asc.frame_samples.max(1));
     let sr = u64::from(asc.sample_rate.max(1));
     core.saturating_mul(u64::from(asc.output_sample_rate)) / sr
 }
@@ -157,6 +152,7 @@ impl<R: Read + Seek> M4aSeek<R> {
             self.asc.ps_present,
             self.asc.output_sample_rate,
         );
+        self.dec.set_frame_samples(self.asc.frame_samples);
         self.locked = None;
         self.scratch.clear();
     }
@@ -216,8 +212,8 @@ impl<R: Read + Seek> M4aSeek<R> {
         let spf = self.samples_per_au.max(1);
         let target = coded / spf;
         let intra = coded % spf;
-        // HE/PS: SBR headers live in-band (TASK-39). 3.0–5.1: coupling /
-        // per-element overlap was not shown to settle in 2 AUs on mc51.
+        // HE/PS: SBR headers live in-band (TASK-39). More than stereo:
+        // overlap was not shown to settle in 2 AUs (measured on mc51).
         // LC mono/stereo: 2 AUs (measured). LD: 1 AU, the low-delay overlap.
         let start = if self.asc.sbr_present || self.asc.channel_configuration > 2 {
             0

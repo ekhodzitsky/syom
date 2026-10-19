@@ -6,7 +6,9 @@ ffmpeg/FDK, fetch corpora, or mint goldens. Goldens were **not** reminted.
 ## Qualified native cells (CI matrix)
 
 Pinned toolchain **1.97.1**. Each cell runs fmt, clippy `-D warnings`,
-lib+doc tests, file-size, changelog. Host dump uploaded as
+`cargo test --workspace --lib --tests`, doctests, file-size, and
+changelog. `linux-x64` also runs the package audit. A separate `msrv`
+job runs `cargo +1.89 test --lib --tests`. Host dump uploaded as
 `host-<cell>`.
 
 | cell | runner | ISA |
@@ -14,7 +16,6 @@ lib+doc tests, file-size, changelog. Host dump uploaded as
 | linux-x64 | `ubuntu-latest` | x86_64, SSE2 min, AVX runtime |
 | linux-arm64 | `ubuntu-24.04-arm` | aarch64, NEON baseline |
 | macos-arm64 | `macos-latest` | aarch64, NEON baseline |
-| macos-x64 | `macos-13` | x86_64, SSE2 min |
 | windows-x64 | `windows-latest` | x86_64, SSE2 min |
 
 Encoder tripwire on every cell: `enc48.adts` / `enc48m.m4a` /

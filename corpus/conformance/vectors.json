@@ -144,27 +144,37 @@
     {
       "id": "asc-lc-960-flag",
       "layer": "asc",
-      "kind": "unsupported",
+      "kind": "valid",
       "finding": "F09",
       "hex": "118c",
       "bit_notes": "LC 48 kHz mono with frameLengthFlag=1 (960-sample frames)",
-      "agreement": "match-reject",
-      "follow_on": "TASK-63",
+      "agreement": "match",
+      "follow_on": "TASK-112.7",
       "independent": {
-        "error": "UnsupportedFrameLength"
+        "aot": 2,
+        "sample_rate": 48000,
+        "output_sample_rate": 48000,
+        "channel_configuration": 1,
+        "sbr_present": false,
+        "ps_present": false
       }
     },
     {
       "id": "asc-aot-main",
       "layer": "asc",
-      "kind": "unsupported",
+      "kind": "valid",
       "finding": "F09",
       "hex": "0988",
       "bit_notes": "AOT=1 (Main), otherwise LC 48 kHz mono GA zeros",
-      "agreement": "match-reject",
-      "follow_on": null,
+      "agreement": "match",
+      "follow_on": "TASK-112.6",
       "independent": {
-        "error": "UnsupportedAot"
+        "aot": 1,
+        "sample_rate": 48000,
+        "output_sample_rate": 48000,
+        "channel_configuration": 1,
+        "sbr_present": false,
+        "ps_present": false
       }
     },
     {

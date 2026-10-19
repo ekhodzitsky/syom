@@ -50,10 +50,16 @@ impl Encoder {
     {
         scratch.clear();
         let hdr = crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC;
+        let cbr_full = self.take_lc_cbr_fullness();
         let payload_off = match self.framing {
             EncodeContainer::Adts => {
                 let cfg = self.enc.channel_config(self.channels);
-                crate::encode::adts_frame_into(au, self.enc.fs_index(), cfg, scratch);
+                let fs = self.enc.fs_index();
+                if let Some(full) = cbr_full {
+                    crate::encode::adts_frame_fullness(au, fs, cfg, full, scratch);
+                } else {
+                    crate::encode::adts_frame_into(au, fs, cfg, scratch);
+                }
                 Some(hdr)
             }
             EncodeContainer::Latm => {
@@ -77,5 +83,14 @@ impl Encoder {
             au: framed,
             payload,
         })
+    }
+
+    /// Next CBR fullness, if this is an LC reservoir encode. ABR returns
+    /// `None` so ADTS keeps the VBR marker.
+    fn take_lc_cbr_fullness(&mut self) -> Option<u16> {
+        match &mut self.enc {
+            super::he::Core::Lc(enc) => enc.take_cbr_fullness(),
+            _ => None,
+        }
     }
 }

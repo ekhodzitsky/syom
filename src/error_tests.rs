@@ -47,6 +47,7 @@ fn engine_error_display_covers_variants() {
         Error::AdtsFrameLengthTooSmall,
         Error::UnsupportedAot(5),
         Error::UnsupportedFrameLength,
+        Error::UnsupportedHeFrame960,
         Error::UnsupportedChannelConfiguration(12),
         Error::UnsupportedSampleRateIndex(15),
         Error::IcsInfoInvalid,
@@ -165,14 +166,16 @@ fn public_decode_encode_match_without_strings() {
         }
     ));
     let mut main = include_bytes!("goldens/sine48.adts").to_vec();
-    main[2] &= 0x3F; // profile Main (0)
-    let e = decode_with(&main, &DecodeOptions::unbounded()).unwrap_err();
-    assert!(
-        matches!(
-            e,
-            AacError::Unsupported(UnsupportedFeature::AudioObjectType(1))
-        ),
-        "Main AOT: {e:?}"
+    main[2] &= 0x3F; // profile Main (0); predictor bit stays clear
+    let lc = decode_with(
+        include_bytes!("goldens/sine48.adts"),
+        &DecodeOptions::unbounded(),
+    )
+    .unwrap();
+    let got = decode_with(&main, &DecodeOptions::unbounded()).unwrap();
+    assert_eq!(
+        got.channels, lc.channels,
+        "Main with prediction off matches LC"
     );
     match Encoder::new(48_000, 1, &EncodeOptions::m4a()) {
         Err(AacError::Unsupported(UnsupportedFeature::EncodeM4aStreaming)) => {}

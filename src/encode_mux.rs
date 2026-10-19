@@ -8,10 +8,10 @@ use crate::options::{EncodeContainer, EncodeOptions};
 use std::io::{Seek, SeekFrom, Write};
 
 /// Encode planar PCM incrementally into any [`std::io::Write`] sink (TASK-59):
-/// ADTS frames (or raw access units with [`EncodeContainer::Raw`]) are
-/// written as they are produced, so the codec workspace stays one frame
-/// and no compressed buffer is collected. Bytes are identical to
-/// [`encode_with`] for the same options. M4A is
+/// ADTS, LOAS, or raw access units are written as they are produced, so the
+/// codec workspace stays one frame and no compressed buffer is collected.
+/// ADTS and LOAS match [`encode_with`]. Raw is push-only
+/// ([`crate::UnsupportedFeature::EncodeRawOneShot`] from one-shot). M4A is
 /// [`crate::UnsupportedFeature::EncodeM4aStreaming`].
 ///
 /// Lifecycle: each frame is written once with `write_all`; a sink error

@@ -178,6 +178,7 @@ impl Decoder {
                     cfg.asc.ps_present,
                     cfg.asc.output_sample_rate,
                 );
+                self.dec.set_frame_samples(cfg.asc.frame_samples);
                 self.mux = Some(cfg);
             }
             let cfg = self

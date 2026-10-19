@@ -10,7 +10,8 @@
 //! let r: Vec<f32> = l.iter().map(|x| 0.5 * x).collect();
 //! let adts = syom::encode(&[l, r], 48_000)?;            // AAC-LC, 128 kbps, ADTS
 //!
-//! // `decode` is the SPEECH default: mono mix, 2 h / 48 kHz caps.
+//! // `decode` is the SPEECH default: mono mix. 2 h at rates up to 48 kHz;
+//! // rates up to 192 kHz are accepted, but the sample budget stays 7200×48_000.
 //! let speech = syom::decode(&adts)?;
 //! assert_eq!(speech.channels.len(), 1);
 //! // Keep the coded channels: `audio()` (same caps) or `unbounded()`.
@@ -211,12 +212,14 @@
 //! AAC track, init `moov` + `moof`/`trun`, DASH init + segments) decodes
 //! on the slice, seekable and push (`Decoder::feed`, any chunking) paths;
 //! truncated fragments fail typed
-//! [`crate::AacError::Truncated`]. Not decoded: Main / SSR / LTP
-//! objects, 960-sample frames, channel configurations 8–15 (all three are
-//! [`crate::AacError::Unsupported`]), AAC-ELD, USAC, 480-sample AAC-LD
-//! frames, multi-track or encrypted fMP4, DRM.
-//! AAC-LD (AOT 23, 512 samples per frame) decodes from LATM/LOAS, M4A and
-//! a raw access unit with an ASC. An M4A `elst` trims priming and the tail
+//! [`crate::AacError::Truncated`]. Not decoded:
+//! channel configurations 8–15 (both are
+//! [`crate::AacError::Unsupported`]), AAC-ELD, USAC, multi-track or
+//! encrypted fMP4, DRM. 960-sample LC decodes from LATM/LOAS, M4A, and a
+//! raw access unit. HE-AAC on a 960-sample core is
+//! [`crate::AacError::Unsupported`], not a 960-line LC frame.
+//! AAC-LD (AOT 23, 512- or 480-sample frames) decodes from LATM/LOAS, M4A,
+//! bounded fragmented MP4, and a raw access unit with an ASC. An M4A `elst` trims priming and the tail
 //! in samples, and seeking replays one overlap frame. A flat M4A or
 //! one-shot fragmented MP4 with no edit list trims from `iTunSMPB` in
 //! `moov` when the counts match; an edit list wins. A push fragmented
@@ -225,10 +228,12 @@
 //! qualified against FDK and libxaac, not libavcodec (it rejects these
 //! streams) and not ISO 14496-26 vectors (not obtained).
 //!
-//! Encode: LC (ABR or quality VBR), HE v1, HE v2, surround LC, and
-//! opt-in AAC-LD (`with_ld`, 512-sample frames, LOAS or M4A, priming
-//! 512; not ADTS and not the default). Not encoded: PCE layouts, HE
-//! surround, ELD, 480-sample LD, CBR with a bit reservoir.
+//! Encode: LC (ABR, opt-in CBR, or quality VBR), HE v1, HE v2, surround
+//! LC, and opt-in AAC-LD (`with_ld`, 512-sample frames, LOAS or M4A,
+//! priming 512; not ADTS and not the default). `with_cbr` is LC mono or
+//! stereo: a bit reservoir inside 6144 bits per channel. Default ABR keeps
+//! ADTS fullness at `0x7FF`. Not encoded: PCE layouts, HE surround, ELD,
+//! 480-sample LD.
 //!
 //! # 10. Behaviour changes since 0.6.0
 //!

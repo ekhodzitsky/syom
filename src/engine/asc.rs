@@ -4,15 +4,19 @@
 //! inner LC. Implicit HE: `0x2b7` + `sbrPresentFlag` + extension rate, then
 //! optional `0x548` PS. ER AAC LD (AOT 23) GA syntax (resilience flags +
 //! `epConfig`) parses for 512-sample frames (TASK-128); the signal core
-//! decodes those payloads (TASK-129). A 480-sample `frameLengthFlag` is
-//! rejected with the other 960-style frame lengths.
+//! decodes those payloads (TASK-129). `frameLengthFlag` selects the
+//! 960-sample LC grid or the 480-sample LD grid. HE-AAC on a 960-sample
+//! core is rejected; the 1024 and 512 grids are unchanged.
 
 use super::adts::ADTS_SAMPLE_RATES_HZ;
 use super::bits::{BitReader, BitWriter};
 use super::channel_map::{PceChannelMap, parse_pce_in_asc};
 use super::error::{Error, Result};
 
-const AOT_LC: u8 = 2;
+pub(crate) const AOT_MAIN: u8 = 1;
+pub(crate) const AOT_LC: u8 = 2;
+pub(crate) const AOT_SSR: u8 = 3;
+pub(crate) const AOT_LTP: u8 = 4;
 const AOT_SBR: u8 = 5;
 const AOT_PS: u8 = 29;
 /// ER AAC LD (low delay), 512-sample frames (TASK-128, TASK-129).
@@ -87,6 +91,8 @@ pub struct AudioSpecificConfig {
     pub sbr_present: bool,
     /// HE-AAC v2 parametric stereo.
     pub ps_present: bool,
+    /// Core samples per frame: 1024, 960, 512, or 480.
+    pub frame_samples: u16,
     /// ASC-embedded `program_config_element()` when `channel_configuration == 0`.
     pub(crate) pce: Option<PceChannelMap>,
 }
@@ -116,25 +122,25 @@ impl AudioSpecificConfig {
         let mut sbr_present = outer_aot == AOT_SBR || outer_aot == AOT_PS;
         let mut ps_present = outer_aot == AOT_PS;
         let mut output_sample_rate = sample_rate;
-        let (aot, pce) = if sbr_present {
+        let (aot, pce, short_frame) = if sbr_present {
             let ext_idx = reader.read(4)? as u8;
             output_sample_rate = resolve_rate(ext_idx, reader)?;
             let inner = read_aot(reader)?;
             if inner != AOT_LC {
                 return Err(Error::UnsupportedAot(inner));
             }
-            let pce = parse_ga(
+            let (pce, flag) = parse_ga(
                 reader,
                 channel_configuration,
                 sampling_frequency_index,
                 inner,
             )?;
-            (inner, pce)
+            (inner, pce, flag)
         } else {
-            if outer_aot != AOT_LC && outer_aot != AOT_LD {
+            if !matches!(outer_aot, AOT_MAIN | AOT_LC | AOT_SSR | AOT_LTP | AOT_LD) {
                 return Err(Error::UnsupportedAot(outer_aot));
             }
-            let pce = parse_ga(
+            let (pce, flag) = parse_ga(
                 reader,
                 channel_configuration,
                 sampling_frequency_index,
@@ -154,10 +160,22 @@ impl AudioSpecificConfig {
                     &mut output_sample_rate,
                 )?;
             }
-            (outer_aot, pce)
+            (outer_aot, pce, flag)
         };
         if sbr_present {
             check_sbr_rates(sample_rate, output_sample_rate)?;
+        }
+        let frame_samples = if aot == AOT_LD {
+            if short_frame { 480 } else { 512 }
+        } else if short_frame {
+            960
+        } else {
+            1024
+        };
+        // SBR/PS time grid is the 1024-core 16-slot layout. A 960 core is a
+        // different error from a plain 960 LC frame.
+        if short_frame && sbr_present {
+            return Err(Error::UnsupportedHeFrame960);
         }
         Ok(AudioSpecificConfig {
             aot,
@@ -167,6 +185,7 @@ impl AudioSpecificConfig {
             channel_configuration,
             sbr_present,
             ps_present,
+            frame_samples,
             pce,
         })
     }
@@ -240,11 +259,8 @@ fn parse_ga(
     channel_configuration: u8,
     sf_index: u8,
     aot: u8,
-) -> Result<Option<PceChannelMap>> {
+) -> Result<(Option<PceChannelMap>, bool)> {
     let frame_length_flag = reader.read_bit()?;
-    if frame_length_flag {
-        return Err(Error::UnsupportedFrameLength);
-    }
     let depends_on_core_coder = reader.read_bit()?;
     if depends_on_core_coder {
         let _core_coder_delay = reader.read(14)?;
@@ -266,7 +282,7 @@ fn parse_ga(
             return Err(Error::Format("ASC extensionFlag3 is Media"));
         }
     }
-    Ok(pce)
+    Ok((pce, frame_length_flag))
 }
 
 #[cfg(test)]

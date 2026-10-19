@@ -1,0 +1,15 @@
+[package]
+name = "syom-peer-speed"
+version = "0.0.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "In-process one-core encode and decode timers for TASK-112.2 and TASK-112.3. Not a workspace member. cargo test does not build or run this."
+
+[dependencies]
+syom = { path = "../../.." }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+opt-level = 3

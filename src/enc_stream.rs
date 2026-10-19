@@ -1,9 +1,9 @@
 //! Streaming encode: a resumable push [`Encoder`] for planar f32 PCM →
-//! AAC-LC in ADTS or raw access units ([`EncodeContainer::Raw`]).
+//! AAC-LC, HE-AAC, or AAC-LD in ADTS, LOAS, or raw access units.
 //!
 //! Feed PCM in chunks of any size; the callback fires once per completed
-//! AAC frame (1024 samples per channel). ADTS wraps the unit; Raw emits
-//! the `raw_data_block` plus a stable [`Encoder::asc`].
+//! frame (1024 LC, 2048 HE input samples, or 512 AAC-LD). ADTS or LOAS
+//! wraps the unit; Raw emits the `raw_data_block` plus [`Encoder::asc`].
 //! Leftover samples are buffered across feeds; [`Encoder::finish`] encodes
 //! the zero-padded tail frame, exactly like one-shot [`crate::encode_with`]
 //! — same frame sequence, same bytes. M4A is rejected at construction
@@ -38,7 +38,7 @@
 //! assert_eq!(info.samples, 3000);
 //! assert_eq!(info.aac_frames, 4); // padded tail + overlap drain
 //! assert_eq!(info.priming, 1024);
-//! assert_eq!(info.remainder, 72); // 3*1024 - 3000
+//! assert_eq!(info.remainder, 72); // 4*1024 - priming - 3000
 //! assert_eq!(info.bytes as usize, adts.len());
 //! let dec = syom::decode_with(&adts, &DecodeOptions::unbounded())?;
 //! assert_eq!(dec.channels[0].len(), 4 * 1024);
@@ -59,9 +59,9 @@ use crate::options::{EncodeContainer, EncodeOptions};
 /// of the callback** — copy them out to keep them.
 #[non_exhaustive]
 pub struct EncodedFrame<'a> {
-    /// Input samples per channel this frame carries: 1024, or the tail
-    /// remainder at [`Encoder::finish`] (that frame is zero-padded to 1024
-    /// in the bitstream, like one-shot encode).
+    /// Input samples this frame carries: 1024 (LC), 2048 (HE), or 512
+    /// (AAC-LD). The [`Encoder::finish`] tail is the remainder, zero-padded
+    /// to that frame length in the bitstream.
     pub samples: usize,
     /// Container bytes: an ADTS or LOAS frame, or the raw `raw_data_block`
     /// when the encoder was built with [`EncodeContainer::Raw`].

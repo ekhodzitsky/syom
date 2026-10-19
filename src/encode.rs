@@ -4,16 +4,15 @@
 //! The default encoder writes AAC-LC (no SBR/PS), mono, stereo or surround
 //! (3, 4, 5, 6, 8 planes = `channel_configuration` 3–7, TASK-116), with block
 //! switching (long windows for steady content, short windows on detected
-//! attacks). CBR-ish via a per-frame global scalefactor offset search plus
-//! a bounded one-frame bit credit. Output is conformant enough that
-//! libavcodec decodes it; the lavc-decoded goldens under `src/goldens/`
-//! are the committed proof.
+//! attacks). ABR via an allowed-noise offset search plus one frame of bit
+//! credit (default; `with_cbr` opts into a reservoir). LC and HE goldens under `src/goldens/` are
+//! libavcodec-decoded proof; AAC-LD is qualified against FDK, not lavc.
 //!
 //! PCM samples must be finite and in `[-1, 1]`. NaN, infinities, and
 //! `|x| > 1` are [`AacError::InvalidPcm`]. There is no silent clip. The
 //! push [`crate::Encoder`] uses the same rule.
 
-use crate::engine::adts::{ADTS_SAMPLE_RATES_HZ, AdtsHeader};
+use crate::engine::adts::ADTS_SAMPLE_RATES_HZ;
 use crate::engine::enc_frame::LcEncoder;
 use crate::engine::enc_he::HeEncoder;
 use crate::engine::enc_he_ps::{AnyHe, PsHeEncoder};
@@ -32,7 +31,8 @@ pub(crate) fn new_lc(sample_rate: u32, channels: usize, opts: &EncodeOptions) ->
         .with_short_group(opts.short_group)
         .with_band_refine(opts.band_refine)
         .with_pns(opts.pns)
-        .with_intensity(opts.intensity))
+        .with_intensity(opts.intensity)
+        .with_cbr(opts.cbr))
 }
 
 /// Encode planar f32 PCM in `[-1, 1]` to an ADTS stream: AAC-LC at 128 kbps.
@@ -135,8 +135,8 @@ pub(crate) fn encode_he(
     Ok((bytes, ps_bits, ext_bits))
 }
 
-/// Encode planar f32 PCM under `opts` (container + bitrate + lookahead +
-/// optional ATH / tonality / short TNS / short grouping / HE v1).
+/// Encode planar f32 PCM under `opts` (container, bitrate, lookahead,
+/// quality VBR, HE v1/v2, AAC-LD, or the opt-in LC tools).
 ///
 /// With [`EncodeOptions::lookahead`] on, the attack detector runs one
 /// frame ahead (better pre-echo suppression on early-in-frame onsets) at
@@ -183,10 +183,14 @@ pub fn encode_with<P: AsRef<[f32]>>(
     }
     payloads.extend(enc.drain_overlap()?);
     match opts.container {
-        EncodeContainer::Adts => Ok(crate::gapless::prefix_lc(
-            wrap_adts(&payloads, enc.fs_index(), channels),
-            n_samples as u64,
-        )),
+        EncodeContainer::Adts => {
+            let fs = enc.fs_index();
+            let wrapped = match enc.take_cbr_log() {
+                Some(log) => cbr_adts::wrap_with_fullness(&payloads, fs, channels, &log),
+                None => wrap_adts(&payloads, fs, channels),
+            };
+            Ok(crate::gapless::prefix_lc(wrapped, n_samples as u64))
+        }
         EncodeContainer::Latm => {
             let asc = crate::engine::asc::write_lc(enc.fs_index(), channels as u8);
             mux::wrap_latm(&payloads, &asc)
@@ -249,6 +253,11 @@ pub fn write_with<P: AsRef<[f32]>>(
 /// Mode combinations shared by one-shot and push encode: a quality level
 /// must be `0..=10` and is LC only.
 pub(crate) fn check_mode(opts: &EncodeOptions) -> Result<()> {
+    if opts.cbr && (opts.he || opts.ps || opts.ld || opts.quality.is_some()) {
+        return Err(AacError::encode(
+            "encode: CBR reservoir is AAC-LC only (not HE, AAC-LD, or quality VBR)",
+        ));
+    }
     if let Some(q) = opts.quality {
         if q > crate::engine::enc_frame::QUALITY_MAX {
             return Err(AacError::encode(format!(
@@ -332,6 +341,9 @@ fn validate(pcm: &[&[f32]], sample_rate: u32, opts: &EncodeOptions) -> Result<()
 /// Plane counts: 1–2 (LC / HE), or surround 3, 4, 5, 6, 8 — AAC-LC only,
 /// no lookahead (`channel_configuration` 3–7, TASK-116).
 pub(crate) fn check_planes(planes: usize, opts: &EncodeOptions) -> Result<()> {
+    if opts.cbr && !matches!(planes, 1 | 2) {
+        return Err(AacError::encode("encode: CBR reservoir is mono or stereo"));
+    }
     if opts.ld && !matches!(planes, 1 | 2) {
         return Err(AacError::encode("encode: AAC-LD is mono or stereo"));
     }
@@ -369,32 +381,7 @@ where
     Ok(())
 }
 
-/// ADTS-wrap each raw_data_block (no CRC, VBR fullness marker).
-fn wrap_adts(payloads: &[Vec<u8>], fs_index: u8, channels: usize) -> Vec<u8> {
-    let total: usize = payloads
-        .iter()
-        .map(|p| p.len() + crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC)
-        .sum();
-    let mut out = Vec::with_capacity(total);
-    for p in payloads {
-        adts_frame_into(p, fs_index, channels, &mut out);
-    }
-    out
-}
-
-/// Append one ADTS-wrapped `raw_data_block` to `out` (no CRC, VBR fullness
-/// marker). Shared by one-shot [`encode_with`] and the push [`crate::Encoder`].
-pub(crate) fn adts_frame_into(payload: &[u8], fs_index: u8, channels: usize, out: &mut Vec<u8>) {
-    let hdr = AdtsHeader {
-        mpeg_version_mpeg2: false,
-        protection_absent: true,
-        profile: 1, // LC
-        sampling_frequency_index: fs_index,
-        channel_configuration: channels as u8,
-        aac_frame_length: (crate::engine::adts::ADTS_HEADER_BYTES_NO_CRC + payload.len()) as u16,
-        adts_buffer_fullness: 0x7FF,
-        number_of_raw_data_blocks_in_frame: 1,
-    };
-    out.extend_from_slice(&hdr.write());
-    out.extend_from_slice(payload);
-}
+#[path = "encode_cbr.rs"]
+mod cbr_adts;
+use cbr_adts::wrap_adts;
+pub(crate) use cbr_adts::{adts_frame_fullness, adts_frame_into};

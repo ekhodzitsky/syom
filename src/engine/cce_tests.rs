@@ -20,6 +20,14 @@ fn long_ics(max_sfb: u8) -> IcsInfo {
         window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
         num_swb: 49,
         ld: false,
+        frame_len: 0,
+        predictor_present: false,
+        pred_reset_group: 0,
+        pred_used: 0,
+        ltp_present: false,
+        ltp_lag: 0,
+        ltp_coef_idx: 0,
+        ltp_used: 0,
     }
 }
 
@@ -334,6 +342,6 @@ fn parse_independent_still_flags_independent() {
     w.write_bit(false);
     let bytes = w.finish();
     let mut br = super::bits::BitReader::new(&bytes);
-    let cce = parse_cce(&mut br, 3, 2).unwrap();
+    let cce = parse_cce(&mut br, 3, 2, 0).unwrap();
     assert!(cce.independent);
 }

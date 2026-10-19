@@ -133,17 +133,37 @@ fn ld_mutations_stay_finite_and_do_not_panic() {
 
 #[test]
 fn ld_rejected_syntax_is_typed_not_an_lc_frame() {
+    // 480-sample LD is a real grid, not the 960-line LC error.
     let mut w = crate::engine::bits::BitWriter::new();
     w.write(23, 5);
     w.write(3, 4);
     w.write(1, 4);
-    w.write_bit(true); // 480-sample grid
-    w.write(0, 2);
-    let asc = w.finish();
-    assert!(matches!(
-        Decoder::from_asc(&asc, DecodeOptions::unbounded()),
-        Err(AacError::Unsupported(UnsupportedFeature::FrameLength960))
-    ));
+    w.write_bit(true);
+    w.write(0, 4); // depends, extension, epConfig
+    let mut dec = Decoder::from_asc(&w.finish(), DecodeOptions::unbounded()).unwrap();
+    let mut au = crate::engine::bits::BitWriter::new();
+    au.write(0, 4); // tag
+    au.write(0, 8); // global_gain
+    au.write(0, 1); // reserved
+    au.write(0, 2); // ONLY_LONG
+    au.write(0, 1); // sine
+    au.write(0, 6); // max_sfb
+    au.write(0, 1); // predictor
+    au.write(0, 1); // pulse
+    au.write(0, 1); // tns
+    au.write(0, 1); // gain
+    let mut n = 0usize;
+    dec.decode_au(&au.finish(), |f| {
+        n = f.samples;
+        assert!(f.planar.iter().all(|p| p.iter().all(|s| s.is_finite())));
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(n, 480);
+    assert_ne!(
+        UnsupportedFeature::FrameLength960.to_string(),
+        UnsupportedFeature::HeFrame960.to_string()
+    );
 
     let mut w = crate::engine::bits::BitWriter::new();
     w.write(23, 5);

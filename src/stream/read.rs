@@ -1,4 +1,4 @@
-//! ADTS/LOAS from a generic [`std::io::Read`]. Flat M4A needs random access
+//! ADTS, LOAS, or bounded fMP4 from a generic [`std::io::Read`]. Flat M4A needs random access
 //! ([`crate::decode_streaming`] on a slice, or TASK-57; bounded fMP4 streams
 //! through [`Decoder::feed`] since TASK-125). Also the one-shot slice
 //! drivers behind `decode_streaming` / `decode_with`.
@@ -11,7 +11,7 @@ use crate::options::DecodeOptions;
 use super::{Decoder, Frame, StreamInfo};
 
 impl Decoder {
-    /// One-shot over a complete slice (ADTS/LATM): sniffs and pumps without
+    /// One-shot over a complete slice (ADTS, LATM, or fMP4): sniffs and pumps without
     /// copying the input into the push buffer. Equivalent to one `feed` of
     /// the whole slice plus `finish`.
     pub(super) fn decode_slice<F>(mut self, data: &[u8], on_frame: F) -> Result<StreamInfo>

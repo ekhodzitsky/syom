@@ -376,8 +376,8 @@ impl HeEncoder {
             self.lc.set_fill(&fill)?;
             self.last_fill_len = fill.len();
             self.lc.encode_into(&planes)?;
-            let au = self.lc.payload().to_vec();
-            self.emit(&au, on_au)?;
+            self.aus += 1;
+            on_au(self.lc.payload())?;
         }
         self.frames += 1;
         // Slots before AU (n+1)'s window are never read again.

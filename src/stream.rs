@@ -309,8 +309,9 @@ impl Decoder {
 
     /// End of input: flush and report tallies. A partial trailing ADTS or
     /// LATM frame is dropped. A partial fMP4 box or an unfinished fragment
-    /// is [`AacError::Truncated`]. Errors [`AacError::NotAac`] when nothing
-    /// decodable was seen. On success the decoder is **finished**; on error
+    /// is [`AacError::Truncated`]. ADTS or unrecognized input with nothing
+    /// decoded is [`AacError::NotAac`]; LATM/LOAS keeps
+    /// [`crate::MalformedKind::LatmMux`]. On success the decoder is **finished**; on error
     /// it is **failed**.
     pub fn finish<F>(&mut self, on_frame: F) -> Result<StreamInfo>
     where
@@ -332,7 +333,8 @@ impl Decoder {
         }
     }
 
-    /// Terminal tallies; [`AacError::NotAac`] when nothing decodable was seen.
+    /// Terminal tallies. ADTS or unrecognized input with nothing decoded is
+    /// [`AacError::NotAac`]; LATM/LOAS keeps [`crate::MalformedKind::LatmMux`].
     fn tallies(&self) -> Result<StreamInfo> {
         if self.emitted == 0 {
             return Err(match self.container {

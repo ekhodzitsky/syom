@@ -50,7 +50,7 @@ impl DecodedAac {
     }
 }
 
-/// Decode ADTS, M4A, or LATM/LOAS bytes with speech-ingest defaults.
+/// Decode ADTS, M4A, LATM/LOAS, or bounded fragmented MP4 with speech defaults.
 #[inline]
 pub fn decode(data: &[u8]) -> Result<DecodedAac> {
     decode_with(data, &DecodeOptions::speech())
@@ -109,14 +109,15 @@ pub fn decode_seek_with<R: Read + Seek>(reader: R, opts: &DecodeOptions) -> Resu
     Ok(DecodedAac::from_info(info, tracks))
 }
 
-/// Decode ADTS/LOAS from a generic [`Read`] with speech-ingest defaults.
-/// Does not materialize the whole stream; M4A is [`AacError::Unsupported`].
+/// Decode ADTS, LOAS, or bounded fMP4 from a generic [`Read`] with speech defaults.
+/// Does not materialize the whole stream. Flat M4A is [`AacError::Unsupported`]
+/// (it needs [`std::io::Seek`]).
 #[inline]
 pub fn decode_read<R: Read>(reader: R) -> Result<DecodedAac> {
     decode_read_with(reader, &DecodeOptions::speech())
 }
 
-/// Decode ADTS/LOAS from `reader` under `opts`. Peak compressed RAM is the
+/// Decode ADTS, LOAS, or bounded fMP4 from `reader` under `opts`. Peak compressed RAM is the
 /// streaming resident cap, not the stream duration.
 pub fn decode_read_with<R: Read>(reader: R, opts: &DecodeOptions) -> Result<DecodedAac> {
     let mut tracks: Vec<Vec<f32>> = Vec::new();
@@ -154,7 +155,7 @@ pub(crate) fn read_file_capped(path: impl AsRef<std::path::Path>, limit: u64) ->
     Ok(buf)
 }
 
-/// Decode ADTS, M4A, or LATM/LOAS bytes under `opts`.
+/// Decode ADTS, M4A, LATM/LOAS, or bounded fragmented MP4 under `opts`.
 pub fn decode_with(data: &[u8], opts: &DecodeOptions) -> Result<DecodedAac> {
     let est_frames = adts_frame_estimate(data);
     if matches!(opts.channel_mode, ChannelMode::Mono) && !sniff_is_isobmff(data) {

@@ -108,6 +108,24 @@ pub fn short_offsets(fs_index: u8) -> Result<&'static [u16]> {
         .ok_or(Error::UnsupportedSampleRateIndex(fs_index))
 }
 
+#[path = "swb_grid.rs"]
+mod grid;
+
+/// 960-line long-window `swb_offset` (`frameLengthFlag = 1`).
+pub fn long_offsets_960(fs_index: u8) -> Result<&'static [u16]> {
+    grid::long_960(fs_index)
+}
+
+/// 120-line short-window `swb_offset` (one of eight in a 960-line frame).
+pub fn short_offsets_960(fs_index: u8) -> Result<&'static [u16]> {
+    grid::short_120(fs_index)
+}
+
+/// AAC-LD 480-line long-window `swb_offset` (44.1–48, 32, and 22.05–24 kHz).
+pub fn long_offsets_ld480(fs_index: u8) -> Result<&'static [u16]> {
+    grid::long_480(fs_index)
+}
+
 /// AAC-LD 512-line long-window `swb_offset` for `samplingFrequencyIndex`
 /// 0..=11 (96–44.1 kHz share the 48K table, 24–7.35 kHz the 24K table).
 pub fn long_offsets_ld(fs_index: u8) -> Result<&'static [u16]> {

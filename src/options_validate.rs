@@ -36,7 +36,7 @@ impl DecodeOptions {
         Ok(())
     }
 
-    /// Maximum decoded frames allowed at `sample_rate` under these options.
+    /// Maximum decoded samples per channel at `sample_rate` under these options.
     ///
     /// Call [`Self::validate`] before decoding. Invalid durations yield 0
     /// here so a missed check cannot open an unlimited cap.

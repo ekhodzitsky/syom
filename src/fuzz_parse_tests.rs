@@ -66,7 +66,7 @@ fn known_invalid_adts_and_asc_reach_their_parsers() {
     assert_eq!(AdtsHeader::parse(trunc).unwrap_err(), Error::UnexpectedEnd);
     let asc = include_bytes!("../corpus/fuzz/asc-main-aot.bin");
     match AudioSpecificConfig::parse(asc) {
-        Err(Error::UnsupportedAot(1)) => {}
+        Ok((cfg, _)) => assert_eq!(cfg.aot, 1),
         other => panic!("ASC Main AOT: {other:?}"),
     }
 }

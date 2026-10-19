@@ -63,6 +63,10 @@ pub use stream::{
 mod decode_tests;
 
 #[cfg(test)]
+#[path = "frame_grid_tests.rs"]
+mod frame_grid_tests;
+
+#[cfg(test)]
 #[path = "decode_budget_tests.rs"]
 mod decode_budget_tests;
 
@@ -166,6 +170,10 @@ mod encode_cmp_tests;
 #[cfg(test)]
 #[path = "encode_rate_tests.rs"]
 mod encode_rate_tests;
+
+#[cfg(test)]
+#[path = "encode_cbr_tests.rs"]
+mod encode_cbr_tests;
 
 #[cfg(test)]
 #[path = "encode_transient_tests.rs"]

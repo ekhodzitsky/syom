@@ -19,6 +19,15 @@ const STEPS_PER_LEVEL: i32 = 8;
 pub const QUALITY_MAX: u8 = 10;
 
 impl LcEncoder {
+    /// Per-frame bit budget from the target bitrate (no reservoir),
+    /// never above the LC 6144 bits/channel cap or the ADTS byte ceiling.
+    pub(super) fn budget_bits(&self) -> usize {
+        let bits = u64::from(self.bitrate_bps) * 1024 / u64::from(self.sample_rate);
+        (bits as usize)
+            .min(max_frame_bits(self.channels))
+            .min(MAX_PAYLOAD_BYTES * 8)
+    }
+
     /// Quality VBR level 0..=10 (`None` = ABR). Level 5 codes at the psy
     /// model's noise-to-mask target; each level is 6 dB of allowed noise.
     #[must_use]
@@ -55,6 +64,9 @@ impl LcEncoder {
             self.drop_bands_until(cap);
             self.emit_into(&mut payload);
             self.credit = 0;
+        } else if self.cbr.is_some() {
+            // Opt-in reservoir. The ABR arm below is the default path.
+            self.rate_control_cbr(specs, &mut payload)?;
         } else {
             let budget = self.budget_bits();
             let spend = budget + (self.credit.min(budget as i64 / 2)) as usize;

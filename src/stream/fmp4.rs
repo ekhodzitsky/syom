@@ -330,6 +330,7 @@ impl Decoder {
         }
         self.dec
             .set_he_config(asc.sbr_present, asc.ps_present, asc.output_sample_rate);
+        self.dec.set_frame_samples(asc.frame_samples);
         let (skip, play) = init.edit_window(out)?;
         self.fmp4.asc = Some((
             asc.aot,

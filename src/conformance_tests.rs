@@ -299,11 +299,23 @@ fn adts_multi_rdb_count_is_parsed_and_decode_ignores_it() {
 }
 
 #[test]
-fn unsupported_is_not_malformed_for_960_and_main() {
-    let fl = AudioSpecificConfig::parse(&unhex("118c")).unwrap_err();
-    assert!(matches!(fl, Error::UnsupportedFrameLength));
-    let main = AudioSpecificConfig::parse(&unhex("0988")).unwrap_err();
-    assert!(matches!(main, Error::UnsupportedAot(1)));
+fn unsupported_is_not_malformed_for_he960_and_main() {
+    let (lc960, _) = AudioSpecificConfig::parse(&unhex("118c")).unwrap();
+    assert_eq!(lc960.frame_samples, 960);
+    assert!(!lc960.sbr_present);
+    // Explicit HE (AOT 5) over the same 960-line LC core.
+    let mut w = crate::engine::bits::BitWriter::new();
+    w.write(5, 5);
+    w.write(3, 4);
+    w.write(1, 4);
+    w.write(3, 4);
+    w.write(2, 5);
+    w.write_bit(true);
+    w.write(0, 2);
+    let he = AudioSpecificConfig::parse(&w.finish()).unwrap_err();
+    assert!(matches!(he, Error::UnsupportedHeFrame960));
+    let (main, _) = AudioSpecificConfig::parse(&unhex("0988")).unwrap();
+    assert_eq!(main.aot, 1);
     let bad = AdtsHeader::parse(&unhex("fff34c4000fffc")).unwrap_err();
     assert!(matches!(bad, Error::AdtsLayerNonZero));
 }

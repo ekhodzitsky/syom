@@ -16,7 +16,7 @@ pub const DEFAULT_MAX_INPUT_BYTES: u64 = 1 << 30;
 /// Duration / rate caps for a lecture-length MP4.
 pub const DEFAULT_MAX_DURATION_SECS: f64 = 7200.0;
 pub const DEFAULT_MAX_SAMPLE_RATE: u32 = 192_000;
-/// Ceiling when converting duration → frame budget.
+/// Ceiling when converting duration → a per-channel sample budget.
 pub const DEFAULT_MAX_DECODE_SAMPLE_RATE: u32 = 48_000;
 
 /// Whether decoded channels are mixed to mono or kept separate.
@@ -45,7 +45,7 @@ pub struct DecodeOptions {
     pub max_duration_secs: f64,
     /// Reject headers whose sample rate is above this value (or zero).
     pub max_sample_rate: u32,
-    /// Cap used when deriving the frame budget from `max_duration_secs`.
+    /// Cap used when deriving the per-channel sample budget from `max_duration_secs`.
     pub max_decode_sample_rate: u32,
     /// Independent input/output/workspace budgets (TASK-23/24).
     pub memory: MemoryBudgets,
@@ -65,13 +65,14 @@ impl Default for DecodeOptions {
 
 impl DecodeOptions {
     /// Mono + lecture caps (same as [`Default`]). One-call [`crate::decode`]
-    /// / [`crate::read`] use this. Stereo and 5.1 are mixed to one plane.
+    /// / [`crate::read`] use this. Any layout is mixed to one plane (non-LFE mean).
     #[inline]
     pub fn speech() -> Self {
         Self::default()
     }
 
-    /// Split channels + the same 2 h / 192 kHz lecture caps as [`speech`].
+    /// Split channels and the same caps as [`speech`]: headers up to 192 kHz,
+    /// duration counted at most 48 kHz.
     ///
     /// Collection still uses the default 4 GiB / 8-channel fences, not
     /// [`Self::unbounded`]. `decode` / `read` stay speech-mono; pass this
@@ -144,12 +145,10 @@ pub use container::EncodeContainer;
 pub struct EncodeOptions {
     pub container: EncodeContainer,
     /// ABR target in bits per second of the whole stream (TASK-65/66).
-    /// Per-frame ceiling plus EXT_FILL `fill_element()` padding before
-    /// `ID_END` so payload/valid
-    /// stays within ±3% on ≥10 s non-silent tracks. Silence and `N < 2048`
-    /// may undershoot. Not CBR: ADTS `adts_buffer_fullness = 0x7FF` (no
-    /// bit reservoir). Must not exceed AAC-LC 6144 bits/channel per
-    /// 1024-sample frame (`6144 · channels · sample_rate / 1024`).
+    /// Per-frame ceiling plus EXT_FILL before `ID_END` keeps payload/valid
+    /// within ±3% on ≥10 s non-silent tracks. Silence and short inputs may
+    /// undershoot. Default is not CBR (ADTS fullness `0x7FF`). Cap:
+    /// `6144 · channels · sample_rate / 1024` (HE at the core rate; LD / 512).
     pub bitrate_bps: u32,
     /// One-frame attack lookahead (default off). When on, the attack
     /// detector runs one frame ahead of the encode: an attack anywhere in
@@ -200,16 +199,13 @@ pub struct EncodeOptions {
     /// VBR, or the LC-only tools.
     pub ld: bool,
     /// Quality VBR level `0..=10` (TASK-67). `None` (default) = ABR on
-    /// `bitrate_bps`. With a level the LC encoder codes every frame at
-    /// one fixed allowed-noise offset — level 5 is the psy model's
-    /// noise-to-mask target, each level moves it 6 dB (up: finer; down: a
-    /// higher water level that drops quiet bands first) — with no target
-    /// rate, no padding and no bit credit; the AAC-LC 6144
-    /// bits/channel/frame cap is met by coarsening uniformly. Bytes then
-    /// follow the content
-    /// (silence and simple tones stay small) and `bitrate_bps` is ignored.
-    /// LC only (`he` must be off).
+    /// `bitrate_bps`. A level fixes one allowed-noise offset (level 5 is
+    /// the psy target; each step is 6 dB) with no rate target, padding,
+    /// or bit credit. The 6144 bits/channel cap coarsens uniformly.
+    /// `bitrate_bps` is ignored. LC only (`he` must be off).
     pub quality: Option<u8>,
+    /// Opt-in CBR bit reservoir. Default off. See [`Self::with_cbr`].
+    pub cbr: bool,
 }
 
 impl Default for EncodeOptions {
@@ -230,6 +226,7 @@ impl Default for EncodeOptions {
             ps_iid_fine: false,
             ld: false,
             quality: None,
+            cbr: false,
         }
     }
 }
@@ -252,9 +249,9 @@ impl EncodeOptions {
 
     /// Development-curve preset (TASK-108, `lab/quality/CURVES.md`): AAC-LC
     /// ADTS at 192 kbps, causal (1024-sample priming, no lookahead). The
-    /// highest measured waveform SNR on every dev clip (noise 19 dB, click
-    /// 19 dB, tremolo 57 dB, tone 60 dB at 48 kHz); ≈ 1.5× the default's
-    /// bytes. Not a transparency claim.
+    /// top of that LC curve (noise 19.1 dB, click 18.8 dB, tremolo 56.9 dB,
+    /// voice-like 8.7 dB); about 1.5× the default's bytes. Not a
+    /// transparency claim.
     #[inline]
     pub fn high_quality() -> Self {
         Self::default().with_bitrate_bps(192_000)
@@ -263,8 +260,8 @@ impl EncodeOptions {
     /// Development-curve preset (TASK-108): HE-AAC v1 ADTS at 48 kbps —
     /// full-band content under 64 kbps (the LC core keeps the low band,
     /// SBR carries the top octave; priming 3018 output samples). Below
-    /// ≈ 48 kbps on speech-only material LC at the same rate measured a
-    /// higher SNR; tonal content above 64 kbps belongs to LC.
+    /// 48 kbps on the speech lecture LC measured a higher SNR than HE;
+    /// tonal content above 64 kbps belongs to LC.
     #[inline]
     pub fn low_rate() -> Self {
         Self::default().with_bitrate_bps(48_000).with_he(true)
@@ -386,6 +383,8 @@ impl EncodeOptions {
     }
 }
 
+#[path = "options_cbr.rs"]
+mod cbr_opt;
 #[path = "options_he.rs"]
 mod he_v2;
 #[path = "options_ld.rs"]

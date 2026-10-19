@@ -138,7 +138,7 @@ fn rdb_protected(payload: &[u8], fs_index: u8, aot: u8) -> Result<(Vec<bool>, us
                 feed_padded(&mut prot, payload, ics2_start, end, 128);
             }
             IdSynEle::Cce => {
-                parse_cce(&mut br, fs_index, aot)?;
+                parse_cce(&mut br, fs_index, aot, 0)?;
                 feed_padded(&mut prot, payload, body_start, br.bit_position(), 192);
             }
             IdSynEle::Dse => {

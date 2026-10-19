@@ -30,15 +30,27 @@ pub fn parse_ics(
     aot: u8,
     common: Option<&IcsInfo>,
 ) -> Result<ChannelBody> {
+    parse_ics_len(br, fs_index, aot, common, 0)
+}
+
+/// [`parse_ics`] on a 960- or 480-sample grid (`frame_len` 0 keeps 1024/512).
+pub(crate) fn parse_ics_len(
+    br: &mut BitReader<'_>,
+    fs_index: u8,
+    aot: u8,
+    common: Option<&IcsInfo>,
+    frame_len: u16,
+) -> Result<ChannelBody> {
     let mut quant = Vec::new();
     let mut spec = Vec::new();
     let mut sections = SectionData::default();
     let mut sf = ScaleFactors::default();
-    let (ics, tns) = parse_ics_into(
+    let (ics, tns, _gain) = parse_ics_into(
         br,
         fs_index,
         aot,
         common,
+        frame_len,
         &mut quant,
         &mut spec,
         &mut sections,
@@ -60,17 +72,22 @@ pub fn parse_ics_into(
     fs_index: u8,
     aot: u8,
     common: Option<&IcsInfo>,
+    frame_len: u16,
     quant: &mut Vec<i32>,
     spec: &mut Vec<f32>,
     sections: &mut SectionData,
     sf: &mut ScaleFactors,
-) -> Result<(IcsInfo, Option<super::tns::TnsData>)> {
+) -> Result<(
+    IcsInfo,
+    Option<super::tns::TnsData>,
+    Option<super::ssr::GainControl>,
+)> {
     let ld = aot == super::asc::AOT_LD;
     let global_gain = br.read(8)? as u8;
     let ics = if let Some(shared) = common {
         *shared
     } else {
-        IcsInfo::parse_mode(br, fs_index, false, ld)?
+        IcsInfo::parse_mode(br, fs_index, false, aot, frame_len)?
     };
     sections.parse_into(br, &ics)?;
     sf::parse_into(br, &ics, &sections.sfb_cb, global_gain, sf)?;
@@ -94,9 +111,14 @@ pub fn parse_ics_into(
         None
     };
     let gain_present = if ld { gain_present } else { br.read_bit()? };
-    if gain_present {
-        return Err(Error::Format("gain_control_data is SSR, not LC"));
-    }
+    let gain = if gain_present {
+        if aot != super::asc::AOT_SSR {
+            return Err(Error::Format("gain_control_data is SSR, not LC"));
+        }
+        Some(super::ssr::read_gain(br, ics.window_sequence)?)
+    } else {
+        None
+    };
     // Pulse reconstruction adds to the integer quantisers. Without it the
     // Huffman read writes the scaled floats directly.
     if let Some(p) = pulse.as_ref() {
@@ -106,5 +128,5 @@ pub fn parse_ics_into(
     } else {
         super::spectrum_scaled::decode_scaled_into(br, &ics, sections, sf, fs_index, spec)?;
     }
-    Ok((ics, tns))
+    Ok((ics, tns, gain))
 }

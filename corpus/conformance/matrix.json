@@ -102,11 +102,11 @@
     },
     {
       "id": "frame-960",
-      "advertised": false,
-      "status": "unsupported",
-      "tests": [],
+      "advertised": true,
+      "status": "supported",
+      "tests": ["src/frame_grid_tests.rs"],
       "independent_vectors": ["asc-lc-960-flag"],
-      "missing": "none for reject path; support is TASK-63",
+      "missing": "HE-AAC over a 960-sample core stays Unsupported",
       "finding": "F09"
     },
     {
@@ -115,7 +115,7 @@
       "status": "unsupported",
       "tests": [],
       "independent_vectors": ["asc-aot-main"],
-      "missing": "TASK-97 research",
+      "missing": "Main and LTP decode; SSR eight-short, ELD, and USAC stay out",
       "finding": null
     },
     {

@@ -42,6 +42,9 @@ impl LcEncoder {
         self.target_q = [[0.0; MAX_BANDS]; 2];
         self.credit = 0;
         self.pad_debt = 0;
+        if let Some(resv) = &mut self.cbr {
+            resv.clear();
+        }
         self.rate_guess = super::rate::OFFSET_LO;
         self.ms = MsBands::off();
         self.tns = [EncTns::off(), EncTns::off()];

@@ -10,7 +10,7 @@ use super::channel_map::ElemKind;
 use super::det_math;
 use super::error::{Error, Result};
 use super::ics::IcsInfo;
-use super::ics_body::parse_ics;
+use super::ics_body::parse_ics_len;
 use super::section::{SectionData, ZERO_HCB};
 use super::sf::{self, ScaleFactors};
 use super::tns::TnsData;
@@ -54,10 +54,17 @@ pub(crate) struct PendingChan {
     pub ics: IcsInfo,
     pub tns: Option<TnsData>,
     pub spec: Vec<f32>,
+    /// SSR gain for this channel. LC leaves it empty.
+    pub gain: Option<std::boxed::Box<super::ssr::GainControl>>,
 }
 
 /// Parse a CCE completely (FAAD2 Table 4.4.8 / FFmpeg `decode_cce`).
-pub fn parse_cce(br: &mut BitReader<'_>, fs_index: u8, aot: u8) -> Result<CcePayload> {
+pub fn parse_cce(
+    br: &mut BitReader<'_>,
+    fs_index: u8,
+    aot: u8,
+    frame_len: u16,
+) -> Result<CcePayload> {
     let tag = br.read(4)? as u8;
     let independent = br.read_bit()?;
     let n_coupled = br.read(3)? as usize + 1;
@@ -87,7 +94,7 @@ pub fn parse_cce(br: &mut BitReader<'_>, fs_index: u8, aot: u8) -> Result<CcePay
     let domain = u8::from(br.read_bit()?);
     let sign = br.read_bit()?;
     let scale_idx = br.read(2)? as u8;
-    let body = parse_ics(br, fs_index, aot, None)?;
+    let body = parse_ics_len(br, fs_index, aot, None, frame_len)?;
     let groups = body.ics.num_window_groups as usize;
     let max_sfb = body.ics.max_sfb as usize;
     let n_band = groups.saturating_mul(max_sfb);

@@ -5,6 +5,9 @@ use crate::engine::error::Error as EngineError;
 use std::fmt;
 use std::io;
 
+#[path = "error_feat.rs"]
+mod error_feat;
+
 /// Result alias for this crate.
 pub type Result<T> = std::result::Result<T, AacError>;
 
@@ -14,8 +17,11 @@ pub type Result<T> = std::result::Result<T, AacError>;
 pub enum UnsupportedFeature {
     /// `audioObjectType` other than LC, SBR, PS, or LD.
     AudioObjectType(u8),
-    /// `frameLengthFlag == 1` (960-line, or the 480-sample LD grid).
+    /// Display text for this variant is fixed. 960-sample LC and the
+    /// 480-sample LD grid do not return it.
     FrameLength960,
+    /// HE-AAC (SBR or PS) on a 960-sample core.
+    HeFrame960,
     /// `channel_configuration` 8–15 (6.1, 7.1 back/top, reserved); 1–7 and PCE decode.
     ChannelConfiguration(u8),
     /// No SWB table / reserved ADTS rate index.
@@ -34,7 +40,7 @@ pub enum UnsupportedFeature {
     EncodeRawOneShot,
     /// HE-AAC v1 encode needs an output rate whose half is an ADTS rate.
     EncodeHeRate(u32),
-    /// `decode_au` needs [`crate::Decoder::from_asc`]; `feed` is ADTS/LATM.
+    /// `decode_au` needs [`crate::Decoder::from_asc`]; `feed` is ADTS/LATM/fMP4.
     RawAccessUnit,
     /// Mid-stream AudioSpecificConfig change (call [`crate::Decoder::reset`]).
     AscChange,
@@ -207,53 +213,6 @@ impl AacError {
     }
 }
 
-impl fmt::Display for UnsupportedFeature {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::AudioObjectType(a) => write!(f, "aac: unsupported audioObjectType {a}"),
-            Self::FrameLength960 => write!(f, "aac: 960-line frames are Media"),
-            Self::ChannelConfiguration(c) => {
-                write!(f, "aac: unsupported channel_configuration {c}")
-            }
-            Self::SampleRateIndex(i) => {
-                write!(f, "aac: no SWB table for samplingFrequencyIndex {i}")
-            }
-            Self::LatmVersionA => write!(f, "aac: LATM audioMuxVersionA reserved"),
-            Self::LatmFrameLengthType => write!(f, "aac: LATM frameLengthType not AAC"),
-            Self::Extension(t) => write!(f, "aac: extension_type {t}"),
-            Self::M4aPush => write!(
-                f,
-                "aac: M4A/ISOBMFF needs random access; use decode_streaming"
-            ),
-            Self::EncodeM4aStreaming => {
-                write!(
-                    f,
-                    "encode: M4A/ISOBMFF needs finish-time sizes; use encode_with"
-                )
-            }
-            Self::EncodeRawOneShot => {
-                write!(
-                    f,
-                    "encode: raw access units need the push Encoder (per-AU sizes)"
-                )
-            }
-            Self::EncodeHeRate(r) => {
-                write!(f, "encode: HE-AAC needs 16-48 kHz (2x ADTS), got {r} Hz")
-            }
-            Self::RawAccessUnit => {
-                write!(f, "aac: decode_au is ASC+AU; feed is ADTS/LATM")
-            }
-            Self::AscChange => {
-                write!(
-                    f,
-                    "aac: AudioSpecificConfig changed mid-stream; call reset()"
-                )
-            }
-            Self::FragmentedMp4(reason) => write!(f, "aac: fragmented MP4: {reason}"),
-        }
-    }
-}
-
 impl fmt::Display for MalformedKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
@@ -366,6 +325,7 @@ impl From<EngineError> for AacError {
             EngineError::AdtsCrcMismatch => Self::Malformed(M::AdtsCrc),
             EngineError::UnsupportedAot(a) => Self::Unsupported(U::AudioObjectType(a)),
             EngineError::UnsupportedFrameLength => Self::Unsupported(U::FrameLength960),
+            EngineError::UnsupportedHeFrame960 => Self::Unsupported(U::HeFrame960),
             EngineError::UnsupportedChannelConfiguration(c) => {
                 Self::Unsupported(U::ChannelConfiguration(c))
             }

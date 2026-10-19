@@ -25,8 +25,7 @@ pub enum ProbeContainer {
 
 /// Codec profile from the header or ASC. ADTS implicit HE stays [`Self::Lc`]
 /// (SBR is in-band, not in the 7-byte header). [`Self::Ld`] is ER AAC LD
-/// (AOT 23, 512-sample frames). A 480-sample `frameLengthFlag` stays
-/// [`AacError::Unsupported`].
+/// (AOT 23, 512- or 480-sample frames). Both grids probe as [`Self::Ld`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ProbeProfile {
@@ -45,9 +44,10 @@ pub enum ProbeDuration {
     Unknown,
 }
 
-/// Encoder delay and unplayed tail. An ADTS `iTunSMPB` tag and an M4A
-/// edit list report [`Self::Exact`]. Untagged ADTS and LATM stay
-/// [`Self::Unknown`].
+/// Encoder delay and unplayed tail. An ADTS `iTunSMPB` tag reports
+/// [`Self::Exact`] only when its counts match the buffered frames (1024
+/// or 2048 samples each). An M4A edit list reports [`Self::Exact`]. A
+/// stale tag, untagged ADTS, and LATM stay [`Self::Unknown`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ProbeTrim {

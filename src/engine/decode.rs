@@ -62,6 +62,8 @@ pub struct StreamDecoder {
     pub(crate) plane_order: Vec<super::channel_map::PlaneMap>,
     /// Independent-CCE IMDCT scratch (TASK-78).
     pub(crate) cce_pcm: Vec<f32>,
+    /// Main predictor, LTP delay line, and SSR filterbank. LC leaves it idle.
+    pub(crate) tools: super::tools::Tools,
     pub(crate) pns_shared: Vec<f32>,
     pub(crate) pending_sbrs: Vec<(
         (super::channel_map::ElemKind, u8),
@@ -73,6 +75,8 @@ pub struct StreamDecoder {
     pub(crate) prof_sbr: u64,
     pub(crate) prof_scale: u64,
     pub(crate) prof_frames: u64,
+    /// ASC core length (0 = 1024 LC / 512 LD). 960 and 480 select those grids.
+    pub(crate) frame_samples: u16,
 }
 
 impl StreamDecoder {
@@ -185,12 +189,17 @@ impl StreamDecoder {
     ) -> Result<u32> {
         meta::check_config(aot, channel_configuration)?;
         self.refill_spec_bufs();
-        let ld = aot == super::asc::AOT_LD;
-        let core_aot = if ld { aot } else { 2 };
+        let core_aot = match aot {
+            1 | 3 | 4 | 23 => aot,
+            _ => 2,
+        };
+        self.tools.aot = core_aot;
         let mut br = BitReader::new(payload);
         // cfg 0 / ≥3 / PCE: per-channel FBs. cfg 1/2 keep the fast path.
         let multichannel =
             channel_configuration == 0 || channel_configuration >= 3 || self.pce.is_some();
+        self.tools.multichannel = multichannel;
+        self.tools.begin_frame();
         if multichannel {
             self.fast_mono = false;
         }
@@ -202,6 +211,7 @@ impl StreamDecoder {
         self.sbr_pool.begin_frame();
         self.pending_sbrs.clear();
         let t_lc = super::prof::stamp();
+        let ld = core_aot == super::asc::AOT_LD;
         if ld {
             self.decode_ld_elements(&mut br, fs_index, core_aot, channel_configuration)?;
         } else {
@@ -213,6 +223,14 @@ impl StreamDecoder {
                 channel_configuration,
                 multichannel,
             )?;
+        }
+        if self.frame_samples == 960
+            && (self.sbr_declared
+                || self.ps_declared
+                || self.sbr_active
+                || !self.pending_sbrs.is_empty())
+        {
+            return Err(super::error::Error::UnsupportedHeFrame960);
         }
         self.prof_lc += super::prof::ns(t_lc);
         br.byte_align()?;
@@ -227,6 +245,7 @@ impl StreamDecoder {
         self.prof_fin += super::prof::ns(t_fin);
         if was_fast && !he {
             self.fb_pool.retain_seen();
+            self.tools.retain_seen();
             self.fast_mono = was_fast;
             self.store_meta(channel_configuration, sample_rate, sample_rate, None, 1);
             return Ok(sample_rate);
@@ -265,6 +284,7 @@ impl StreamDecoder {
                 }
             }
             self.fb_pool.retain_seen();
+            self.tools.retain_seen();
             self.fast_mono = was_fast;
             self.store_meta(
                 channel_configuration,
@@ -290,6 +310,7 @@ impl StreamDecoder {
         )?;
         self.prof_sbr += super::prof::ns(t_sbr);
         self.fb_pool.retain_seen();
+        self.tools.retain_seen();
         self.sbr_pool.retain_seen();
         self.fast_mono = was_fast;
         self.store_meta(

@@ -21,7 +21,7 @@ fn silent_ics(w: &mut BitWriter) {
 
 fn parse_ok(bytes: &[u8]) -> super::cce::CcePayload {
     let mut br = BitReader::new(bytes);
-    parse_cce(&mut br, 3, 2).expect("parse_cce")
+    parse_cce(&mut br, 3, 2, 0).expect("parse_cce")
 }
 
 #[test]
@@ -39,7 +39,7 @@ fn independent_one_sce_consumes_header_ics_and_no_gain() {
     let bits = 4 + 1 + 3 + 1 + 4 + 1 + 1 + 2 + 22;
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    let cce = parse_cce(&mut br, 3, 2).unwrap();
+    let cce = parse_cce(&mut br, 3, 2, 0).unwrap();
     assert_eq!(cce.tag, 7);
     assert!(cce.independent);
     assert_eq!(cce.n_coupled, 1);
@@ -64,7 +64,7 @@ fn independent_two_targets_reads_one_sf_vlc() {
     w.write_bit(false); // sf delta 0 (Table 4.A.1 index 60)
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    let cce = parse_cce(&mut br, 3, 2).unwrap();
+    let cce = parse_cce(&mut br, 3, 2, 0).unwrap();
     assert_eq!(cce.n_coupled, 2);
     assert_eq!(cce.n_gain_lists, 2);
     assert_eq!(br.bit_position(), 4 + 1 + 3 + 5 + 5 + 4 + 22 + 1);
@@ -88,7 +88,7 @@ fn dependent_second_list_common_gain() {
     w.write_bit(false); // sf 0
     let bytes = w.finish();
     let mut br = BitReader::new(&bytes);
-    let cce = parse_cce(&mut br, 3, 2).unwrap();
+    let cce = parse_cce(&mut br, 3, 2, 0).unwrap();
     assert!(!cce.independent);
     assert_eq!(cce.n_gain_lists, 2);
 }
@@ -132,7 +132,7 @@ fn truncated_gain_is_unexpected_end() {
     let bytes = w.finish();
     assert_eq!(bytes.len(), 8);
     let mut br = BitReader::new(&bytes);
-    let err = parse_cce(&mut br, 3, 2).expect_err("truncated gain");
+    let err = parse_cce(&mut br, 3, 2, 0).expect_err("truncated gain");
     assert!(matches!(err, Error::UnexpectedEnd | Error::HuffmanInvalid));
 }
 

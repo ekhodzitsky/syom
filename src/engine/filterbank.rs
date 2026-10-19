@@ -6,6 +6,9 @@ use super::imdct::imdct_into_f32;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 use std::sync::LazyLock;
 
+#[path = "filterbank_grid.rs"]
+mod grid;
+
 const N_L: usize = 2048;
 const N_S: usize = 256;
 /// AAC-LD frame length in PCM samples (512-line transform).
@@ -64,7 +67,7 @@ fn bessel_i0(x: f64) -> f64 {
     sum
 }
 
-fn kbd_left(half: usize, alpha: f64) -> Vec<f64> {
+pub(crate) fn kbd_left(half: usize, alpha: f64) -> Vec<f64> {
     let quarter = half as f64 / 2.0;
     let denom = bessel_i0(std::f64::consts::PI * alpha);
     let kernel: Vec<f64> = (0..=half)
@@ -84,7 +87,7 @@ fn kbd_left(half: usize, alpha: f64) -> Vec<f64> {
     out
 }
 
-fn sine_left(half: usize) -> Vec<f64> {
+pub(crate) fn sine_left(half: usize) -> Vec<f64> {
     let n = (2 * half) as f64;
     (0..half)
         .map(|i| (std::f64::consts::PI / n * (i as f64 + 0.5)).sin())
@@ -159,6 +162,11 @@ impl Default for Filterbank {
 }
 
 impl Filterbank {
+    /// Windowed overlap saved for the next frame (filterbank scale).
+    pub(crate) fn saved_overlap(&self) -> &[f32] {
+        &self.overlap
+    }
+
     /// Zero overlap, previous shape sine (lavc `use_kb_window[1]` starts at 0).
     #[must_use]
     pub fn new() -> Self {
@@ -184,7 +192,13 @@ impl Filterbank {
         ics: &IcsInfo,
         dst: &mut Vec<f32>,
     ) -> Result<()> {
+        if ics.core_len() == 960 {
+            return grid::synthesize_960(self, spec, ics, dst);
+        }
         if ics.ld {
+            if ics.core_len() == 480 {
+                return grid::synthesize_ld480(self, spec, ics, dst);
+            }
             return self.synthesize_ld_into(spec, ics, dst);
         }
         if ics.window_sequence == WindowSequence::OnlyLong {

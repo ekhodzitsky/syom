@@ -204,7 +204,22 @@ fn ar_filter(spec: &mut [f32], start: usize, size: usize, inc: i32, lpc: &[f64])
 }
 
 /// §4.6.9.3 `tns_decode_frame` on a window-major spectrum.
+/// Encoder-direction TNS used by LTP on the predicted spectrum.
+pub(crate) fn apply_ma(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Result<()> {
+    apply_dir(spec, tns, ics, fs_index, false)
+}
+
 pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Result<()> {
+    apply_dir(spec, tns, ics, fs_index, true)
+}
+
+fn apply_dir(
+    spec: &mut [f32],
+    tns: &TnsData,
+    ics: &IcsInfo,
+    fs_index: u8,
+    decode: bool,
+) -> Result<()> {
     let win_len = ics.window_len();
     let offsets = ics.swb_offsets(fs_index)?;
     let tns_max_order = max_order(ics.window_sequence) as usize;
@@ -235,10 +250,44 @@ pub fn apply(spec: &mut [f32], tns: &TnsData, ics: &IcsInfo, fs_index: u8) -> Re
             } else {
                 (1i32, base + start)
             };
-            ar_filter(spec, origin, size, inc, &lpc[..=order]);
+            if decode {
+                ar_filter(spec, origin, size, inc, &lpc[..=order]);
+            } else {
+                ma_filter(spec, origin, size, inc, &lpc[..=order]);
+            }
         }
     }
     Ok(())
+}
+
+/// All-zero analysis: `y[n] = x[n] + Σ a[i] x[n−i]`, the inverse of `ar_filter`.
+fn ma_filter(spec: &mut [f32], start: usize, size: usize, inc: i32, lpc: &[f64]) {
+    let order = lpc.len().saturating_sub(1);
+    if size == 0 || order == 0 {
+        return;
+    }
+    let mut hist = [0.0f64; MAX_TNS_ORDER];
+    let mut pos = 0usize;
+    let mut idx = start as isize;
+    for _ in 0..size {
+        let x = f64::from(spec[idx as usize]);
+        let mut y = x;
+        let mut hidx = pos;
+        for &coeff in lpc.iter().take(order + 1).skip(1) {
+            if hidx == 0 {
+                hidx = order;
+            }
+            hidx -= 1;
+            y += coeff * hist[hidx];
+        }
+        hist[pos] = x;
+        spec[idx as usize] = y as f32;
+        pos += 1;
+        if pos == order {
+            pos = 0;
+        }
+        idx += inc as isize;
+    }
 }
 
 #[cfg(test)]

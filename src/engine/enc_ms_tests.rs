@@ -241,6 +241,14 @@ fn emit_parses_back_bit_exact() -> Result<()> {
         window_group_length: [1, 0, 0, 0, 0, 0, 0, 0],
         num_swb: n_bands as u8,
         ld: false,
+        frame_len: 0,
+        predictor_present: false,
+        pred_reset_group: 0,
+        pred_used: 0,
+        ltp_present: false,
+        ltp_lag: 0,
+        ltp_coef_idx: 0,
+        ltp_used: 0,
     };
     let parsed = MsInfo::parse(&mut br, &ics)?;
     assert_eq!(parsed.mask, MsMask::PerBand);

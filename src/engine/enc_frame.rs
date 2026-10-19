@@ -97,6 +97,8 @@ pub struct LcEncoder {
     /// Quality VBR (TASK-67): a fixed allowed-noise offset instead of the
     /// ABR rate loop; `None` = ABR on `bitrate_bps`.
     quality: Option<i32>,
+    /// Opt-in CBR reservoir (`enc_cbr`). `None` keeps ABR.
+    cbr: Option<cbr::Reservoir>,
     /// Short-path state (touched only on EightShort frames).
     chans_s: Box<[QuantShort; 2]>,
     books_s: [[u8; MAX_FLAT_SHORT]; 2],
@@ -180,6 +182,7 @@ impl LcEncoder {
             pad_fill: 0,
             alloc: super::heap::heap_array(super::enc_alloc::AllocCache::new()),
             quality: None,
+            cbr: None,
             chans_s: super::heap::heap_array(QuantShort::new(short_offsets.len() - 1)),
             books_s: [[0; MAX_FLAT_SHORT]; 2],
             target_q_s: [[0.0; MAX_FLAT_SHORT]; 2],
@@ -240,15 +243,6 @@ impl LcEncoder {
     #[cfg(test)]
     pub(crate) fn tns_on(&self) -> bool {
         self.tns[..self.channels].iter().any(EncTns::is_on)
-    }
-
-    /// Per-frame bit budget from the target bitrate (no reservoir),
-    /// never above the LC 6144 bits/channel cap or the ADTS byte ceiling.
-    fn budget_bits(&self) -> usize {
-        let bits = u64::from(self.bitrate_bps) * 1024 / u64::from(self.sample_rate);
-        (bits as usize)
-            .min(rate::max_frame_bits(self.channels))
-            .min(MAX_PAYLOAD_BYTES * 8)
     }
 
     /// Window sequence state machine (see the module docs). Causal: the
@@ -371,6 +365,10 @@ mod opts;
 /// ABR rate loop vs quality VBR (`enc_frame_control.rs`), a child like `rate`.
 #[path = "enc_frame_control.rs"]
 mod control;
+
+/// Opt-in CBR bit reservoir (`enc_cbr.rs`). Default ABR does not enter it.
+#[path = "enc_cbr.rs"]
+mod cbr;
 
 #[path = "enc_frame_alloc.rs"]
 mod alloc;

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-19
+
+### Added
+
+- Opt-in LC CBR (`EncodeOptions::with_cbr`): a bit reservoir inside the
+  6144 bits/channel frame cap. Default encode stays ABR, and ADTS
+  `adts_buffer_fullness` stays `0x7FF` unless CBR is on. Not combined
+  with HE, AAC-LD, quality VBR, or surround.
+- Decode 960-sample AAC-LC and the 480-sample AAC-LD grid. HE-AAC on a
+  960-sample core is `Unsupported`, not a 960-line LC frame. 1024-sample
+  and 512-sample streams are unchanged.
+- Decode AAC Main and LTP to planar f32. SSR long windows decode; eight-short
+  SSR stays a typed error. LC, HE, and AAC-LD goldens are unchanged.
+
 ## [0.7.1] - 2026-10-02
 
 ### Changed
@@ -1025,7 +1039,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/ekhodzitsky/syom/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/ekhodzitsky/syom/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/ekhodzitsky/syom/compare/v0.5.0...v0.6.0

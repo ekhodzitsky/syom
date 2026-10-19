@@ -313,6 +313,14 @@ fn grouped_short_book11_matches_integer_rescale() -> Result<(), super::Error> {
         window_group_length: lens,
         num_swb: 14,
         ld: false,
+        frame_len: 0,
+        predictor_present: false,
+        pred_reset_group: 0,
+        pred_used: 0,
+        ltp_present: false,
+        ltp_lag: 0,
+        ltp_coef_idx: 0,
+        ltp_used: 0,
     };
     let sections = SectionData {
         sfb_cb: vec![

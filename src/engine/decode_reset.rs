@@ -6,6 +6,11 @@ use crate::engine::pns::Lcg;
 use crate::layout::FrameMeta;
 
 impl StreamDecoder {
+    /// Core samples per frame from the ASC (1024, 960, 512, or 480).
+    pub(crate) fn set_frame_samples(&mut self, n: u16) {
+        self.frame_samples = n;
+    }
+
     /// Zero overlap, HE/PS/PCE, LCG, and counters. Spectral/PCM/element
     /// `Vec` capacity is kept. [`Self::mix_down_mono`] is unchanged.
     pub(crate) fn reset(&mut self) {
@@ -38,8 +43,10 @@ impl StreamDecoder {
         }
         self.plane_order.clear();
         self.cce_pcm.clear();
+        self.tools.reset();
         self.pns_shared.clear();
         self.last_rdb_bytes = 0;
         self.last_meta = FrameMeta::EMPTY;
+        self.frame_samples = 0;
     }
 }

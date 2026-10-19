@@ -101,15 +101,18 @@ fn truncated_implicit_sbr_is_unexpected_end_not_panic() {
 }
 
 #[test]
-fn unsupported_960_and_main_are_explicit() {
-    assert!(matches!(
-        AudioSpecificConfig::parse(&unhex("118c")),
-        Err(Error::UnsupportedFrameLength)
-    ));
-    assert!(matches!(
-        AudioSpecificConfig::parse(&unhex("0988")),
-        Err(Error::UnsupportedAot(1))
-    ));
+fn lc_960_parses_and_main_is_explicit() -> Result<()> {
+    let (asc, _) = AudioSpecificConfig::parse(&unhex("118c"))?;
+    assert_eq!(asc.aot, 2);
+    assert_eq!(asc.frame_samples, 960);
+    assert_eq!(asc.sample_rate, 48_000);
+    assert_eq!(asc.channel_configuration, 1);
+    assert!(!asc.sbr_present);
+    let (main, _) = AudioSpecificConfig::parse(&unhex("0988"))?;
+    assert_eq!(main.aot, 1);
+    assert_eq!(main.sample_rate, 48_000);
+    assert_eq!(main.channel_configuration, 1);
+    Ok(())
 }
 
 #[test]
@@ -237,6 +240,7 @@ fn ld_aot23_config_parses_with_er_ga_bits() -> Result<()> {
     assert_eq!(asc.sample_rate, 48_000);
     assert_eq!(asc.output_sample_rate, 48_000);
     assert_eq!(asc.channel_configuration, 1);
+    assert_eq!(asc.frame_samples, 512);
     assert!(!asc.sbr_present);
     assert!(!asc.ps_present);
     assert_eq!(bits, 22);
@@ -249,18 +253,18 @@ fn ld_aot23_config_parses_with_er_ga_bits() -> Result<()> {
 }
 
 #[test]
-fn ld_config_rejects_480_frames_ep_config_and_ext3() {
-    // frameLengthFlag 1 = 480-sample LD grid: Unsupported, same as LC 960.
+fn ld_config_accepts_480_and_rejects_ep_config_and_ext3() -> Result<()> {
+    // frameLengthFlag 1 = 480-sample LD grid, not a 960-line LC frame.
     let mut w = BitWriter::new();
     w.write(23, 5);
     w.write(3, 4);
     w.write(1, 4);
     w.write_bit(true);
     w.write(0, 4);
-    assert!(matches!(
-        AudioSpecificConfig::parse(&w.finish()),
-        Err(Error::UnsupportedFrameLength)
-    ));
+    let (asc, _) = AudioSpecificConfig::parse(&w.finish())?;
+    assert_eq!(asc.aot, 23);
+    assert_eq!(asc.frame_samples, 480);
+    assert_eq!(asc.sample_rate, 48_000);
     assert!(matches!(
         AudioSpecificConfig::parse(&write_ld(3, 1, false, 2)),
         Err(Error::Format(_))
@@ -280,6 +284,7 @@ fn ld_config_rejects_480_frames_ep_config_and_ext3() {
         AudioSpecificConfig::parse(&w.finish()),
         Err(Error::Format("ASC extensionFlag3 is Media"))
     ));
+    Ok(())
 }
 
 #[test]

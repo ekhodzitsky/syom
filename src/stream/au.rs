@@ -12,8 +12,8 @@ impl Decoder {
     /// [`decode_au`](Self::decode_au) complete access units.
     ///
     /// The ASC is parsed and validated (LC / HE-AAC v1 / HE-AAC v2 / AAC-LD
-    /// AOT 23 at 512 samples per frame). A 480-sample LD
-    /// `frameLengthFlag` is [`AacError::Unsupported`]. PCM is
+    /// AOT 23 at 512 or 480 samples per frame, and 960-sample LC). HE-AAC
+    /// on a 960-sample core is [`AacError::Unsupported`]. PCM is
     /// delivered through the same borrowed [`Frame`] callback as [`Self::feed`].
     ///
     /// ```
@@ -53,8 +53,8 @@ impl Decoder {
     ///
     /// After a frame has been emitted, a different parsed ASC is
     /// [`AacError::Unsupported`] (`AscChange`); call [`Self::reset`] first.
-    /// The same ASC may be repeated. `feed` (ADTS/LATM) and `decode_au` do
-    /// not mix on one instance.
+    /// The same ASC may be repeated. `feed` (ADTS/LATM/fMP4) and `decode_au`
+    /// do not mix on one instance.
     pub fn set_asc(&mut self, asc: &[u8]) -> Result<()> {
         self.ensure_open()?;
         self.opts.validate()?;
@@ -85,6 +85,7 @@ impl Decoder {
         }
         self.dec
             .set_he_config(cfg.sbr_present, cfg.ps_present, cfg.output_sample_rate);
+        self.dec.set_frame_samples(cfg.frame_samples);
         self.au = Some(cfg);
         self.container = Container::Au;
         Ok(())

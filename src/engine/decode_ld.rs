@@ -50,11 +50,12 @@ impl StreamDecoder {
                     if multichannel {
                         reject_dup(&self.elems, kind, tag)?;
                     }
-                    let (ics, tns) = parse_ics_into(
+                    let (ics, tns, _gain) = parse_ics_into(
                         br,
                         fs_index,
                         aot,
                         None,
+                        self.frame_samples,
                         &mut self.quant,
                         &mut self.spec_l,
                         &mut self.sections_l,
@@ -67,7 +68,8 @@ impl StreamDecoder {
                     if multichannel {
                         reject_dup(&self.elems, ElemKind::Cpe, tag)?;
                     }
-                    let (ics_l, tns_l, ics_r, tns_r) = self.decode_cpe(br, fs_index, aot, tag)?;
+                    let (ics_l, tns_l, _gain_l, ics_r, tns_r, _gain_r) =
+                        self.decode_cpe(br, fs_index, aot, tag)?;
                     self.stash_chan(ElemKind::Cpe, tag, 0, ics_l, tns_l, true, true);
                     self.stash_chan(ElemKind::Cpe, tag, 1, ics_r, tns_r, false, true);
                 }

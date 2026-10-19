@@ -171,11 +171,7 @@ fn truncated_unsupported_change_callback_limit() {
         Err(e) => panic!("empty ASC: {e:?}"),
         Ok(_) => panic!("empty ASC must error"),
     }
-    match Decoder::from_asc(&[0x09, 0x88], opts.clone()) {
-        Err(AacError::Unsupported(UnsupportedFeature::AudioObjectType(1))) => {}
-        Err(e) => panic!("Main AOT: {e:?}"),
-        Ok(_) => panic!("Main AOT must error"),
-    }
+    Decoder::from_asc(&[0x09, 0x88], opts.clone()).expect("Main ASC");
     let mut dec = Decoder::from_asc(&write_lc(3, 1), opts.clone()).unwrap();
     let au = adts_payloads(SINE48)[0];
     dec.decode_au(au, |_| Ok(())).unwrap();

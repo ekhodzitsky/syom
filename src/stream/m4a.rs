@@ -78,6 +78,7 @@ where
         dec.set_config_pce(pce);
     }
     dec.set_he_config(asc.sbr_present, asc.ps_present, asc.output_sample_rate);
+    dec.set_frame_samples(asc.frame_samples);
     dec.mix_down_mono = mono;
     let mut scratch: Vec<f32> = Vec::new();
     let (mut skip_left, mut play_left) = track.edit_window(out_rate)?;
