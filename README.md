@@ -116,6 +116,9 @@ matches normalized baseline transcripts and durations on 32 speech-format cases.
 The [local load/fault qualification](lab/release-audit/HTTP-LOAD-0.8.1.md)
 also passes 224 measured requests per binary at 1/2/4/8 clients, queue and
 watchdog timeouts, and recovery after client cancellation.
+Those checks use the original consumer snapshot. The maintained
+[opt-in gigastt integration](https://github.com/ekhodzitsky/gigastt/pull/442)
+has [separate refactored-adapter qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md).
 Cold or stateful seeks can replay the prefix; known noise-free LC/LD
 prefixes retain short preroll. Tagged/untagged LC ABR/CBR consumer checks
 allocate zero times after warmup. Encoder listening, physical mobile,

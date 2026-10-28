@@ -124,8 +124,13 @@ in [gigastt-stream.json](runs/candidate-0.8.1/gigastt-stream.json) and
 - The packaged consumer passes all cells, including zero allocations after warmup for tagged/untagged LC ABR and CBR.
 - The package builds independently and retains zero runtime dependencies.
 
-The [consumer version patch](gigastt-version.patch) is ready for review;
-it now includes the manifest and lockfile update to the
+The maintained consumer integration is now [PR #442](https://github.com/ekhodzitsky/gigastt/pull/442),
+with a [separate qualification of its refactored adapter](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md).
+It keeps syom opt-in and preserves the standard decoder. The measurements
+in this document refer to the earlier working-tree snapshot.
+
+The archived [snapshot version patch](gigastt-version.patch)
+includes the manifest and lockfile update to the
 [published 0.8.1 package](PUBLISHED-0.8.1.md). The lab build's ORT
 configuration is not part of that production patch. Kover currently uses
 a separate legacy syom CLI helper, while this crate ships a library;

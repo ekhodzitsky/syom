@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `upload_busy` backoff, check client latency including retries, and use a
   held job to test pool timeouts independently of upload rejection. Keep
   the historical queueing protocol as the default.
+- Link the maintained opt-in gigastt integration and its new qualification,
+  distinguishing the refactored adapter from the earlier consumer snapshot.
 
 ## [0.8.1] - 2026-10-28
 

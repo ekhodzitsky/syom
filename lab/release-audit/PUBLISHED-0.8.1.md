@@ -42,13 +42,19 @@ registry syom 0.8.1, using the same lab ORT configuration as the canary. This
 compile check is not a production feature-matrix result; the patch does not
 change ORT configuration. [Check log](runs/http-load-0.8.1/published-consumer-check.log).
 
-The integration itself currently exists as uncommitted consumer changes;
-upstream gigastt main still uses the previous AAC path and has no syom
-dependency. Applying this version patch to upstream main alone is therefore
-not a complete integration. The consumer's existing changes were preserved.
-The patch is ready to accompany that integration's own review and commit.
+The original canary used the consumer's uncommitted working-tree adapter.
+A separately audited integration exists in [gigastt PR #442](https://github.com/ekhodzitsky/gigastt/pull/442),
+which retains the standard Symphonia path and exposes syom through the
+non-default `extended-aac` feature. Its [0.8.1 follow-up qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)
+uses the refactored adapter, current main, larger bounded worker batches,
+exact PCM checks, paired decoder timings and admission-aware HTTP load.
+These are distinct consumer snapshots; the earlier measurements are retained.
 
-Once the integration is committed on its intended consumer branch, build with
+The patch archived here targets the original working-tree snapshot, not
+upstream main alone or the updated PR head. Use the maintained PR for integration.
+The original consumer checkout and its unfinished changes were preserved.
+
+After the maintained integration is reviewed and merged, build with
 the deployment's normal features/runtime, repeat the paired canary, then
 use the [readiness/rollback sequence](HTTP-CANARY-0.8.1.md#reproduce-and-promote).
 No live deployment endpoint or traffic router was configured by this work;

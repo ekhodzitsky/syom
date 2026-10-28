@@ -2,6 +2,8 @@
 
 syom [0.8.1 is published](release-audit/PUBLISHED-0.8.1.md), with verified
 registry checksum and a downstream manifest/lockfile upgrade patch.
+The [maintained consumer PR qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)
+separately covers the refactored, opt-in adapter and current upload admission.
 
 The [0.8.1 qualification](release-audit/CANDIDATE-0.8.1.md) covers real
 recordings and the actual consumer adapter. Its
