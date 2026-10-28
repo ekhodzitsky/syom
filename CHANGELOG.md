@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Record verified 0.8.1 registry publication and complete the downstream
+  consumer dependency patch with its locked registry checksum.
+
 ## [0.8.1] - 2026-10-28
 
 ### Fixed

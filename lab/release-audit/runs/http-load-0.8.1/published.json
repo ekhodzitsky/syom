@@ -1,0 +1,18 @@
+{
+  "version": "0.8.1",
+  "created_at": "2026-10-28T21:02:54.602580Z",
+  "checksum": "9720ac01d202d983ee3b83bce3c72c4d0822a5e5533feadd03946e897b7a20d7",
+  "download_bytes": 449644,
+  "release_commit": "580f2546396870503eced5609a491a5e4bcf2797",
+  "cargo_vcs_info": {
+    "git": {
+      "sha1": "580f2546396870503eced5609a491a5e4bcf2797"
+    },
+    "path_in_vcs": ""
+  },
+  "registry_checksum_verified": true,
+  "published_runtime_sources_match_working_tree": true,
+  "runtime_source_files_compared": 168,
+  "rust_version": "1.89",
+  "crate_url": "https://crates.io/crates/syom/0.8.1"
+}

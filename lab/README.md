@@ -1,5 +1,8 @@
 # Offline native comparison lab
 
+syom [0.8.1 is published](release-audit/PUBLISHED-0.8.1.md), with verified
+registry checksum and a downstream manifest/lockfile upgrade patch.
+
 The [0.8.1 qualification](release-audit/CANDIDATE-0.8.1.md) covers real
 recordings and the actual consumer adapter. Its
 [paired HTTP ASR canary](release-audit/HTTP-CANARY-0.8.1.md) passes 32

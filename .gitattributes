@@ -5,3 +5,4 @@ src/engine/goldens/** -text
 src/engine/goldens/* -text
 # Captured audit evidence and patch context retain their original bytes.
 lab/release-audit/runs/** -text -whitespace
+lab/release-audit/*.patch -text -whitespace

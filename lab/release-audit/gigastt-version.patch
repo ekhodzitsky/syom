@@ -1,6 +1,28 @@
 diff --git a/crates/gigastt-core/Cargo.toml b/crates/gigastt-core/Cargo.toml
 --- a/crates/gigastt-core/Cargo.toml
 +++ b/crates/gigastt-core/Cargo.toml
-@@ -90 +90 @@
+@@ -87,7 +87,7 @@
+ symphonia = { version = "0.6.1", features = ["mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+ # AAC-LC, HE-AAC, and AAC-LD from ADTS, M4A, LATM/LOAS, and bounded fMP4.
+ # Zero runtime dependencies. rust-version 1.89, below the workspace MSRV.
 -syom = { version = "0.7.1", optional = true }
 +syom = { version = "0.8.1", optional = true }
+ # WAVE family ingest (PCM/IEEE, G.711, G.722, GSM 06.10, MS/IMA ADPCM,
+ # RF64/RIFX/Wave64). Zero default-feature deps; default features are
+ # `adpcm` + `simd`.
+diff --git a/Cargo.lock b/Cargo.lock
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -4175,9 +4175,9 @@
+ 
+ [[package]]
+ name = "syom"
+-version = "0.7.1"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "599d0459aea231fbafc3f1dd51743508d3414613a3aa067772a8c97eb327df7b"
++version = "0.8.1"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "9720ac01d202d983ee3b83bce3c72c4d0822a5e5533feadd03946e897b7a20d7"
+ 
+ [[package]]
+ name = "sysctl"

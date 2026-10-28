@@ -125,8 +125,8 @@ in [gigastt-stream.json](runs/candidate-0.8.1/gigastt-stream.json) and
 - The package builds independently and retains zero runtime dependencies.
 
 The [consumer version patch](gigastt-version.patch) is ready for review;
-its application also needs the normal consumer lockfile update once the
-candidate is published or bound with a local path. The lab build's ORT
+it now includes the manifest and lockfile update to the
+[published 0.8.1 package](PUBLISHED-0.8.1.md). The lab build's ORT
 configuration is not part of that production patch. Kover currently uses
 a separate legacy syom CLI helper, while this crate ships a library;
 upgrading that helper is a separate integration change.
