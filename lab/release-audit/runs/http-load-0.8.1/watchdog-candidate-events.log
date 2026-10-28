@@ -1,0 +1,5 @@
+2026-10-28T20:59:26.455598Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-10-28T20:59:26.549442Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:50989
+2026-10-28T20:59:27.815791Z ERROR request{request_id=01a1844f-86dd-7707-8c57-f8de30b6da2a method=POST path=/v1/transcribe}: gigastt::server::http::transcribe: REST inference made no progress for 1s — aborting
+2026-10-28T20:59:31.217533Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T20:59:31.250780Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

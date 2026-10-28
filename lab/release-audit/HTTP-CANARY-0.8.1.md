@@ -7,6 +7,9 @@ exit cleanly. Latency and RSS pass the recorded relative regression
 gates. This extends the [decode-only qualification](CANDIDATE-0.8.1.md)
 to actual model inference through `/v1/transcribe`.
 
+The subsequent [load/fault qualification](HTTP-LOAD-0.8.1.md) adds parallel
+REST requests, bounded memory checks, queue/watchdog timeouts and cancellation.
+
 ## Controlled comparison
 
 Two temporary gigastt 2.21.0 server binaries were built from identical

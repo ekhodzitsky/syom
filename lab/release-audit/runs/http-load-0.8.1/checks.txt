@@ -1,0 +1,14 @@
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+Local Linux x86_64 checks; no GitHub CI dispatched.
+PASS python3 -m py_compile lab/release-audit/run_http_load.py
+PASS cargo fmt --check
+PASS python3 scripts/check-file-size.py
+PASS python3 scripts/check-changelog.py
+PASS cargo clippy --all-targets -- -D warnings
+test result: ok. 1125 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 20.61s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s
+PASS python3 scripts/check-package.py: 176 files, 449656 compressed bytes; no runtime dependencies/build script
+PASS cargo publish --dry-run --locked --allow-dirty: independently built packaged crate; no upload
+PASS report links, input/reference and runner hashes, all load/fault gates, six exit-0 shutdowns
+PASS no experimental baseline/candidate servers remain

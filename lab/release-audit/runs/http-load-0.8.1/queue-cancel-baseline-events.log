@@ -1,0 +1,4 @@
+2026-10-28T20:58:32.666401Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-10-28T20:58:32.749546Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:43099
+2026-10-28T20:58:57.595908Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T20:58:57.626623Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

@@ -33,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Qualify the local 0.8.1 candidate on real consumer recordings and a
   paired HTTP RNN-T canary against syom 0.7.1; preserve source hashes,
   response parity, latency/RSS gates and readiness/rollback results.
+- Extend local HTTP qualification to concurrent 1/2/4/8-client load,
+  repeated memory checks, queue/watchdog timeouts and recovery after
+  disconnects and client read timeouts, against the same 0.7.1 baseline.
 
 ## [0.8.0] - 2026-10-19
 

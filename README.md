@@ -113,6 +113,9 @@ The local [0.8.1 candidate](lab/release-audit/CANDIDATE-0.8.1.md) passes
 adapter. It fixes padded-LC allocations and PNS history during M4A seek.
 The [paired HTTP ASR canary](lab/release-audit/HTTP-CANARY-0.8.1.md)
 matches normalized baseline transcripts and durations on 32 speech-format cases.
+The [local load/fault qualification](lab/release-audit/HTTP-LOAD-0.8.1.md)
+also passes 224 measured requests per binary at 1/2/4/8 clients, queue and
+watchdog timeouts, and recovery after client cancellation.
 Cold or stateful seeks can replay the prefix; known noise-free LC/LD
 prefixes retain short preroll. Tagged/untagged LC ABR/CBR consumer checks
 allocate zero times after warmup. Encoder listening, physical mobile,
