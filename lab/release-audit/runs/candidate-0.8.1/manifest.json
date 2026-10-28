@@ -1,0 +1,459 @@
+[
+  {
+    "id": "kover-source",
+    "path": "../kover/jobs/guard-retention-fixed/source.mp4",
+    "kind": "original consumer AAC",
+    "recording_id": "kover-instructional",
+    "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "48000",
+          "channels": 2
+        },
+        {
+          "codec_name": "h264",
+          "profile": "High"
+        }
+      ],
+      "format": {
+        "duration": "408.000000"
+      }
+    }
+  },
+  {
+    "id": "kover-lc-adts",
+    "path": "target/consumer-audit/inputs/kover-lc.adts",
+    "kind": "lossless container derivative",
+    "recording_id": "kover-instructional",
+    "sha256": "7da66e97631bee173faf6f7de2198a7be1360f3f324a5d9de998f099dc66423d",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "48000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "19501.629039"
+      }
+    }
+  },
+  {
+    "id": "kover-he1",
+    "path": "target/consumer-audit/inputs/kover-he1.adts",
+    "kind": "FDK encode of natural PCM excerpt",
+    "recording_id": "kover-instructional",
+    "encoder": {
+      "ok": true,
+      "lane": "encode",
+      "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+      "adts_bytes": 180886,
+      "delay": 5058,
+      "aot": 5,
+      "afterburner": 0,
+      "bitrate_bps": 48000
+    },
+    "sha256": "1c073402e02ae535fbb5d8330f5a0cd820b4375ec90376aba6285e5d6e751be6",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "HE-AAC",
+          "sample_rate": "48000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "30.147667"
+      }
+    }
+  },
+  {
+    "id": "kover-he2",
+    "path": "target/consumer-audit/inputs/kover-he2.adts",
+    "kind": "FDK encode of natural PCM excerpt",
+    "recording_id": "kover-instructional",
+    "encoder": {
+      "ok": true,
+      "lane": "encode",
+      "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+      "adts_bytes": 120583,
+      "delay": 7106,
+      "aot": 29,
+      "afterburner": 0,
+      "bitrate_bps": 32000
+    },
+    "sha256": "5e4bae784c8bf1faf763e2e423d6170dbec126ebfe01f299bba009ae0f4d026b",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "HE-AACv2",
+          "sample_rate": "48000",
+          "channels": 2
+        }
+      ],
+      "format": {
+        "duration": "30.151403"
+      }
+    }
+  },
+  {
+    "id": "golos_00",
+    "path": "target/consumer-audit/inputs/golos_00.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_00",
+    "source_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+    "sha256": "a662b21e9eb8e5987a2c4e6fc87ed953e3d72e1b0a4e94a12fe93aff5126e870",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "4.000000"
+      }
+    }
+  },
+  {
+    "id": "golos_01",
+    "path": "target/consumer-audit/inputs/golos_01.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_01",
+    "source_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+    "sha256": "87bf8aa989a2e35661649af67e9729980301aeb0e9b72868637d73e48e355758",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.430000"
+      }
+    }
+  },
+  {
+    "id": "golos_02",
+    "path": "target/consumer-audit/inputs/golos_02.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_02",
+    "source_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+    "sha256": "bbae30dd1eafd2899db2fb9faa5c650a444693d7a0ec343df4d07dfeb236244a",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.060000"
+      }
+    }
+  },
+  {
+    "id": "golos_03",
+    "path": "target/consumer-audit/inputs/golos_03.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_03",
+    "source_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+    "sha256": "041043a8beddbce68a5b357b68e46920010a58a047b232f65f19a8e071cb75eb",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "5.440000"
+      }
+    }
+  },
+  {
+    "id": "golos_04",
+    "path": "target/consumer-audit/inputs/golos_04.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_04",
+    "source_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+    "sha256": "d681d1c01582c90765ccf186c2faed4daeb9ecc0aa020736539adb0c61189a6f",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "5.220000"
+      }
+    }
+  },
+  {
+    "id": "golos_05",
+    "path": "target/consumer-audit/inputs/golos_05.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_05",
+    "source_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+    "sha256": "c353c6b45afb5093d4303562cd671e99233456b573ad3d7b8a129f9eb95c2134",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.204000"
+      }
+    }
+  },
+  {
+    "id": "golos_06",
+    "path": "target/consumer-audit/inputs/golos_06.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_06",
+    "source_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+    "sha256": "d248805919d4dc8965d00195edb59bfd534824f68dcfad4e48dcbcece165cbe3",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "5.000000"
+      }
+    }
+  },
+  {
+    "id": "golos_07",
+    "path": "target/consumer-audit/inputs/golos_07.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_07",
+    "source_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+    "sha256": "f55166821815750878af9052af29fb4f70368521f6615e79f02fddf7dcfeface",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "2.040000"
+      }
+    }
+  },
+  {
+    "id": "golos_08",
+    "path": "target/consumer-audit/inputs/golos_08.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_08",
+    "source_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+    "sha256": "671e862060e8febec6f76e9c2aa5213685879c42057898b9070737bdd7c88735",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "4.928000"
+      }
+    }
+  },
+  {
+    "id": "golos_09",
+    "path": "target/consumer-audit/inputs/golos_09.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_09",
+    "source_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+    "sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.344000"
+      }
+    }
+  },
+  {
+    "id": "golos_10",
+    "path": "target/consumer-audit/inputs/golos_10.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_10",
+    "source_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+    "sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.907000"
+      }
+    }
+  },
+  {
+    "id": "golos_11",
+    "path": "target/consumer-audit/inputs/golos_11.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_11",
+    "source_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+    "sha256": "948602e6ce2fa9bd193d118204481d0ce72c2bcd1660cedf9393f24458bd7488",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "5.640000"
+      }
+    }
+  },
+  {
+    "id": "golos_12",
+    "path": "target/consumer-audit/inputs/golos_12.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_12",
+    "source_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+    "sha256": "f88e12f972469a03a13a2364058668fb1ecf9334842dc485a81d2601b6405dca",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "5.944000"
+      }
+    }
+  },
+  {
+    "id": "golos_13",
+    "path": "target/consumer-audit/inputs/golos_13.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_13",
+    "source_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+    "sha256": "d08ec4308ec3e217b9bc387c4681296407caed9c6c48eb14be080ff29a30314d",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.200000"
+      }
+    }
+  },
+  {
+    "id": "golos_14",
+    "path": "target/consumer-audit/inputs/golos_14.m4a",
+    "kind": "FFmpeg encode of consumer natural speech WAV",
+    "recording_id": "golos_14",
+    "source_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+    "sha256": "a064c203afd9aa8abc0a6d565ea92b76f1e94fbba88e7b9f10b37e26bf36bd0e",
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "profile": "LC",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "3.410000"
+      }
+    }
+  }
+]

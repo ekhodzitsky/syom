@@ -1,5 +1,9 @@
 # syom benches
 
+Current 0.8.0 decode comparison against rusty_aac 2.0.1, Symphonia 0.6.1
+and oxideav-aac 0.1.7: [2026-10-28 release audit](lab/release-audit/REPORT.md).
+The older tables below do not rank current rusty_aac.
+
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
 Decode groups now run an untimed equivalent-PCM preflight
 (`syom::decode_cmp::run_preflight`) before Criterion: matching native

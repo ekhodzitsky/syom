@@ -1,8 +1,11 @@
 //! Isolated stateful Decoder/Encoder fuzz (TASK-49). Not invoked by `cargo test`.
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+
+#[allow(dead_code)]
+mod release_seeds;
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -112,31 +115,35 @@ fn main() {
     let latm = load("src/goldens/latm48.latm");
     let fmp4 = load("src/goldens/fmp4_lc.mp4");
     let ld = load("src/goldens/ld64m.loas");
-    let seeds = [
-        sine.as_slice(),
-        he.as_slice(),
-        latm.as_slice(),
-        fmp4.as_slice(),
-        ld.as_slice(),
-    ];
+    let mut seeds = vec![sine, he, latm, fmp4, ld];
+    seeds.extend(release_seeds::paths().into_iter().map(load));
+    seeds.extend(release_seeds::generated().into_iter().map(|(_, b)| b));
     let (limit, max_iters, seed) = parse_args();
     let start = Instant::now();
     let mut rng = seed;
     let mut n = 0u64;
     let mut panics = 0u64;
     let mut dec = syom::Decoder::new(syom::DecodeOptions::speech());
-    let mut enc = syom::Encoder::new(48_000, 1, &syom::EncodeOptions::adts()).expect("enc");
+    let opts = [
+        syom::EncodeOptions::adts(),
+        syom::EncodeOptions::adts().with_cbr(true),
+    ];
+    let mut encs = opts
+        .each_ref()
+        .map(|o| syom::Encoder::new(48_000, 1, o).expect("enc"));
     while n < max_iters && start.elapsed() < limit {
-        let src = seeds[(next_u32(&mut rng) as usize) % seeds.len()];
+        let src = &seeds[(next_u32(&mut rng) as usize) % seeds.len()];
         let panicked = catch_unwind(AssertUnwindSafe(|| {
             decode_step(&mut dec, src, &mut rng);
-            encode_step(&mut enc, &mut rng);
+            encode_step(&mut encs[n as usize % 2], &mut rng);
         }))
         .is_err();
         if panicked {
             panics += 1;
             dec = syom::Decoder::new(syom::DecodeOptions::speech());
-            enc = syom::Encoder::new(48_000, 1, &syom::EncodeOptions::adts()).expect("enc");
+            encs = opts
+                .each_ref()
+                .map(|o| syom::Encoder::new(48_000, 1, o).expect("enc"));
         }
         n += 1;
     }

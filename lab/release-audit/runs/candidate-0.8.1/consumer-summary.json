@@ -1,0 +1,135 @@
+[
+  {
+    "id": "kover-source",
+    "samples_16k": 6527999,
+    "hash_flat": "b4e5feb3e55d2139",
+    "hash_stream": "b4e5feb3e55d2139",
+    "pass": true
+  },
+  {
+    "id": "kover-lc-adts",
+    "samples_16k": 6528340,
+    "hash_flat": "c57b88752b71b00a",
+    "hash_stream": "c57b88752b71b00a",
+    "pass": true
+  },
+  {
+    "id": "kover-he1",
+    "samples_16k": 481279,
+    "hash_flat": "beaec2d554e456b6",
+    "hash_stream": "beaec2d554e456b6",
+    "pass": true
+  },
+  {
+    "id": "kover-he2",
+    "samples_16k": 481279,
+    "hash_flat": "bf1509305a2d143b",
+    "hash_stream": "bf1509305a2d143b",
+    "pass": true
+  },
+  {
+    "id": "golos_00",
+    "samples_16k": 64000,
+    "hash_flat": "fc01a42d3407adf9",
+    "hash_stream": "fc01a42d3407adf9",
+    "pass": true
+  },
+  {
+    "id": "golos_01",
+    "samples_16k": 54880,
+    "hash_flat": "549f8707425cbed0",
+    "hash_stream": "549f8707425cbed0",
+    "pass": true
+  },
+  {
+    "id": "golos_02",
+    "samples_16k": 48960,
+    "hash_flat": "6158dbbfa845dfe3",
+    "hash_stream": "6158dbbfa845dfe3",
+    "pass": true
+  },
+  {
+    "id": "golos_03",
+    "samples_16k": 87040,
+    "hash_flat": "4ec516f9ac04ab4f",
+    "hash_stream": "4ec516f9ac04ab4f",
+    "pass": true
+  },
+  {
+    "id": "golos_04",
+    "samples_16k": 83520,
+    "hash_flat": "38a5d2e2a52586a2",
+    "hash_stream": "38a5d2e2a52586a2",
+    "pass": true
+  },
+  {
+    "id": "golos_05",
+    "samples_16k": 51264,
+    "hash_flat": "95410431e503bb3e",
+    "hash_stream": "95410431e503bb3e",
+    "pass": true
+  },
+  {
+    "id": "golos_06",
+    "samples_16k": 80000,
+    "hash_flat": "4a0331926f543361",
+    "hash_stream": "4a0331926f543361",
+    "pass": true
+  },
+  {
+    "id": "golos_07",
+    "samples_16k": 32640,
+    "hash_flat": "98d9d8eaf2d6375c",
+    "hash_stream": "98d9d8eaf2d6375c",
+    "pass": true
+  },
+  {
+    "id": "golos_08",
+    "samples_16k": 78848,
+    "hash_flat": "2744adcbb07ec1e9",
+    "hash_stream": "2744adcbb07ec1e9",
+    "pass": true
+  },
+  {
+    "id": "golos_09",
+    "samples_16k": 53504,
+    "hash_flat": "76c4c894518396d5",
+    "hash_stream": "76c4c894518396d5",
+    "pass": true
+  },
+  {
+    "id": "golos_10",
+    "samples_16k": 62512,
+    "hash_flat": "8fe5837b9e04bfce",
+    "hash_stream": "8fe5837b9e04bfce",
+    "pass": true
+  },
+  {
+    "id": "golos_11",
+    "samples_16k": 90240,
+    "hash_flat": "caf4e428fa9926f0",
+    "hash_stream": "caf4e428fa9926f0",
+    "pass": true
+  },
+  {
+    "id": "golos_12",
+    "samples_16k": 95104,
+    "hash_flat": "ab63d53f7fa461f1",
+    "hash_stream": "ab63d53f7fa461f1",
+    "pass": true
+  },
+  {
+    "id": "golos_13",
+    "samples_16k": 51200,
+    "hash_flat": "d50e775bdac6c47e",
+    "hash_stream": "d50e775bdac6c47e",
+    "pass": true
+  },
+  {
+    "id": "golos_14",
+    "samples_16k": 54560,
+    "hash_flat": "6993866ece6aea2a",
+    "hash_stream": "6993866ece6aea2a",
+    "pass": true
+  }
+]

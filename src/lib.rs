@@ -258,6 +258,8 @@ mod stream_ld_tests;
 #[cfg(test)]
 #[path = "stream_m4a_seek_tests.rs"]
 mod stream_m4a_seek_tests;
+#[cfg(test)]
+mod stream_seek_noise_tests;
 
 #[cfg(test)]
 #[path = "stream_au_tests.rs"]

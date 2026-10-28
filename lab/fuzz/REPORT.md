@@ -1,5 +1,9 @@
 # TASK-48 initial parser-fuzz campaign
 
+The [2026-10-28 audit](../release-audit/REPORT.md) adds 0.8.0 seed
+families, raw ASC/AU mutation, CBR lifecycle exercise and AddressSanitizer.
+The initial campaign below is historical.
+
 Not invoked by `cargo test`. This is not proof of exhaustive safety.
 
 ## Toolchain / host

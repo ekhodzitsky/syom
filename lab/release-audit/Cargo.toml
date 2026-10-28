@@ -1,0 +1,18 @@
+[package]
+name = "syom-release-audit"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+syom = { path = "../.." }
+rusty_aac = "=2.0.1"
+oxideav-aac = "=0.1.7"
+symphonia = { version = "=0.6.1", default-features = false, features = ["aac", "isomp4"] }
+serde_json = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+[workspace]

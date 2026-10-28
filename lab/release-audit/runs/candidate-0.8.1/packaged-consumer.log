@@ -1,0 +1,18 @@
+packaged syom 0.8.1: 449239 bytes, sha256 c3bf7d47dfd5fe16…
+packaged manifest: no dependencies, no build.rs, rust-version 1.89
+--- flows ---
+cell bytes-decode: 1 call each way; speech = 1 ch, full = 2 ch @ 48000 Hz Mpeg(2), SNR L 39.3 / R 43.6 dB, no resample
+cell file-reader-decode: read(path) + read_with; decode_read over ADTS (17010 B) and LOAS (1905 B); raw ADTS sniff; tagged ADTS probe duration Exact(48000)
+cell raw-au: Encoder::raw + asc (2 B) -> 11 AUs; Decoder::from_asc + decode_au -> 11264 samples; frame meta Some(Mpeg(1)); wrap_adts_au re-frames
+cell sink-encode: encode_write to a generic Write (49 calls, 17010 B, byte-exact with one-shot); failing sink -> typed Io with exact prefix; encode_write_m4a/decode_seek roundtrip is sample-exact (48000 samples, priming Some(1024))
+cell bounded-streaming-abr: 1319-B chunks == one-shot (480000 samples); 10-s stream trips a 5-s cap with TooLong: Audio file too long (5s). Maximum supported: 5s.; reset() + second pass after warm-up: untagged 0 allocations; tagged 0 allocations / 0 B cumulative
+cell bounded-streaming-cbr: 1319-B chunks == one-shot (480000 samples); 10-s stream trips a 5-s cap with TooLong: Audio file too long (5s). Maximum supported: 5s.; reset() + second pass after warm-up: untagged 0 allocations; tagged 0 allocations / 0 B cumulative
+cell error-handling: garbage -> NotAac: Unsupported audio format | truncated-adts-tail -> Ok, -1024 samples (documented drop, not silent success) | truncated-raw-au -> Truncated: aac: unexpected end of bitstream at byte 0 | malformed-main-payload -> Truncated: aac: unexpected end of bitstream | tiny-asc -> NotAac: Unsupported audio format | |x|>1 -> InvalidPcm: encode: sample amplitude exceeds ±1 | NaN -> InvalidPcm: encode: non-finite sample | 7-planes -> Encode: encode: channels must be 1, 2, 3, 4, 5, 6 or 8, got 7 | garbage-feed -> NotAac: Unsupported audio format; failed instance -> Lifecycle until reset(), then recovers
+--- consumers ---
+cell kover-extract: 33666 B M4A in memory -> 64000 B s16le 16 kHz mono; native 48000 Hz / 96000 valid samples retained until the consumer's own resample; one-shot extract cost 448 allocs / 1473258 B heap; zero processes, zero temp files, zero WAV wraps
+cell kover-error: garbage M4A -> NotAac (helper path: exit status -> KoverError::Media, cause lost)
+cell sluh-ingest: AAC -> speech mono f32 (native) -> consumer resample -> 64000 B s16le; s16 quantization happens once, at the ASR boundary
+cell native-layout: same bytes as full fidelity -> (2, 48000, Mpeg(2), Some(1024)) (2 planes, sample-exact 96000 via elst, priming Some(1024)); the helper contract discards all of this
+cell probe: duration Exact { samples: 96000 }, trim Exact { priming: 1024, remainder: 256 } — exact before any PCM is decoded
+cell borrowed-encode: &[&[f32]] planes encode byte-identical to owned (33485 B) — no consumer-side copy
+OK: all consumer cells passed against the packaged crate

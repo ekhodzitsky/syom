@@ -1,0 +1,7 @@
+2026-10-28T17:19:16.755726Z  INFO gigastt::server::listen: gigastt bootstrapping on http://127.0.0.1:38153 — loading model, /health is up
+2026-10-28T17:19:17.046669Z  INFO gigastt_core::inference::engine::load: Models loaded (vocab_size=34, pool_size=1)
+2026-10-28T17:19:17.046751Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-10-28T17:19:29.845270Z ERROR request{request_id=01a18386-2835-72bd-af37-b4ec716a041a method=POST path=/v1/transcribe}: gigastt::server::http::transcribe: Transcription error: invalid audio: Unsupported audio format: unsupported feature: core (probe): no suitable format reader found
+2026-10-28T17:19:29.846978Z ERROR request{request_id=01a18386-2836-7378-8e45-f34b96bcb633 method=POST path=/v1/transcribe}: gigastt::server::http::transcribe: Transcription error: invalid audio: isomp4: box extends past end of input
+2026-10-28T17:19:29.866253Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T17:19:29.873545Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

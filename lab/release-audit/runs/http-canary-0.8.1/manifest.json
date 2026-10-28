@@ -1,0 +1,182 @@
+[
+  {
+    "id": "golos_00-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_00-aac",
+    "path": "target/consumer-audit/inputs/golos_00.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_01-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_01-aac",
+    "path": "target/consumer-audit/inputs/golos_01.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_02-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_02-aac",
+    "path": "target/consumer-audit/inputs/golos_02.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_03-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_03-aac",
+    "path": "target/consumer-audit/inputs/golos_03.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_04-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_04-aac",
+    "path": "target/consumer-audit/inputs/golos_04.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_05-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_05-aac",
+    "path": "target/consumer-audit/inputs/golos_05.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_06-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_06-aac",
+    "path": "target/consumer-audit/inputs/golos_06.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_07-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_07-aac",
+    "path": "target/consumer-audit/inputs/golos_07.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_08-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_08-aac",
+    "path": "target/consumer-audit/inputs/golos_08.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_09-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_09-aac",
+    "path": "target/consumer-audit/inputs/golos_09.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_10-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_10-aac",
+    "path": "target/consumer-audit/inputs/golos_10.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_11-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_11-aac",
+    "path": "target/consumer-audit/inputs/golos_11.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_12-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_12-aac",
+    "path": "target/consumer-audit/inputs/golos_12.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_13-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_13-aac",
+    "path": "target/consumer-audit/inputs/golos_13.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_14-wav",
+    "path": "../gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+    "kind": "wav"
+  },
+  {
+    "id": "golos_14-aac",
+    "path": "target/consumer-audit/inputs/golos_14.m4a",
+    "kind": "m4a"
+  },
+  {
+    "id": "golos_00-he1",
+    "path": "target/rollout-canary/inputs/golos_00-he1.adts",
+    "kind": "adts",
+    "encoder": {
+      "ok": true,
+      "lane": "encode",
+      "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+      "adts_bytes": 24599,
+      "delay": 5058,
+      "aot": 5,
+      "afterburner": 0,
+      "bitrate_bps": 48000
+    }
+  },
+  {
+    "id": "golos_00-he2",
+    "path": "target/rollout-canary/inputs/golos_00-he2.adts",
+    "kind": "adts",
+    "encoder": {
+      "ok": true,
+      "lane": "encode",
+      "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+      "adts_bytes": 16393,
+      "delay": 7106,
+      "aot": 29,
+      "afterburner": 0,
+      "bitrate_bps": 32000
+    }
+  }
+]

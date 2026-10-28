@@ -16,6 +16,98 @@ const FS_SBR: u32 = 96_000;
 
 type Planes = Vec<Vec<f32>>;
 
+#[test]
+fn opaque_fill_preserves_alignment_and_escaped_count() -> Result<(), Error> {
+    use super::sbr_attach::{SbrPool, ingest_fil};
+    for count in [0u32, 1, 8, 14, 15, 269] {
+        for offset in 0..8 {
+            let mut w = BitWriter::new();
+            w.write(0, offset);
+            if count < 15 {
+                w.write(count, 4);
+            } else {
+                w.write(15, 4);
+                w.write(count - 14, 8);
+            }
+            if count > 0 {
+                w.write(0, 4); // EXT_FILL, arbitrary opaque body follows.
+                w.write(0xb, 4);
+                for _ in 1..count {
+                    w.write(0xa5, 8);
+                }
+            }
+            w.write(0b10101, 5); // Next syntax must remain at this exact bit.
+            let bytes = w.finish();
+            let mut br = BitReader::new(&bytes);
+            br.skip(offset)?;
+            assert_eq!(super::skip::fill_count(&mut br)?, count);
+            let before = br.bit_position();
+            let mut pool = SbrPool::default();
+            let mut pending = Vec::new();
+            ingest_fil(&mut br, count, None, FS_SBR, &mut pool, &mut pending)?;
+            assert_eq!(br.bit_position(), before + u64::from(count) * 8);
+            assert_eq!(br.read(5)?, 0b10101);
+            assert!(pending.is_empty());
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn opaque_fill_truncation_is_not_accepted_as_padding() {
+    use super::sbr_attach::{SbrPool, ingest_fil};
+    for count in [1u32, 8, 269] {
+        let mut bytes = vec![0xff; count as usize];
+        bytes[0] = 0x0f; // EXT_FILL + arbitrary body bits.
+        for end in 0..bytes.len() {
+            let mut br = BitReader::new(&bytes[..end]);
+            assert!(
+                matches!(
+                    ingest_fil(
+                        &mut br,
+                        count,
+                        None,
+                        FS_SBR,
+                        &mut SbrPool::default(),
+                        &mut Vec::new()
+                    ),
+                    Err(Error::UnexpectedEnd)
+                ),
+                "count={count} bytes={end}"
+            );
+        }
+    }
+}
+
+#[test]
+fn opaque_fill_fast_path_does_not_relax_other_extensions() {
+    use super::sbr_attach::{SbrPool, ingest_fil};
+    for (bytes, count) in [(&[0x11][..], 1), (&[0x10, 0][..], 2)] {
+        assert!(matches!(
+            ingest_fil(
+                &mut BitReader::new(bytes),
+                count,
+                None,
+                FS_SBR,
+                &mut SbrPool::default(),
+                &mut Vec::new()
+            ),
+            Err(Error::ExtensionPayloadInvalid)
+        ));
+    }
+    assert!(matches!(
+        ingest_fil(
+            &mut BitReader::new(&[0xf0]),
+            1,
+            None,
+            FS_SBR,
+            &mut SbrPool::default(),
+            &mut Vec::new()
+        ),
+        Err(Error::UnsupportedExtensionType(15))
+    ));
+}
+
 fn write_header(w: &mut BitWriter, amp_res: bool) {
     w.write_bit(amp_res);
     w.write(5, 4);

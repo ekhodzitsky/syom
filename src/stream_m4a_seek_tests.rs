@@ -376,8 +376,8 @@ fn seek_before_end_beyond_and_repeat() -> Result<()> {
 }
 
 #[test]
-fn seek_io_is_preroll_not_prefix() -> Result<()> {
-    let data = LECTURE;
+fn seek_uses_short_preroll_only_after_verifying_the_prefix() -> Result<()> {
+    let data = SINE441;
     let mut probe = Probe {
         inner: Cursor::new(data),
         read_bytes: 0,
@@ -387,6 +387,12 @@ fn seek_io_is_preroll_not_prefix() -> Result<()> {
     let mut src = M4aSeek::open(&mut probe, DecodeOptions::speech())?;
     let play = src.presentation_len();
     let at = play / 2;
+    src.seek(at as i64)?;
+    assert!(
+        src.last_seek_aus() > 2,
+        "cold seek must establish noise history"
+    );
+    let _ = collect_from(&mut src)?;
     src.seek(at as i64)?;
     assert!(
         src.last_seek_aus() <= 2,

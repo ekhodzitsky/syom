@@ -1,0 +1,89 @@
+{
+  "cases": [],
+  "load_before": "13.58 14.00 8.82 4/5204 2150849",
+  "runtime_sha256": "aa4079d18f4ea7a5f3a94d80cd4bbe0f2740436626622d64d793803a20381083",
+  "instances": {
+    "baseline": {
+      "binary_sha256": "505b51c3af761e4be09c7a9edd01b997b982bfec184e87d19f3e8839d106b2ba",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/target/rollout-canary/gigastt-baseline",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "54143",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "rnnt",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--execution-provider",
+        "cpu",
+        "--metrics",
+        "--metrics-listen",
+        "127.0.0.1:58353",
+        "--shutdown-drain-secs",
+        "1"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "loading",
+        "version": "2.21.0"
+      },
+      "exit_code": 0
+    },
+    "candidate": {
+      "binary_sha256": "9977c9e9132e87d7f8c8ea24ee93c253b2d54ef8a3746022337ef33767b56a08",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/target/rollout-canary/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "34807",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "rnnt",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--execution-provider",
+        "cpu",
+        "--metrics",
+        "--metrics-listen",
+        "127.0.0.1:37839",
+        "--shutdown-drain-secs",
+        "1"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "loading",
+        "version": "2.21.0"
+      },
+      "exit_code": 0
+    }
+  },
+  "thresholds": {
+    "max_latency_ratio": 1.5,
+    "max_rss_ratio": 1.25,
+    "rss_slack_mib": 32
+  },
+  "pass": false,
+  "failure": "baseline warmup returned 503",
+  "load_after": "13.58 14.00 8.82 4/5203 2150999"
+}

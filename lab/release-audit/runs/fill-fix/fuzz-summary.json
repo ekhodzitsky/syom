@@ -1,0 +1,96 @@
+{
+  "seconds_per_worker": 180,
+  "workers": [
+    {
+      "name": "release-syom_fuzz-2801",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/lab/fuzz/target/release/syom_fuzz",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2801",
+        "--crash-dir",
+        "/home/ekhodzitsky/Projects/syom/target/fill-fix/crashes/release-syom_fuzz-2801"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.175
+    },
+    {
+      "name": "release-syom_fuzz-2802",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/lab/fuzz/target/release/syom_fuzz",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2802",
+        "--crash-dir",
+        "/home/ekhodzitsky/Projects/syom/target/fill-fix/crashes/release-syom_fuzz-2802"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.124
+    },
+    {
+      "name": "release-syom_fuzz_state-2801",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/lab/fuzz/target/release/syom_fuzz_state",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2801"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.145
+    },
+    {
+      "name": "release-syom_fuzz_state-2802",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/lab/fuzz/target/release/syom_fuzz_state",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2802"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.143
+    },
+    {
+      "name": "asan-syom_fuzz-2803",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/target/release-audit-fuzz-asan/x86_64-unknown-linux-gnu/release/syom_fuzz",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2803",
+        "--crash-dir",
+        "/home/ekhodzitsky/Projects/syom/target/fill-fix/crashes/asan-syom_fuzz-2803"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.321
+    },
+    {
+      "name": "asan-syom_fuzz_state-2803",
+      "command": [
+        "/home/ekhodzitsky/Projects/syom/target/release-audit-fuzz-asan/x86_64-unknown-linux-gnu/release/syom_fuzz_state",
+        "--seconds",
+        "180",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2803"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 180.22
+    }
+  ],
+  "child_cpu_seconds": 1076.334895
+}

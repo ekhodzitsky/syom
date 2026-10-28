@@ -1,0 +1,37 @@
+syom-lab-fuzz TASK-103
+seed 2801
+seeds 31
+  src/goldens/sine48.adts 4452 B
+  src/goldens/latm48.latm 2352 B
+  src/goldens/sine441.m4a 4907 B
+  src/goldens/he48.adts 832 B
+  src/goldens/ps48.adts 2440 B
+  src/goldens/mc51.adts 13294 B
+  src/goldens/enc48.adts 10744 B
+  src/goldens/tns48.adts 21 B
+  src/goldens/pns48.adts 3520 B
+  src/goldens/lecture.m4a 3213 B
+  src/goldens/he48.latm 819 B
+  src/goldens/ps48.m4a 3163 B
+  src/goldens/fmp4_lc.mp4 32090 B
+  src/goldens/ld48.loas 12324 B
+  src/goldens/ld64m.loas 16356 B
+  src/goldens/ld64mus.loas 16279 B
+  lab/frame960/vectors/lc960-m48.loas 312 B
+  lab/frame960/vectors/lc960-s48.loas 483 B
+  lab/frame960/vectors/lc960-s48.m4a 1055 B
+  generated-cbr 1872 B
+  authored-aot-1 56 B
+  authored-aot-3 52 B
+  authored-aot-4 60 B
+  corpus/fuzz/adts-reserved-srate.bin 7 B
+  corpus/fuzz/adts-truncated.bin 3 B
+  corpus/fuzz/m4a-truncated.bin 8 B
+  corpus/fuzz/adts-len-too-small.bin 7 B
+  corpus/fuzz/latm-truncated.bin 2 B
+  corpus/fuzz/fmp4-truncated.bin 756 B
+  corpus/fuzz/empty.bin 0 B
+  corpus/fuzz/asc-main-aot.bin 2 B
+iters 12054
+wall_ms 180108
+panics 0

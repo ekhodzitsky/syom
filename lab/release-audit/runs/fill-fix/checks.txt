@@ -1,0 +1,34 @@
+cargo test --workspace --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.13s
+test result: ok. 1124 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 48.58s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+cargo test --doc
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.67s
+
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.45s
+
+CARGO_TARGET_DIR=target/release-audit-msrv cargo +1.89.0 test --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.70s
+test result: ok. 1124 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 66.27s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+CARGO_TARGET_DIR=target/release-audit-asan RUSTFLAGS=-Zsanitizer=address ASAN_OPTIONS=detect_leaks=1 cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 17.17s
+test result: ok. 1124 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 98.71s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+python3 scripts/check-package.py
+OK: 176 files, 448558 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script
+
+cargo package --locked --allow-dirty
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.46s
+
+cargo fmt --check: passed
+python3 scripts/check-file-size.py: passed
+python3 scripts/check-changelog.py: passed
+git diff --check: passed
+
+Fuzz regression: 6 workers x 180 seconds; 794297 iterations; all exit 0

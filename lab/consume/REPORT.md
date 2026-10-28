@@ -1,5 +1,15 @@
 # TASK-102 — realistic consumer flows and one-engine integration
 
+**Historical 0.6.0 results.** The [0.8.0 rerun](../release-audit/REPORT.md)
+corrects the ADTS trim/probe assumptions and finds 915 steady-state
+allocations on padded LC; the zero-allocation claim below does not hold
+for that 0.8.0 consumer case.
+
+The [unreleased followup](../release-audit/FILL-FIX.md) restores zero
+allocations for the tagged/untagged LC ABR/CBR cells. The runner now
+rebuilds its release dependency after package extraction to avoid stale
+builds when the version stays the same.
+
 Measured 2026-09-22, Linux x86_64, dev-pin rustc 1.97.1. Subject is the
 **packaged** syom 0.6.0 crate (`cargo package --allow-dirty --no-verify`;
 360 942 B, sha256 `d9ff6bf4c8cc6aa8…`, manifest audited: no dependencies,

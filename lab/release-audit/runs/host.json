@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-28",
+  "engine_commit": "997bf56efda8700792dbc4b0136a36ad90eca328",
+  "engine_status": "",
+  "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cpu": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "nightly": "rustc 1.100.0-nightly (574ff7d98 2026-09-14)\nbinary: rustc\ncommit-hash: 574ff7d98bd6d037e5236a8453029173b32631fd\ncommit-date: 2026-09-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0-nightly\nLLVM version: 23.1.1\n",
+  "fixtures": {
+    "he48.adts": "c07b549e26756a05ed59c023ecab058daf491dc9dba709245ea2e7efc7108809",
+    "sine441.m4a": "ddbc480c0454cac9fdffa4610c018a03695df65dec5cb32d747bd7010330b1d5",
+    "mc51.adts": "86bf89c2ae9acdc117d58eb8d8bc4a9651aca1497b5185ab780f9d7a457e2ce5",
+    "ps48.adts": "fed0ba6e012ea13c9b09e2543f967102dc48a07a1d3075cf71e88ca9541de8dc",
+    "lecture.m4a": "5367bc4c93593c6de1afe0418eb9d673e4cc0201ff088bf542553c1589e05052",
+    "sine48.adts": "49bda98ba67c9662218495ff0bbfca61cc14a739ff788a8baec566b95a1c04c7",
+    "he48.m4a": "cdbff6fad512d33b0b9c8400fdfa1d9a2ba0fb5a7079c1fad47f4a5380be360e"
+  },
+  "harness_sha256": {
+    "lab/fuzz/src/state.rs": "1b87180845be03638b1a84ff114381a123c546a3e4d8dd097479673159ddaba8",
+    "lab/fuzz/src/main.rs": "c3f7bed4f9663fac020919c828b3a7c068b084b30b15b0083c4dde010fa9105c",
+    "lab/fuzz/src/release_seeds.rs": "2d6182d224ed6cd4fc05f74b82fdf3ea03ab618557651aa59bc80f853c32717e",
+    "lab/release-audit/Cargo.lock": "569e3e1c8c2c107a49766c6f14ebae8502a2d2c19859721446d4deafc35bbcf9"
+  },
+  "audit_harness_sha256": {
+    "lab/release-audit/src/main.rs": "1e33bdb2747c82ba939c25099856bd0b115850f53086bea0fb3140d2efa40218",
+    "lab/release-audit/src/peers.rs": "60f57d21db933b1c4cbb8161e1f815c76c5b335224f3ceb0bb8b8a8ba06b497c",
+    "lab/release-audit/src/bin/flows.rs": "bd204ed020a822f9a7bba2be459a30e43e48166fd2a4cabc1e4f5aef64707c49"
+  }
+}

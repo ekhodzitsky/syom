@@ -1,0 +1,4 @@
+OK: 176 files, 449483 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script
+Isolated package verification: passed
+Python runner syntax: passed
+Paired HTTP ASR protocol: all gates passed

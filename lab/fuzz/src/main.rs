@@ -1,8 +1,10 @@
 //! Isolated mutational parser fuzz (TASK-48). Not invoked by `cargo test`.
 
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
+
+mod release_seeds;
 
 const MAX_LEN: usize = 64 * 1024;
 
@@ -11,12 +13,18 @@ fn repo_root() -> PathBuf {
 }
 
 fn harvest(data: &[u8]) {
-    let opts = syom::DecodeOptions::speech();
+    let mut opts = syom::DecodeOptions::speech().with_max_duration_secs(10.0);
+    opts.memory.max_output_bytes = 16 << 20;
+    opts.memory.max_metadata_bytes = 1 << 20;
+    opts.memory.max_index_entries = 16384;
     let _ = syom::sniff_aac(data);
     let _ = syom::sniff_is_adts(data);
     let _ = syom::sniff_is_latm(data);
     let _ = syom::sniff_is_isobmff(data);
-    let _ = syom::decode_with(data, &opts);
+    if let Ok(pcm) = syom::decode_with(data, &opts) {
+        assert!(pcm.channels.iter().flatten().all(|x| x.is_finite()));
+    }
+    let _ = syom::probe(data);
 }
 
 fn next_u32(s: &mut u32) -> u32 {
@@ -83,6 +91,10 @@ fn load_seeds(root: &Path) -> Vec<(String, Vec<u8>)> {
         let p = root.join(rel);
         out.push((rel.to_string(), std::fs::read(&p).expect(rel)));
     }
+    for rel in release_seeds::paths() {
+        out.push((rel.to_string(), std::fs::read(root.join(rel)).expect(rel)));
+    }
+    out.extend(release_seeds::generated());
     let dir = root.join("corpus/fuzz");
     for ent in std::fs::read_dir(&dir).expect("corpus/fuzz") {
         let p = ent.expect("ent").path();
@@ -123,6 +135,7 @@ fn main() {
         let _ = std::fs::create_dir_all(d);
     }
     let start = Instant::now();
+    let raw = release_seeds::raw_cases();
     let mut rng = seed;
     let mut n = 0u64;
     let mut panics = 0u64;
@@ -130,7 +143,27 @@ fn main() {
     while n < max_iters && start.elapsed() < limit {
         let idx = (next_u32(&mut rng) as usize) % seeds.len();
         let buf = mutate(&seeds[idx].1, &mut rng);
-        let panicked = catch_unwind(AssertUnwindSafe(|| harvest(&buf))).is_err();
+        let panicked = catch_unwind(AssertUnwindSafe(|| {
+            harvest(&buf);
+            let (asc, au) = &raw[n as usize % raw.len()];
+            let mutated = mutate(au, &mut rng);
+            let config = if n % 2 == 0 {
+                mutate(asc, &mut rng)
+            } else {
+                asc.clone()
+            };
+            if let Ok(mut dec) = syom::Decoder::from_asc(&config, syom::DecodeOptions::speech()) {
+                let _ = dec.decode_au(&mutated, |f| {
+                    assert!(f
+                        .planar
+                        .iter()
+                        .flat_map(|p| p.iter())
+                        .all(|x| x.is_finite()));
+                    Ok(())
+                });
+            }
+        }))
+        .is_err();
         if panicked {
             panics += 1;
             last_panic = Some((n, seeds[idx].0.clone()));

@@ -1,0 +1,319 @@
+[
+  {
+    "path": "../kover/jobs/guard-retention-fixed/out.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        },
+        {
+          "index": 1,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "16000",
+          "channels": 1,
+          "duration": "407.680000"
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "407.991000"
+        }
+      ],
+      "format": {
+        "duration": "407.991000",
+        "size": "58516014"
+      }
+    },
+    "error": "",
+    "sha256": "b4ab208177925123e7c3a01f44dcdda978eafc34d74a495d1e5206c37df689fb"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-fixed/source.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "aac",
+          "profile": "LC",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 2,
+          "channel_layout": "stereo",
+          "duration": "408.000000"
+        },
+        {
+          "index": 1,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        }
+      ],
+      "format": {
+        "duration": "408.000000",
+        "size": "57704049"
+      }
+    },
+    "error": "",
+    "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-punct-fix/out.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        },
+        {
+          "index": 1,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "16000",
+          "channels": 1,
+          "duration": "407.680000"
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "407.991000"
+        }
+      ],
+      "format": {
+        "duration": "407.991000",
+        "size": "58495945"
+      }
+    },
+    "error": "",
+    "sha256": "33f868303416ed0f447a4328de7c3abdbf4839d6ca64f5fff9076d3bcdadf494"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-punct-fix/source.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "aac",
+          "profile": "LC",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 2,
+          "channel_layout": "stereo",
+          "duration": "408.000000"
+        },
+        {
+          "index": 1,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        }
+      ],
+      "format": {
+        "duration": "408.000000",
+        "size": "57704049"
+      }
+    },
+    "error": "",
+    "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-revision/out.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        },
+        {
+          "index": 1,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "16000",
+          "channels": 1,
+          "duration": "407.680000"
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "407.991000"
+        }
+      ],
+      "format": {
+        "duration": "407.991000",
+        "size": "58516013"
+      }
+    },
+    "error": "",
+    "sha256": "f2bb3b8c14adb58262d142111fd0ec888191c5a6006ab7a99051da2150f07aee"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-revision/phrases/out.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        },
+        {
+          "index": 1,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "16000",
+          "channels": 1,
+          "duration": "407.680000"
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "407.991000"
+        }
+      ],
+      "format": {
+        "duration": "407.991000",
+        "size": "58497370"
+      }
+    },
+    "error": "",
+    "sha256": "366fda036a0ae36eead2f9cf799e03e31f180967de79870815f079db9b7c8826"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-revision/phrases/source.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "aac",
+          "profile": "LC",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 2,
+          "channel_layout": "stereo",
+          "duration": "408.000000"
+        },
+        {
+          "index": 1,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        }
+      ],
+      "format": {
+        "duration": "408.000000",
+        "size": "57704049"
+      }
+    },
+    "error": "",
+    "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-revision/source.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "aac",
+          "profile": "LC",
+          "codec_type": "audio",
+          "sample_rate": "48000",
+          "channels": 2,
+          "channel_layout": "stereo",
+          "duration": "408.000000"
+        },
+        {
+          "index": 1,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        }
+      ],
+      "format": {
+        "duration": "408.000000",
+        "size": "57704049"
+      }
+    },
+    "error": "",
+    "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0"
+  },
+  {
+    "path": "../kover/jobs/guard-retention-trial/first-pass-out.mp4",
+    "exit": 0,
+    "probe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "profile": "High",
+          "codec_type": "video",
+          "duration": "407.990917"
+        },
+        {
+          "index": 1,
+          "codec_name": "pcm_s16le",
+          "codec_type": "audio",
+          "sample_rate": "16000",
+          "channels": 1,
+          "duration": "407.680000"
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "407.991000"
+        }
+      ],
+      "format": {
+        "duration": "407.991000",
+        "size": "58516018"
+      }
+    },
+    "error": "",
+    "sha256": "6832ff4c11266159063ca222c41b440d5c34e7d9058056eb7a8a87efc723bbe6"
+  }
+]

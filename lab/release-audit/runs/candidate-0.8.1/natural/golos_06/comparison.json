@@ -1,0 +1,35 @@
+{
+  "id": "golos_06",
+  "recording_id": "golos_06",
+  "kind": "FFmpeg encode of consumer natural speech WAV",
+  "sha256": "d248805919d4dc8965d00195edb59bfd534824f68dcfad4e48dcbcece165cbe3",
+  "driver_exit": 0,
+  "shape_match": true,
+  "rate": 16000,
+  "channels": 1,
+  "samples": 80000,
+  "reference_raw_samples": 80896,
+  "reference_compared_samples": 80000,
+  "presentation_samples": 80000,
+  "oracle": {
+    "channels": [
+      {
+        "channel": 0,
+        "identical": false,
+        "max_abs_s16_lsb": 0.00634765625,
+        "snr_db": 130.72935298019954
+      }
+    ],
+    "comparable": true,
+    "samples_per_channel": 80000
+  },
+  "seek_exact": true,
+  "timing_ms": {
+    "median_ms": 1.0733730000000001,
+    "p95_ms": 1.120982,
+    "p99_ms": 1.17357,
+    "reps": 101
+  },
+  "elapsed_seconds": 0.1758744716644287,
+  "pass": true
+}

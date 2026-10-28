@@ -97,6 +97,24 @@ fn class(e: &AacError) -> String {
 
 type Cell = Result<String, String>;
 
+/// Transport sniffers inspect the sync at offset zero, not an ID3 prefix.
+fn untagged_adts(bytes: &[u8]) -> Result<&[u8], String> {
+    if !bytes.starts_with(b"ID3") {
+        return Ok(bytes);
+    }
+    let header = bytes.get(..10).ok_or("short ID3 header")?;
+    let mut size = 0usize;
+    for &b in &header[6..10] {
+        if b & 0x80 != 0 {
+            return Err("invalid synchsafe ID3 size".into());
+        }
+        size = (size << 7) | usize::from(b);
+    }
+    bytes
+        .get(10 + size..)
+        .ok_or_else(|| "short ID3 body".into())
+}
+
 fn ok(name: &str, detail: String) -> Cell {
     Ok(format!("cell {name}: {detail}"))
 }
@@ -132,16 +150,19 @@ fn cell_bytes_decode(adts: &[u8], l: &[f32], r: &[f32]) -> Cell {
             format!("layouts {:?} {:?}", full.layout, speech.layout),
         );
     }
-    // ADTS carries no trim: skip the documented 1024-sample priming by hand.
-    let dl = &full.channels[0][1024..1024 + l.len()];
-    let dr = &full.channels[1][1024..1024 + r.len()];
+    // One-shot encode carries iTunSMPB in ID3; decode already trims the edges.
+    if full.channels.iter().any(|p| p.len() != l.len()) || speech.channels[0].len() != l.len() {
+        return fail(name, "tagged ADTS did not retain the exact source length");
+    }
+    let dl = &full.channels[0];
+    let dr = &full.channels[1];
     let (sl, sr) = (snr_db(l, dl), snr_db(r, dr));
     if sl < 25.0 || sr < 25.0 {
         return fail(name, format!("SNR L {sl:.1} dB R {sr:.1} dB"));
     }
     // Speech mono is documented as the mean of the decoded planes.
     let mean: Vec<f32> = dl.iter().zip(dr).map(|(&a, &b)| 0.5 * (a + b)).collect();
-    let ds = &speech.channels[0][1024..1024 + l.len()];
+    let ds = &speech.channels[0];
     let c = corr(ds, &mean);
     if c < 0.999 {
         // TASK-122 (fixed 2026-09-23): the LC stereo fast-mono path used to
@@ -208,22 +229,24 @@ fn cell_file_and_reader(adts: &[u8]) -> Cell {
         );
     }
 
-    let sniffs = syom::sniff_is_adts(adts)
+    let body = untagged_adts(adts)?;
+    let sniffs = syom::sniff_is_adts(body)
         && syom::sniff_is_latm(&loas)
         && !syom::sniff_is_latm(adts)
         && !syom::sniff_is_adts(&loas)
-        && syom::sniff_aac(adts)
+        && syom::sniff_aac(body)
         && !syom::sniff_is_isobmff(adts);
     if !sniffs {
         return fail(name, "sniff mismatch");
     }
     let probe = syom::probe(adts).map_err(|e| format!("probe: {e}"))?;
-    if probe.container != ProbeContainer::Adts || !matches!(probe.duration, ProbeDuration::Unknown)
+    if probe.container != ProbeContainer::Adts
+        || probe.duration != (ProbeDuration::Exact { samples: 48_000 })
     {
         return fail(name, format!("probe {:?}", probe.container));
     }
     ok(name, format!(
-        "read(path) + read_with; decode_read over ADTS ({} B) and LOAS ({} B); sniff/probe agree (ADTS duration Unknown: no index)",
+        "read(path) + read_with; decode_read over ADTS ({} B) and LOAS ({} B); raw ADTS sniff; tagged ADTS probe duration Exact(48000)",
         adts.len(), loas.len()))
 }
 
@@ -367,8 +390,7 @@ fn cell_sink_encode(l: &[f32], r: &[f32]) -> Cell {
 }
 
 /// Push streaming in network-sized chunks, bounded by options, zero-alloc steady state.
-fn cell_bounded_streaming(adts: &[u8]) -> Cell {
-    let name = "bounded-streaming";
+fn cell_bounded_streaming(adts: &[u8], name: &str) -> Cell {
     let reference = syom::decode_with(adts, &DecodeOptions::audio())
         .map_err(|e| e.to_string())?
         .channels[0]
@@ -409,6 +431,21 @@ fn cell_bounded_streaming(adts: &[u8]) -> Cell {
         return fail(name, format!("cap error: {}", class(&capped_err)));
     }
 
+    let (tag_alloc, tag_bytes) = steady_allocations(adts)?;
+    let body = untagged_adts(adts)?;
+    let (raw_alloc, raw_bytes) = steady_allocations(body)?;
+    if raw_alloc != 0 || tag_alloc != 0 {
+        return fail(
+            name,
+            format!("steady-state allocations: untagged {raw_alloc} (+{raw_bytes} B); tagged {tag_alloc} (+{tag_bytes} B)"),
+        );
+    }
+    ok(name, format!(
+        "1319-B chunks == one-shot ({total} samples); 10-s stream trips a 5-s cap with {}; reset() + second pass after warm-up: untagged {raw_alloc} allocations; tagged {tag_alloc} allocations / {tag_bytes} B cumulative",
+        class(&capped_err)))
+}
+
+fn steady_allocations(adts: &[u8]) -> Result<(usize, usize), String> {
     // Steady-state heap: pass 1 warms the instance with the same chunked
     // pattern (the resident byte buffer reaches its working capacity),
     // reset() keeps the workspace, pass 2 must not allocate.
@@ -430,15 +467,7 @@ fn cell_bounded_streaming(adts: &[u8]) -> Cell {
     dec.finish(|_| Ok(())).map_err(|e| e.to_string())?;
     let (a1, b1) = alloc_stats();
     let (d_alloc, d_bytes) = (a1 - a0, b1 - b0);
-    if d_alloc != 0 {
-        return fail(
-            name,
-            format!("steady-state allocations {d_alloc} (+{d_bytes} B)"),
-        );
-    }
-    ok(name, format!(
-        "1319-B chunks == one-shot ({total} samples); 10-s stream trips a 5-s cap with {}; reset() + second pass: {d_alloc} allocations after warm-up",
-        class(&capped_err)))
+    Ok((d_alloc, d_bytes))
 }
 
 /// Typed, distinguishable outcomes for hostile input and misuse.
@@ -462,8 +491,10 @@ fn cell_errors(adts: &[u8]) -> Cell {
     // An ADTS stream cut mid-frame is *not* an error in one-shot decode:
     // finish drops the trailing partial frame (documented in pump.rs), so
     // the loss shows up as fewer samples. Record the measured delta.
-    let whole = syom::decode(adts).map_err(|e| e.to_string())?;
-    let cut = syom::decode(&adts[..adts.len() - 100]).map_err(|e| e.to_string())?;
+    // Use untagged bytes: a stale iTunSMPB tag has different trim semantics.
+    let body = untagged_adts(adts)?;
+    let whole = syom::decode(body).map_err(|e| e.to_string())?;
+    let cut = syom::decode(&body[..body.len() - 100]).map_err(|e| e.to_string())?;
     let dropped = whole.channels[0].len() - cut.channels[0].len();
     if dropped != 1024 {
         return fail(
@@ -488,11 +519,14 @@ fn cell_errors(adts: &[u8]) -> Cell {
         Err(e) => seen.push(format!("truncated-raw-au -> {}", class(&e))),
         Ok(()) => return fail(name, "truncated raw AU decoded"),
     }
-    // MPEG-4 ADTS header declaring AAC Main (profile 0): legal syntax syom
-    // does not implement. 44100 Hz (index 4), stereo, 519-byte frame.
+    // Main is supported since 0.8.0; this zero-filled payload is malformed.
     let mut main_profile = vec![0xFF, 0xF1, 0x10, 0x80, 0x40, 0xFF, 0xFC];
     main_profile.extend_from_slice(&[0u8; 512]);
-    record(&mut seen, "aac-main-profile", syom::decode(&main_profile))?;
+    record(
+        &mut seen,
+        "malformed-main-payload",
+        syom::decode(&main_profile),
+    )?;
     record(
         &mut seen,
         "tiny-asc",
@@ -555,20 +589,26 @@ fn main() {
     let long: Vec<f32> = (0..480_000)
         .map(|i| 0.1 * (i as f32 * 0.03).sin())
         .collect();
-    let adts_long = match syom::encode(&[long], 48_000) {
+    let adts_long = match syom::encode(&[&long], 48_000) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("long fixture encode failed: {e}");
             std::process::exit(1);
         }
     };
+    let adts_cbr = syom::encode_with(&[&long], 48_000, &EncodeOptions::adts().with_cbr(true))
+        .unwrap_or_else(|e| {
+            eprintln!("CBR fixture encode failed: {e}");
+            std::process::exit(1);
+        });
 
     let cells = [
         cell_bytes_decode(&adts, &l, &r),
         cell_file_and_reader(&adts),
         cell_raw_au(),
         cell_sink_encode(&l, &r),
-        cell_bounded_streaming(&adts_long),
+        cell_bounded_streaming(&adts_long, "bounded-streaming-abr"),
+        cell_bounded_streaming(&adts_cbr, "bounded-streaming-cbr"),
         cell_errors(&adts),
     ];
     let mut failed = 0;

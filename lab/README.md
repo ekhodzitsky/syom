@@ -1,5 +1,12 @@
 # Offline native comparison lab
 
+The [0.8.1 qualification](release-audit/CANDIDATE-0.8.1.md) covers real
+recordings and the actual consumer adapter. Its
+[paired HTTP ASR canary](release-audit/HTTP-CANARY-0.8.1.md) passes 32
+speech-format cases with readiness, latency/RSS and stop gates.
+The [0.8.0 audit](release-audit/REPORT.md) and
+[fill fix](release-audit/FILL-FIX.md) preserve the earlier findings.
+
 Isolated from the `syom` package. Not a Cargo workspace member. Product
 `[dependencies]` stay empty; ordinary tests never download, link, or spawn
 ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.

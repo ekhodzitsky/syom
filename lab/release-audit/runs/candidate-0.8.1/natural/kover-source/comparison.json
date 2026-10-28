@@ -1,0 +1,41 @@
+{
+  "id": "kover-source",
+  "recording_id": "kover-instructional",
+  "kind": "original consumer AAC",
+  "sha256": "2677806280ea5b74ad993782a9db466211fe5a618aed34b5da611c56bbb65ec0",
+  "driver_exit": 0,
+  "shape_match": true,
+  "rate": 48000,
+  "channels": 2,
+  "samples": 19584000,
+  "reference_raw_samples": 19584000,
+  "reference_compared_samples": 19584000,
+  "presentation_samples": 19584000,
+  "oracle": {
+    "channels": [
+      {
+        "channel": 0,
+        "identical": false,
+        "max_abs_s16_lsb": 0.015625,
+        "snr_db": 131.0067616600918
+      },
+      {
+        "channel": 1,
+        "identical": false,
+        "max_abs_s16_lsb": 0.015625,
+        "snr_db": 131.0072046065473
+      }
+    ],
+    "comparable": true,
+    "samples_per_channel": 19584000
+  },
+  "seek_exact": true,
+  "timing_ms": {
+    "median_ms": 307.738953,
+    "p95_ms": 333.45061799999996,
+    "p99_ms": 336.5825,
+    "reps": 101
+  },
+  "elapsed_seconds": 35.226240396499634,
+  "pass": true
+}

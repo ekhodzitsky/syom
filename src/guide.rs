@@ -146,6 +146,9 @@
 //! # Ok::<(), syom::AacError>(())
 //! ```
 //!
+//! A cold M4A seek or a seek past PNS can replay the prefix to preserve
+//! decoder history; verified noise-free LC/LD prefixes use short preroll.
+//!
 //! Untagged ADTS and LATM leave duration and trim `Unknown`. A leading
 //! `iTunSMPB` tag whose sample counts equal the frames in the buffer
 //! fills both.

@@ -63,33 +63,61 @@ LD fMP4 golden. Surround LC is 3, 4, 5, 6, or 8 planes
 (`channel_configuration` 3–7). Seven planes have no layout.
 No resample.
 
-## Compared with rusty_aac, Symphonia, oxideav-aac
+## Compared with Rust AAC libraries
 
-| | syom | rusty_aac 0.5 | symphonia 0.6 | oxideav-aac 0.1.7 |
+Capabilities below refer to the pinned published versions, not their main
+branches. Raw-AU support does not imply a built-in M4A demuxer.
+
+| | syom 0.8.0 | rusty_aac 2.0.1 | symphonia 0.6.1 | oxideav-aac 0.1.7 |
 |---|---|---|---|---|
-| Job | AAC codec | LC decoder | media pipeline | ADTS decoder |
-| Default deps | none | none | several | oxideav-core |
-| HE-AAC v1/v2 decode | yes | signalled | LC core | ADTS |
-| AAC-LD | yes | no | no | no |
-| M4A / LATM / fMP4 | yes | no | M4A, no fMP4 | no |
-| LC / HE / LD encode | LC; HE and LD opt-in | no | no | no |
-| Output | planar `f32`, native rate | interleaved f32 | packets | interleaved i16 |
-| Duration / RAM caps | yes | no | no | no |
-| One call `decode(&[u8])` | yes | no | no | `decode_all` |
+| Job | AAC codec | AAC codec | media pipeline | AAC codec |
+| Runtime deps | none | none | several | oxideav-core |
+| HE-AAC v1/v2 decode | yes | yes | LC core only | yes |
+| AAC-LD decode | yes | yes | no | yes, with documented TNS limitations |
+| Built-in M4A demux | yes | caller supplies raw AUs | yes | caller supplies raw AUs |
+| LATM/LOAS decode | yes | yes | no built-in LATM reader | yes |
+| Encode profiles | LC, HE v1/v2, LD | LC | none | LC, HE v1 |
+| Decoded output | planar f32 | interleaved f32 | audio buffers | interleaved i16 |
+
+Sources: [rusty_aac](https://docs.rs/crate/rusty_aac/2.0.1),
+[Symphonia](https://github.com/pdeljanov/Symphonia),
+[oxideav-aac](https://docs.rs/crate/oxideav-aac/0.1.7).
 
 ## Speed
 
 Linux x86_64, AMD Ryzen AI 9 HX 370, rustc 1.97.1, `taskset -c 0`,
-profile.bench (thin LTO), 20 reps after 4 warmup, 2026-10-01. Same
-bitstream and the same output shape. Sample checksums differ. A peer
-that cannot produce that shape is left blank. Older rows of a different
-protocol: [BENCH.md](BENCH.md).
+release thin LTO, 8 warmup + 101 measured reps, 2026-10-28.
+Same bitstream and collected planar f32 shape; adapters include layout
+conversion. Checksums differ; matching shape is not a quality score.
+Median wall times from the Rust fast-peer pass:
 
-| Workload | syom | symphonia 0.6.1 | rusty_aac 0.5.0 | oxideav-aac 0.1.7 |
-|---|---|---|---|---|
-| LC ADTS, 48 kHz mono, 13312 samples | **72.2 µs** | 123 µs | 179 ms | 175 ms |
-| HE-AAC v2 ADTS, 48 kHz stereo, 53248 samples | **4.61 ms** | | | 369 ms |
-| LC 5.1 ADTS, 48 kHz, 20480 samples | **640 µs** | | | 1.67 s |
+| Workload | syom 0.8.0 | rusty_aac 2.0.1 | symphonia 0.6.1 |
+|---|---|---|---|
+| LC ADTS, 48 kHz mono, 13312 samples | 59.6 µs | 152.3 µs | 135.2 µs |
+| HE ADTS, 48 kHz stereo, 18432 samples | 190.8 µs | 354.9 µs | core-only, excluded |
+| HE-AAC v2 ADTS, 48 kHz stereo, 53248 samples | 1.211 ms | 1.120 ms | core-only, excluded |
+| LC 5.1 ADTS, 48 kHz, 20480 samples | 601.3 µs | 678.3 µs | decoder unavailable |
+
+This busy-host sample favors syom on LC/HE v1 and rusty_aac on HE v2;
+it is not a universal speed ranking. The separate four-peer run has
+substantial scheduling noise. Both runs, exact inputs, protocol and
+limitations are in the [release audit](lab/release-audit/REPORT.md).
+[BENCH.md](BENCH.md) retains historical results against older peers.
+Encoder quality superiority is not established; the earlier in-process
+LC encode comparison was slower than FDK (see the audit).
+
+## Production scope
+
+The local [0.8.1 candidate](lab/release-audit/CANDIDATE-0.8.1.md) passes
+19 cases from 16 recordings against FFmpeg and the actual gigastt decode
+adapter. It fixes padded-LC allocations and PNS history during M4A seek.
+The [paired HTTP ASR canary](lab/release-audit/HTTP-CANARY-0.8.1.md)
+matches normalized baseline transcripts and durations on 32 speech-format cases.
+Cold or stateful seeks can replay the prefix; known noise-free LC/LD
+prefixes retain short preroll. Tagged/untagged LC ABR/CBR consumer checks
+allocate zero times after warmup. Encoder listening, physical mobile,
+full ISO conformance and live-service rollout qualification remain open. Use
+`DecodeOptions::audio()` to keep channels; `decode()` defaults to mono.
 
 ## Install
 

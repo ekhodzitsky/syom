@@ -64,6 +64,10 @@ def main() -> int:
     print(f"packaged manifest: no dependencies, no build.rs, "
           f"rust-version {packed['package'].get('rust-version')}")
 
+    # Crate archives normalize source mtimes. Replacing vendor/syom with a
+    # changed package of the same version can otherwise reuse the previous
+    # dependency build. Force this isolated consumer to compile the new bytes.
+    run("cargo", "clean", "-p", "syom", "--release", cwd=LAB)
     run("cargo", "build", "--release", cwd=LAB)  # fail early on a dep drift
     for name in BINS:
         print(f"--- {name} ---")

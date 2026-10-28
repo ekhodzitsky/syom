@@ -1,0 +1,41 @@
+{
+  "id": "kover-he1",
+  "recording_id": "kover-instructional",
+  "kind": "FDK encode of natural PCM excerpt",
+  "sha256": "1c073402e02ae535fbb5d8330f5a0cd820b4375ec90376aba6285e5d6e751be6",
+  "driver_exit": 0,
+  "shape_match": true,
+  "rate": 48000,
+  "channels": 2,
+  "samples": 1443840,
+  "reference_raw_samples": 1443840,
+  "reference_compared_samples": 1443840,
+  "presentation_samples": null,
+  "oracle": {
+    "channels": [
+      {
+        "channel": 0,
+        "identical": false,
+        "max_abs_s16_lsb": 0.007080078125,
+        "snr_db": 130.61792875952204
+      },
+      {
+        "channel": 1,
+        "identical": false,
+        "max_abs_s16_lsb": 0.00732421875,
+        "snr_db": 130.5906583390964
+      }
+    ],
+    "comparable": true,
+    "samples_per_channel": 1443840
+  },
+  "seek_exact": true,
+  "timing_ms": {
+    "median_ms": 35.615544,
+    "p95_ms": 38.938794,
+    "p99_ms": 39.794859,
+    "reps": 101
+  },
+  "elapsed_seconds": 3.895021677017212,
+  "pass": true
+}

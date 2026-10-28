@@ -1,0 +1,35 @@
+{
+  "id": "golos_13",
+  "recording_id": "golos_13",
+  "kind": "FFmpeg encode of consumer natural speech WAV",
+  "sha256": "d08ec4308ec3e217b9bc387c4681296407caed9c6c48eb14be080ff29a30314d",
+  "driver_exit": 0,
+  "shape_match": true,
+  "rate": 16000,
+  "channels": 1,
+  "samples": 51200,
+  "reference_raw_samples": 51200,
+  "reference_compared_samples": 51200,
+  "presentation_samples": 51200,
+  "oracle": {
+    "channels": [
+      {
+        "channel": 0,
+        "identical": false,
+        "max_abs_s16_lsb": 0.003173828125,
+        "snr_db": 130.89826739939352
+      }
+    ],
+    "comparable": true,
+    "samples_per_channel": 51200
+  },
+  "seek_exact": true,
+  "timing_ms": {
+    "median_ms": 0.430697,
+    "p95_ms": 0.47917800000000005,
+    "p99_ms": 0.491591,
+    "reps": 101
+  },
+  "elapsed_seconds": 0.07409000396728516,
+  "pass": true
+}

@@ -9,7 +9,7 @@ use super::sf::ScaleFactors;
 ///
 /// ISO leaves the generator non-normative. Seed and int-as-float mapping
 /// match FFmpeg libavcodec (`ac->random_state = 0x1f2e3d4c`).
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Lcg {
     state: u32,
 }

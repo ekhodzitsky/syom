@@ -1,0 +1,22 @@
+   Compiling syom v0.8.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.82s
+     Running unittests src/lib.rs (target/debug/deps/syom-5680d71f8b07359b)
+
+running 14 tests
+test engine::sbr_attach_tests::opaque_fill_fast_path_does_not_relax_other_extensions ... ok
+test engine::sbr_attach_tests::opaque_fill_truncation_is_not_accepted_as_padding ... ok
+test engine::sbr_attach_tests::sbr_without_channel_element_is_format ... ok
+test engine::sbr_attach_tests::opaque_fill_preserves_alignment_and_escaped_count ... ok
+test engine::sbr_attach_tests::duplicate_sbr_extension_is_format ... ok
+test engine::sbr_attach_tests::zero_count_fil_is_an_empty_extension ... ok
+test engine::sbr_attach_tests::cfg3_declared_2x_keeps_three_planes ... ok
+test engine::sbr_attach_tests::two_sce_sbr_history_is_isolated ... ok
+test engine::sbr_attach_tests::he_mix_is_non_lfe_mean_after_sbr ... ok
+test engine::sbr_attach_tests::two_sce_mix_matches_split_mean ... ok
+test engine::sbr_attach_tests::fil_attaches_to_preceding_element_only ... ok
+test engine::sbr_attach_tests::layout_change_does_not_reuse_sbr_state ... ok
+test engine::sbr_attach_tests::interleaved_order_keeps_per_element_sbr ... ok
+test engine::sbr_attach_tests::he48_speech_mix_matches_unbounded_mean ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 1117 filtered out; finished in 0.03s
+

@@ -1,0 +1,13 @@
+{
+  "base_commit": "997bf56efda8700792dbc4b0136a36ad90eca328",
+  "date": "2026-10-28",
+  "status": "unreleased working tree fix",
+  "sha256": {
+    "src/engine/sbr_attach.rs": "776b336a47d5e28d0dec56f675c3dd2175acce18ca7d3ea9c685f96015a9145c",
+    "src/engine/sbr_attach_tests.rs": "67c171f3497373acb24916ac14d67da2c7e5c55f6959e4e324a73b5d3994a2fd",
+    "lab/consume/run.py": "d9d9578395b7efc35fbfe215104b02abac0fdbd536bcb2cb4a216f81d1a1c429",
+    "lab/consume/src/bin/flows.rs": "c8fc352743cad986575a5e2411501ccea708aef4f76457275392ae7c754c2c86"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "asan_rustc": "rustc 1.100.0-nightly (574ff7d98 2026-09-14)\nbinary: rustc\ncommit-hash: 574ff7d98bd6d037e5236a8453029173b32631fd\ncommit-date: 2026-09-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0-nightly\nLLVM version: 23.1.1\n"
+}

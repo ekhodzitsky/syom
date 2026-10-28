@@ -1,0 +1,8 @@
+chunk-equivalence sine48.adts: chunks 1/7/1319/65536; exact PCM and sample count
+chunk-equivalence he48.adts: chunks 1/7/1319/65536; exact PCM and sample count
+chunk-equivalence ps48.adts: chunks 1/7/1319/65536; exact PCM and sample count
+chunk-equivalence mc51.adts: chunks 1/7/1319/65536; exact PCM and sample count
+chunk-equivalence fmp4_lc.mp4: chunks 1/7/1319/65536; exact PCM and sample count
+chunk-equivalence ld64m.loas: chunks 1/7/1319/65536; exact PCM and sample count
+long-m4a: 120 s mono; exact source length; 5 sample-exact seeks
+long-stream: 28807168 samples (>600 s); retained heap warm=188077 end=188077; peak delta=19910 B

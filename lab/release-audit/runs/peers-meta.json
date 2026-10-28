@@ -1,0 +1,9 @@
+{
+  "start_utc": "2026-10-28T12:47:44Z",
+  "load_before": "20.97 10.17 5.81 87/4406 1467168",
+  "affinity": "taskset -c 0",
+  "reps": 21,
+  "warmup": 4,
+  "exit_code": 1,
+  "load_after": "20.12 13.20 7.27 38/4272 1480989"
+}

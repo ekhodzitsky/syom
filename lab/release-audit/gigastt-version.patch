@@ -1,0 +1,6 @@
+diff --git a/crates/gigastt-core/Cargo.toml b/crates/gigastt-core/Cargo.toml
+--- a/crates/gigastt-core/Cargo.toml
++++ b/crates/gigastt-core/Cargo.toml
+@@ -90 +90 @@
+-syom = { version = "0.7.1", optional = true }
++syom = { version = "0.8.1", optional = true }

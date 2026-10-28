@@ -1,0 +1,41 @@
+{
+  "id": "kover-lc-adts",
+  "recording_id": "kover-instructional",
+  "kind": "lossless container derivative",
+  "sha256": "7da66e97631bee173faf6f7de2198a7be1360f3f324a5d9de998f099dc66423d",
+  "driver_exit": 0,
+  "shape_match": true,
+  "rate": 48000,
+  "channels": 2,
+  "samples": 19585024,
+  "reference_raw_samples": 19585024,
+  "reference_compared_samples": 19585024,
+  "presentation_samples": null,
+  "oracle": {
+    "channels": [
+      {
+        "channel": 0,
+        "identical": false,
+        "max_abs_s16_lsb": 0.015625,
+        "snr_db": 131.0067616600918
+      },
+      {
+        "channel": 1,
+        "identical": false,
+        "max_abs_s16_lsb": 0.015625,
+        "snr_db": 131.0072046065473
+      }
+    ],
+    "comparable": true,
+    "samples_per_channel": 19585024
+  },
+  "seek_exact": true,
+  "timing_ms": {
+    "median_ms": 565.788947,
+    "p95_ms": 3440.949997,
+    "p99_ms": 4664.847514,
+    "reps": 101
+  },
+  "elapsed_seconds": 114.07630944252014,
+  "pass": true
+}

@@ -1,0 +1,37 @@
+cargo test --workspace --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.50s
+test result: ok. 1121 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 21.04s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+cargo test --doc
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.61s
+
+cargo clippy --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+
+cargo +1.89.0 test --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 24.96s
+test result: ok. 1121 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 26.72s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+ASAN_OPTIONS=detect_leaks=1 RUSTFLAGS=-Zsanitizer=address cargo +nightly test -Zbuild-std --target x86_64-unknown-linux-gnu --lib --tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.60s
+test result: ok. 1121 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 73.98s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+python3 scripts/check-package.py
+OK: 176 files, 448074 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script
+
+python3 scripts/verify_corpus.py
+OK: 82 cases, 24 natural excerpts, offline checks passed
+
+cargo test --lib docs_tests
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.19s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1126 filtered out; finished in 0.00s
+
+cargo fmt --check: passed
+python3 scripts/check-file-size.py: passed
+python3 scripts/check-changelog.py: passed
+
+cargo package --locked --allow-dirty: passed isolated package verification

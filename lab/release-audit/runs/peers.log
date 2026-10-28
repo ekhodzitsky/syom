@@ -1,0 +1,58 @@
+# syom 0.8.0 / rusty_aac 2.0.1 / symphonia 0.6.1 / oxideav-aac 0.1.7
+# release thin-LTO cg=1; 4 warmup + 21 reps; planar f32 including collection and drop
+preflight fixture=lc_adts lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 1 ch 13312 samples checksum=0xe651507d0740f07c
+  rusty_aac 2.0.1: comparable 48000 Hz 1 ch 13312 samples checksum=0xa2ad2980b0e3d471
+  oxideav-aac 0.1.7: comparable 48000 Hz 1 ch 13312 samples checksum=0xa98b5f7621a390b6
+  symphonia 0.6.1: comparable 48000 Hz 1 ch 13312 samples checksum=0x5b3c68257470430e
+  timed: syom, rusty_aac, oxideav-aac, symphonia
+TIMING lc_adts syom median_ns=185097 p95_ns=231254 raw_ns=[214001, 199123, 231254, 113893, 196037, 193593, 12209689, 111499, 183584, 193102, 173866, 94638, 199123, 184617, 190087, 91562, 172313, 188624, 185097, 90149, 176762]
+TIMING lc_adts rusty_aac median_ns=237375 p95_ns=262112 raw_ns=[251481, 247464, 259156, 175610, 240250, 243226, 262062, 170119, 221666, 262112, 223840, 161893, 237375, 256641, 12229576, 160601, 219271, 222798, 240360, 159990, 229410]
+TIMING lc_adts oxideav-aac median_ns=739163039 p95_ns=1535380053 raw_ns=[241409564, 235601547, 217869766, 563174976, 739163039, 230667357, 756470243, 1373553017, 1236885766, 1535380053, 1587241725, 1500725079, 1216860797, 1008104305, 950886703, 895921594, 691350939, 658410498, 387062691, 215134779, 219375749]
+TIMING lc_adts symphonia median_ns=233698 p95_ns=257081 raw_ns=[244338, 246663, 282830, 198963, 232747, 240541, 232546, 219772, 257081, 236102, 228959, 170149, 254708, 232065, 233057, 168496, 235943, 237605, 233698, 166281, 233738]
+preflight fixture=lc_m4a lane=planar_split
+  syom 0.8.0: comparable 44100 Hz 1 ch 11025 samples checksum=0x7f9f7d9e6ecf3807
+  rusty_aac 2.0.1: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: non-comparable mismatched output: 44100 Hz 1 ch 12288 samples (expected 44100 Hz 1 ch 11025 samples) [44100 Hz 1 ch 12288 samples]
+  timed: syom
+TIMING lc_m4a syom median_ns=65423 p95_ns=68478 raw_ns=[65583, 65593, 65322, 65303, 65322, 65423, 65423, 68478, 65413, 67006, 70993, 65984, 66033, 65503, 65122, 65253, 65733, 65523, 65303, 65262, 65222]
+preflight fixture=he_adts lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 2 ch 18432 samples checksum=0xac76a8575417319d
+  rusty_aac 2.0.1: comparable 48000 Hz 2 ch 18432 samples checksum=0x52618a19d7826d29
+  oxideav-aac 0.1.7: non-comparable mismatched output: 48000 Hz 1 ch 18432 samples (expected 48000 Hz 2 ch 18432 samples) [48000 Hz 1 ch 18432 samples]
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 9216 samples (expected 48000 Hz 2 ch 18432 samples) [24000 Hz 1 ch 9216 samples]
+  timed: syom, rusty_aac
+TIMING he_adts syom median_ns=214822 p95_ns=219962 raw_ns=[211016, 218770, 213891, 222497, 210424, 217858, 210184, 216757, 210965, 216897, 214822, 219962, 210655, 217167, 210264, 216917, 211126, 216817, 210875, 216195, 213961]
+TIMING he_adts rusty_aac median_ns=391474 p95_ns=395512 raw_ns=[397114, 391474, 391403, 389450, 387987, 388859, 391845, 392015, 393738, 388398, 391474, 392024, 393197, 392877, 391093, 393658, 395512, 390161, 393979, 388739, 390452]
+preflight fixture=he_m4a lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 2 ch 16320 samples checksum=0xb1573e053d307b05
+  rusty_aac 2.0.1: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 9216 samples (expected 48000 Hz 2 ch 16320 samples) [24000 Hz 1 ch 9216 samples]
+  timed: syom
+TIMING he_m4a syom median_ns=225663 p95_ns=226845 raw_ns=[225824, 222196, 225764, 222827, 232106, 223058, 225663, 225563, 225783, 226825, 222607, 225563, 224992, 226074, 226845, 222618, 225643, 225703, 225953, 225834, 222357]
+preflight fixture=ps_adts lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 2 ch 53248 samples checksum=0x68c8736e8df0a301
+  rusty_aac 2.0.1: comparable 48000 Hz 2 ch 53248 samples checksum=0x8ed485107b66b89e
+  oxideav-aac 0.1.7: comparable 48000 Hz 2 ch 53248 samples checksum=0xdfa7f55f20898f4d
+  symphonia 0.6.1: non-comparable mismatched output: 24000 Hz 1 ch 26624 samples (expected 48000 Hz 2 ch 53248 samples) [24000 Hz 1 ch 26624 samples]
+  timed: syom, rusty_aac, oxideav-aac
+TIMING ps_adts syom median_ns=1378845 p95_ns=1947921 raw_ns=[1378965, 2164468, 1409462, 1335273, 1354058, 1271664, 1378845, 1623243, 1288316, 1350652, 1947921, 1735994, 1324232, 1598877, 1190462, 1906804, 1363045, 1201984, 1559533, 1721828, 1209908]
+TIMING ps_adts rusty_aac median_ns=1234804 p95_ns=1443245 raw_ns=[1258179, 1417116, 1263809, 1234804, 1261235, 1173250, 1224977, 1261265, 1147090, 1311068, 1515922, 1443245, 1291681, 1378323, 1084553, 1145578, 1210800, 1075396, 1176595, 1178058, 1078091]
+TIMING ps_adts oxideav-aac median_ns=377325637 p95_ns=409071859 raw_ns=[377421266, 386452216, 382898745, 377325637, 373614901, 373641009, 379321819, 379357436, 379502698, 374796425, 439708582, 409071859, 404189838, 370639733, 372670410, 371461354, 371320370, 365252665, 367405951, 366964283, 396258589]
+preflight fixture=mc_adts lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 6 ch 20480 samples checksum=0x90188977d0c42ea7
+  rusty_aac 2.0.1: comparable 48000 Hz 6 ch 20480 samples checksum=0x764be7d3143a32e3
+  oxideav-aac 0.1.7: comparable 48000 Hz 6 ch 20480 samples checksum=0x3494378f82770083
+  symphonia 0.6.1: non-comparable decoder not constructed
+  timed: syom, rusty_aac, oxideav-aac
+TIMING mc_adts syom median_ns=825437 p95_ns=969197 raw_ns=[747651, 741090, 649327, 949450, 908573, 800501, 825437, 705343, 591118, 969197, 698369, 581811, 928610, 1062411, 920034, 923792, 955561, 839293, 957515, 741880, 665938]
+TIMING mc_adts rusty_aac median_ns=825697 p95_ns=1027656 raw_ns=[797344, 741510, 659186, 932678, 877986, 779251, 769753, 724207, 623749, 935755, 751228, 618520, 1087569, 1027656, 868017, 845214, 929072, 825697, 923922, 865953, 684764]
+TIMING mc_adts oxideav-aac median_ns=1920721226 p95_ns=2086278014 raw_ns=[1852579145, 1663996181, 1879663368, 2040161092, 2055691036, 1919321563, 1660814207, 1777535566, 2033192219, 1865382537, 1798530323, 1940178762, 2086278014, 1920721226, 2011579182, 1912525192, 2047538823, 1788669719, 2022050352, 2069222292, 3198445471]
+preflight fixture=lecture_m4a lane=planar_split
+  syom 0.8.0: comparable 48000 Hz 2 ch 12000 samples checksum=0xb7e2af30c69aac91
+  rusty_aac 2.0.1: non-comparable no ISOBMFF demux
+  oxideav-aac 0.1.7: non-comparable no ISOBMFF demux
+  symphonia 0.6.1: failed unsupported feature: aac: predictor data
+  abort: candidate failed before timing

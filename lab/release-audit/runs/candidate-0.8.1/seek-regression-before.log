@@ -1,0 +1,22 @@
+   Compiling syom v0.8.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.32s
+     Running unittests src/lib.rs (target/debug/deps/syom-5680d71f8b07359b)
+
+running 1 test
+test stream_seek_noise_tests::pns_seek_matches_linear_on_cold_and_reused_source ... FAILED
+
+failures:
+
+---- stream_seek_noise_tests::pns_seek_matches_linear_on_cold_and_reused_source stdout ----
+
+thread 'stream_seek_noise_tests::pns_seek_matches_linear_on_cold_and_reused_source' (1864095) panicked at src/stream_seek_noise_tests.rs:31:21:
+PNS history differs after seek to 6673 at sample 6673
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stream_seek_noise_tests::pns_seek_matches_linear_on_cold_and_reused_source
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1131 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `--lib`

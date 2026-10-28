@@ -142,7 +142,11 @@ fn ld_m4a_duration_trim_and_seek_match_loas() -> Result<()> {
     assert_eq!(src.preroll_aus(), 1);
     let at = 4 * FRAME;
     assert_eq!(src.seek(at as i64)?, at);
-    assert_eq!(src.last_seek_aus(), 1, "one overlap frame, not the LC pair");
+    assert_eq!(
+        src.last_seek_aus(),
+        4,
+        "cold seek must establish PNS history"
+    );
     let mut pcm = Vec::new();
     src.decode(|f| {
         assert_eq!(f.samples, FRAME as usize);
@@ -150,6 +154,12 @@ fn ld_m4a_duration_trim_and_seek_match_loas() -> Result<()> {
         Ok(())
     })?;
     assert_eq!(pcm, loas.channels[0][at as usize..]);
+    src.seek(at as i64)?;
+    assert_eq!(
+        src.last_seek_aus(),
+        1,
+        "verified noise-free LD uses one overlap frame"
+    );
 
     let stereo = decode_with(LD_S, &DecodeOptions::unbounded())?;
     let m4a = mux_ld(LD_S, 2, 0, stereo.channels[0].len() as u64);

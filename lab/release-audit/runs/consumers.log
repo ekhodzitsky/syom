@@ -1,0 +1,32 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /home/ekhodzitsky/Projects/syom/lab/consume/vendor/syom/Cargo.toml
+workspace: /home/ekhodzitsky/Projects/syom/lab/consume/Cargo.toml
+warning: function `section_spectral_cost` is never used
+ --> vendor/syom/src/engine/enc_section_dp.rs:8:8
+  |
+8 | pub fn section_spectral_cost(
+  |        ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `plan_books_dp` is never used
+  --> vendor/syom/src/engine/enc_section_dp.rs:38:8
+   |
+38 | pub fn plan_books_dp(
+   |        ^^^^^^^^^^^^^
+
+warning: function `plan_stretch_dp` is never used
+  --> vendor/syom/src/engine/enc_section_dp.rs:61:4
+   |
+61 | fn plan_stretch_dp(
+   |    ^^^^^^^^^^^^^^^
+
+warning: `syom` (lib) generated 3 warnings
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running `lab/consume/target/release/consumers`
+cell kover-extract: 33666 B M4A in memory -> 64000 B s16le 16 kHz mono; native 48000 Hz / 96000 valid samples retained until the consumer's own resample; one-shot extract cost 540 allocs / 1494376 B heap; zero processes, zero temp files, zero WAV wraps
+cell kover-error: garbage M4A -> NotAac (helper path: exit status -> KoverError::Media, cause lost)
+cell sluh-ingest: AAC -> speech mono f32 (native) -> consumer resample -> 64000 B s16le; s16 quantization happens once, at the ASR boundary
+cell native-layout: same bytes as full fidelity -> (2, 48000, Mpeg(2), Some(1024)) (2 planes, sample-exact 96000 via elst, priming Some(1024)); the helper contract discards all of this
+cell probe: duration Exact { samples: 96000 }, trim Exact { priming: 1024, remainder: 256 } — exact before any PCM is decoded
+cell borrowed-encode: &[&[f32]] planes encode byte-identical to owned (33485 B) — no consumer-side copy

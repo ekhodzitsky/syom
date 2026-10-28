@@ -1,0 +1,6 @@
+{
+  "load_before": "48.92 23.05 16.18 63/4692 1925577",
+  "note": "repeat after own core/ASan/MSRV checks finished; original samples retained",
+  "exit_code": 0,
+  "load_after": "31.31 21.92 16.10 4/4647 1927390"
+}

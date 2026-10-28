@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-28
+
+### Fixed
+
+- Preserve PNS random-generator history during M4A seek. Cold seeks and
+  seeks past noise-coded material replay the required prefix; verified
+  noise-free LC/LD prefixes retain short overlap preroll. Legacy profiles
+  also replay prediction history. This restores exact agreement with
+  linear decoding on a real 408-second recording and the PNS regression.
+
+- Skip opaque AAC fill padding without copying it into temporary vectors.
+  Padded LC ABR/CBR push decode again performs zero allocations after
+  warmup in the packaged consumer checks, with or without ID3 metadata.
+  Truncated fill payloads still fail; SBR and DRC validation is unchanged.
+- Rebuild the packaged consumer's release dependency after replacing
+  extracted sources, so a same-version package cannot reuse stale code.
+
+### Changed
+
+- Refresh the Rust competitor comparison against rusty_aac 2.0.1 and
+  record the 0.8.0 production audit, including the failing padded-LC
+  allocation gate. Extend the isolated fuzz lab to the 0.8.0 profiles
+  and raw ASC/AU mutations.
+- Qualify the local 0.8.1 candidate on real consumer recordings and a
+  paired HTTP RNN-T canary against syom 0.7.1; preserve source hashes,
+  response parity, latency/RSS gates and readiness/rollback results.
+
 ## [0.8.0] - 2026-10-19
 
 ### Added
@@ -1039,7 +1066,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/ekhodzitsky/syom/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/ekhodzitsky/syom/compare/v0.6.0...v0.7.0
