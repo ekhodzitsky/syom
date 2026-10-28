@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import http.client
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -31,6 +32,7 @@ def post(port, payload, timeout=90):
         text = normalized(body.get("text", ""))
         return {"status": response.status, "code": body.get("code"),
                 "retry_after": response.getheader("Retry-After"),
+                "retry_after_ms": body.get("retry_after_ms"),
                 "text_sha256": hashlib.sha256(text.encode()).hexdigest(),
                 "word_count": len(text.split()), "duration": body.get("duration"),
                 "wall_ms": (time.monotonic() - start) * 1000}
@@ -52,6 +54,16 @@ def matches(response, expected):
             and abs(response["duration"] - expected["duration"]) <= 1 / 16000)
 
 
+def upload_busy(response):
+    try:
+        delay = float(response["retry_after"])
+        return (response["status"] == 503 and response.get("code") == "upload_busy"
+                and math.isfinite(delay) and 0 < delay <= 60
+                and abs(response["retry_after_ms"] - delay * 1000) <= 1)
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 class Server:
     def __init__(self, name, binary, args, profile):
         self.out = args.out.resolve() / f"{profile}-{name}"
@@ -65,6 +77,7 @@ class Server:
             raise RuntimeError("port collision; rerun")
         self.port, self.metrics_port = ports
         self.pool = 2 if profile == "load" else 1
+        self.admission = args.upload_admission
         cmd = [str(binary.resolve()), "serve", "--offline", "--host", "127.0.0.1",
                "--port", str(self.port), "--model-dir", str(args.model_dir.resolve()),
                "--model-variant", "rnnt", "--pool-size", str(self.pool),
@@ -72,8 +85,10 @@ class Server:
                "--punctuation", "off", "--itn", "off", "--execution-provider", "cpu",
                "--metrics", "--metrics-listen", f"127.0.0.1:{self.metrics_port}",
                "--shutdown-drain-secs", "1", "--pool-checkout-timeout-secs",
-               "30" if profile == "load" else "1", "--inference-timeout-secs",
+               "30" if profile == "load" and not self.admission else "1", "--inference-timeout-secs",
                "1" if profile == "watchdog" else "600"]
+        if self.admission and profile == "queue-cancel":
+            cmd.append("--enable-jobs")
         env = {k: v for k, v in os.environ.items() if not k.startswith("GIGASTT_")}
         env.update(GIGASTT_OFFLINE="1", ORT_DYLIB_PATH=str(args.ort.resolve()),
                    GIGASTT_OPTIMIZED_CACHE_DIR=str(self.out / "cache"), RAYON_NUM_THREADS="2")
@@ -160,16 +175,35 @@ class Server:
 def burst(server, cases, expected, concurrency):
     start = time.monotonic()
     def one(case):
-        response = post(server.port, Path(case["path"]).read_bytes())
-        return {"id": case["id"], "response": response,
-                "pass": matches(response, expected[case["id"]])}
+        started = time.monotonic()
+        payload = Path(case["path"]).read_bytes()
+        attempts = []
+        while True:
+            response = post(server.port, payload)
+            attempts.append(response)
+            if not (server.admission and concurrency > server.pool and upload_busy(response)):
+                break
+            delay = float(response["retry_after"])
+            if time.monotonic() + delay - started > 60:
+                break
+            time.sleep(delay)
+        row = {"id": case["id"], "response": response,
+               "pass": matches(response, expected[case["id"]])}
+        if server.admission:
+            row.update(attempts=attempts, client_wall_ms=(time.monotonic() - started) * 1000)
+        return row
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         rows = list(executor.map(one, cases))
     values = [row["response"]["wall_ms"] for row in rows]
-    return {"concurrency": concurrency, "rows": rows, "pass": all(r["pass"] for r in rows),
+    result = {"concurrency": concurrency, "rows": rows, "pass": all(r["pass"] for r in rows),
             "elapsed_ms": (time.monotonic() - start) * 1000,
             "p95_ms": percentile(values, .95), "p99_ms": percentile(values, .99),
             "recovery": server.recovered(), "memory_after": rss(server.proc.pid)}
+    if server.admission:
+        client = [r["client_wall_ms"] for r in rows]
+        result.update(client_p95_ms=percentile(client, .95), client_p99_ms=percentile(client, .99),
+                      upload_busy_retries=sum(len(r["attempts"]) - 1 for r in rows))
+    return result
 
 
 def disconnect(server, payload, mode):
@@ -206,9 +240,40 @@ def faults(server, short, long, expected, watchdog):
             held = executor.submit(post, server.port, long)
             rows["busy_health"] = server.wait(lambda h: h.get("pool_available") == 0, 5)
             responses = list(executor.map(lambda _: post(server.port, short), range(8)))
-            rows["queue_timeouts"] = responses
+            rows["admission_rejections" if server.admission else "queue_timeouts"] = responses
             rows["held_response"] = held.result(timeout=90)
         rows["queue_recovery"] = server.recovered()
+        admission_pass = True
+        if server.admission:
+            admission_pass = all(upload_busy(r) for r in responses)
+            # A job releases its upload permit after store insertion but keeps
+            # the sole inference slot. REST can now exercise real pool waiting,
+            # independently from the pre-body upload admission rejection.
+            url = f"http://127.0.0.1:{server.port}/v1/jobs"
+            status, body, _ = request(url, long)
+            if status != 202 or not isinstance(body.get("job_id"), str):
+                raise RuntimeError(f"job submission returned {status}")
+            job_url = url + "/" + body["job_id"]
+            server.wait(lambda h: h.get("pool_available") == 0, 5)
+            responses = [post(server.port, short) for _ in range(8)]
+            rows["queue_timeouts"] = responses
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                status, body, _ = request(job_url, timeout=5)
+                if status != 200 or body.get("status") in ("failed", "cancelled"):
+                    raise RuntimeError(f"holding job failed: HTTP {status}, state {body.get('status')}")
+                if body.get("status") == "done":
+                    break
+                time.sleep(.05)
+            else:
+                raise TimeoutError("holding job did not finish")
+            status, body, _ = request(job_url + "/result", timeout=5)
+            text_sha = hashlib.sha256(normalized(body.get("text", "")).encode()).hexdigest()
+            rows["holding_job"] = {"status": status, "text_sha256": text_sha,
+                                   "duration": body.get("duration")}
+            admission_pass &= (status == 200 and text_sha == rows["held_response"]["text_sha256"]
+                               and body.get("duration") == rows["held_response"].get("duration"))
+            rows["job_recovery"] = server.recovered()
         rows["cancellations"] = []
         for _ in range(3):
             for mode in ["disconnect", "read-timeout"]:
@@ -219,7 +284,7 @@ def faults(server, short, long, expected, watchdog):
                                and row["observed"] == ("TimeoutError" if mode == "read-timeout"
                                                        else "disconnect"))
                 rows["cancellations"].append(row)
-        rows["pass"] = (all(r["status"] == 503 and r.get("code") == "timeout"
+        rows["pass"] = (admission_pass and all(r["status"] == 503 and r.get("code") == "timeout"
                             and r.get("retry_after") is not None for r in responses)
                         and rows["held_response"]["status"] == 200
                         and all(r["pass"] for r in rows["cancellations"]))
@@ -239,6 +304,8 @@ def main():
     for flag in ["baseline", "candidate", "model-dir", "ort", "manifest", "reference",
                  "long-input", "out"]:
         parser.add_argument("--" + flag, type=Path, required=True)
+    parser.add_argument("--upload-admission", action="store_true",
+                        help="Current gigastt: honor upload_busy backoff; hold a job for pool timeout tests")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     if (args.out / "result.json").exists():
@@ -256,6 +323,7 @@ def main():
     short = Path(short_case["path"]).read_bytes()
     long = args.long_input.read_bytes()
     result = {"pass": False, "instances": {}, "inputs": inputs,
+              "upload_admission": args.upload_admission,
               "long_input": {"path": str(args.long_input), "sha256": digest(args.long_input)},
               "script_sha256": digest(Path(__file__)), "runtime_sha256": digest(args.ort),
               "reference_sha256": digest(args.reference),
@@ -296,6 +364,14 @@ def main():
         gates["latency"] = all(b[metric] <= a[metric] * 1.5
                                for a, b in zip(base["bursts"], cand["bursts"])
                                for metric in ["p95_ms", "p99_ms"])
+        if args.upload_admission:
+            gates["client_latency_with_retries"] = all(
+                b[metric] <= a[metric] * 1.5
+                for a, b in zip(base["bursts"], cand["bursts"])
+                for metric in ["client_p95_ms", "client_p99_ms"])
+            gates["upload_admission_exercised"] = all(
+                sum(b["upload_busy_retries"] for b in servers[name].record["bursts"]) > 0
+                for name in servers)
         gates["peak_rss"] = cand["peak_rss_kib"] <= base["peak_rss_kib"] * 1.25 + 32 * 1024
         for profile in ["queue-cancel", "watchdog"]:
             for name, binary in [("baseline", args.baseline), ("candidate", args.candidate)]:

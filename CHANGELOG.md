@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Record verified 0.8.1 registry publication and complete the downstream
   consumer dependency patch with its locked registry checksum.
+- Add an opt-in upload-admission mode to the local HTTP load lab. Honor
+  `upload_busy` backoff, check client latency including retries, and use a
+  held job to test pool timeouts independently of upload rejection. Keep
+  the historical queueing protocol as the default.
 
 ## [0.8.1] - 2026-10-28
 

@@ -1,0 +1,29 @@
+{
+  "runner_sha256": "e5c4643344151c498f8fd8d7502df3c2ee56087788b137ab0f24798acff88d2e",
+  "cases": {
+    "valid": {
+      "expected": true,
+      "observed": true
+    },
+    "wrong-code": {
+      "expected": false,
+      "observed": false
+    },
+    "missing-header": {
+      "expected": false,
+      "observed": false
+    },
+    "mismatched-delay": {
+      "expected": false,
+      "observed": false
+    },
+    "zero-delay": {
+      "expected": false,
+      "observed": false
+    },
+    "boolean-delay": {
+      "expected": false,
+      "observed": false
+    }
+  }
+}
