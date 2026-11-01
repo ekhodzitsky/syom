@@ -143,7 +143,7 @@ fn lc960_loas_m4a_and_raw_match_the_lab_geometry() -> Result<(), AacError> {
     Ok(())
 }
 
-fn ld480_tone_au() -> Vec<u8> {
+pub(crate) fn ld480_tone_au() -> Vec<u8> {
     let mut au = BitWriter::new();
     au.write(0, 4);
     au.write(100, 8);

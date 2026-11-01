@@ -25,6 +25,27 @@ fn harvest(data: &[u8]) {
         assert!(pcm.channels.iter().flatten().all(|x| x.is_finite()));
     }
     let _ = syom::probe(data);
+    if let Ok(mut source) = syom::M4aSeek::open(std::io::Cursor::new(data), opts) {
+        let at = source.presentation_len().saturating_sub(1).min(4097) as i64;
+        if let Ok(plan) = source.exact_seek_plan(at, at + 1) {
+            for range in plan.media_ranges() {
+                assert!(range.start <= range.end);
+            }
+            if source.seek_exact(at, 16).is_ok() {
+                if let Ok(position) = source.save_exact_position() {
+                    let _ = source.restore_exact_position(&position, 16);
+                }
+                let _ = source.decode(|frame| {
+                    assert!(frame
+                        .planar
+                        .iter()
+                        .flat_map(|p| p.iter())
+                        .all(|x| x.is_finite()));
+                    Err(syom::AacError::Decode("fuzz interval stop".into()))
+                });
+            }
+        }
+    }
 }
 
 fn next_u32(s: &mut u32) -> u32 {

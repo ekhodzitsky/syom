@@ -1,0 +1,200 @@
+{
+  "candidate": "0.9.0 (unpublished)",
+  "date": "2026-11-01",
+  "base_revision": "1525595",
+  "platform": "Linux x86_64",
+  "tested_platforms": [
+    "Linux x86_64"
+  ],
+  "rust": [
+    "1.97.1",
+    "MSRV 1.89.0"
+  ],
+  "github_actions": "not dispatched; capacity restriction",
+  "baseline": "Before API changes, the current 0.8.1 legacy seek passed the native consumer noise/tone fixture (baseline.log). PNS activation is independently checked in the final suite; native-read.log records requested and observed PNS.",
+  "read_protocol": {
+    "generator": "src/exact_seek_tests.rs::fixtures",
+    "duration_seconds": 6,
+    "bitrate_bps": 64000,
+    "start_ms": 4001,
+    "length_ms": 500,
+    "comparison": "all native f32 bits versus sequential decode",
+    "read_proof": "actual AU reads and Seek offsets equal planned ranges; counter equals replay AUs; metadata reads during open excluded"
+  },
+  "observed_intervals": [
+    {
+      "rate": 16000,
+      "pns": false,
+      "observed_pns": false,
+      "channels": 1,
+      "start": 64016,
+      "end": 72016,
+      "replay_aus": 63,
+      "total_aus": 72,
+      "payload_bytes": 36855,
+      "native_differences": 0
+    },
+    {
+      "rate": 16000,
+      "pns": false,
+      "observed_pns": false,
+      "channels": 2,
+      "start": 64016,
+      "end": 72016,
+      "replay_aus": 63,
+      "total_aus": 72,
+      "payload_bytes": 36856,
+      "native_differences": 0
+    },
+    {
+      "rate": 16000,
+      "pns": true,
+      "observed_pns": true,
+      "channels": 1,
+      "start": 64016,
+      "end": 72016,
+      "replay_aus": 63,
+      "total_aus": 72,
+      "payload_bytes": 36873,
+      "native_differences": 0
+    },
+    {
+      "rate": 16000,
+      "pns": true,
+      "observed_pns": true,
+      "channels": 2,
+      "start": 64016,
+      "end": 72016,
+      "replay_aus": 63,
+      "total_aus": 72,
+      "payload_bytes": 36852,
+      "native_differences": 0
+    },
+    {
+      "rate": 44100,
+      "pns": false,
+      "observed_pns": false,
+      "channels": 1,
+      "start": 176444,
+      "end": 198494,
+      "replay_aus": 173,
+      "total_aus": 195,
+      "payload_bytes": 36221,
+      "native_differences": 0
+    },
+    {
+      "rate": 44100,
+      "pns": false,
+      "observed_pns": false,
+      "channels": 2,
+      "start": 176444,
+      "end": 198494,
+      "replay_aus": 173,
+      "total_aus": 195,
+      "payload_bytes": 36243,
+      "native_differences": 0
+    },
+    {
+      "rate": 44100,
+      "pns": true,
+      "observed_pns": true,
+      "channels": 1,
+      "start": 176444,
+      "end": 198494,
+      "replay_aus": 173,
+      "total_aus": 195,
+      "payload_bytes": 36221,
+      "native_differences": 0
+    },
+    {
+      "rate": 44100,
+      "pns": true,
+      "observed_pns": true,
+      "channels": 2,
+      "start": 176444,
+      "end": 198494,
+      "replay_aus": 173,
+      "total_aus": 195,
+      "payload_bytes": 36242,
+      "native_differences": 0
+    }
+  ],
+  "other_coverage": [
+    "cold/repeated/backward/reopened seeks",
+    "source-bound logical-position restore; foreign source rejected before I/O",
+    "insufficient budget before I/O/state change",
+    "unavailable prefix even after warm full decode; failed exact state cannot emit",
+    "corrupt AU failure invalidates exact state",
+    "LC1024/960, LD512/480; inside-AU offsets; edit/priming/tail trim",
+    "8/16/22.05/44.1/48/64 kHz; mono/stereo; speech downmix and full audio",
+    "fragmented LC; malformed SIDX source rejected",
+    "explicit/implicit HE/PS and prediction profile rejection"
+  ],
+  "checks": {
+    "cargo_fmt": "passed",
+    "file_size": "passed",
+    "changelog": "passed",
+    "clippy_all_targets_deny_warnings": "passed",
+    "workspace_lib_tests": {
+      "passed": 1137,
+      "ignored": 7,
+      "failed": 0
+    },
+    "integration_allocation_test": {
+      "passed": 1
+    },
+    "doctests": {
+      "passed": 29
+    },
+    "package": {
+      "files": 178,
+      "compressed_bytes": 455053,
+      "budget": 524288,
+      "dependencies": 0,
+      "guide_doctests": "passed from packaged sources"
+    },
+    "msrv": [
+      "test result: ok. 1137 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 27.02s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s"
+    ],
+    "consumer": "all cells passed including exact_seek (consumer.log)",
+    "fuzz_contract": {
+      "seed": 3237998146,
+      "iterations": 1808,
+      "wall_ms": 30360,
+      "panics": 0
+    },
+    "fuzz_state": {
+      "seed": 1240760137,
+      "iterations": 39840,
+      "wall_ms": 30014,
+      "panics": 0
+    }
+  },
+  "reproduce": [
+    "cargo fmt --check",
+    "python3 scripts/check-file-size.py",
+    "python3 scripts/check-changelog.py",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test --workspace --lib --tests",
+    "cargo test --doc",
+    "python3 scripts/check-package.py",
+    "cargo +1.89.0 test --locked --lib --tests",
+    "cargo test --lib exact_seek_tests -- --nocapture",
+    "python3 lab/consume/run.py",
+    "cargo run --release --manifest-path lab/fuzz/Cargo.toml --bin syom_fuzz -- --seconds 30 --seed 3237998146",
+    "cargo run --release --manifest-path lab/fuzz/Cargo.toml --bin syom_fuzz_state -- --seconds 30 --seed 1240760137"
+  ],
+  "limitations": [
+    "Every nonempty plan includes coded AU 0. No bounded independent cold preroll or imported DSP checkpoint is qualified.",
+    "Logical positions are instance-bound and always require replay; source bytes must remain immutable.",
+    "Replay budget counts discarded AUs only. Existing input/index/workspace/duration limits still apply.",
+    "Planning checks metadata and scope; corrupt payloads or implicit extensions may still fail during execution.",
+    "Interval end is enforced by caller callback: trim final frame and stop before next AU.",
+    "No resampling: absolute rational phase and resampler history remain consumer responsibilities.",
+    "Short deterministic fuzz runs are regression smoke coverage, not exhaustive security proof.",
+    "No Windows/macOS/ARM validation, crate publication or deployment."
+  ],
+  "package_sha256": "26cd3b6aba14cef04b6364268c730213e670db2917bacb7eb09cdee0912c122e",
+  "consumer_archive": "Final consumer rerun uses the current packaged sources including the corrected unpublished local dependency example; consumer.log records its archive hash."
+}

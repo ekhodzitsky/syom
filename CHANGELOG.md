@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - Unreleased
+
+### Added
+
+- Opt-in exact M4A interval planning with borrowed access-unit byte ranges,
+  native presentation coordinates and explicit initial-state prefix replay.
+  `seek_exact` rejects an insufficient replay-AU budget before I/O; missing
+  prefix bytes remain errors. No independent bounded-preroll window is claimed.
+- Opaque source-bound logical seek positions with budgeted replay on restore.
+  They are not codec-state checkpoints. Foreign positions, unsupported exact
+  profiles and failed exact decode state produce explicit errors. The new
+  contract covers LC/LD mono/stereo; HE/PS and prediction histories are excluded.
+  Existing `seek` and the 0.8.1 PNS history fix remain available.
+
 ### Changed
 
 - Record verified 0.8.1 registry publication and complete the downstream
@@ -1081,6 +1095,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 [Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...HEAD
+[0.9.0]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...HEAD
 [0.8.1]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/ekhodzitsky/syom/compare/v0.7.0...v0.7.1

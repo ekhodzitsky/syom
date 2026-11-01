@@ -127,9 +127,23 @@ full ISO conformance and live-service rollout qualification remain open. Use
 
 ## Install
 
+The unpublished **0.9.0 candidate** adds `exact_seek_plan` and budgeted
+`seek_exact` for LC/LD mono/stereo interval consumers. Every nonempty exact
+plan requires the coded prefix from AU 0; arbitrary cold sparse seeking is
+not qualified. See [the integration guide](src/guide.rs) for byte ranges,
+native coordinates, logical-position restore and resource limits. Use a
+local path or this Git revision for that API; registry 0.8 remains separate.
+
 ```toml
 [dependencies]
 syom = "0.8"
+```
+
+For the unpublished candidate checked out at `../syom`:
+
+```toml
+[dependencies]
+syom = { version = "0.9", path = "../syom" }
 ```
 
 rustc **1.89**.

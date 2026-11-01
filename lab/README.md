@@ -1,5 +1,10 @@
 # Offline native comparison lab
 
+The unpublished 0.9.0 exact-seek candidate has
+[native equality and observed-read evidence](release-audit/runs/exact-seek-0.9.0/report.json).
+All qualified intervals replay the coded prefix; no arbitrary cold bounded
+window is advertised. Linux x86_64 only; no new cross-platform claim.
+
 syom [0.8.1 is published](release-audit/PUBLISHED-0.8.1.md), with verified
 registry checksum and a downstream manifest/lockfile upgrade patch.
 The [maintained consumer PR qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)

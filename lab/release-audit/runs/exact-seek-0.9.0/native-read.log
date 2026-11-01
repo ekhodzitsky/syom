@@ -1,0 +1,28 @@
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.47s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 12 tests
+test exact_seek_tests::grids::prediction_profiles_cannot_authorize_partial_history ... ok
+test exact_seek_tests::grids::unsupported_implicit_he_cannot_complete_exact_output ... ok
+test exact_seek_tests::unsupported_histories_empty_requests_and_invalid_coordinates_are_explicit ... ok
+test exact_seek_tests::grids::rates_and_encoder_edits_preserve_absolute_native_coordinates ... ok
+test exact_seek_tests::grids::fragmented_lc_is_exact_and_inconsistent_sidx_source_remains_rejected ... ok
+test exact_seek_tests::grids::lc960_ld512_and_ld480_keep_exact_grid_and_edit_semantics ... ok
+test exact_seek_tests::corrupt_prefix_invalidates_exact_state_and_cannot_yield_approximate_pcm ... ok
+exact_seek_read {"rate":16000,"pns":false,"observed_pns":false,"channels":1,"start":64016,"end":72016,"replay_aus":63,"total_aus":72,"payload_bytes":36855,"native_differences":0}
+exact_seek_read {"rate":16000,"pns":false,"observed_pns":false,"channels":2,"start":64016,"end":72016,"replay_aus":63,"total_aus":72,"payload_bytes":36856,"native_differences":0}
+exact_seek_read {"rate":16000,"pns":true,"observed_pns":true,"channels":1,"start":64016,"end":72016,"replay_aus":63,"total_aus":72,"payload_bytes":36873,"native_differences":0}
+exact_seek_read {"rate":16000,"pns":true,"observed_pns":true,"channels":2,"start":64016,"end":72016,"replay_aus":63,"total_aus":72,"payload_bytes":36852,"native_differences":0}
+exact_seek_read {"rate":44100,"pns":false,"observed_pns":false,"channels":1,"start":176444,"end":198494,"replay_aus":173,"total_aus":195,"payload_bytes":36221,"native_differences":0}
+exact_seek_read {"rate":44100,"pns":false,"observed_pns":false,"channels":2,"start":176444,"end":198494,"replay_aus":173,"total_aus":195,"payload_bytes":36243,"native_differences":0}
+exact_seek_read {"rate":44100,"pns":true,"observed_pns":true,"channels":1,"start":176444,"end":198494,"replay_aus":173,"total_aus":195,"payload_bytes":36221,"native_differences":0}
+exact_seek_read {"rate":44100,"pns":true,"observed_pns":true,"channels":2,"start":176444,"end":198494,"replay_aus":173,"total_aus":195,"payload_bytes":36242,"native_differences":0}
+test exact_seek_tests::planned_payload_ranges_match_observed_reads_and_au_counts ... ok
+test exact_seek_tests::budget_is_pre_io_and_unavailable_prefix_fails_even_after_warm_decode ... ok
+test exact_seek_tests::logical_checkpoints_restore_with_replay_and_reject_other_sources ... ok
+test exact_seek_tests::current_pns_fix_matches_native_consumer_fixture ... ok
+test exact_seek_tests::exact_seek_replays_cold_repeated_backward_and_reopened_positions ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 1132 filtered out; finished in 11.25s
+

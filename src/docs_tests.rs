@@ -8,7 +8,11 @@ fn readme_install_matches_package_version() {
     let ver = env!("CARGO_PKG_VERSION");
     let major_minor = ver.rsplit_once('.').map(|(a, _)| a).unwrap_or(ver);
     assert!(
-        readme.contains(&format!("syom = \"{major_minor}\"")),
+        readme.contains(&format!("syom = \"{major_minor}\""))
+            || (readme.contains("unpublished candidate")
+                && readme.contains(&format!(
+                    "syom = {{ version = \"{major_minor}\", path = \"../syom\" }}"
+                ))),
         "install example must use {major_minor}"
     );
     assert!(

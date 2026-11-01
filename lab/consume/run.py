@@ -23,7 +23,7 @@ from pathlib import Path
 
 LAB = Path(__file__).resolve().parent
 ROOT = LAB.parents[1]
-BINS = ["flows", "consumers"]
+BINS = ["flows", "consumers", "exact_seek"]
 
 
 def run(*args: str, cwd: Path) -> str:

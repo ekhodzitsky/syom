@@ -149,6 +149,57 @@
 //! A cold M4A seek or a seek past PNS can replay the prefix to preserve
 //! decoder history; verified noise-free LC/LD prefixes use short preroll.
 //!
+//! ## Exact interval acquisition (0.9.0 candidate)
+//!
+//! The new API is available from this checkout/Git revision; 0.9.0 has not
+//! been published. For immutable LC/LD mono/stereo sources, plan before
+//! withholding media bytes. Coordinates are absolute native presentation
+//! samples after supported edit/gapless trimming, never resampled samples.
+//!
+//! ```
+//! use std::io::Cursor;
+//! use syom::{AacError, DecodeOptions, ExactSeekHistory, M4aSeek};
+//! let pcm = vec![0.1f32; 8192];
+//! let bytes = syom::encode_with(&[&pcm], 48_000, &syom::EncodeOptions::m4a())?;
+//! let mut src = M4aSeek::open(Cursor::new(bytes), DecodeOptions::audio())?;
+//! let plan = src.exact_seek_plan(2049, 4097)?;
+//! assert_eq!(plan.history(), ExactSeekHistory::PrefixReplay);
+//! let payloads: Vec<_> = plan.media_ranges().collect();
+//! let replay = plan.replay_access_units();
+//! assert_eq!(plan.access_units().start, 0);
+//! assert!(!payloads.is_empty()); // Acquire ALL these payloads, not just the last ones.
+//! assert!(matches!(src.seek_exact(2049, 0), Err(AacError::SeekReplayRequired { .. })));
+//! src.seek_exact(2049, replay)?;
+//! let position = src.save_exact_position()?; // Logical position only, no DSP state.
+//! src.restore_exact_position(&position, replay)?; // Replays again, on this instance.
+//! # Ok::<(), syom::AacError>(())
+//! ```
+//!
+//! Every nonempty plan includes coded AU 0 through the AU covering `end`.
+//! No bounded history-independent preroll or imported codec checkpoint is
+//! qualified, even for PNS-off encodes or a warm decoder. SIDX is no proof.
+//! `open` separately reads container metadata; payload ranges are in decode
+//! order and need not be contiguous. Missing prefix bytes cause I/O failure;
+//! an insufficient replay budget fails before I/O or position changes.
+//! Planning is not a validation certificate: corrupt data or in-band HE can
+//! still fail during decoding. HE/PS, prediction profiles and unqualified
+//! channel layouts return unsupported errors rather than approximate output.
+//!
+//! `decode` continues to EOF unless its callback stops it. For `[start,end)`,
+//! consume only `min(frame.samples, end - position)` from the final callback
+//! and return a caller-owned error to stop before reading the next AU. Callback
+//! errors do not invalidate the codec. After a codec/read failure, reset with
+//! a successful seek. Source-bound positions cannot transfer to another reader.
+//!
+//! Planning borrows the bounded index without allocating a second range list;
+//! inspecting ranges costs O(number of required AUs). Replay costs O(position)
+//! CPU and input bytes, with per-AU workspace rather than cached prefix PCM.
+//! Existing input/index/workspace/duration limits still apply, including at
+//! open; the replay budget limits discarded AUs, not total output or bytes.
+//! Consumers must handle resampler history and absolute rational phase
+//! themselves. Native bit equality does not establish resampled equality.
+//! Local Linux tests do not establish Windows/macOS/ARM parity.
+//!
 //! Untagged ADTS and LATM leave duration and trim `Unknown`. A leading
 //! `iTunSMPB` tag whose sample counts equal the frames in the buffer
 //! fills both.

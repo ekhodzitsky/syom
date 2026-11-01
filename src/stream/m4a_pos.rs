@@ -10,6 +10,11 @@ use crate::options::{ChannelMode, DecodeOptions};
 use crate::stream::{Frame, StreamInfo};
 
 use super::m4a::map_m4a_parse_err;
+#[path = "m4a_pos_au.rs"]
+mod au;
+#[path = "m4a_pos_exact.rs"]
+mod exact;
+pub use exact::{ExactSeekHistory, ExactSeekPlan, ExactSeekPosition};
 
 fn read_exact<R: Read>(r: &mut R, buf: &mut [u8]) -> Result<()> {
     loop {
@@ -76,6 +81,9 @@ pub struct M4aSeek<R> {
     mono: bool,
     // Contiguous decoded prefix that leaves the initial PNS state unchanged.
     noise_free_prefix: usize,
+    exact_mode: bool,
+    exact_failed: bool,
+    source_identity: std::sync::Arc<()>,
     #[cfg(test)]
     last_seek_aus: u64,
 }
@@ -138,6 +146,9 @@ impl<R: Read + Seek> M4aSeek<R> {
             locked: None,
             mono,
             noise_free_prefix: 0,
+            exact_mode: false,
+            exact_failed: false,
+            source_identity: std::sync::Arc::new(()),
             #[cfg(test)]
             last_seek_aus: 0,
         };
@@ -146,6 +157,8 @@ impl<R: Read + Seek> M4aSeek<R> {
     }
 
     fn reset_codec(&mut self) {
+        self.exact_mode = false;
+        self.exact_failed = false;
         self.dec.reset();
         self.dec.mix_down_mono = self.mono;
         if let Some(pce) = self.asc.pce.clone() {
@@ -252,62 +265,16 @@ impl<R: Read + Seek> M4aSeek<R> {
         Ok(pres)
     }
 
-    fn decode_au(&mut self, idx: usize) -> Result<(u32, usize)> {
-        let &(off, len) = self
-            .track
-            .frames
-            .get(idx)
-            .ok_or_else(|| AacError::format("aac: sample index past table"))?;
-        self.opts.memory.check_declared_au(u64::from(len))?;
-        let n = usize::try_from(len).map_err(|_| AacError::format("aac: sample range overflow"))?;
-        self.reader
-            .seek(SeekFrom::Start(off))
-            .map_err(AacError::from)?;
-        let mut payload = vec![0u8; n];
-        read_exact(&mut self.reader, &mut payload)?;
-        let rate = if self.mono {
-            self.scratch.clear();
-            self.dec
-                .decode_raw_mono_f32(
-                    self.asc.aot,
-                    self.asc.sampling_frequency_index,
-                    self.asc.sample_rate,
-                    self.asc.channel_configuration,
-                    1,
-                    &payload,
-                    &mut self.scratch,
-                )
-                .map_err(AacError::from)?
-        } else {
-            self.dec
-                .decode_frame_scaled(
-                    self.asc.aot,
-                    self.asc.sampling_frequency_index,
-                    self.asc.sample_rate,
-                    self.asc.channel_configuration,
-                    &payload,
-                )
-                .map_err(AacError::from)?
-        };
-        if idx == self.noise_free_prefix
-            && self.dec.rng == crate::engine::pns::Lcg::new()
-            && !self.dec.sbr_active
-        {
-            self.noise_free_prefix += 1;
-        }
-        let n_samp = if self.mono {
-            self.scratch.len()
-        } else {
-            self.dec.frame_planes().first().map_or(0, Vec::len)
-        };
-        Ok((rate, n_samp))
-    }
-
     /// Decode from the current position to the presentation end.
     pub fn decode<F>(&mut self, mut on_frame: F) -> Result<StreamInfo>
     where
         F: FnMut(Frame<'_>) -> Result<()>,
     {
+        if self.exact_failed {
+            return Err(AacError::Lifecycle {
+                state: crate::LifecycleState::Failed,
+            });
+        }
         let mut aac_frames = 0u64;
         let mut emitted = 0u64;
         let mut samples_out = 0u64;

@@ -181,5 +181,14 @@ corr 0.999 instead of printing a KNOWN DEVIATION marker; re-measured
 ## Reproduce
 
 ```sh
-python3 lab/consume/run.py   # packages syom, builds vendor/syom, runs both bins
+python3 lab/consume/run.py   # packages syom, builds vendor/syom, runs all bins
 ```
+
+## Exact-seek candidate supplement (2026-11-01)
+
+`python3 lab/consume/run.py` now also runs `exact_seek` against the packaged
+0.9.0 candidate. It compares native PCM bits with sequential decoding, checks
+the pre-I/O replay budget and rejects foreign logical-position checkpoints.
+The historical measurements above remain unchanged. Results and reproduction commands
+are retained in [the candidate evidence](../release-audit/runs/exact-seek-0.9.0/report.json).
+This adds an integration check, not a bounded cold-seek qualification.

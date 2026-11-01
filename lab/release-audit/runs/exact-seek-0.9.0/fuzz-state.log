@@ -1,0 +1,32 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+warning: function `section_spectral_cost` is never used
+ --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:8:8
+  |
+8 | pub fn section_spectral_cost(
+  |        ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `plan_books_dp` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:38:8
+   |
+38 | pub fn plan_books_dp(
+   |        ^^^^^^^^^^^^^
+
+warning: function `plan_stretch_dp` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:61:4
+   |
+61 | fn plan_stretch_dp(
+   |    ^^^^^^^^^^^^^^^
+
+warning: `syom` (lib) generated 3 warnings
+   Compiling syom-lab-fuzz v0.0.0 (/home/ekhodzitsky/Projects/syom/lab/fuzz)
+    Finished `release` profile [optimized] target(s) in 5.81s
+     Running `lab/fuzz/target/release/syom_fuzz_state --seconds 30 --seed 1240760137`
+syom-lab-fuzz-state TASK-103
+seed 1240760137
+iters 39840
+wall_ms 30014
+panics 0
