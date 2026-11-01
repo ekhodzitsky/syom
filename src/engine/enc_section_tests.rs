@@ -50,6 +50,27 @@ fn plan_books_never_picks_unrepresentable() {
 }
 
 #[test]
+fn single_band_minimum_preserves_invalid_books_and_ties() {
+    let mut state = 0x92ab_5619u32;
+    for seed in 0..1024 {
+        let mut row = [UNREPRESENTABLE; BOOKS];
+        for cost in &mut row[1..] {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            *cost = match state % 5 {
+                0 => UNREPRESENTABLE,
+                1 => UNREPRESENTABLE - 1,
+                _ => state % 7,
+            };
+        }
+        if seed == 0 {
+            row.fill(UNREPRESENTABLE);
+        }
+        let reference = super::best_book(&[true], &[row], 0, 1).map_or(11, |(cb, _)| cb);
+        assert_eq!(super::best_single_book(&row), reference);
+    }
+}
+
+#[test]
 fn section_data_parses_back() {
     let q = sample_channel(49);
     let books = plan_books(&q);

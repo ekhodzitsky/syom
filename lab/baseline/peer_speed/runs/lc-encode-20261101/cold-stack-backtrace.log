@@ -1,0 +1,30 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/usr/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+running 1 test
+[New Thread 0x7ffff7bff6c0 (LWP 1830825)]
+[New Thread 0x7ffff7e4d6c0 (LWP 1830826)]
+
+Thread 3 "latency_tests::" received signal SIGSEGV, Segmentation fault.
+[Switching to Thread 0x7ffff7e4d6c0 (LWP 1830826)]
+0x0000555556146db4 in <std::sync::once::Once>::call_once_force::<<std::sync::lazy_lock::LazyLock<[syom::engine::huff::HuffTree; 11]>>::force::{closure#0}>::{closure#0} ()
+#0  0x0000555556146db4 in <std::sync::once::Once>::call_once_force::<<std::sync::lazy_lock::LazyLock<[syom::engine::huff::HuffTree; 11]>>::force::{closure#0}>::{closure#0} ()
+#1  0x00005555564832f9 in <std::sys::sync::once::futex::Once>::call ()
+#2  0x000055555617e11d in syom::engine::spectrum_scaled::decode_scaled_into ()
+#3  0x000055555604b25b in syom::engine::ics_body::parse_ics_into ()
+#4  0x000055555614d30f in <syom::engine::decode::StreamDecoder>::decode_into_bufs ()
+#5  0x0000555556153286 in <syom::engine::decode::StreamDecoder>::decode_adts_blocks ()
+#6  0x0000555556153765 in <syom::engine::decode::StreamDecoder>::decode_adts_header_payload ()
+#7  0x0000555555f164f6 in syom::stream::decode_streaming::<syom::decode::decode_with::{closure#0}> ()
+#8  0x00005555562eea93 in syom::decode::decode_with ()
+#9  0x0000555556012379 in std::sys::backtrace::__rust_begin_short_backtrace::<syom::latency_tests::codec_runs_on_a_128_kib_thread_stack::{closure#2}, (usize, bool, bool)> ()
+#10 0x00005555560ee255 in <std::thread::lifecycle::spawn_unchecked<syom::latency_tests::codec_runs_on_a_128_kib_thread_stack::{closure#2}, (usize, bool, bool)>::{closure#1} as core::ops::function::FnOnce<()>>::call_once::{shim:vtable#0} ()
+#11 0x00005555564a0bef in <std::sys::thread::unix::Thread>::new::thread_start ()
+#12 0x00007ffff7ca3dfa in start_thread (arg=<optimized out>) at ./nptl/pthread_create.c:454
+#13 0x00007ffff7d375cc in __GI___clone3 () at ../sysdeps/unix/sysv/linux/x86_64/clone3.S:78

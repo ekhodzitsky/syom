@@ -1,5 +1,13 @@
 # In-process one-core speed, 2026-10-16
 
+**Historical encoder protocol correction (2026-11-01):** the original FDK
+adapter performed only one flush call and omitted delayed tail AUs. Its
+encoder measurements below do not represent complete input coverage.
+They are preserved as historical observations. The new full-drain protocol
+and byte-preserving LC performance increment are recorded in the appendix
+below and [raw evidence](peer_speed/runs/lc-encode-20261101/report.json).
+The historical decode cells are unaffected by the encoder drain correction.
+
 TASK-112.2 (LC encode vs fdk-aac 2.0.3) and TASK-112.3 (decode vs
 libfdk and libavcodec on the same output shape). This file is the log.
 The README speed table was not edited. BENCH.md was not edited.
@@ -150,4 +158,136 @@ taskset -c 0 "$AVC" bench-decode src/goldens/ps48.adts 4 21
 taskset -c 0 "$BIN" decode src/goldens/mc51.adts 4 21
 taskset -c 0 "$FDK" bench-decode src/goldens/mc51.adts 4 21
 taskset -c 0 "$AVC" bench-decode src/goldens/mc51.adts 4 21
+```
+
+## Byte-preserving LC increment, 2026-11-01
+
+**TASK-112.2 remains In Progress.** This increment improves LC encoding,
+but the required FDK tie/win is not established on every cell. No README
+speed ranking or SOTA claim is updated. Version stays the existing
+**unpublished 0.9.0 candidate**; no tag, publication or deployment occurs.
+
+### Corrected complete-input protocol
+
+Baseline production revision: `e8ceb7eb4ed31220ae7b2f3995d4ef52e5983920`.
+An isolated checkout builds those unchanged product sources with the same
+current lab harness as the candidate. Candidate source hashes are retained
+in [source-manifest.json](peer_speed/runs/lc-encode-20261101/source-manifest.json);
+the sources and measurements are committed together. Both use release,
+thin LTO, one codegen unit and rustc 1.97.1 on Linux x86_64, Ryzen AI 9 HX 370.
+
+FDK is pinned 2.0.3, generic x86_64 `-O2`, afterburner off, ADTS AOT2.
+The adapter includes float-to-INT_PCM conversion inside the measured call.
+Same source PCM does not establish equivalent encoder quality.
+The corrected adapter drains to `AACENC_ENCODE_EOF`, checks errors and
+bounds the drain loop. On the 96000-sample LC input the historical output
+covers only `97280 - 2048 = 95232` samples after declared delay; full drain
+covers `98304 - 2048 = 96256`. HE v1/v2 omission was also independently
+verified. Old outputs are exact prefixes of the complete outputs. See
+[drain evidence](peer_speed/runs/lc-encode-20261101/fdk-drain-smoke.json)
+and [native build provenance](peer_speed/runs/lc-encode-20261101/native-manifest.json).
+Earlier encoder quality comparisons using this adapter need fresh complete-tail
+qualification before being promoted; historical numbers are preserved.
+
+Each timed process is pinned to CPU0. Four warmups are followed by 31
+measured complete one-shot open/encode/flush/free calls. All six orders of
+baseline/candidate/FDK run for all four cells. The table pools all 186
+observations per engine/cell; even-sized medians average the middle pair.
+No outlier is removed. Process startup, file reads, PCM generation, hashing
+and independent FFmpeg validation are outside the in-process wall timer.
+Every block retains host load/frequency and all individual observations.
+The host is busy, with substantial scheduling modes; these observations
+are not a universal speed ranking or proof of performance on other hosts.
+
+| Cell | Baseline ms | Candidate ms | FDK full-drain ms | Candidate vs baseline |
+|---|---:|---:|---:|---:|
+| original voice stereo 128k, 2s | 12.12985 | 9.02285 | 6.02835 | 25.6% faster |
+| original voice stereo 24k, 2s | 6.08920 | 4.78765 | 3.73905 | 21.4% faster |
+| CORE_TUNE lecture stereo 24k, 0.25s | 0.36725 | 0.43765 | 0.39745 | 19.2% slower |
+| CORE_TUNE lecture mean-mono 24k, 0.25s | 0.31035 | 0.20765 | 0.26695 | 33.1% faster |
+
+The quarter-second stereo pooled result is worse and is not hidden. Because
+these very short blocks were scheduling-sensitive, both short cells were
+then repeated with all six orders and **301 observations per process** on
+the same binaries, retaining all data again. Pooled medians over 1806 samples:
+
+| Short-cell stability check | Baseline ms | Candidate ms | FDK ms |
+|---|---:|---:|---:|
+| lecture stereo 24k | 0.33750 | 0.31405 | 0.36910 |
+| lecture mean-mono 24k | 0.22870 | 0.20580 | 0.20690 |
+
+This supports a short-cell improvement in that run, not an excuse to replace
+the first table or declare the full FDK gate passed. Both long voice cells
+remain slower than FDK. The original voice-like fixture and actual lecture
+are distinct; neither is relabelled as the other.
+
+### Retained changes and evidence
+
+- Reuse invariant short-window analysis and long-frame peak/noise/scalefactor
+  terms. Reuse quantized long bands only at the same normalized sf, resetting
+  every frame and invalidating explicit refinement mutations.
+- Preserve section choices with exact integer prefix sums, including missing
+  books, saturated costs and the lower-book tie rule.
+- Leave the chosen rate-probe build resident. Write bit fields by bytes,
+  emit the fitted AU directly once, and append EXT_FILL at the original
+  pre-END bit position rather than serializing the AAC body again.
+- Compute four independent TNS autocorrelation lags together while preserving
+  the scalar operation order within every sum. FIR batching and forced
+  Huffman inlining regressed their micro cases and were rejected; raw data
+  and the rejected FIR patch are retained.
+
+Full output bytes match `e8ceb7e` in **60 configurations**, including rate,
+layout, CBR/VBR, PNS/intensity, grouping/TNS/refinement/lookahead, HE and LD
+variations. This is an actual file-byte comparison, not hash equality alone.
+Existing auto/scalar/SSE2 goldens stay unchanged. Independent references
+cover cached analysis, quantizer mutations, greedy costs, rate selection,
+credit/fullness, band drops, and every padding bit alignment.
+
+The broader `syom_speed` corpus retains all 15 cells (speech/music/noise/click,
+ABR128/64 and q5) in baseline/candidate/candidate/baseline order, five warmups
+and 31 measured calls. All byte counts/hashes match. The two paired tables
+show median gains of **27.0% and 27.4%**, with all 15 cells improving in each
+pair. Their bootstrap intervals describe those samples; shared-host systematic
+noise remains. Full tables are in the evidence directory.
+
+The tradeoff is **8008 extra fixed heap bytes per LC encoder** and one
+constructor allocation; the caches add no per-frame allocations. The section
+prefix scratch uses 4992 stack bytes. Isolated footprint release cells
+(fat LTO, panic=abort) pass LC/HEv2/MC encoding on 128 KiB stacks.
+
+An extra isolated release latency test fails on first cold decoder Huffman
+initialization on **both original e8ceb7e and the retained candidate**.
+That pre-existing limitation is recorded, not fixed or disguised by warming
+it here. A passing full debug suite (whose test stack is 512 KiB) does not
+establish blanket cold decoder support on 128 KiB. No Windows/macOS/ARM
+parity is established by these Linux checks.
+
+Local gates pass: fmt, file-size, changelog, clippy all-targets with warnings
+denied, 1156 unit tests (7 existing ignored), the allocation integration test,
+29 doctests and package audit. Rust 1.89 full lib/tests, all packaged consumer
+cells and stateful fuzz seed1122 (8683 iterations, zero panics) also pass.
+No hosted GitHub checks are dispatched.
+
+[Full report and reproduction commands](peer_speed/runs/lc-encode-20261101/report.json)
+retain source/tool hashes, every measured repetition, exploratory snapshots,
+byte comparisons, failed cold-stack tests and accepted/rejected experiments.
+
+```sh
+# Build the current harness against both unchanged e8ceb7e and candidate sources.
+# Use the same lab files/Cargo release profile in the isolated baseline checkout.
+cargo build --release --manifest-path lab/baseline/peer_speed/Cargo.toml
+BIN=lab/baseline/peer_speed/target/release/syom-peer-speed
+"$BIN" prepare-lc target/lc-speed/fixtures
+# Build the pinned FDK source/link the C timer using native-manifest.json commands.
+python3 lab/baseline/peer_speed/compare_encode.py \
+  --baseline BASELINE_BIN --candidate "$BIN" --fdk FDK_BENCH \
+  --fixtures target/lc-speed/fixtures --output target/lc-speed/reproduce \
+  --rounds 6 --reps 31
+# Separate short-cell stability campaign; keep the original results as well.
+python3 lab/baseline/peer_speed/compare_encode.py \
+  --baseline BASELINE_BIN --candidate "$BIN" --fdk FDK_BENCH \
+  --fixtures target/lc-speed/fixtures --output target/lc-speed/short-reproduce \
+  --rounds 6 --reps 301 --cells lecture24 lecture-m24
+"$BIN" byte-corpus target/lc-speed/byte-corpus/candidate
+# Run byte-corpus on the baseline too, then compare all output file bytes.
 ```

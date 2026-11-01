@@ -1,0 +1,12 @@
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `release` profile [optimized] target(s) in 39.73s
+     Running unittests src/lib.rs (target/release/deps/syom-ed7324f0e1e98bb7)
+
+running 1 test
+
+thread '<unknown>' (1966803) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+error: test failed, to rerun pass `--lib`
+
+Caused by:
+  process didn't exit successfully: `/home/ekhodzitsky/Projects/syom/target/release/deps/syom-ed7324f0e1e98bb7 'latency_tests::codec_runs_on_a_128_kib_thread_stack' --nocapture` (signal: 6, SIGABRT: process abort signal)

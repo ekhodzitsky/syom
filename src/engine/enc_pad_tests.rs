@@ -52,3 +52,28 @@ fn room_solver_stays_within_room_and_is_maximal() {
     assert_eq!(pad_fill_for_room(14), 0, "smallest FIL needs 15 bits");
     assert_eq!(pad_fill_bits(0), 0);
 }
+
+#[test]
+fn appending_padding_matches_full_rebuild_for_every_prefix_alignment() {
+    for prefix_bits in 128..136 {
+        for pad in [0, 1, 14, 15, 269, 270, 800] {
+            let prefix = |w: &mut BitWriter| {
+                for i in 0..prefix_bits {
+                    w.write_bit(i % 3 == 0);
+                }
+            };
+            let mut old = BitWriter::from_vec(Vec::with_capacity(5000));
+            prefix(&mut old);
+            old.write(7, 3);
+            let mut bytes = old.finish();
+            let capacity = bytes.capacity();
+            super::append_pad_fill(&mut bytes, prefix_bits, pad);
+            let mut reference = BitWriter::new();
+            prefix(&mut reference);
+            write_pad_fill(&mut reference, pad);
+            reference.write(7, 3);
+            assert_eq!(bytes, reference.finish(), "prefix={prefix_bits} pad={pad}");
+            assert_eq!(bytes.capacity(), capacity);
+        }
+    }
+}

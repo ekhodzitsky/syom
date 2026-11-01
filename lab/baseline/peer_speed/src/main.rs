@@ -11,14 +11,21 @@ use std::time::Instant;
 
 use syom::{decode_with, encode_with, DecodeOptions, EncodeOptions};
 
+mod encode_cells;
+
 const RATE: u32 = 48_000;
 const SECS: usize = 2;
 const N: usize = RATE as usize * SECS;
+
+mod byte_corpus;
 
 fn main() {
     let mut args = std::env::args().skip(1);
     let cmd = args.next().unwrap_or_default();
     let code = match cmd.as_str() {
+        "byte-corpus" => byte_corpus::run(args.next().as_deref()),
+        "prepare-lc" => encode_cells::prepare(&args.next().expect("prepare-lc OUTDIR")),
+        "encode-pcm" => encode_cells::file(&args.collect::<Vec<_>>()),
         "encode-voice" => {
             let warm = parse(&args.next(), 4);
             let reps = parse(&args.next(), 21);

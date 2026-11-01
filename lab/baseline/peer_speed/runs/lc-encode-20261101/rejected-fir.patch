@@ -1,0 +1,48 @@
+--- accepted/enc_tns_lpc.rs
++++ rejected/enc_tns_lpc.rs
+@@ -2,2 +2,2 @@
+-//! same left-to-right add order as the straight loops. Independent lag
+-//! sums are batched without reassociating any accumulator's operations.
++//! same left-to-right add order as the straight loops; the inner indexes
++//! are slice iterators so the rate path does not bounds-check each tap.
+@@ -108,2 +108,21 @@
+-    if n <= ORDER {
+-        return;
++    let mut i = head;
++    // Every output depends on the original samples only. Parallel outputs
++    // retain each sample's coefficient/add order without shifting history.
++    while i + 4 <= n {
++        let mut e = [
++            f64::from(orig[i]),
++            f64::from(orig[i + 1]),
++            f64::from(orig[i + 2]),
++            f64::from(orig[i + 3]),
++        ];
++        for (j, &a) in ak.iter().enumerate().take(ORDER) {
++            let p = i - 1 - j;
++            e[0] += a * f64::from(orig[p]);
++            e[1] += a * f64::from(orig[p + 1]);
++            e[2] += a * f64::from(orig[p + 2]);
++            e[3] += a * f64::from(orig[p + 3]);
++        }
++        for (slot, value) in x[i..i + 4].iter_mut().zip(e) {
++            *slot = value as f32;
++        }
++        i += 4;
+@@ -111,5 +130 @@
+-    let mut hist = [0.0f64; MAX_ORDER];
+-    for j in 0..ORDER {
+-        hist[j] = f64::from(orig[ORDER - 1 - j]);
+-    }
+-    for i in ORDER..n {
++    for i in i..n {
+@@ -117,2 +132,2 @@
+-        for j in 0..ORDER {
+-            e += ak[j] * hist[j];
++        for (j, &a) in ak.iter().enumerate().take(ORDER) {
++            e += a * f64::from(orig[i - 1 - j]);
+@@ -121,4 +135,0 @@
+-        for j in (1..ORDER).rev() {
+-            hist[j] = hist[j - 1];
+-        }
+-        hist[0] = f64::from(orig[i]);

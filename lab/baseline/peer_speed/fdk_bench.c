@@ -7,6 +7,7 @@
 
 #include "fdk_adapt.h"
 
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,6 +61,30 @@ static void print_reps(const double *ms, int n) {
     printf("]");
 }
 
+static uint64_t fnv1a(const uint8_t *data, size_t len) {
+    uint64_t hash = UINT64_C(0xcbf29ce484222325);
+    size_t i;
+    for (i = 0; i < len; i++)
+        hash = (hash ^ data[i]) * UINT64_C(0x100000001b3);
+    return hash;
+}
+
+static size_t adts_frames(const uint8_t *data, size_t len) {
+    size_t at = 0, frames = 0;
+    while (at < len) {
+        size_t size;
+        if (len - at < 7 || data[at] != 0xff || (data[at + 1] & 0xf6) != 0xf0)
+            return 0;
+        size = ((size_t)(data[at + 3] & 3) << 11) |
+               ((size_t)data[at + 4] << 3) | (data[at + 5] >> 5);
+        if (size < 7 || size > len - at)
+            return 0;
+        at += size;
+        frames++;
+    }
+    return frames;
+}
+
 static int bench_decode(const char *path, int warm, int reps) {
     size_t n = 0;
     uint8_t *buf = read_all(path, &n);
@@ -108,7 +133,7 @@ static int bench_decode(const char *path, int warm, int reps) {
 }
 
 static int bench_encode(uint32_t rate, int ch, uint32_t bps, int aot, const char *path, int warm,
-                        int reps) {
+                        int reps, const char *out_path) {
     size_t raw_n = 0, nsamp;
     uint8_t *raw = read_all(path, &raw_n);
     const float *planes[2];
@@ -116,7 +141,9 @@ static int bench_encode(uint32_t rate, int ch, uint32_t bps, int aot, const char
     FdkEnc enc;
     int i, c, rc;
     double med;
-    if (!raw || (ch != 1 && ch != 2) || raw_n % ((size_t)ch * 4) != 0) {
+    size_t frames;
+    if (!raw || raw_n == 0 || warm < 0 || reps <= 0 || (ch != 1 && ch != 2) ||
+        raw_n % ((size_t)ch * 4) != 0 || raw_n / 4 / (size_t)ch > INT_MAX) {
         fprintf(stderr, "bad pcm\n");
         free(raw);
         return 2;
@@ -155,14 +182,36 @@ static int bench_encode(uint32_t rate, int ch, uint32_t bps, int aot, const char
     }
     qsort(ms, (size_t)reps, sizeof(double), cmp_double);
     med = ms[reps / 2];
+    /* Separate untimed validation/output call: both competitors' timings
+     * include complete one-shot encode/free, neither includes hashing. */
+    rc = fdk_encode_pcm_adts(planes, ch, (int)nsamp, rate, bps, aot, &enc);
+    if (rc != 0 || (frames = adts_frames(enc.adts, enc.adts_len)) == 0) {
+        fprintf(stderr, "verification encode failed: %s\n", enc.error);
+        return 1;
+    }
+    if (aot == 2 && frames * 1024 < nsamp + (size_t)enc.delay) {
+        fprintf(stderr, "incomplete LC encoder drain: %zu AUs, %zu source samples, delay %d\n",
+                frames, nsamp, enc.delay);
+        return 1;
+    }
+    if (out_path) {
+        FILE *out = fopen(out_path, "wb");
+        if (!out || fwrite(enc.adts, 1, enc.adts_len, out) != enc.adts_len || fclose(out) != 0) {
+            fprintf(stderr, "write verification ADTS\n");
+            return 2;
+        }
+    }
     printf("{\"engine\":\"%s\",\"op\":\"encode\",\"aot\":%d,\"bitrate_bps\":%u,\"warm\":%d,"
            "\"reps\":%d,\"median_ms\":%.4f,\"min_ms\":%.4f,\"max_ms\":%.4f,"
            "\"rate\":%u,\"channels\":%d,\"samples\":%zu,\"adts_bytes\":%zu,\"delay\":%d,"
-           "\"afterburner\":%d,\"samples_ms\":",
+           "\"afterburner\":%d,\"complete_flush\":true,\"adts_frames\":%zu,"
+           "\"pcm_fnv1a\":\"%016llx\",\"adts_fnv1a\":\"%016llx\",\"samples_ms\":",
            fdk_engine_id(), aot, bps, warm, reps, med, ms[0], ms[reps - 1], rate, ch, nsamp,
-           enc.adts_len, enc.delay, enc.afterburner);
+           enc.adts_len, enc.delay, enc.afterburner, frames,
+           (unsigned long long)fnv1a(raw, raw_n), (unsigned long long)fnv1a(enc.adts, enc.adts_len));
     print_reps(ms, reps);
     printf("}\n");
+    fdk_enc_free(&enc);
     free(ms);
     free(raw);
     return 0;
@@ -175,12 +224,13 @@ int main(int argc, char **argv) {
     }
     if (argc == 5 && strcmp(argv[1], "bench-decode") == 0)
         return bench_decode(argv[2], atoi(argv[3]), atoi(argv[4]));
-    if (argc == 9 && strcmp(argv[1], "bench-encode") == 0)
+    if ((argc == 9 || argc == 10) && strcmp(argv[1], "bench-encode") == 0)
         return bench_encode((uint32_t)atoi(argv[2]), atoi(argv[3]), (uint32_t)atoi(argv[4]),
-                            atoi(argv[5]), argv[6], atoi(argv[7]), atoi(argv[8]));
+                            atoi(argv[5]), argv[6], atoi(argv[7]), atoi(argv[8]),
+                            argc == 10 ? argv[9] : NULL);
     fprintf(stderr,
             "usage:\n  %s id\n  %s bench-decode FILE WARM REPS\n"
-            "  %s bench-encode RATE CH BPS AOT IN.f32 WARM REPS\n",
+            "  %s bench-encode RATE CH BPS AOT IN.f32 WARM REPS [OUT.adts]\n",
             argv[0], argv[0], argv[0]);
     return 2;
 }

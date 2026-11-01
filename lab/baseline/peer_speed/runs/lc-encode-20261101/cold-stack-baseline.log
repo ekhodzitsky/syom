@@ -1,0 +1,82 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.24
+   Compiling autocfg v1.5.1
+   Compiling serde_core v1.0.229
+   Compiling bytemuck v1.25.2
+   Compiling crossbeam-utils v0.8.22
+   Compiling zmij v1.0.23
+   Compiling zerocopy v0.8.56
+   Compiling bitflags v2.13.1
+   Compiling serde_json v1.0.151
+   Compiling smallvec v1.16.0
+   Compiling lazy_static v1.5.0
+   Compiling crossbeam-epoch v0.9.20
+   Compiling log v0.4.34
+   Compiling memchr v2.8.3
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.12
+   Compiling regex-lite v0.1.9
+   Compiling serde v1.0.229
+   Compiling crossbeam-deque v0.8.7
+   Compiling itoa v1.0.18
+   Compiling cfg-if v1.0.4
+   Compiling thiserror v2.0.20
+   Compiling rayon-core v1.13.0
+   Compiling either v1.18.0
+   Compiling libc v0.2.189
+   Compiling plotters-backend v0.3.7
+   Compiling regex-syntax v0.8.11
+   Compiling anstyle v1.0.14
+   Compiling clap_lex v1.1.0
+   Compiling ciborium-io v0.2.2
+   Compiling cc v1.4.5
+   Compiling same-file v1.0.6
+   Compiling cast v0.3.0
+   Compiling oorandom v11.1.5
+   Compiling anes v0.1.6
+   Compiling rusty_aac v0.5.0
+   Compiling plotters-svg v0.3.7
+   Compiling walkdir v2.5.0
+   Compiling clap_builder v4.6.6
+   Compiling itertools v0.13.0
+   Compiling num-traits v0.2.19
+   Compiling syn v3.0.4
+   Compiling syn v2.0.119
+   Compiling num-complex v0.4.6
+   Compiling page_size v0.6.0
+   Compiling plotters v0.3.7
+   Compiling alloca v0.4.0
+   Compiling criterion-plot v0.8.2
+   Compiling rayon v1.12.0
+   Compiling regex-automata v0.4.18
+   Compiling symphonia-core v0.6.1
+   Compiling clap v4.6.6
+   Compiling zerocopy-derive v0.8.56
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling symphonia-metadata v0.6.1
+   Compiling regex v1.13.1
+   Compiling symphonia-common v0.6.1
+   Compiling symphonia-format-isomp4 v0.6.1
+   Compiling symphonia-codec-aac v0.6.1
+   Compiling oxideav-core v0.1.35
+   Compiling symphonia v0.6.1
+   Compiling oxideav-aac v0.1.7
+   Compiling tinytemplate v1.2.1
+   Compiling half v2.7.1
+   Compiling ciborium-ll v0.2.2
+   Compiling ciborium v0.2.2
+   Compiling criterion v0.8.2
+   Compiling syom v0.9.0 (/tmp/syom-lc-base-worktree)
+    Finished `release` profile [optimized] target(s) in 47.45s
+     Running unittests src/lib.rs (/tmp/syom-lc-stack-base-target/release/deps/syom-ed7324f0e1e98bb7)
+
+running 1 test
+
+thread '<unknown>' (1840478) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+error: test failed, to rerun pass `--lib`
+
+Caused by:
+  process didn't exit successfully: `/tmp/syom-lc-stack-base-target/release/deps/syom-ed7324f0e1e98bb7 'latency_tests::codec_runs_on_a_128_kib_thread_stack' --nocapture` (signal: 6, SIGABRT: process abort signal)

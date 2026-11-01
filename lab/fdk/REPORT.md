@@ -85,3 +85,13 @@ Matrix results live in `lab/quality/HE_QUALIFY.md`.
 | LC ADTS encode peer | **go** with actual bytes, FDK delay, independent lavc PCM length |
 | syom as decoder of FDK ADTS | **no-go** until FIL (frame 11) is understood |
 | HE v1/v2 encode peer | **go** (TASK-95 `encode-pcm` AOT 5/29; ffprobe-confirmed profiles) |
+
+## Complete encoder drain correction (2026-11-01)
+
+The historical adapter flushed only once and omitted delayed tail AUs.
+Current `fdk_encode_pcm_adts` drains to `AACENC_ENCODE_EOF`, rejects errors
+and bounds the loop. LC/HE v1/HE v2 complete-input coverage is independently
+verified in [the drain evidence](../baseline/peer_speed/runs/lc-encode-20261101/fdk-drain-smoke.json).
+The [new speed protocol](../baseline/SOTA-SPEED-2026-10-16.md#byte-preserving-lc-increment-2026-11-01)
+uses complete output. Earlier encode-quality numbers remain historical and
+need a full-tail rerun before broader claims; decoder qualification is unchanged.

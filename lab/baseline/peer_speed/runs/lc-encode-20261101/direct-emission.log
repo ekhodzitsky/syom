@@ -1,0 +1,20 @@
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.62s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 2 tests
+test engine::enc_frame::control::tests::direct_band_drops_match_original_including_no_band_fit ... ok
+test engine::enc_frame::control::tests::direct_budget_emission_preserves_bytes_credit_debt_and_avoids_reemission ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1161 filtered out; finished in 5.81s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 4 tests
+test engine::enc_pad::enc_pad_tests::padding_parses_back_as_fill_elements ... ok
+test engine::enc_pad::enc_pad_tests::writer_bits_match_the_accounting ... ok
+test engine::enc_pad::enc_pad_tests::room_solver_stays_within_room_and_is_maximal ... ok
+test engine::enc_pad::enc_pad_tests::appending_padding_matches_full_rebuild_for_every_prefix_alignment ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1159 filtered out; finished in 0.00s

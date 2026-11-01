@@ -305,3 +305,55 @@ fn surround_warm_search_matches_a_cold_search() -> Result<()> {
     assert_eq!(run(false)?, run(true)?);
     Ok(())
 }
+
+/// Every search exit must leave the selected quantization resident, including
+/// a failed final probe, warm neighbors and short/grouped/TNS configurations.
+#[test]
+fn selected_search_state_matches_an_explicit_selected_build() -> Result<()> {
+    for mode in 0..4 {
+        for channels in [1, 2] {
+            let mut enc = LcEncoder::new(48_000, channels, 64_000)?
+                .with_pns(mode == 1)
+                .with_short_tns(mode == 2)
+                .with_short_group(mode == 2)
+                .with_intensity(mode == 3);
+            for frame in 0..8 {
+                let l = click_frame(frame);
+                let r = noise_frame(frame, 7, 0.3);
+                let refs = if channels == 1 {
+                    vec![l.as_slice()]
+                } else {
+                    vec![l.as_slice(), r.as_slice()]
+                };
+                let specs = enc.analyze(&refs, frame % 3 != 2);
+                enc.cache_mags(&specs);
+                for spend in [12_288, 200, 1600, 3000, 1000, 12_288] {
+                    let offset = enc.search_offset(&specs, spend);
+                    let mut got = Vec::new();
+                    enc.emit_into(&mut got);
+                    enc.build(&specs, offset);
+                    let mut reference = Vec::new();
+                    enc.emit_into(&mut reference);
+                    assert_eq!(
+                        got, reference,
+                        "mode={mode} channels={channels} frame={frame} spend={spend}"
+                    );
+                }
+                enc.prev_seq = enc.seq;
+            }
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn fitting_quality_offset_quantizes_only_once() -> Result<()> {
+    let mut enc = LcEncoder::new(48_000, 2, 128_000)?;
+    enc.quality = Some(240);
+    let pcm = sine_frame(0, 0.2);
+    let specs = enc.analyze(&[&pcm, &pcm], false);
+    let _ = super::take_builds();
+    enc.rate_control(&specs)?;
+    assert_eq!(super::take_builds(), 1);
+    Ok(())
+}

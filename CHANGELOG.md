@@ -23,6 +23,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reduce LC encoder work by caching frame-invariant analysis and unchanged
+  quantized bands, preserving greedy section choices with integer prefix
+  costs, and avoiding duplicate quantization and frame serialization.
+  Write fields by bytes and append padding at the original bit position.
+  Existing goldens and 60 encoder configurations retain their exact bytes.
+- Correct the isolated FDK adapter to drain delayed output completely.
+  Retain a balanced one-core comparison and raw observations: LC improves
+  locally, but the strict FDK encode-speed gate remains unmet. Record the
+  additional fixed encoder workspace and existing cold small-stack limit.
 - Qualify the existing opt-in LC CBR reservoir against independently decoded
   CORE_TUNE speech/tremolo scores and separate 10-second payload-rate/cap
   checks. Retain a reproducible isolated runner and full-precision results;

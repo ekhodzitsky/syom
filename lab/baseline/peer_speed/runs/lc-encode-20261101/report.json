@@ -1,0 +1,157 @@
+{
+  "task": "TASK-112.2",
+  "status": "Validated performance increment; strict FDK gate remains unmet.",
+  "date": "2026-11-01",
+  "candidate": "0.9.0 (unpublished)",
+  "baseline_revision": "e8ceb7eb4ed31220ae7b2f3995d4ef52e5983920",
+  "measured_candidate": "Worktree production sources retained in this commit; exact file hashes in source-manifest.json. Documents/artifacts are outside timed code.",
+  "source_manifest_sha256": "5cc9767a189ffd73a7941335c05b02f22b23aa3fe6d70c97aa55cbadaf009758",
+  "platform": "Linux x86_64",
+  "cpu_model": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "governor": "performance",
+  "timing": {
+    "affinity": "CPU0 for every timed process; encoder work uses one core.",
+    "method": "Complete one-shot open/encode/flush/free inside each process; 4 warmups plus31 measured, all6 engine orders for each of4 cells. File reads, generation, verification hashing and strict FFmpeg decode are outside the timer.",
+    "samples_per_engine_per_cell": 186,
+    "clock": "Instant / CLOCK_MONOTONIC wall time; no process startup subtraction and no outlier removal.",
+    "summary": "Median of all186 repetitions per engine/cell; even-size median is mean of middle2 samples. Raw individual observations and block medians retained.",
+    "load": "Busy shared host; every block records load and CPU0 frequency. Large scheduling modes exist. Reported gains are observations, not universal speed guarantees."
+  },
+  "summaries": [
+    {
+      "cell": "voice128",
+      "pooled_median_ms": {
+        "baseline": 12.12985,
+        "candidate": 9.02285,
+        "fdk": 6.02835
+      },
+      "candidate_vs_baseline": 0.7438550353054655,
+      "at_or_below_fdk": false
+    },
+    {
+      "cell": "voice24",
+      "pooled_median_ms": {
+        "baseline": 6.0892,
+        "candidate": 4.78765,
+        "fdk": 3.7390499999999998
+      },
+      "candidate_vs_baseline": 0.786252709715562,
+      "at_or_below_fdk": false
+    },
+    {
+      "cell": "lecture24",
+      "pooled_median_ms": {
+        "baseline": 0.36724999999999997,
+        "candidate": 0.43765,
+        "fdk": 0.39744999999999997
+      },
+      "candidate_vs_baseline": 1.1916950306330838,
+      "at_or_below_fdk": false
+    },
+    {
+      "cell": "lecture-m24",
+      "pooled_median_ms": {
+        "baseline": 0.31035,
+        "candidate": 0.20765,
+        "fdk": 0.26695
+      },
+      "candidate_vs_baseline": 0.6690832930562268,
+      "at_or_below_fdk": true
+    }
+  ],
+  "fdk_gate_passed": false,
+  "guard_protocol": "Base/candidate/candidate/base; 5warmups+31measured,15registered syom_speed cells. Both paired tables retain all samples, matching bytes/FNV; median gains27.0% and27.4%. Bootstrap per-repetition intervals do not eliminate shared-host systematic noise.",
+  "accepted_changes": [
+    "Four independent autocorrelation lag accumulators preserving each scalar add order.",
+    "Per-frame short psychoacoustic/group analysis cache; per-frame long peak/noise/scalefactor invariants.",
+    "Long-band quantization and Huffman cost reuse keyed on normalized sf, cleared per frame and invalidated for refinement mutations.",
+    "Prefix sums preserve greedy section-cost choices, invalid books, saturating sums and tie order.",
+    "Rate search retains its selected build; one fitting quality build.",
+    "Byte-at-a-time BitWriter; fitted frame emitted directly once; padding appended at original pre-END bit position."
+  ],
+  "resources": {
+    "additional_fixed_heap_bytes_per_lc_encoder": 8008,
+    "additional_constructor_allocations": 1,
+    "per_frame_cache_allocations": 0,
+    "prefix_cost_stack_bytes": 4992,
+    "encoder_stack": "LC, HEv2 andMC pass128KiB cells in isolated footprint release profile (fatLTO,panicabort); encoder-stack.log.",
+    "cold_stack_limitation": "Isolated release latency test overflows on first cold decoder Huffman-table initialization on BOTH original e8ceb7e and candidate. Not introduced or fixed here. Full default debug test suite passes (512KiB test stack); do not claim blanket cold128KiB decoder support."
+  },
+  "verification": {
+    "unit_passed": 1156,
+    "existing_ignored": 7,
+    "integration_passed": 1,
+    "doctests_passed": 29,
+    "local_checks": "fmt, size, changelog, clippy alltargets -Dwarnings, tests and package audit passed.",
+    "msrv": "Rust1.89.0 full lib/tests passed; msrv.log.",
+    "byte_identity": "Full byte equality (not hashes alone) across60configurations vs e8ceb7e; byte-identity.json.",
+    "consumer": "All packaged consumer cells pass; consumer.log.",
+    "state_fuzz": {
+      "seed": 1122,
+      "iterations": 8683,
+      "wall_ms": 30233,
+      "panics": 0
+    },
+    "github_actions": "not dispatched",
+    "package_audit": {
+      "files": 181,
+      "compressed_bytes": 458848,
+      "budget_bytes": 524288,
+      "archive_sha256": "06fe3ae9c0362fa9da74ca4650ed2b6540c12baef841b1ca2239c1966e5e498a",
+      "kind": "Local precommit candidate archive, dirty worktree metadata; not a published release."
+    },
+    "consumer_archive_note": "Consumer ran against the same frozen production Rust sources before the final report/changelog additions; its own package hash is retained in consumer.log."
+  },
+  "rejected_experiments": {
+    "FIR4": "Per-output order preserved but micro regressed20.3/5.1/5.4% for orders2/6/12; restored original FIR.",
+    "forced_huffman_inline": "Most unsigned books regressed1.7-4.1%; attributes removed. All44rows retained.",
+    "bitwriter_bool_case": "Accepted byte-writer micro improves mixed-width/byte/header cases but bool-only was10.5% slower in a noisy micro; retained rather than hidden."
+  },
+  "protocol_correction": "Historical FDK adapter flushed once and truncated its tail. Full drain now reaches AACENC_ENCODE_EOF with bounded loop/error handling. Old LC96kinput covers95232samples after delay; corrected covers96256. HEv1/v2 tail omission also verified. Earlier speed/encode-quality reports remain historical and must not be silently relabelled as full-drain results.",
+  "limitations": [
+    "Linux x86_64 only; no new Windows/macOS/ARM/device parity claim.",
+    "FDK generic x86_64-O2, afterburner off, includes planar f32 to INT_PCM conversion inside timing. Same PCM source does not prove encoder quality equivalence.",
+    "No README performance ranking updated. The original voice-like fixture and actual CORE_TUNE quarter-second lecture/mean-mono remain separate.",
+    "Exploratory v2/v3/v4 snapshots retain raw data and binary hashes, but are not qualified releases; final source manifest and corpus define the retained candidate.",
+    "No release tag, crate publication or consumer deployment."
+  ],
+  "reproduce": [
+    "Build current and e8ceb7e production with the SAME current lab harness; peer Cargo.toml pins release thinLTO/codegenunits1.",
+    "Use prepare-lc DIR for exact frozen PCM files; native-manifest.json retains hashes and pinned FDK build/link commands.",
+    "python3 lab/baseline/peer_speed/compare_encode.py --baseline BASE --candidate CAND --fdk FDK --fixtures PCM_DIR --output OUT --rounds 6 --reps 31",
+    "Run byte-corpus OUTDIR on both syom binaries and compare every output byte; retain only stats in Git.",
+    "taskset -c 0 BASE_QUALITY 31; taskset -c 0 CAND_QUALITY 31 in ABBA order; use lab/quality/speed_ci.py on the saved TSV pairs.",
+    "Run AGENTS.md local gates and cargo +1.89.0 test --locked --lib --tests.",
+    "python3 lab/consume/run.py",
+    "cargo run --release --manifest-path lab/fuzz/Cargo.toml --bin syom_fuzz_state -- --seconds 30 --seed 1122",
+    "Micro diagnostics: restore micro-source-snippets.json entries under /tmp as named; retained harness .rs.txt files use those names. Adjust absolute repository paths to this checkout, compile with rustc -O, pin toCPU0. The rejected FIR patch has zero context (git apply --unidiff-zero if applied to the accepted file)."
+  ],
+  "short_cell_stability": {
+    "reason": "The original 31-repetition quarter-second stereo cell showed a worse pooled median despite most blocks improving. Retain that result; run both short cells with all six orders and301 repetitions to reduce short-block scheduling sensitivity, without changing codec sources or removing outliers.",
+    "samples_per_engine_per_cell": 1806,
+    "summaries": [
+      {
+        "cell": "lecture24",
+        "pooled_median_ms": {
+          "baseline": 0.3375,
+          "candidate": 0.31405,
+          "fdk": 0.3691
+        },
+        "candidate_vs_baseline": 0.9305185185185184,
+        "at_or_below_fdk": true
+      },
+      {
+        "cell": "lecture-m24",
+        "pooled_median_ms": {
+          "baseline": 0.2287,
+          "candidate": 0.2058,
+          "fdk": 0.2069
+        },
+        "candidate_vs_baseline": 0.8998688237866201,
+        "at_or_below_fdk": true
+      }
+    ],
+    "gate_effect": "This does not close the strict FDK gate: the original long voice128/voice24 cells still lose to FDK."
+  }
+}

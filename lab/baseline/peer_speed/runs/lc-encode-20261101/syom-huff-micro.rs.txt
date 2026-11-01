@@ -1,0 +1,50 @@
+use std::hint::black_box;
+use std::time::Instant;
+mod engine {
+ #[path="/home/ekhodzitsky/Projects/syom/src/engine/error.rs"] mod error;
+ #[path="/tmp/syom-bitwriter-micro-current.rs"] pub mod bits;
+ #[path="/home/ekhodzitsky/Projects/syom/src/engine/sf_tab.rs"] pub mod sf_tab;
+ #[path="/home/ekhodzitsky/Projects/syom/src/engine/huff_quad.rs"] pub mod huff_quad;
+ #[path="/home/ekhodzitsky/Projects/syom/src/engine/huff_pair.rs"] pub mod huff_pair;
+ #[path="/home/ekhodzitsky/Projects/syom/src/engine/huff_esc.rs"] pub mod huff_esc;
+ #[path="/tmp/syom-huff-micro-base.rs"] pub mod base;
+ #[path="/tmp/syom-huff-micro-current.rs"] pub mod current;
+}
+macro_rules! emitter {
+ ($name:ident,$module:path)=>{
+  fn $name(bands:&[(u8,Vec<i32>)],buffer:Vec<u8>)->(Vec<u8>,u64) {
+   use $module as encoder;
+   let mut writer=engine::bits::BitWriter::from_vec(buffer);
+   writer.write(0x55,7);
+   for (cb,values) in bands {
+    let step=if *cb<=4{4}else{2};
+    for tuple in values.chunks(step) { encoder::spectral_emit(*cb,tuple,&mut writer); }
+   }
+   let bits=writer.bit_len();
+   (writer.finish(),bits)
+  }
+ }
+}
+emitter!(base,engine::base);
+emitter!(current,engine::current);
+fn main(){
+ for cb in 1u8..=11 {
+  let lav=match cb {1|2=>1,3|4=>2,5|6=>4,7|8=>7,9|10=>12,11=>33,_=>unreachable!()};
+  let mut seed=0xC0FFEE42u32;
+  let bands:Vec<_>=(0..16).map(|_|{
+   let values=(0..32).map(|i|{seed=seed.wrapping_mul(1664525).wrapping_add(1013904223);if cb==11&&i%13==0 {8191}else{(seed%(2*lav+1))as i32-lav as i32}}).collect();
+   (cb,values)
+  }).collect();
+  let reference=base(&bands,Vec::new());
+  assert_eq!(reference,current(&bands,Vec::new()));
+  for (round,candidate) in [false,true,true,false].into_iter().enumerate() {
+   let mut buffer=Vec::with_capacity(8192);
+   let mut run=||{let out=if black_box(candidate){current(black_box(&bands),std::mem::take(&mut buffer))}else{base(black_box(&bands),std::mem::take(&mut buffer))};black_box(out.1);buffer=out.0;black_box(&buffer);};
+   for _ in 0..100 {run();}
+   let mut samples=Vec::new();
+   for _ in 0..11 {let begin=Instant::now();for _ in 0..1000 {run();} samples.push(begin.elapsed().as_secs_f64()*1e9/1000.0);}
+   samples.sort_by(f64::total_cmp);
+   println!("{{\"cb\":{cb},\"bands\":16,\"coefficients_per_band\":32,\"prefix_bits\":7,\"output_bytes\":{},\"round\":{round},\"candidate\":{candidate},\"median_ns\":{},\"samples_ns\":{:?}}}",reference.0.len(),samples[5],samples);
+  }
+ }
+}

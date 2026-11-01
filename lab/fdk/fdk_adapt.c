@@ -161,7 +161,7 @@ int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
     void *in_ptr[1], *out_ptr[1];
     INT in_id = IN_AUDIO_DATA, out_id = OUT_BITSTREAM_DATA;
     INT in_el = sizeof(INT_PCM), out_el = sizeof(UCHAR);
-    INT in_sz, out_sz = 2048 * 8, in_n, out_n = 1;
+    INT in_sz, out_sz = 2048 * 8;
     uint8_t *adts = NULL;
     size_t cap = 0, len = 0;
     int off = 0, i, c, frame, rc = -1;
@@ -170,9 +170,9 @@ int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
     out->aot = aot;
     out->afterburner = 0;
     out->transmux = 2;
-    if (channels < 1 || channels > 2 || (aot != 2 && aot != 5 && aot != 29) ||
+    if (samples <= 0 || channels < 1 || channels > 2 || (aot != 2 && aot != 5 && aot != 29) ||
         (aot == 29 && channels != 2)) {
-        snprintf(out->error, sizeof(out->error), "unsupported channel mode/aot");
+        snprintf(out->error, sizeof(out->error), "empty input or unsupported channel mode/aot");
         return -1;
     }
     if (aacEncOpen(&enc, 0, (UINT)channels) != AACENC_OK) {
@@ -217,7 +217,6 @@ int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
             }
         }
         in_sz = frame * channels * (INT)sizeof(INT_PCM);
-        in_n = 1;
         in_ptr[0] = inbuf;
         in_desc.numBufs = 1;
         in_desc.bufs = in_ptr;
@@ -256,24 +255,38 @@ int fdk_encode_pcm_adts(const float *const *planes, int channels, int samples,
         }
         off += n;
     }
-    /* flush */
+    /* Complete the encoder drain. One call can leave delayed frames queued.
+     * Bound the loop so a broken backend cannot hang an isolated lab run. */
     in_desc.numBufs = 0;
     in_args.numInSamples = -1;
-    memset(&out_args, 0, sizeof(out_args));
-    aacEncEncode(enc, &in_desc, &out_desc, &in_args, &out_args);
-    if (out_args.numOutBytes > 0) {
-        uint8_t *nbuf;
-        if (len + (size_t)out_args.numOutBytes > cap) {
-            cap += (size_t)out_args.numOutBytes + 16;
-            nbuf = realloc(adts, cap);
-            if (!nbuf) {
-                snprintf(out->error, sizeof(out->error), "oom");
-                goto done;
-            }
-            adts = nbuf;
+    for (i = 0; i < 64; i++) {
+        AACENC_ERROR err;
+        memset(&out_args, 0, sizeof(out_args));
+        err = aacEncEncode(enc, &in_desc, &out_desc, &in_args, &out_args);
+        if (err != AACENC_OK && err != AACENC_ENCODE_EOF) {
+            snprintf(out->error, sizeof(out->error), "aacEncEncode flush: %d", (int)err);
+            goto done;
         }
-        memcpy(adts + len, outbuf, (size_t)out_args.numOutBytes);
-        len += (size_t)out_args.numOutBytes;
+        if (out_args.numOutBytes > 0) {
+            uint8_t *nbuf;
+            if (len + (size_t)out_args.numOutBytes > cap) {
+                cap += (size_t)out_args.numOutBytes + 16;
+                nbuf = realloc(adts, cap);
+                if (!nbuf) {
+                    snprintf(out->error, sizeof(out->error), "oom");
+                    goto done;
+                }
+                adts = nbuf;
+            }
+            memcpy(adts + len, outbuf, (size_t)out_args.numOutBytes);
+            len += (size_t)out_args.numOutBytes;
+        }
+        if (err == AACENC_ENCODE_EOF)
+            break;
+    }
+    if (i == 64) {
+        snprintf(out->error, sizeof(out->error), "aacEncEncode flush did not reach EOF");
+        goto done;
     }
     if (len == 0) {
         snprintf(out->error, sizeof(out->error), "empty encode");

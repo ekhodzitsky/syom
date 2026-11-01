@@ -1,0 +1,142 @@
+[
+  {
+    "aot": 2,
+    "bitrate_bps": 128000,
+    "input_samples": 96000,
+    "historical-driver": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 32777,
+        "delay": 2048,
+        "aot": 2,
+        "afterburner": 0,
+        "bitrate_bps": 128000
+      },
+      "decoded_samples_per_channel": 97280,
+      "coverage_after_encoder_delay": 95232,
+      "sha256": "b0d5485cfb78891e604f0518102d82f6fc2f9d16b39fddbde79f6ad5e40db61c"
+    },
+    "complete-flush": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 33115,
+        "delay": 2048,
+        "aot": 2,
+        "afterburner": 0,
+        "bitrate_bps": 128000
+      },
+      "decoded_samples_per_channel": 98304,
+      "coverage_after_encoder_delay": 96256,
+      "sha256": "e346bf3f75a92adaa59264647119e302c9b26c9e1f4ab65c93987735b8205925"
+    }
+  },
+  {
+    "aot": 2,
+    "bitrate_bps": 24000,
+    "input_samples": 96000,
+    "historical-driver": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 6690,
+        "delay": 2048,
+        "aot": 2,
+        "afterburner": 0,
+        "bitrate_bps": 24000
+      },
+      "decoded_samples_per_channel": 97280,
+      "coverage_after_encoder_delay": 95232,
+      "sha256": "d6f9f19395849ad1f3514029f22e9677fcd00b914915c6d52c201669dcd7e339"
+    },
+    "complete-flush": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 6750,
+        "delay": 2048,
+        "aot": 2,
+        "afterburner": 0,
+        "bitrate_bps": 24000
+      },
+      "decoded_samples_per_channel": 98304,
+      "coverage_after_encoder_delay": 96256,
+      "sha256": "3317e1a89a16d1b8e7e2a79b17f0b92366eddb5b4176db793344e0c40b1b002e"
+    }
+  },
+  {
+    "aot": 5,
+    "bitrate_bps": 24000,
+    "input_samples": 96000,
+    "historical-driver": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 6488,
+        "delay": 5058,
+        "aot": 5,
+        "afterburner": 0,
+        "bitrate_bps": 24000
+      },
+      "decoded_samples_per_channel": 98304,
+      "coverage_after_encoder_delay": 93246,
+      "sha256": "e36a9fab02ed03af6e3db3a0d5ee43b10f9274300b35490910086bbb299ae199"
+    },
+    "complete-flush": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 6656,
+        "delay": 5058,
+        "aot": 5,
+        "afterburner": 0,
+        "bitrate_bps": 24000
+      },
+      "decoded_samples_per_channel": 102400,
+      "coverage_after_encoder_delay": 97342,
+      "sha256": "e68f4b0ef32e68a9782a5a1d2017d9f7df391425a513a5114500fb604b191772"
+    }
+  },
+  {
+    "aot": 29,
+    "bitrate_bps": 32000,
+    "input_samples": 96000,
+    "historical-driver": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 8386,
+        "delay": 7106,
+        "aot": 29,
+        "afterburner": 0,
+        "bitrate_bps": 32000
+      },
+      "decoded_samples_per_channel": 98304,
+      "coverage_after_encoder_delay": 91198,
+      "sha256": "dbd295fba6357773de14a53efa5d40074c4a33ff2b04a364fb40119195536a62"
+    },
+    "complete-flush": {
+      "encode": {
+        "ok": true,
+        "lane": "encode",
+        "engine": "fdk-aac-2.0.3 ADTS AOT=2 afterburner=0",
+        "adts_bytes": 8762,
+        "delay": 7106,
+        "aot": 29,
+        "afterburner": 0,
+        "bitrate_bps": 32000
+      },
+      "decoded_samples_per_channel": 104448,
+      "coverage_after_encoder_delay": 97342,
+      "sha256": "ef7b69449fdec619b7fab49d2122146fadf88600aee45bb5a4ba785e9a5eb3ce"
+    }
+  }
+]

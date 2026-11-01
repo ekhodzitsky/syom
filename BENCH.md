@@ -198,3 +198,8 @@ first row and the only fair RSS cell):
   `speech()` is 1 plane; `unbounded()` Split is 2 planes (lavc implicit
   HE-AACv2 PS, dual-mono on `he48`). benches call `decode()`
   (`speech()`).
+
+The [2026-11-01 LC encode increment](lab/baseline/SOTA-SPEED-2026-10-16.md#byte-preserving-lc-increment-2026-11-01)
+retains byte-identity checks and balanced one-core timings. It also corrects
+the isolated FDK encoder drain; earlier encode observations remain historical.
+The strict FDK speed gate remains open.

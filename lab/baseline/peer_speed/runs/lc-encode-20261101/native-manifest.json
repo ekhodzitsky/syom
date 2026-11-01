@@ -1,0 +1,165 @@
+{
+  "source_url": "https://github.com/mstorsjo/fdk-aac/archive/refs/tags/v2.0.3.tar.gz",
+  "source_tar_sha256": "e25671cd96b10bad896aa42ab91a695a9e573395262baed4e4a2ff178d6a3a78",
+  "source_version": "fdk-aac 2.0.3",
+  "platform": "Linux x86_64",
+  "cpu_affinity_build": "4-11; avoided timed CPU0 and sibling12",
+  "compiler_jobs": 2,
+  "build_working_directory": "/home/ekhodzitsky/Projects/syom",
+  "static_library": {
+    "path": "target/lc-speed/native/fdk-prefix/lib/libfdk-aac.a",
+    "sha256": "5010b1d9ceefa46bdfcb7d38d8905328955cac3ddef0fc8ce02299254a6aaeb1"
+  },
+  "build_script_sha256": "d25d8c7254632f2533374d296d42bd28b3b9013c1163e016895ab2d0b1ed0474",
+  "adapter_sha256": "58fa3638f85e29d56383840998c830ad450a1cfcc9108bf3e7ad2230ae6998b1",
+  "benchmark_sha256": "2149bc1695b9b52049d9355cb8fe30d98d06306e53d96e563b010a6ce82137d6",
+  "compiler_versions": {
+    "gcc": "gcc-15 (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "zig-c++": "clang version 19.1.7 (https://github.com/ziglang/zig-bootstrap de1b01a8c1dddf75a560123ac1c2ab182b4830da)"
+  },
+  "source_compile_env": {
+    "FDK_SRC": "/home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-aac-2.0.3",
+    "FDK_PREFIX": "/home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-prefix",
+    "JOBS": "2"
+  },
+  "source_compile_command": [
+    "taskset",
+    "-c",
+    "4-11",
+    "python3",
+    "lab/baseline/peer_speed/build_fdk.py"
+  ],
+  "source_compile_flags": [
+    "zig-c++",
+    "-target",
+    "x86_64-linux-gnu",
+    "-O2",
+    "-fno-exceptions",
+    "-fno-rtti",
+    "-Wno-date-time"
+  ],
+  "adapter_compile_command": [
+    "gcc",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Wno-unused-function",
+    "-Itarget/lc-speed/native/fdk-prefix/include",
+    "-Ilab/fdk",
+    "-c",
+    "lab/fdk/fdk_adapt.c",
+    "-o",
+    "target/lc-speed/native/fdk_adapt.o"
+  ],
+  "benchmark_compile_command": [
+    "gcc",
+    "-O2",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-Itarget/lc-speed/native/fdk-prefix/include",
+    "-Ilab/fdk",
+    "-c",
+    "lab/baseline/peer_speed/fdk_bench.c",
+    "-o",
+    "target/lc-speed/native/fdk_bench.o"
+  ],
+  "benchmark_link_command": [
+    "zig-c++",
+    "-target",
+    "x86_64-linux-gnu",
+    "-O2",
+    "-o",
+    "target/lc-speed/native/fdk_bench",
+    "target/lc-speed/native/fdk_adapt.o",
+    "target/lc-speed/native/fdk_bench.o",
+    "target/lc-speed/native/fdk-prefix/lib/libfdk-aac.a",
+    "-lm"
+  ],
+  "binaries": {
+    "target/lc-speed/native/fdk_bench": "3ca3c65c174320274563aaff7bc04326168ff2c09a7cee2e452d1bfe4a21723c",
+    "target/lc-speed/native/fdk_driver": "a4edadfe74b0b5a1824e42497c88cf621eed238159c8c904c5119ddbd6d4ab01",
+    "lab/fdk/fdk_driver": "c1cf67b940a87509d3784470f7aabc741b70ac1294ef522edc7c5ea619759dc5"
+  },
+  "smoke_input": {
+    "path": "/tmp/syom-lc-voice.f32",
+    "bytes": 768000,
+    "sha256": "33a4d307f1839a76a1d0d0a58474a7a900331ec70c51d778c786359f45c1643e"
+  },
+  "smoke_commands": {
+    "old": [
+      "lab/fdk/fdk_driver",
+      "encode-pcm",
+      "48000",
+      "2",
+      "BPS",
+      "AOT",
+      "/tmp/syom-lc-voice.f32",
+      "OUT.adts"
+    ],
+    "new": [
+      "target/lc-speed/native/fdk_driver",
+      "encode-pcm",
+      "48000",
+      "2",
+      "BPS",
+      "AOT",
+      "/tmp/syom-lc-voice.f32",
+      "OUT.adts"
+    ],
+    "decode": [
+      "ffmpeg",
+      "-v",
+      "error",
+      "-xerror",
+      "-i",
+      "OUT.adts",
+      "-f",
+      "f32le",
+      "-acodec",
+      "pcm_f32le",
+      "-"
+    ]
+  },
+  "smoke_result": "drain-smoke.json",
+  "performance_measurements": "none by protocol worker; smoke driver does not time encoding",
+  "limitations": [
+    "Static peer retains pinned generic x86_64 -O2 flags, not -march=native.",
+    "FDK conversion from planar float to interleaved INT_PCM occurs inside timed encoding. Same float source does not establish quality equivalence.",
+    "FDK afterburner is disabled, AOT2 for the LC speed cells.",
+    "Original voice and actual CORE_TUNE lecture cells are separate; do not relabel voice as natural lecture.",
+    "Historical FDK driver stops after one flush and truncates delayed audio; complete-flush results use changed protocol."
+  ],
+  "fixture_manifest": {
+    "target/lc-speed/fixtures/voice-like.f32": {
+      "bytes": 768000,
+      "sha256": "33a4d307f1839a76a1d0d0a58474a7a900331ec70c51d778c786359f45c1643e"
+    },
+    "target/lc-speed/fixtures/lecture.f32": {
+      "bytes": 96000,
+      "sha256": "f5c9ac3871fc0473d06e691f4bdcac05404901b30a40156e4b4106ee8860fefc"
+    },
+    "target/lc-speed/fixtures/lecture-m.f32": {
+      "bytes": 48000,
+      "sha256": "14d389520148605511f27286687c128e21042689ac1342d6f687aa9b9287bb29"
+    }
+  },
+  "drain_prefix_check": "All four old ADTS outputs are exact byte prefixes of complete-flush outputs; drain adds omitted trailing AUs.",
+  "initial_baseline_peer": {
+    "revision": "e8ceb7eb4ed31220ae7b2f3995d4ef52e5983920",
+    "worktree": "/tmp/syom-lc-base-worktree",
+    "source_changes": "Only lab/baseline/peer_speed/src/main.rs and new encode_cells.rs copied from candidate. git diff -- src/ is empty.",
+    "command": "CARGO_TARGET_DIR=/tmp/syom-lc-base-target taskset -c 4-11 cargo build --release --locked --manifest-path /tmp/syom-lc-base-worktree/lab/baseline/peer_speed/Cargo.toml",
+    "binary": "/tmp/syom-lc-base-target/release/syom-peer-speed",
+    "binary_sha256": "acfc6bdb1cd3275e583f1acdb30f086465f2c8c96340414ee87f4801a5310513"
+  },
+  "baseline_peer": {
+    "revision": "e8ceb7eb4ed31220ae7b2f3995d4ef52e5983920",
+    "source_changes": "Only current lab main.rs, encode_cells.rs and byte_corpus.rs copied; src/ remains unchanged.",
+    "binary": "/tmp/syom-lc-base-target/release/syom-peer-speed",
+    "binary_sha256": "346f6b3e4107da588f0b2fc1e52c597842e7c5b301d7ede35f36e14221d72aa9"
+  }
+}
