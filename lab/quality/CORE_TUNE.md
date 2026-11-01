@@ -141,3 +141,69 @@ cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_tune133 --
 cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_det133
 cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_he_qualify
 ```
+
+## Opt-in LC CBR qualification (2026-11-01)
+
+The unpublished 0.9.0 candidate at production revision `ad45ee5` passes
+the remaining TASK-112.11 quality gate on Linux x86_64, rustc 1.97.1.
+This is lab/report work; the product encoder and its default ABR bytes
+are unchanged. The isolated runner reuses the original generators and
+scoring functions above. It exits unsuccessfully for missing fixtures,
+failed decoding, invalid format/shape, nonfinite samples, alignment drift,
+or failed quality/rate gates. External codecs remain outside ordinary tests.
+
+Neutral decode is the installed **FFmpeg 7.0.2-static**, not the separate
+libavcodec 9.0.1 adapter. The runner verifies LC, 48 kHz and channel count
+with ffprobe, rejects decoder errors with `-xerror`, and checks complete
+finite output. Alignment remains declared delay 1024, refined within
+±128 samples. LF remains the original 2048-point Hann amplitude-spectrum
+SNR below 6750 Hz; it is not waveform lowpass SNR.
+
+| Original quality cell | Current ABR SNR / LF, dB | CBR SNR / LF, dB | Published LC floor |
+|---|---:|---:|---|
+| tremolo stereo 48 kbps | 44.8 / 54.7 | 45.3 / 54.7 | SNR 44.8, LF 54.7 |
+| tremolo stereo 64 kbps | 46.2 / 55.9 | 46.5 / 55.9 | SNR 46.2, LF 55.9 |
+| lecture stereo 24 kbps | 36.1 / 42.6 | 37.2 / 42.6 | LF 42.6 |
+| lecture mono 24 kbps | 34.8 / 38.9 | 35.5 / 38.9 | LF 38.9 |
+
+The original durations are preserved: tremolo is 2 seconds; lecture is
+the 12000-sample reference decoded from the committed `lecture.m4a`;
+mono is exactly the channel mean. Both ABR controls and CBR meet the
+historical floors at their published precision of one decimal place.
+Full values are retained: tremolo 48k LF is 54.6947041649109 dB for ABR
+and 54.69469475522793 dB for CBR (a decrease of about 0.0000094 dB).
+This is a published-score gate, not a claim of bit identity or universal
+quality superiority. HE and the later HE-only speech2 rows are outside
+this LC CBR qualification.
+
+For a separate rate check, repeat each unchanged fixture to 10 seconds;
+these repetitions do not replace the short quality cells. Rate is AAC
+payload bits divided by valid source duration, excluding ID3 and ADTS
+headers. Short-cell `actual_kbps` in the raw quality log includes framing
+and must not be compared with the ±3% long-track payload promise.
+
+| Repeated 10s CBR cell | Payload bps | Target error | Maximum AU bits / cap |
+|---|---:|---:|---:|
+| tremolo stereo 48k | 48092.8 | +0.1933% | 8184 / 12288 |
+| tremolo stereo 64k | 63912.0 | −0.1375% | 8936 / 12288 |
+| lecture stereo 24k | 24060.0 | +0.2500% | 2368 / 12288 |
+| lecture mono 24k | 24055.2 | +0.2300% | 2616 / 6144 |
+
+All four rate cells contain 470 AUs and zero VBR fullness markers.
+The separate 10s stereo 128k sine test measures +0.008%; all five CBR
+unit tests and auto/scalar/SSE2 encoder golden checks pass. These cells
+establish bounded regression coverage, not arbitrary-content rate or ISO
+HRD conformance. Silence/short input can undershoot; AU sizes vary.
+No listening study or Windows/macOS/ARM qualification was performed.
+
+Full precision rows, tool/source hashes, commands and local check results
+are retained in [the CBR evidence](runs/cbr-20261101/report.json).
+The runner requires `ffmpeg`, `ffprobe` and `sha256sum` on `PATH`.
+No GitHub Actions, publication or deployment was performed.
+
+```sh
+cargo run --release --manifest-path lab/quality/Cargo.toml --bin syom_tune133 -- cbr
+cargo test --lib encode_cbr_tests -- --nocapture
+cargo test --lib platform_tests::encoder_goldens_match_auto_and_scalar_fft
+cargo test --lib platform_tests::encoder_goldens_match_sse2_only_fft
+```

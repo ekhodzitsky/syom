@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Qualify the existing opt-in LC CBR reservoir against independently decoded
+  CORE_TUNE speech/tremolo scores and separate 10-second payload-rate/cap
+  checks. Retain a reproducible isolated runner and full-precision results;
+  production encoder bytes and historical measurements are unchanged.
 - Record verified 0.8.1 registry publication and complete the downstream
   consumer dependency patch with its locked registry checksum.
 - Add an opt-in upload-admission mode to the local HTTP load lab. Honor

@@ -1,0 +1,11 @@
+cargo fmt --check; python3 scripts/check-file-size.py; python3 scripts/check-changelog.py; cargo clippy --all-targets -- -D warnings; cargo test --workspace --lib --tests; cargo test --doc; python3 scripts/check-package.py
+OK: all Rust sources within line caps
+OK: CHANGELOG.md has Unreleased and ## [0.9.0]
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+test result: ok. 1137 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 21.92s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.60s
+OK: 178 files, 455043 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script
+After the changelog update, package audit rerun passed; final archive size is recorded in package.log.

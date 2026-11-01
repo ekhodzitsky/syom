@@ -10,7 +10,9 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
-use syom::{DecodeOptions, EncodeOptions, decode_with, encode_with};
+use syom::{decode_with, encode_with, DecodeOptions, EncodeOptions};
+
+mod cbr_qualification;
 
 const RATE: u32 = 48_000;
 const SECS: usize = 2;
@@ -42,6 +44,9 @@ fn main() -> ExitCode {
     // Optional cell filter: `tune133 [clip] [mode] [kbps]` substrings.
     // `speech2` is the second-clip HE v1 24 kbps arm (syom and FDK).
     let flt: Vec<String> = std::env::args().skip(1).collect();
+    if flt.first().map(String::as_str) == Some("cbr") {
+        return cbr_qualification::run(repo);
+    }
     if flt.first().map(String::as_str) == Some("speech2") {
         return speech2_report(repo);
     }
@@ -740,7 +745,11 @@ fn resonator(x: &[f32], hz: f64, bw: f64) -> Vec<f64> {
 fn mix_peaks(a: &[f64], pa: f64, b: &[f64], pb: f64) -> Vec<f32> {
     let scale = |x: &[f64], peak: f64| {
         let m = x.iter().fold(0.0f64, |acc, v| acc.max(v.abs()));
-        if m == 0.0 { 0.0 } else { peak / m }
+        if m == 0.0 {
+            0.0
+        } else {
+            peak / m
+        }
     };
     let (ga, gb) = (scale(a, pa), scale(b, pb));
     a.iter()

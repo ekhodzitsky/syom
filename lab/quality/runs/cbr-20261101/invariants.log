@@ -1,0 +1,28 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 5 tests
+test encode_cbr_tests::cbr_rejects_he_ld_quality_and_surround ... ok
+test encode_cbr_tests::cbr_defaults_off_and_matches_abr_bytes ... ok
+test encode_cbr_tests::cbr_fullness_is_not_vbr_and_frames_stay_inside_the_cap ... ok
+test encode_cbr_tests::cbr_reservoir_lets_a_hard_frame_exceed_the_average ... ok
+cbr_10s_stereo_sine_128k +0.008%
+test encode_cbr_tests::cbr_ten_second_sine_stays_within_three_percent ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 1139 filtered out; finished in 0.48s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 1 test
+test platform_tests::encoder_goldens_match_auto_and_scalar_fft ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1143 filtered out; finished in 1.32s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 1 test
+test platform_tests::encoder_goldens_match_sse2_only_fft ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1143 filtered out; finished in 0.34s

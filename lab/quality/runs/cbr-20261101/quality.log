@@ -1,0 +1,36 @@
+warning: function `section_spectral_cost` is never used
+ --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:8:8
+  |
+8 | pub fn section_spectral_cost(
+  |        ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `plan_books_dp` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:38:8
+   |
+38 | pub fn plan_books_dp(
+   |        ^^^^^^^^^^^^^
+
+warning: function `plan_stretch_dp` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/enc_section_dp.rs:61:4
+   |
+61 | fn plan_stretch_dp(
+   |    ^^^^^^^^^^^^^^^
+
+warning: `syom` (lib) generated 3 warnings
+   Compiling syom-lab-quality v0.0.0 (/home/ekhodzitsky/Projects/syom/lab/quality)
+    Finished `release` profile [optimized] target(s) in 0.73s
+     Running `lab/quality/target/release/syom_tune133 cbr`
+{"kind":"quality","clip":"tremolo","mode":"abr","requested_bps":48000,"actual_kbps":52.324,"lag":1024,"snr_db":44.80986447720553,"lf_db":54.6947041649109,"hf_error_db":36.74256529921587,"lf_floor_db":54.7,"snr_floor_db":44.8,"decoded_samples":97280,"source_samples":96000,"adts_bytes":13081,"adts_sha256":"0f373181752218a08dbbbfcb45911ce51cac4854707807e7c37d19a5a59068e9","decode_finite":true,"historical_gate":true}
+{"kind":"quality","clip":"tremolo","mode":"cbr","requested_bps":48000,"actual_kbps":51.728,"lag":1024,"snr_db":45.269879667687796,"lf_db":54.69469475522793,"hf_error_db":36.742560039217,"lf_floor_db":54.7,"snr_floor_db":44.8,"decoded_samples":97280,"source_samples":96000,"adts_bytes":12932,"adts_sha256":"6235b250916d57bbfede7df25e3718531af86b13ce19ab99d80735533dbeba1c","decode_finite":true,"historical_gate":true}
+{"kind":"rate","clip":"tremolo","mode":"cbr","requested_bps":48000,"duration_seconds":10,"fixture_repeated":true,"payload_bps":48092.8,"error_percent":0.19333333333333425,"frames":470,"max_au_bits":8184,"cap_bits":12288,"adts_bytes":63552,"adts_sha256":"6c2416315bbe2d87f2ea6e8064546b9c104e33bb47aa10e43707bab335b27aae","decoded_samples":481280,"decode_finite":true,"fullness_vbr_markers":0,"rate_gate":true}
+{"kind":"quality","clip":"tremolo","mode":"abr","requested_bps":64000,"actual_kbps":68.512,"lag":1024,"snr_db":46.173790610962726,"lf_db":55.86536216175763,"hf_error_db":36.75465098336818,"lf_floor_db":55.9,"snr_floor_db":46.2,"decoded_samples":97280,"source_samples":96000,"adts_bytes":17128,"adts_sha256":"002a21511153a971b5dc6a1a8543a56f072b5add7f3768eec6bf049ec4f5a4c9","decode_finite":true,"historical_gate":true}
+{"kind":"quality","clip":"tremolo","mode":"cbr","requested_bps":64000,"actual_kbps":67.772,"lag":1024,"snr_db":46.52198192327673,"lf_db":55.86536216175763,"hf_error_db":36.75465098336818,"lf_floor_db":55.9,"snr_floor_db":46.2,"decoded_samples":97280,"source_samples":96000,"adts_bytes":16943,"adts_sha256":"79db0590fda66bf8f5ce78335a25da3fd8affd4b5f557adab6443908ef431ddf","decode_finite":true,"historical_gate":true}
+{"kind":"rate","clip":"tremolo","mode":"cbr","requested_bps":64000,"duration_seconds":10,"fixture_repeated":true,"payload_bps":63912,"error_percent":-0.1375000000000015,"frames":470,"max_au_bits":8936,"cap_bits":12288,"adts_bytes":83326,"adts_sha256":"0d74d44464111950f98cae944c07fa33db215025b2d08a8b4cc11e6f9b565266","decoded_samples":481280,"decode_finite":true,"fullness_vbr_markers":0,"rate_gate":true}
+{"kind":"quality","clip":"lecture","mode":"abr","requested_bps":24000,"actual_kbps":35.872,"lag":1024,"snr_db":36.13307641660625,"lf_db":42.56804925448471,"hf_error_db":7.844597050275416,"lf_floor_db":42.6,"snr_floor_db":null,"decoded_samples":13312,"source_samples":12000,"adts_bytes":1121,"adts_sha256":"94e119db4fd79fe2af6157ef244f553d23ee56e704646f0227e5e06b9c24c13c","decode_finite":true,"historical_gate":true}
+{"kind":"quality","clip":"lecture","mode":"cbr","requested_bps":24000,"actual_kbps":34.048,"lag":1024,"snr_db":37.152077192335156,"lf_db":42.56804925448471,"hf_error_db":7.844597050275416,"lf_floor_db":42.6,"snr_floor_db":null,"decoded_samples":13312,"source_samples":12000,"adts_bytes":1064,"adts_sha256":"8fb45dfdcace1ce1a3aff1a160205b6f7829b6eed50df13f8d6a559c6ee56d46","decode_finite":true,"historical_gate":true}
+{"kind":"rate","clip":"lecture","mode":"cbr","requested_bps":24000,"duration_seconds":10,"fixture_repeated":true,"payload_bps":24060,"error_percent":0.24999999999999467,"frames":470,"max_au_bits":2368,"cap_bits":12288,"adts_bytes":33511,"adts_sha256":"ceda974fc9e0a2b447d606de2340c1ebfe3b19ffb875cd34361f4369b9022b73","decoded_samples":481280,"decode_finite":true,"fullness_vbr_markers":0,"rate_gate":true}
+{"kind":"quality","clip":"lecture-m","mode":"abr","requested_bps":24000,"actual_kbps":35.904,"lag":1024,"snr_db":34.78749168797417,"lf_db":38.8816225337617,"hf_error_db":7.890447197622725,"lf_floor_db":38.9,"snr_floor_db":null,"decoded_samples":13312,"source_samples":12000,"adts_bytes":1122,"adts_sha256":"66e5ed9d6a89498dcb617d8a85d20663d5b07da7b4f08a0205b6dc0354448dc9","decode_finite":true,"historical_gate":true}
+{"kind":"quality","clip":"lecture-m","mode":"cbr","requested_bps":24000,"actual_kbps":33.984,"lag":1024,"snr_db":35.469592564955974,"lf_db":38.8816225337617,"hf_error_db":7.890447197622725,"lf_floor_db":38.9,"snr_floor_db":null,"decoded_samples":13312,"source_samples":12000,"adts_bytes":1062,"adts_sha256":"d7fd9422ddd142315630dbc95c899d1b8a78a52563a66f182e199d3c73f420bb","decode_finite":true,"historical_gate":true}
+{"kind":"rate","clip":"lecture-m","mode":"cbr","requested_bps":24000,"duration_seconds":10,"fixture_repeated":true,"payload_bps":24055.2,"error_percent":0.22999999999999687,"frames":470,"max_au_bits":2616,"cap_bits":6144,"adts_bytes":33505,"adts_sha256":"6d1a8fb36e2541d3e56c9340a0f0825f9ad6d6bc2c10d3b50c893c848d42fb20","decoded_samples":481280,"decode_finite":true,"fullness_vbr_markers":0,"rate_gate":true}
