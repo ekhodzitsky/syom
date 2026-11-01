@@ -1,0 +1,35 @@
+{
+  "baseline_revision": "4d44195cc7c5b13ea0b39eacb0ac58606f8d4ca1",
+  "measured_source": "Reviewed accepted production sources and tests retained with this commit",
+  "source_files": {
+    "src/engine/enc_group.rs": "9e52c6c1c36752a6c7d7fa14e637aff3460475659d745ee8b7f02020ae06f96e",
+    "src/engine/enc_huff.rs": "3f1b031e99bcb670996a3d167f335b31958fc99b3ab7ac92b1304e56a10d04c0",
+    "src/engine/enc_huff_band.rs": "c19335e512807100dca5c40b769c7169329d54a807e97380f7520e82e9de3add",
+    "src/engine/enc_huff_band_tests.rs": "82fb140209615b1441fce4c7bb3e52c6ed8eba6923f92dae846030f232707d50",
+    "src/engine/enc_psy.rs": "bc4cf4e550a0db3550fd15a46a680a4b447463ac81f1f9be6b267f02abfb426d",
+    "src/engine/enc_psy_dense_tests.rs": "687603b26960a0b5a17b1407d66db6f04386a5eb14e800a372510c5d7f3d975e",
+    "src/engine/enc_quant_bits.rs": "c858ba7ccfb9d6fa0b17bd02ec2c71ff9507e019ccf0ae37778d5bb1b54f7d94",
+    "src/engine/enc_quant_packed.rs": "4cfdca0789469c953a8278ce10f7027b3d7b5339c7bd1c4637ded6ac70f67cf5",
+    "src/engine/enc_quant_packed_tests.rs": "a956255edf12eaf967527ff179e109160d808362b91beb874de2fcb326bf2de0",
+    "src/engine/enc_section.rs": "7712d833baa800a85ba75e2abd15902e26f3abe8ebea426f8f25fcbf7f3b5818",
+    "src/engine/enc_section_cost.rs": "1c25297c6d34bd9973bd66192e55d4e22077a91f4b4eab536c3f40e69b8a4b77",
+    "src/engine/enc_section_cost_tests.rs": "0f94380076c2495ecc03bdbd496c586b9adf8b307d3eb6ae00176fe0082883e0",
+    "src/engine/enc_section_dp.rs": "a6b1994404b83e7b9369ccb2afe5ff6c0cd18f54a675f0f9cbe16d01ca57a1df",
+    "src/engine/enc_section_emit.rs": "9d4357947302cefb8864e421a242836b2e01a2d989d4b44b1f8d1f1ce39c0ebb"
+  },
+  "harness_files": {
+    "lab/quality/src/speed.rs": "a2106b1b523f9ee045af60eab36a3763579a52a3d1e9a775bcc254c8e95829d4",
+    "lab/quality/Cargo.toml": "6c0747f1eace0cd968fce6dc1817b7903564191da1b664e4ed612f39e5ca9c7e",
+    "lab/baseline/peer_speed/Cargo.toml": "690ecadfde000252eaca31d9a2c6453e50d20c4ac754235730499083d11daf7c",
+    "lab/baseline/peer_speed/compare_encode.py": "503b8c28a711bd4c3d9247e48e054ab6d0923d522ee91a2b5bfd5f5d99b0b16a",
+    "Cargo.toml": "8bac987bed1de5e42efa544c095b0c85e994c6c33e2e1bb3e816cf818627d40d",
+    "Cargo.lock": "346a4dee630e44f6b99bcd6200591b8d0631bde47a0571ae1b328f7a2f768b4b",
+    "rust-toolchain.toml": "e7155b5437585c3c3acc3053b08c6936020e9e93cc343e47e7e25f0033418e84"
+  },
+  "binaries": {
+    "baseline_peer": "0aaebb1c207dae1059021f6afb789fdad49dd9e38974007416a072570d2e94ca",
+    "reviewed_peer": "355828b70b5f29124e73f1a9599dc995b2b49a9635607cd80ddbdec5b66ad8d0",
+    "baseline_filtered_quality": "82a9d0603dc7313656d32ba744dd3da384e7cc38c64a61cd5aefc59c0550b299",
+    "reviewed_filtered_quality": "8cd1fdae73da463b2fe39b885dee3d8fb6373b9ac4489732ec4a4e055988c712"
+  }
+}

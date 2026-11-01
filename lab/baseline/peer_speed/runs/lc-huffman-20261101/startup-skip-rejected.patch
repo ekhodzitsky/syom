@@ -1,0 +1,92 @@
+diff --git a/src/engine/enc_alloc.rs b/src/engine/enc_alloc.rs
+index a165f69..b527071 100644
+--- a/src/engine/enc_alloc.rs
++++ b/src/engine/enc_alloc.rs
+@@ -68,6 +68,14 @@ impl AllocCache {
+             .map(|b| self.noise[b] / self.width[b])
+             .fold(f32::INFINITY, f32::min);
+         for b in 0..n {
++            // Every probe starts from this mask and can only remove bands.
++            // Clear unused terms so later frames may safely reactivate them.
++            if !self.coded[b] {
++                self.peak34[b] = 0.0;
++                self.peak_sf_base[b] = 0.0;
++                self.safe_sf[b] = 0;
++                continue;
++            }
+             let peak = self.peaks[b];
+             self.peak34[b] = det_math::pow_three_quarter(peak);
+             self.peak_sf_base[b] = if peak <= 0.0 {
+@@ -117,6 +125,7 @@ impl AllocCache {
+         q: &mut super::enc_quant::QuantChannel,
+     ) {
+         for (b, &tq) in target_q.iter().enumerate().take(q.n_bands) {
++            debug_assert!(!q.coded[b] || self.coded[b]);
+             q.sf[b] = if q.coded[b] && tq >= 1.0 && self.peaks[b] > 0.0 {
+                 let sf = self.peak_sf_base[b] - (16.0 / 3.0) * det_math::log2(tq);
+                 (sf.round() as i32).max(self.safe_sf[b])
+diff --git a/src/engine/enc_alloc_tests.rs b/src/engine/enc_alloc_tests.rs
+index ff2a6d2..95b2ed3 100644
+--- a/src/engine/enc_alloc_tests.rs
++++ b/src/engine/enc_alloc_tests.rs
+@@ -89,3 +89,60 @@ fn cached_scalefactors_match_boundary_targets() {
+         assert_eq!(cached.sf, reference.sf, "target={target}");
+     }
+ }
++
++#[test]
++fn uncoded_frame_terms_clear_and_reactivate_without_stale_values() {
++    let mut a = AllocCache::new();
++    for (frame, n) in [MAX_BANDS, MAX_BANDS, 15, 1, 49, MAX_BANDS]
++        .into_iter()
++        .enumerate()
++    {
++        for b in 0..n {
++            a.coded[b] = frame == 0 || (frame > 1 && !(frame + b).is_multiple_of(4));
++            a.peaks[b] = match (frame + b) % 5 {
++                0 => f32::from_bits(1),
++                1 => f32::MIN_POSITIVE,
++                2 => 0.0,
++                _ => (b + frame + 1) as f32 * 257.0,
++            };
++            a.energy[b] = (b + 1) as f32 * 100.0;
++            a.sum_sqrt[b] = (b + 1) as f32 * 7.0;
++            a.noise[b] = (b + frame + 1) as f32 * 0.003;
++            a.width[b] = 4.0;
++            a.cap[b] = 7600.0;
++        }
++        a.finish_invariants(n);
++        for b in 0..n {
++            if !a.coded[b] {
++                assert_eq!(a.peak34[b].to_bits(), 0);
++                assert_eq!(a.peak_sf_base[b].to_bits(), 0);
++                assert_eq!(a.safe_sf[b], 0);
++            }
++        }
++        for offset in [-60, 0, 21, 120, 240] {
++            let (mut got_mask, mut want_mask) = (a.coded, a.coded);
++            let (mut got_tq, mut want_tq) = ([0.0; MAX_BANDS], [0.0; MAX_BANDS]);
++            a.targets(offset, n, &mut got_mask, &mut got_tq);
++            noise_targets(
++                &a.peaks,
++                &a.energy,
++                &a.sum_sqrt,
++                &a.noise,
++                &a.width,
++                &a.cap,
++                offset,
++                n,
++                &mut want_mask,
++                &mut want_tq,
++            );
++            assert_eq!(got_mask, want_mask);
++            assert_eq!(got_tq.map(f32::to_bits), want_tq.map(f32::to_bits));
++            let mut got = QuantChannel::new(n);
++            got.coded = got_mask;
++            let mut want = got.clone();
++            a.raw_scalefactors(&got_tq, &mut got);
++            raw_scalefactors(&a.peaks, &want_tq, 0, &mut want);
++            assert_eq!(got.sf, want.sf, "frame={frame} offset={offset}");
++        }
++    }
++}

@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Further reduce LC Huffman cost/emission and section-planning work without
+  changing encoded bytes. Store psychoacoustic spreading matrices at their
+  active dimensions, saving 10404 logical bytes per 48 kHz LC encoder on
+  x86_64. Retain balanced local measurements and rejected experiments;
+  the strict FDK speed gate is still unmet.
 - Reduce LC encoder work by caching frame-invariant analysis and unchanged
   quantized bands, preserving greedy section choices with integer prefix
   costs, and avoiding duplicate quantization and frame serialization.

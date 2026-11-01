@@ -1,0 +1,114 @@
+warning: type alias `Result` is never used
+ --> /home/ekhodzitsky/Projects/syom/src/engine/error.rs:6:10
+  |
+6 | pub type Result<T> = core::result::Result<T, Error>;
+  |          ^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: enum `Error` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/error.rs:10:10
+   |
+10 | pub enum Error {
+   |          ^^^^^
+
+warning: struct `BitReader` is never constructed
+ --> /tmp/syom-bitwriter-micro-current.rs:7:12
+  |
+7 | pub struct BitReader<'a> {
+  |            ^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> /tmp/syom-bitwriter-micro-current.rs:18:12
+    |
+ 15 | impl<'a> BitReader<'a> {
+    | ---------------------- associated items in this implementation
+...
+ 18 |     pub fn new(data: &'a [u8]) -> Self {
+    |            ^^^
+...
+ 29 |     pub fn bit_position(&self) -> u64 {
+    |            ^^^^^^^^^^^^
+...
+ 37 |     pub fn bits_remaining(&self) -> u64 {
+    |            ^^^^^^^^^^^^^^
+...
+ 45 |     pub fn bits_range(&self, start: u64, end: u64) -> Vec<bool> {
+    |            ^^^^^^^^^^
+...
+ 55 |     fn refill(&mut self) {
+    |        ^^^^^^
+...
+ 79 |     pub fn read_bit(&mut self) -> Result<bool> {
+    |            ^^^^^^^^
+...
+ 94 |     pub fn try_peek12(&mut self) -> Option<u32> {
+    |            ^^^^^^^^^^
+...
+106 |     pub fn eat(&mut self, n: u32) {
+    |            ^^^
+...
+145 |     pub fn read(&mut self, n: u32) -> Result<u32> {
+    |            ^^^^
+...
+165 |     pub fn read_u32(&mut self, n: u32) -> Result<u32> {
+    |            ^^^^^^^^
+...
+203 |     pub fn peek_u32(&mut self, n: u32) -> Result<u32> {
+    |            ^^^^^^^^
+...
+226 |     pub fn skip(&mut self, n: u32) -> Result<()> {
+    |            ^^^^
+...
+250 |     pub fn byte_align(&mut self) -> Result<()> {
+    |            ^^^^^^^^^^
+
+warning: associated items `new` and `write_u32` are never used
+   --> /tmp/syom-bitwriter-micro-current.rs:270:12
+    |
+267 | impl BitWriter {
+    | -------------- associated items in this implementation
+...
+270 |     pub fn new() -> Self {
+    |            ^^^
+...
+336 |     pub fn write_u32(&mut self, value: u32, n: u32) {
+    |            ^^^^^^^^^
+
+warning: static `SF_LEN` is never used
+ --> /home/ekhodzitsky/Projects/syom/src/engine/sf_tab.rs:4:12
+  |
+4 | pub static SF_LEN: [u8; 121] = [
+  |            ^^^^^^
+
+warning: static `SF_CODE` is never used
+  --> /home/ekhodzitsky/Projects/syom/src/engine/sf_tab.rs:12:12
+   |
+12 | pub static SF_CODE: [u32; 121] = [
+   |            ^^^^^^^
+
+warning: function `sf_delta_bits` is never used
+   --> /tmp/syom-band-micro-base.rs:124:8
+    |
+124 | pub fn sf_delta_bits(delta: i32) -> usize {
+    |        ^^^^^^^^^^^^^
+
+warning: function `sf_emit_delta` is never used
+   --> /tmp/syom-band-micro-base.rs:129:8
+    |
+129 | pub fn sf_emit_delta(w: &mut BitWriter, delta: i32) {
+    |        ^^^^^^^^^^^^^
+
+warning: function `sf_delta_bits` is never used
+   --> /tmp/syom-band-micro-current.rs:129:8
+    |
+129 | pub fn sf_delta_bits(delta: i32) -> usize {
+    |        ^^^^^^^^^^^^^
+
+warning: function `sf_emit_delta` is never used
+   --> /tmp/syom-band-micro-current.rs:134:8
+    |
+134 | pub fn sf_emit_delta(w: &mut BitWriter, delta: i32) {
+    |        ^^^^^^^^^^^^^
+
+warning: 11 warnings emitted

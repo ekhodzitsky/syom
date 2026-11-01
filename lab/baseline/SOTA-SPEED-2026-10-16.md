@@ -291,3 +291,175 @@ python3 lab/baseline/peer_speed/compare_encode.py \
 "$BIN" byte-corpus target/lc-speed/byte-corpus/candidate
 # Run byte-corpus on the baseline too, then compare all output file bytes.
 ```
+
+## LC Huffman/planner follow-up — 2026-11-01
+
+This second byte-preserving increment starts at `4d44195`. The version is
+still the **unpublished 0.9.0 candidate**. TASK-112.2 remains In Progress:
+the complete-input FDK gate fails on both long voice cells. Historical
+measurements above are retained; the following results are a new campaign,
+not values to splice into an earlier table.
+
+The pre-review phase-two candidate, unchanged complete-drain FDK 2.0.3
+adapter and four source PCM cells use
+the previous protocol: CPU0, four warmups, 31 measured complete calls, all
+six engine orders, 186 observations per engine/cell. Same release profile,
+Linux x86_64 host and rustc 1.97.1. All samples, host load/frequency and
+binary hashes are in [comparison.json](peer_speed/runs/lc-huffman-20261101/comparison.json).
+Its exact source manifest is `phase2-source-manifest.json`. Final review
+subsequently found that rolling totals read cost rows for uncoded bands,
+where the original planner skipped those rows. The final candidate restores
+that behavior and is measured separately below.
+FDK build provenance remains in the preceding increment's native manifest.
+
+| Cell | 4d44195 ms | Candidate ms | FDK full-drain ms | Candidate vs baseline |
+|---|---:|---:|---:|---:|
+| original voice stereo 128k, 2s | 8.29645 | 7.71620 | 5.41200 | 7.0% faster |
+| original voice stereo 24k, 2s | 4.72345 | 4.58650 | 3.88055 | 2.9% faster |
+| CORE_TUNE lecture stereo 24k, 0.25s | 0.34810 | 0.33280 | 0.40715 | 4.4% faster |
+| CORE_TUNE lecture mean-mono 24k, 0.25s | 0.21950 | 0.20315 | 0.22735 | 7.4% faster |
+
+Retained changes:
+
+- Accumulate two bounded Huffman book costs in independent u16 lanes of a
+  u32. Compile-time table bounds prevent carries. Only 64-bit targets,
+  bands of at most 1024 coefficients and maximum magnitude at most seven
+  use this path; other cases retain scalar costs. Immutable tables add
+  1904 bytes, with no allocation or unsafe code. Tuple-reference tests
+  include exhaustive small quads/pairs and both sides of the length gate.
+- Select the Huffman codebook once per band and combine codeword/sign bits
+  in one write. Bounded escape words also use one write; larger magnitudes
+  retain the generic sequence. The old tuple writer remains the independent
+  test oracle, including invalid tuples, partial tails, extreme magnitudes
+  and all bit alignments.
+- Specialize section header costs and build exact u64 prefix sums with
+  rolling totals instead of copying the previous row on every band. The
+  all-range reference retains missing-book, near-u32-limit and tie cases.
+- Store only active rows/columns of each psychoacoustic spreading matrix.
+  This preserves coefficient bits and scalar accumulation order. The two
+  48 kHz LC matrices shrink from 20808 to 10388 payload bytes; two fat
+  pointers add 16 bytes on x86_64, for **10404 fewer logical bytes per LC
+  encoder**. This is not an RSS or allocator-rounded measurement. There
+  is no independent proven speed gain from this storage change.
+
+The linked peer harness gains 1488 `.text` bytes and 1968 `.rodata` bytes
+under the same release profile. These are binary-section measurements,
+not a claim about every downstream consumer's code size. Dense matrix
+storage adds no allocation count; packed costs and emission add no heap.
+
+Actual file comparisons match `4d44195` across all **60 configurations**;
+all existing encoder goldens remain unchanged. Thus the preceding
+increment's equality to `e8ceb7e` is also preserved. Evidence includes an
+independent fixed-matrix reference across LC/short/LD rates, zero-band and
+custom layouts, and independent Huffman tuple/reference tests.
+
+Rejected experiments are retained separately: skipping inactive-band
+invariant calculations did not help short cells; a short-window scalefactor
+cache added 1920 bytes for approximately flat timing; a compact u32 section
+prefix tier regressed common planner micro cases. Earlier u64 packed-cost
+variants and a magnitude-12 fast path were not retained. Planner shortcuts
+that avoided prefix construction also failed to beat the retained planner
+consistently. Micro results describe their cases, not end-to-end guarantees.
+
+The first broad 15-cell ABBA campaign has substantial regressions, including
+click64 and click-q5. Both complete raw pairs and bootstrap output are
+retained as `lc2-guard-*` in the evidence directory. Independent dense-only
+experiments also show an approximately 1.5x timing mode in both baseline
+and candidate, so these observations require separate attribution; they
+are not silently discarded as outliers. An additional interleaved,
+per-cell campaign is recorded below.
+
+The full local phase-two source checks passed: fmt, size, changelog,
+clippy all-targets with warnings denied, **1164 unit tests** (7 existing
+ignored), one allocation integration test, 29 doctests and package audit.
+Rust **1.89** lib/tests, packaged consumers, stateful fuzz seed1123
+(25229 iterations, zero panics) and isolated release LC/HEv2/MC encoder
+128 KiB stack cells also passed. These validate Linux x86_64 only. The
+pre-existing cold decoder stack failure recorded above remains separate.
+GitHub CI was not dispatched; nothing was published or deployed.
+
+Exact source and binary hashes, all observations, micro input sources,
+rejected patches and validation logs are retained in
+[the follow-up evidence directory](peer_speed/runs/lc-huffman-20261101/report.json).
+Reproduce the four-cell comparison with the previous `compare_encode.py`
+command, using `4d44195` plus the same current lab harness for baseline.
+
+### Reviewed source freeze and final local checks
+
+Review restored the optional uncoded-row behavior before the accepted source
+freeze. Three new reference checks cover empty costs under an all-false
+mask, omitted trailing uncoded rows, and rejection of a missing coded row.
+The earlier timings above remain explicitly pre-review measurements.
+
+On the reviewed source, all required local gates passed again: fmt,
+file-size, changelog, clippy all-targets `-D warnings`, **1167 unit tests**
+(7 existing ignored), one integration test, 29 doctests and package audit.
+Full Rust 1.89 lib/tests also passed. The packaged consumer passed every
+flow, including exact seek and zero-allocation warm streaming. Stateful
+fuzz seed1124 completed **37535 iterations** in 30026 ms with zero panics.
+The isolated fat-LTO release encoder cells passed on 128 KiB stacks for
+LC, HEv2 and multichannel. Actual full-byte comparison again matched all
+60 baseline outputs. See [validation.json](peer_speed/runs/lc-huffman-20261101/validation.json)
+and [reviewed byte comparison](peer_speed/runs/lc-huffman-20261101/reviewed-byte-identity.json).
+
+The reviewed peer binary adds 1504 `.text` bytes and 1968 `.rodata` bytes
+relative to the baseline (the pre-review binary added 1488/1968). Exact
+[binary section sizes](peer_speed/runs/lc-huffman-20261101/binary-sections.json)
+and [source hashes](peer_speed/runs/lc-huffman-20261101/source-manifest.json)
+identify the final code separately from every exploratory prototype.
+
+### Final reviewed speed campaign
+
+After the correctness fix and all builds/checks finished, the same four-cell
+FDK comparison was repeated on the final binary, with no concurrent local
+build/test jobs. Again, all six orders, four warmups and 31 measurements
+per process are retained: 186 samples per engine/cell, no outlier removal.
+A preliminary launch failed because the copied binary lacked execute
+permission; permission was restored and the complete campaign restarted.
+This infrastructure retry is recorded in `launch-note.json`.
+
+| Cell | 4d44195 ms | Reviewed candidate ms | FDK full-drain ms | Candidate vs baseline |
+|---|---:|---:|---:|---:|
+| original voice stereo 128k, 2s | 7.96235 | 7.57500 | 5.12370 | 4.9% faster |
+| original voice stereo 24k, 2s | 4.57235 | 4.36785 | 3.77915 | 4.5% faster |
+| CORE_TUNE lecture stereo 24k, 0.25s | 0.33585 | 0.32160 | 0.39125 | 4.2% faster |
+| CORE_TUNE lecture mean-mono 24k, 0.25s | 0.20360 | 0.19005 | 0.21450 | 6.7% faster |
+
+[All final comparison observations](peer_speed/runs/lc-huffman-20261101/reviewed-comparison.json)
+identify the exact binary hashes and independent complete-stream validation.
+The long voice cells still take approximately 48% and 16% more time than
+FDK respectively on this run. Same PCM does not imply matched encoder
+quality. **The strict speed gate remains unmet.**
+
+The guard harness now accepts an optional exact cell name as its second
+argument; the original no-filter invocation still emits the same 15 cells
+and byte/hash identities. Unknown names fail explicitly. This allows
+shorter alternating blocks rather than an entire corpus per variant.
+See [CLI compatibility checks](peer_speed/runs/lc-huffman-20261101/guard-cli-checks/report.json).
+
+An initial interleaved campaign on the pre-review source retained two small
+pooled regressions: click64 +2.22% and lecture-st64 +0.86%. Its full
+[observations/provenance](peer_speed/runs/lc-huffman-20261101/guards-before-review/report.json)
+remain available. The final reviewed source then ran all 15 exact cells in
+ABBA/BAAB order, five warmups plus seven measured calls per process,
+**120 blocks total** (28 observations per engine/cell). All sizes/FNVs match.
+All 15 final pooled medians improve in that run, but music/noise retain
+large pair-level scheduling swings, including ratios from about 0.650 to
+1.267. The extrema are not a stable speed guarantee. Click128/64/q5 final
+pooled times fall by 8.38%/6.40%/4.25%; the earlier regressions are retained,
+not reclassified or removed. [Full final guard data](peer_speed/runs/lc-huffman-20261101/guards-final/report.json)
+include every sample, host reading and pair ratio.
+
+```sh
+python3 lab/baseline/peer_speed/compare_encode.py \
+  --baseline BASELINE_4D44195_BIN --candidate REVIEWED_BIN --fdk FDK_BENCH \
+  --fixtures target/lc-speed/fixtures --output target/lc-speed/reproduce \
+  --rounds 6 --reps 31
+# Build the same current speed harness against both product revisions;
+# repeat all cells in baseline/candidate/candidate/baseline/candidate/baseline/baseline/candidate order.
+taskset -c 0 QUALITY_BIN 7 click-mono-lc64
+```
+
+The full report preserves both source freezes and rejected experiments.
+No speed ranking is changed in README. Candidate 0.9.0 remains unpublished;
+no tag, hosted CI or consumer deployment occurs.

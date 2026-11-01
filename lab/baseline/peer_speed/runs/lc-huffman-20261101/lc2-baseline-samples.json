@@ -1,0 +1,122 @@
+[
+  {
+    "timeout_seconds": 0.55,
+    "frames": [
+      "#0  0x00005555556a6e2a in syom::engine::enc_section::plan_books_into ()",
+      "#1  0x000055555566995d in syom::engine::enc_section::plan_books ()",
+      "#2  0x000055555561bf70 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#3  0x000055555561a7aa in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#4  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#5  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#6  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#7  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#8  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#9  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()"
+    ]
+  },
+  {
+    "timeout_seconds": 0.7,
+    "frames": [
+      "#0  0x000055555563d049 in <syom::engine::bits::BitWriter>::write ()",
+      "#1  0x00005555556870ea in syom::engine::enc_huff::spectral_emit ()",
+      "#2  0x0000555555669d30 in syom::engine::enc_section::emit_channel_body ()",
+      "#3  0x000055555561f0ff in <syom::engine::enc_frame::LcEncoder>::emit_into ()",
+      "#4  0x0000555555622708 in <syom::engine::enc_frame::LcEncoder>::drop_bands_until ()",
+      "#5  0x00005555556117ed in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#6  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#7  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#8  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#9  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()"
+    ]
+  },
+  {
+    "timeout_seconds": 0.9,
+    "frames": [
+      "#0  0x000055555561c9e0 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#1  0x000055555561a8c6 in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#2  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#3  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#4  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#5  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#6  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#7  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()",
+      "#8  0x00005555555ca37e in std::rt::lang_start_internal ()",
+      "#9  0x00005555556bea25 in main ()"
+    ]
+  },
+  {
+    "timeout_seconds": 1.05,
+    "frames": [
+      "#0  0x00005555556a6ad5 in syom::engine::enc_section::plan_books_into ()",
+      "#1  0x000055555566995d in syom::engine::enc_section::plan_books ()",
+      "#2  0x000055555561bf70 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#3  0x000055555561a7aa in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#4  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#5  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#6  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#7  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#8  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#9  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()"
+    ]
+  },
+  {
+    "timeout_seconds": 1.2,
+    "frames": [
+      "#0  0x000055555561c4b1 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#1  0x000055555561a7aa in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#2  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#3  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#4  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#5  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#6  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#7  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()",
+      "#8  0x00005555555ca37e in std::rt::lang_start_internal ()",
+      "#9  0x00005555556bea25 in main ()"
+    ]
+  },
+  {
+    "timeout_seconds": 1.4,
+    "frames": [
+      "#0  0x000055555568ea93 in syom::engine::enc_quant::sf_for_peak ()",
+      "#1  0x000055555561ad17 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#2  0x000055555561a6ea in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#3  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#4  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#5  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#6  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#7  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#8  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()",
+      "#9  0x00005555555ca37e in std::rt::lang_start_internal ()"
+    ]
+  },
+  {
+    "timeout_seconds": 1.6,
+    "frames": [
+      "#0  __memcpy_avx512_unaligned_erms () at ../sysdeps/x86_64/multiarch/memmove-vec-unaligned-erms.S:490",
+      "#1  0x00005555556a6c61 in syom::engine::enc_section::plan_books_into ()",
+      "#2  0x000055555566995d in syom::engine::enc_section::plan_books ()",
+      "#3  0x000055555561bf70 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#4  0x000055555561a6a3 in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#5  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#6  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#7  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#8  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#9  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()"
+    ]
+  },
+  {
+    "timeout_seconds": 1.8,
+    "frames": [
+      "#0  0x00005555556a7235 in syom::engine::enc_section::plan_books_into ()",
+      "#1  0x000055555566995d in syom::engine::enc_section::plan_books ()",
+      "#2  0x000055555561bf70 in <syom::engine::enc_frame::LcEncoder>::build ()",
+      "#3  0x000055555561a6ea in <syom::engine::enc_frame::LcEncoder>::search_offset_from ()",
+      "#4  0x00005555556117af in <syom::engine::enc_frame::LcEncoder>::encode_with_attack ()",
+      "#5  0x00005555556ab4b8 in syom::encode::encode_with::<alloc::vec::Vec<f32>> ()",
+      "#6  0x00005555556b76fc in syom_peer_speed::encode_voice ()",
+      "#7  0x00005555556b85ea in syom_peer_speed::main ()",
+      "#8  0x00005555556aba13 in std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()> ()",
+      "#9  0x00005555556b6229 in std::rt::lang_start::<()>::{closure#0} ()"
+    ]
+  }
+]

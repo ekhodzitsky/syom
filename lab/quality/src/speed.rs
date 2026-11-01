@@ -21,10 +21,10 @@ struct Clip {
 }
 
 fn main() {
-    let reps: usize = std::env::args()
-        .nth(1)
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(31);
+    let mut args = std::env::args().skip(1);
+    let reps: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(31);
+    let exact_cell = args.next();
+    let mut matched = false;
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let repo = root.parent().unwrap().parent().unwrap();
     let clips = clips(repo);
@@ -39,6 +39,11 @@ fn main() {
             ("q5", EncodeOptions::adts().with_quality(5)),
         ];
         for (tag, opts) in cells {
+            let cell = format!("{}-{tag}", clip.name);
+            if exact_cell.as_ref().is_some_and(|name| *name != cell) {
+                continue;
+            }
+            matched = true;
             let mut ms = Vec::with_capacity(reps);
             let mut bytes = Vec::new();
             for i in 0..WARM + reps {
@@ -64,6 +69,10 @@ fn main() {
             );
         }
     }
+    assert!(
+        exact_cell.is_none() || matched,
+        "unknown exact encoder cell"
+    );
 }
 
 fn fnv1a(b: &[u8]) -> u64 {

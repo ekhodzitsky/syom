@@ -1,0 +1,35 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 2 tests
+test platform_tests::encoder_goldens_match_sse2_only_fft ... ok
+test platform_tests::encoder_goldens_match_auto_and_scalar_fft ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1167 filtered out; finished in 1.06s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 8 tests
+test encode_he_tests::mint_lavc_he_m4a_golden ... ok
+test encode_he_tests::asc_is_the_iso_two_rate_vector ... ok
+test encode_he_tests::he_is_off_by_default_and_rates_channels_bitrates_are_typed ... ok
+test encode_he_tests::he_tail_shorter_than_the_sbr_delay_still_presents ... ok
+test encode_he_tests::m4a_signals_two_rates_and_presents_exactly_n_samples ... ok
+test encode_he_tests::lavc_decodes_our_he_adts_and_m4a ... ok
+test encode_he_tests::presets_are_explicit_settings_not_claims ... ok
+test encode_he_tests::push_adts_raw_and_one_shot_agree ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1161 filtered out; finished in 1.19s
+
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 5 tests
+test encode_mc_tests::mint_public_mc_goldens ... ok
+test encode_mc_tests::quality_vbr_works_and_unsupported_shapes_fail_before_any_write ... ok
+test encode_mc_tests::libavcodec_decodes_our_surround_m4a_and_latm ... ok
+test encode_mc_tests::push_chunking_and_sinks_match_one_shot ... ok
+test encode_mc_tests::every_layout_and_container_round_trips_with_plane_identity ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 1164 filtered out; finished in 3.39s

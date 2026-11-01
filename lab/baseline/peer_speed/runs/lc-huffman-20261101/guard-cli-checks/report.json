@@ -1,0 +1,63 @@
+{
+  "harness_path": "lab/quality/src/speed.rs",
+  "harness_sha256": "a2106b1b523f9ee045af60eab36a3763579a52a3d1e9a775bcc254c8e95829d4",
+  "cases": [
+    {
+      "variant": "new_baseline",
+      "command": [
+        "taskset",
+        "-c",
+        "4-11",
+        "/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed",
+        "1",
+        "click-mono-lc128"
+      ],
+      "returncode": 0,
+      "data_rows": 1
+    },
+    {
+      "variant": "new_baseline",
+      "command": [
+        "taskset",
+        "-c",
+        "4-11",
+        "/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed",
+        "1",
+        "no-such-cell"
+      ],
+      "returncode": 101,
+      "data_rows": 0
+    },
+    {
+      "variant": "new_candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "4-11",
+        "/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed",
+        "1",
+        "click-mono-lc128"
+      ],
+      "returncode": 0,
+      "data_rows": 1
+    },
+    {
+      "variant": "new_candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "4-11",
+        "/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed",
+        "1",
+        "no-such-cell"
+      ],
+      "returncode": 101,
+      "data_rows": 0
+    }
+  ],
+  "default_backward_compatibility": {
+    "verified": true,
+    "cells": 15,
+    "comparison": "Original4d and new no-filter CLI: cell names,channels,durations,bitrate flags,byte counts andFNV identical. Raw outputs saved beside this record."
+  }
+}

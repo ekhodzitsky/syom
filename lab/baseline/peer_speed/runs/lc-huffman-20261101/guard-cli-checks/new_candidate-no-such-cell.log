@@ -1,0 +1,6 @@
+# syom_speed reps=1 warm=5 (ms per rep, sorted; xrt = audio s / median s)
+cell	ch	secs	bps	median_ms	p95_ms	xrt	bytes	fnv1a	reps
+
+thread 'main' (2327587) panicked at src/speed.rs:72:5:
+unknown exact encoder cell
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

@@ -1,0 +1,17 @@
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.24s
+     Running unittests src/lib.rs (target/debug/deps/syom-d87fa236f1021dd3)
+
+running 10 tests
+test engine::enc_huff::band::tests::every_codeword_and_its_tuple_signs_fit_one_u32 ... ok
+test engine::enc_huff::enc_huff_tests::out_of_range_tuples_are_rejected ... ok
+test engine::enc_huff::enc_huff_tests::sf_dpcm_full_range_roundtrip ... ok
+test engine::enc_huff::band::tests::extreme_invalid_values_preserve_generic_checked_behavior ... ok
+test engine::enc_huff::enc_huff_tests::signed_quad_books_roundtrip ... ok
+test engine::enc_huff::enc_huff_tests::esc_book_roundtrip_including_escapes ... ok
+test engine::enc_huff::enc_huff_tests::unsigned_quad_books_roundtrip ... ok
+test engine::enc_huff::enc_huff_tests::pair_books_roundtrip ... ok
+test engine::enc_huff::band::tests::escape_boundaries_and_mixed_signs_preserve_bit_order ... ok
+test engine::enc_huff::band::tests::all_books_preserve_valid_invalid_and_incomplete_tuples ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1160 filtered out; finished in 0.03s

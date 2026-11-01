@@ -1,0 +1,19 @@
+| cell | base ms | cand ms | speedup | 95% CI of ratio | bytes/hash |
+|---|---:|---:|---:|---|---|
+| lecture-st-lc128 | 2.81 | 2.73 | +3.0% | [-0.1%, +5.2%] | identical |
+| lecture-st-lc64 | 3.28 | 3.35 | -2.0% | [-13.4%, +5.3%] | identical |
+| lecture-st-q5 | 2.58 | 2.58 | +0.1% | [-2.3%, +3.9%] | identical |
+| lecture-mono-lc128 | 1.57 | 1.50 | +4.8% | [+2.6%, +7.1%] | identical |
+| lecture-mono-lc64 | 1.91 | 1.86 | +2.7% | [+0.6%, +11.0%] | identical |
+| lecture-mono-q5 | 1.33 | 1.36 | -2.6% | [-8.0%, +2.7%] | identical |
+| music-st-lc128 | 5.52 | 7.18 | -30.3% | [-35.3%, -2.2%] | identical |
+| music-st-lc64 | 5.93 | 5.79 | +2.4% | [+0.6%, +6.1%] | identical |
+| music-st-q5 | 5.84 | 5.35 | +8.3% | [-0.3%, +10.1%] | identical |
+| noise-st-lc128 | 8.27 | 8.01 | +3.2% | [-7.9%, +4.6%] | identical |
+| noise-st-lc64 | 4.50 | 6.16 | -36.8% | [-41.7%, -31.3%] | identical |
+| noise-st-q5 | 3.89 | 4.69 | -20.6% | [-27.9%, -5.6%] | identical |
+| click-mono-lc128 | 2.71 | 3.94 | -45.4% | [-53.3%, -23.5%] | identical |
+| click-mono-lc64 | 2.39 | 3.72 | -55.6% | [-58.0%, -46.8%] | identical |
+| click-mono-q5 | 1.28 | 1.65 | -29.3% | [-40.3%, -19.0%] | identical |
+
+median gain over cells: -2.0% (15 cells)

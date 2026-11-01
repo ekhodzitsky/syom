@@ -1,0 +1,4 @@
+{
+  "initial_final_compare_attempt": "Failed with exit126 before candidate timing because the copied binary lacked execute permission; chmod +x applied, then all6 orders restarted. No observation removed from the complete campaign.",
+  "reproduction_helper": "validate.py uses copy2 to retain executable permission. Validation commands and outputs are unchanged."
+}

@@ -1,0 +1,133 @@
+{
+  "task": "TASK-112.2",
+  "candidate": "0.9.0 (unpublished)",
+  "baseline_revision": "4d44195cc7c5b13ea0b39eacb0ac58606f8d4ca1",
+  "platform": "Linux x86_64",
+  "status": "Validated byte-preserving performance and memory increment; strict FDK gate remains unmet. TASK-112.2 stays In Progress.",
+  "phase2_comparison": "comparison.json",
+  "phase2_source_manifest": "phase2-source-manifest.json",
+  "prior_fdk_provenance": "../lc-encode-20261101/native-manifest.json",
+  "phase2_guard_warning": "Initial whole-corpus ABBA shows large click regressions. Interleaved pre-review attribution retains small regressions in two cells; all original data remain.",
+  "accepted": [
+    "packed bounded Huffman costs on 64-bit targets",
+    "per-band codebook dispatch and fused sign/escape writes",
+    "specialized section header costs and rolling u64 prefix totals",
+    "dense psychoacoustic matrix storage, memory benefit only"
+  ],
+  "rejected": [
+    "inactive-band invariant skip",
+    "short SF cache",
+    "compact u32 section prefix tier",
+    "planner no-merge/scan shortcuts",
+    "magnitude12 packed fast path",
+    "earlier slower packed variants"
+  ],
+  "validation_logs": [
+    "lc2-local-gates.log",
+    "lc2-msrv.log",
+    "lc2-package.log",
+    "lc2-consumer.log",
+    "lc2-fuzz-state.log",
+    "lc2-stack.log"
+  ],
+  "byte_identity": "lc2-byte-identity.json",
+  "memory": "dense-memory.json",
+  "limits": [
+    "Busy shared host; preserve every repetition; no universal ranking",
+    "No Windows/macOS/ARM validation",
+    "Pre-existing cold Huffman decoder init 128KiB stack defect unchanged",
+    "No GitHub CI, publication or deployment"
+  ],
+  "phase2_interleaved_guards": "guards-before-review/report.json",
+  "source_manifest": "source-manifest.json",
+  "review": "review.json",
+  "validation": "validation.json",
+  "reviewed_byte_identity": "reviewed-byte-identity.json",
+  "reviewed_binary_sections": "binary-sections.json",
+  "final_checks": {
+    "unit_passed": 1167,
+    "unit_existing_ignored": 7,
+    "integration_passed": 1,
+    "doc_passed": 29,
+    "msrv": "1.89.0 full lib/tests pass",
+    "packaged_consumer": "all cells passed",
+    "fuzz_seed": 1124,
+    "fuzz_iterations": 37535,
+    "fuzz_panics": 0,
+    "encoder_stack_kib": 128,
+    "encoder_stack_modes": [
+      "LC",
+      "HEv2",
+      "MC"
+    ]
+  },
+  "date": "2026-11-01",
+  "source_manifest_sha256": "4e7810129a9b5d827c92d3c100ea652866dfabd05db723203aa79b5f7178252d",
+  "reviewed_comparison": "reviewed-comparison.json",
+  "reviewed_summaries": [
+    {
+      "cell": "voice128",
+      "pooled_median_ms": {
+        "baseline": 7.96235,
+        "candidate": 7.574999999999999,
+        "fdk": 5.1236999999999995
+      },
+      "candidate_vs_baseline": 0.9513523017702059,
+      "at_or_below_fdk": false
+    },
+    {
+      "cell": "voice24",
+      "pooled_median_ms": {
+        "baseline": 4.57235,
+        "candidate": 4.367850000000001,
+        "fdk": 3.77915
+      },
+      "candidate_vs_baseline": 0.9552746399553841,
+      "at_or_below_fdk": false
+    },
+    {
+      "cell": "lecture24",
+      "pooled_median_ms": {
+        "baseline": 0.33585,
+        "candidate": 0.3216,
+        "fdk": 0.39125
+      },
+      "candidate_vs_baseline": 0.9575703439035284,
+      "at_or_below_fdk": true
+    },
+    {
+      "cell": "lecture-m24",
+      "pooled_median_ms": {
+        "baseline": 0.2036,
+        "candidate": 0.19005,
+        "fdk": 0.21450000000000002
+      },
+      "candidate_vs_baseline": 0.9334479371316307,
+      "at_or_below_fdk": true
+    }
+  ],
+  "final_guards": "guards-final/report.json",
+  "guard_cli_compatibility": "guard-cli-checks/report.json",
+  "guard_protocol": "15 cells each in ABBA/BAAB order,5warm+7measured per process;28samples per variant/cell; all120blocks retained. Every size/FNV matches.",
+  "guard_interpretation": "All15 final pooled medians improve, but some music/noise pair ratios are scheduling-sensitive. Exploratory pre-review click64+2.22% and lecture64+0.86% regressions, plus larger original whole-corpus regressions, are preserved; no universal speed claim.",
+  "timing_protocol": {
+    "affinity": "CPU0",
+    "warm": 4,
+    "reps": 31,
+    "orders": 6,
+    "samples_per_engine_per_cell": 186,
+    "boundaries": "Complete in-process open/encode/flush/free; conversion included for FDK; hashing and independent FFmpeg decode outside timer",
+    "outliers": "None removed from complete balanced campaigns",
+    "host": "Busy Linux x86_64 Ryzen AI9 HX370; raw host load/frequency retained",
+    "rustc": "1.97.1, release opt3 thinLTO one codegen-unit"
+  },
+  "memory_delta": {
+    "scope": "Two matrices per48kHz LC encoder; x86_64 logical payload+struct bytes, not RSS/allocator rounding",
+    "old_matrix_payload": 20808,
+    "new_matrix_payload": 10388,
+    "extra_pointer_bytes": 16,
+    "net_bytes_saved": 10404,
+    "packed_global_table_bytes": 1904
+  },
+  "next_work": "Profile remaining LC long-voice quantization/planning costs; retain byte identity and re-run balanced FDK protocol. Do not mark AC2 until all published cells tie/win."
+}

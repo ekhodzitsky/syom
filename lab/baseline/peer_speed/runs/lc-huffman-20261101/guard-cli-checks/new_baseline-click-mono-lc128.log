@@ -1,0 +1,3 @@
+# syom_speed reps=1 warm=5 (ms per rep, sorted; xrt = audio s / median s)
+cell	ch	secs	bps	median_ms	p95_ms	xrt	bytes	fnv1a	reps
+click-mono-lc128	1	2.00	128000	4.035	4.035	495.6	24961	1e7dd4b4e4e582a1	4.035

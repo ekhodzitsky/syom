@@ -1,0 +1,190 @@
+{
+  "matrix_cases": [
+    {
+      "rate": 96000,
+      "transform": 2048,
+      "bands": 41,
+      "dense_payload_bytes": 6724,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 96000,
+      "transform": 256,
+      "bands": 12,
+      "dense_payload_bytes": 576,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 96000,
+      "transform": 1024,
+      "bands": 36,
+      "dense_payload_bytes": 5184,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 48000,
+      "transform": 2048,
+      "bands": 49,
+      "dense_payload_bytes": 9604,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 48000,
+      "transform": 256,
+      "bands": 14,
+      "dense_payload_bytes": 784,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 48000,
+      "transform": 1024,
+      "bands": 36,
+      "dense_payload_bytes": 5184,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 44100,
+      "transform": 2048,
+      "bands": 49,
+      "dense_payload_bytes": 9604,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 44100,
+      "transform": 256,
+      "bands": 14,
+      "dense_payload_bytes": 784,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 44100,
+      "transform": 1024,
+      "bands": 36,
+      "dense_payload_bytes": 5184,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 16000,
+      "transform": 2048,
+      "bands": 43,
+      "dense_payload_bytes": 7396,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 16000,
+      "transform": 256,
+      "bands": 15,
+      "dense_payload_bytes": 900,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 16000,
+      "transform": 1024,
+      "bands": 31,
+      "dense_payload_bytes": 3844,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 8000,
+      "transform": 2048,
+      "bands": 40,
+      "dense_payload_bytes": 6400,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 8000,
+      "transform": 256,
+      "bands": 15,
+      "dense_payload_bytes": 900,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 8000,
+      "transform": 1024,
+      "bands": 31,
+      "dense_payload_bytes": 3844,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 48000,
+      "transform": 2048,
+      "bands": 0,
+      "dense_payload_bytes": 0,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 44100,
+      "transform": 1024,
+      "bands": 4,
+      "dense_payload_bytes": 64,
+      "old_payload_bytes": 10404
+    },
+    {
+      "rate": 48000,
+      "transform": 1024,
+      "bands": 9,
+      "dense_payload_bytes": 324,
+      "old_payload_bytes": 10404
+    }
+  ],
+  "box_pointer_bytes_added_per_psy": 8,
+  "new_psy_struct_bytes": 856,
+  "old_psy_struct_bytes": 848,
+  "summary": [
+    {
+      "rate": 96000,
+      "long_bands": 41,
+      "short_bands": 12,
+      "old_lc_matrix_payload_bytes": 20808,
+      "new_lc_matrix_payload_bytes": 7300,
+      "additional_lc_struct_bytes": 16,
+      "net_lc_saved_bytes": 13492,
+      "ld_bands": 36,
+      "ld_net_saved_bytes": 5212
+    },
+    {
+      "rate": 48000,
+      "long_bands": 49,
+      "short_bands": 14,
+      "old_lc_matrix_payload_bytes": 20808,
+      "new_lc_matrix_payload_bytes": 10388,
+      "additional_lc_struct_bytes": 16,
+      "net_lc_saved_bytes": 10404,
+      "ld_bands": 36,
+      "ld_net_saved_bytes": 5212
+    },
+    {
+      "rate": 44100,
+      "long_bands": 49,
+      "short_bands": 14,
+      "old_lc_matrix_payload_bytes": 20808,
+      "new_lc_matrix_payload_bytes": 10388,
+      "additional_lc_struct_bytes": 16,
+      "net_lc_saved_bytes": 10404,
+      "ld_bands": 36,
+      "ld_net_saved_bytes": 5212
+    },
+    {
+      "rate": 16000,
+      "long_bands": 43,
+      "short_bands": 15,
+      "old_lc_matrix_payload_bytes": 20808,
+      "new_lc_matrix_payload_bytes": 8296,
+      "additional_lc_struct_bytes": 16,
+      "net_lc_saved_bytes": 12496,
+      "ld_bands": 31,
+      "ld_net_saved_bytes": 6552
+    },
+    {
+      "rate": 8000,
+      "long_bands": 40,
+      "short_bands": 15,
+      "old_lc_matrix_payload_bytes": 20808,
+      "new_lc_matrix_payload_bytes": 7300,
+      "additional_lc_struct_bytes": 16,
+      "net_lc_saved_bytes": 13492,
+      "ld_bands": 31,
+      "ld_net_saved_bytes": 6552
+    }
+  ]
+}

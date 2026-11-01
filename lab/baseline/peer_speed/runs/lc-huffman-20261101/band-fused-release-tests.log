@@ -1,0 +1,11 @@
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `release` profile [optimized] target(s) in 44.57s
+     Running unittests src/lib.rs (target/release/deps/syom-ed7324f0e1e98bb7)
+
+running 4 tests
+test engine::enc_huff::band::tests::every_codeword_and_its_tuple_signs_fit_one_u32 ... ok
+test engine::enc_huff::band::tests::extreme_invalid_values_preserve_generic_checked_behavior ... ok
+test engine::enc_huff::band::tests::escape_boundaries_and_mixed_signs_preserve_bit_order ... ok
+test engine::enc_huff::band::tests::all_books_preserve_valid_invalid_and_incomplete_tuples ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1165 filtered out; finished in 0.00s

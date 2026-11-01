@@ -116,7 +116,7 @@ pub(super) fn plan_books_into(
     bits: &[[u32; BOOKS]],
     n: usize,
     sfb_cb: &mut [u8],
-    header_bits: fn(usize) -> usize,
+    header_bits: impl Fn(usize) -> usize + Copy,
 ) {
     let costs = cost::CostPrefix::new(coded, bits, n);
     for b in 0..n {

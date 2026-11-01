@@ -1,0 +1,19 @@
+{
+  "reviewer": "band_emit subagent",
+  "scope": "Final accepted production diff including uncoded-row correction",
+  "result": "No correctness blocker for valid encoder inputs",
+  "checked": [
+    "packed lane carry bounds and scalar domain fallbacks",
+    "Huffman bit concatenation, escape range and generic oracle",
+    "dense matrix coefficient/order preservation and bounded dimensions",
+    "generic section-header call ordering",
+    "uncoded cost rows remain optional"
+  ],
+  "limits": [
+    "Actual platform tests are Linux x86_64 only",
+    "No independent tiny-band speed claim; retain measured per-cell regressions",
+    "Custom unsupported offsets above MAX_BANDS explicitly assert",
+    "New band helper ignores incomplete trailing tuple; actual SWB tables are aligned"
+  ],
+  "mutations": "None; independent read-only review"
+}

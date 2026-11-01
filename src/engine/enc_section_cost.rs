@@ -13,16 +13,24 @@ impl CostPrefix {
     pub(super) fn new(coded: &[bool], bits: &[[u32; BOOKS]], n: usize) -> Self {
         assert!(n <= MAX_BANDS);
         let mut values = [[0; BOOKS]; MAX_BANDS + 1];
+        let mut totals = [0; BOOKS];
         for b in 0..n {
-            values[b + 1] = values[b];
-            if coded[b] {
-                for cb in 1..BOOKS {
-                    values[b + 1][cb] += if bits[b][cb] == UNREPRESENTABLE {
-                        MISSING
-                    } else {
-                        u64::from(bits[b][cb])
-                    };
-                }
+            if !coded[b] {
+                values[b + 1][1..].copy_from_slice(&totals[1..]);
+                continue;
+            }
+            for ((total, value), &cost) in totals
+                .iter_mut()
+                .zip(values[b + 1].iter_mut())
+                .zip(bits[b].iter())
+                .skip(1)
+            {
+                *total += if cost == UNREPRESENTABLE {
+                    MISSING
+                } else {
+                    u64::from(cost)
+                };
+                *value = *total;
             }
         }
         Self { values }

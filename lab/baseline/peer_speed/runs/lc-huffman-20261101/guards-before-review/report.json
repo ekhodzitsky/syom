@@ -1,0 +1,389 @@
+{
+  "baseline_revision": "4d44195",
+  "protocol": "Exact filtered cell, CPU0, ABBA/BAAB,5warmups plus7measured perblock; allblocks retained. No process wall time used.",
+  "order": [
+    "baseline",
+    "candidate",
+    "candidate",
+    "baseline",
+    "candidate",
+    "baseline",
+    "baseline",
+    "candidate"
+  ],
+  "binaries": {
+    "baseline": {
+      "path": "/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed",
+      "sha256": "82a9d0603dc7313656d32ba744dd3da384e7cc38c64a61cd5aefc59c0550b299"
+    },
+    "candidate": {
+      "path": "/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed",
+      "sha256": "97f393498b05bb9e1dcf599edee60a2a3e5f6d6434c80e9df807327e29acdb00"
+    }
+  },
+  "harness_sha256": "a2106b1b523f9ee045af60eab36a3763579a52a3d1e9a775bcc254c8e95829d4",
+  "summaries": [
+    {
+      "cell": "lecture-st-lc128",
+      "pooled_median_ms": {
+        "baseline": 2.3705,
+        "candidate": 2.335
+      },
+      "candidate_vs_baseline": 0.9850242564859735,
+      "paired_ratios": [
+        0.9840134623474969,
+        0.985611510791367,
+        0.9848165331083931,
+        0.9881706801858893
+      ],
+      "median_pair_ratio": 0.9852140219498801,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "lecture-st-lc64",
+      "pooled_median_ms": {
+        "baseline": 2.781,
+        "candidate": 2.805
+      },
+      "candidate_vs_baseline": 1.0086299892125135,
+      "paired_ratios": [
+        1.0064608758076095,
+        1.0104204096298957,
+        1.006474820143885,
+        1.0097192224622031
+      ],
+      "median_pair_ratio": 1.008097021303044,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "lecture-st-q5",
+      "pooled_median_ms": {
+        "baseline": 2.2135,
+        "candidate": 2.1935000000000002
+      },
+      "candidate_vs_baseline": 0.9909645358030271,
+      "paired_ratios": [
+        1.0018157058556514,
+        0.9887285843101894,
+        0.9877993673746045,
+        0.9878158844765342
+      ],
+      "median_pair_ratio": 0.9882722343933619,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "lecture-mono-lc128",
+      "pooled_median_ms": {
+        "baseline": 1.315,
+        "candidate": 1.274
+      },
+      "candidate_vs_baseline": 0.9688212927756654,
+      "paired_ratios": [
+        0.975553857906799,
+        0.9733231707317072,
+        0.9688449848024315,
+        0.9414003044140031
+      ],
+      "median_pair_ratio": 0.9710840777670693,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "lecture-mono-lc64",
+      "pooled_median_ms": {
+        "baseline": 1.594,
+        "candidate": 1.5695000000000001
+      },
+      "candidate_vs_baseline": 0.9846298619824342,
+      "paired_ratios": [
+        0.9918032786885245,
+        0.9849435382685069,
+        0.9836990595611285,
+        0.9837194740137758
+      ],
+      "median_pair_ratio": 0.9843315061411413,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "lecture-mono-q5",
+      "pooled_median_ms": {
+        "baseline": 1.1709999999999998,
+        "candidate": 1.144
+      },
+      "candidate_vs_baseline": 0.976942783945346,
+      "paired_ratios": [
+        0.9678510998307952,
+        0.9862424763542562,
+        0.9761092150170648,
+        0.9802913453299056
+      ],
+      "median_pair_ratio": 0.9782002801734853,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "music-st-lc128",
+      "pooled_median_ms": {
+        "baseline": 6.4385,
+        "candidate": 6.1434999999999995
+      },
+      "candidate_vs_baseline": 0.9541818746602468,
+      "paired_ratios": [
+        0.9494886891850016,
+        0.9553585316534453,
+        0.9556765163297045,
+        0.959012575687005
+      ],
+      "median_pair_ratio": 0.955517523991575,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "music-st-lc64",
+      "pooled_median_ms": {
+        "baseline": 5.0195,
+        "candidate": 4.9505
+      },
+      "candidate_vs_baseline": 0.986253610917422,
+      "paired_ratios": [
+        0.9833234067897558,
+        0.9812412692077429,
+        0.9910107870555334,
+        0.9860557768924304
+      ],
+      "median_pair_ratio": 0.9846895918410932,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "music-st-q5",
+      "pooled_median_ms": {
+        "baseline": 5.0355,
+        "candidate": 4.515000000000001
+      },
+      "candidate_vs_baseline": 0.8966338993148646,
+      "paired_ratios": [
+        0.8942040492258833,
+        0.892271199841866,
+        0.8984095427435388,
+        0.9022931206380859
+      ],
+      "median_pair_ratio": 0.8963067959847111,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "noise-st-lc128",
+      "pooled_median_ms": {
+        "baseline": 7.065,
+        "candidate": 6.7595
+      },
+      "candidate_vs_baseline": 0.956758669497523,
+      "paired_ratios": [
+        0.9552724699221513,
+        0.957744488411532,
+        0.9590941259731068,
+        0.9582034570699915
+      ],
+      "median_pair_ratio": 0.9579739727407618,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "noise-st-lc64",
+      "pooled_median_ms": {
+        "baseline": 5.2725,
+        "candidate": 5.234
+      },
+      "candidate_vs_baseline": 0.9926979611190138,
+      "paired_ratios": [
+        0.9971509971509972,
+        0.9927948426241942,
+        0.9899526066350711,
+        0.9914659586573108
+      ],
+      "median_pair_ratio": 0.9921304006407525,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "noise-st-q5",
+      "pooled_median_ms": {
+        "baseline": 4.52,
+        "candidate": 4.0305
+      },
+      "candidate_vs_baseline": 0.8917035398230089,
+      "paired_ratios": [
+        0.8843687817820032,
+        0.8920115069705686,
+        0.8931974296476844,
+        0.8914677276746243
+      ],
+      "median_pair_ratio": 0.8917396173225964,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "click-mono-lc128",
+      "pooled_median_ms": {
+        "baseline": 3.3265000000000002,
+        "candidate": 3.325
+      },
+      "candidate_vs_baseline": 0.9995490756049902,
+      "paired_ratios": [
+        1.005666567253206,
+        1.0063732928679818,
+        1.0091019417475728,
+        0.9889683959451402
+      ],
+      "median_pair_ratio": 1.0060199300605939,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "click-mono-lc64",
+      "pooled_median_ms": {
+        "baseline": 2.9945000000000004,
+        "candidate": 3.061
+      },
+      "candidate_vs_baseline": 1.0222073801970277,
+      "paired_ratios": [
+        1.0219050779953536,
+        1.0199733688415447,
+        1.0161507402422612,
+        1.0318536089461199
+      ],
+      "median_pair_ratio": 1.0209392234184491,
+      "byte_identity": "same size and FNV across8blocks"
+    },
+    {
+      "cell": "click-mono-q5",
+      "pooled_median_ms": {
+        "baseline": 1.1255,
+        "candidate": 1.0539999999999998
+      },
+      "candidate_vs_baseline": 0.936472678809418,
+      "paired_ratios": [
+        0.7228335625859698,
+        0.9094076655052266,
+        0.9489247311827955,
+        0.9496402877697842
+      ],
+      "median_pair_ratio": 0.929166198344011,
+      "byte_identity": "same size and FNV across8blocks"
+    }
+  ],
+  "rows": [
+    {"cell":"lecture-st-lc128","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276155","cpu0_khz":"5145331"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276156","cpu0_khz":"5146321"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.377,"p95_ms":2.402,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.368,2.373,2.375,2.377,2.382,2.386,2.402]},
+    {"cell":"lecture-st-lc128","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276156","cpu0_khz":"5146321"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276157","cpu0_khz":"5142633"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.339,"p95_ms":2.347,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.332,2.332,2.333,2.339,2.341,2.344,2.347]},
+    {"cell":"lecture-st-lc128","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276157","cpu0_khz":"5142633"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276158","cpu0_khz":"5145629"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.329,"p95_ms":2.345,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.323,2.327,2.327,2.329,2.331,2.335,2.345]},
+    {"cell":"lecture-st-lc128","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276158","cpu0_khz":"5145629"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276159","cpu0_khz":"5141642"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.363,"p95_ms":2.382,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.359,2.36,2.362,2.363,2.37,2.371,2.382]},
+    {"cell":"lecture-st-lc128","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276159","cpu0_khz":"5141642"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5747 2276169","cpu0_khz":"5129056"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.335,"p95_ms":2.405,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.33,2.334,2.335,2.335,2.337,2.354,2.405]},
+    {"cell":"lecture-st-lc128","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 7/5747 2276169","cpu0_khz":"5129056"},"host_after":{"loadavg":"8.20 5.81 5.82 8/5742 2276178","cpu0_khz":"5145355"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.371,"p95_ms":2.47,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.357,2.364,2.366,2.371,2.378,2.383,2.47]},
+    {"cell":"lecture-st-lc128","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276178","cpu0_khz":"5142146"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276189","cpu0_khz":"5145183"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.367,"p95_ms":2.443,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.355,2.359,2.36,2.367,2.367,2.379,2.443]},
+    {"cell":"lecture-st-lc128","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276189","cpu0_khz":"5145183"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276191","cpu0_khz":"5141329"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.339,"p95_ms":2.344,"bytes":33358,"fnv1a":"3f80b95916a17b94","samples_ms":[2.328,2.331,2.331,2.339,2.339,2.342,2.344]},
+    {"cell":"lecture-st-lc64","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276191","cpu0_khz":"5141329"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5742 2276194","cpu0_khz":"5145320"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.786,"p95_ms":2.802,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.78,2.782,2.784,2.786,2.787,2.789,2.802]},
+    {"cell":"lecture-st-lc64","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276194","cpu0_khz":"5145320"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276195","cpu0_khz":"5125424"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.804,"p95_ms":2.997,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.79,2.792,2.8,2.804,2.804,2.821,2.997]},
+    {"cell":"lecture-st-lc64","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276195","cpu0_khz":"5125424"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276196","cpu0_khz":"5145933"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.812,"p95_ms":2.816,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.8,2.808,2.81,2.812,2.813,2.814,2.816]},
+    {"cell":"lecture-st-lc64","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276196","cpu0_khz":"5145933"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276197","cpu0_khz":"5145588"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.783,"p95_ms":2.792,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.776,2.78,2.781,2.783,2.784,2.785,2.792]},
+    {"cell":"lecture-st-lc64","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276197","cpu0_khz":"5145588"},"host_after":{"loadavg":"8.20 5.81 5.82 11/5741 2276198","cpu0_khz":"5146165"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.798,"p95_ms":2.826,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.789,2.794,2.796,2.798,2.805,2.822,2.826]},
+    {"cell":"lecture-st-lc64","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 9/5741 2276198","cpu0_khz":"5146165"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276199","cpu0_khz":"5146866"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.78,"p95_ms":2.801,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.776,2.777,2.778,2.78,2.781,2.791,2.801]},
+    {"cell":"lecture-st-lc64","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276199","cpu0_khz":"5146866"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5742 2276201","cpu0_khz":"5142545"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.778,"p95_ms":2.835,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.77,2.771,2.772,2.778,2.779,2.78,2.835]},
+    {"cell":"lecture-st-lc64","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276201","cpu0_khz":"5142545"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276202","cpu0_khz":"5146258"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.805,"p95_ms":2.812,"bytes":17053,"fnv1a":"6a4b700c77c031cb","samples_ms":[2.8,2.801,2.805,2.805,2.805,2.807,2.812]},
+    {"cell":"lecture-st-q5","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276202","cpu0_khz":"5146258"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5742 2276203","cpu0_khz":"5146141"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.203,"p95_ms":2.215,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.196,2.199,2.202,2.203,2.203,2.204,2.215]},
+    {"cell":"lecture-st-q5","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276203","cpu0_khz":"5147055"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276204","cpu0_khz":"5133750"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.207,"p95_ms":2.27,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.183,2.193,2.195,2.207,2.215,2.216,2.27]},
+    {"cell":"lecture-st-q5","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276204","cpu0_khz":"5133750"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276205","cpu0_khz":"5146634"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.193,"p95_ms":2.217,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.183,2.184,2.188,2.193,2.196,2.198,2.217]},
+    {"cell":"lecture-st-q5","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276205","cpu0_khz":"5146634"},"host_after":{"loadavg":"8.20 5.81 5.82 8/5742 2276207","cpu0_khz":"5145782"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.218,"p95_ms":2.269,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.212,2.212,2.214,2.218,2.224,2.254,2.269]},
+    {"cell":"lecture-st-q5","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 8/5742 2276207","cpu0_khz":"5145782"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276208","cpu0_khz":"5145443"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.186,"p95_ms":2.199,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.177,2.179,2.179,2.186,2.194,2.195,2.199]},
+    {"cell":"lecture-st-q5","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276208","cpu0_khz":"5145443"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276209","cpu0_khz":"5144870"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.213,"p95_ms":2.231,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.207,2.21,2.212,2.213,2.22,2.226,2.231]},
+    {"cell":"lecture-st-q5","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276209","cpu0_khz":"5143351"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276210","cpu0_khz":"5141777"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.216,"p95_ms":2.235,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.206,2.211,2.214,2.216,2.216,2.23,2.235]},
+    {"cell":"lecture-st-q5","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-st-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276210","cpu0_khz":"5141777"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276211","cpu0_khz":"5142464"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":2.189,"p95_ms":2.204,"bytes":4503,"fnv1a":"364c593eb4fd34c1","samples_ms":[2.184,2.185,2.186,2.189,2.196,2.197,2.204]},
+    {"cell":"lecture-mono-lc128","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276211","cpu0_khz":"5142464"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276212","cpu0_khz":"5146113"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.309,"p95_ms":1.332,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.305,1.308,1.309,1.309,1.316,1.323,1.332]},
+    {"cell":"lecture-mono-lc128","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276212","cpu0_khz":"5146309"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276213","cpu0_khz":"5144845"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.277,"p95_ms":1.303,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.27,1.272,1.277,1.277,1.288,1.29,1.303]},
+    {"cell":"lecture-mono-lc128","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276213","cpu0_khz":"5145961"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5741 2276214","cpu0_khz":"5145026"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.277,"p95_ms":1.287,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.265,1.273,1.275,1.277,1.282,1.283,1.287]},
+    {"cell":"lecture-mono-lc128","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276214","cpu0_khz":"5145026"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5742 2276216","cpu0_khz":"5144726"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.312,"p95_ms":1.359,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.308,1.31,1.312,1.312,1.318,1.34,1.359]},
+    {"cell":"lecture-mono-lc128","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 7/5742 2276216","cpu0_khz":"5144726"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276217","cpu0_khz":"5141860"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.275,"p95_ms":1.277,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.265,1.268,1.27,1.275,1.275,1.275,1.277]},
+    {"cell":"lecture-mono-lc128","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276217","cpu0_khz":"5141860"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276218","cpu0_khz":"5132134"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.316,"p95_ms":1.321,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.308,1.313,1.316,1.316,1.317,1.32,1.321]},
+    {"cell":"lecture-mono-lc128","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276218","cpu0_khz":"5132134"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276219","cpu0_khz":"5141768"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.314,"p95_ms":1.324,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.308,1.311,1.312,1.314,1.316,1.322,1.324]},
+    {"cell":"lecture-mono-lc128","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276219","cpu0_khz":"5141768"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276220","cpu0_khz":"5141480"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.237,"p95_ms":1.256,"bytes":33361,"fnv1a":"61dbc1e57c406d4f","samples_ms":[1.232,1.233,1.237,1.237,1.244,1.25,1.256]},
+    {"cell":"lecture-mono-lc64","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276220","cpu0_khz":"5144628"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276221","cpu0_khz":"5144567"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.586,"p95_ms":1.622,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.582,1.583,1.583,1.586,1.593,1.595,1.622]},
+    {"cell":"lecture-mono-lc64","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276221","cpu0_khz":"5144567"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5742 2276223","cpu0_khz":"5141541"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.573,"p95_ms":1.582,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.568,1.568,1.568,1.573,1.574,1.577,1.582]},
+    {"cell":"lecture-mono-lc64","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276223","cpu0_khz":"5141541"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276224","cpu0_khz":"5141959"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.57,"p95_ms":1.595,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.564,1.566,1.567,1.57,1.571,1.575,1.595]},
+    {"cell":"lecture-mono-lc64","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276224","cpu0_khz":"5142142"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276225","cpu0_khz":"5142251"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.594,"p95_ms":1.615,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.589,1.591,1.593,1.594,1.594,1.595,1.615]},
+    {"cell":"lecture-mono-lc64","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276225","cpu0_khz":"5142251"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5741 2276226","cpu0_khz":"5146420"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.569,"p95_ms":1.579,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.564,1.565,1.567,1.569,1.569,1.576,1.579]},
+    {"cell":"lecture-mono-lc64","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 8/5741 2276226","cpu0_khz":"5146420"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276227","cpu0_khz":"5141171"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.595,"p95_ms":1.612,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.591,1.594,1.595,1.595,1.601,1.607,1.612]},
+    {"cell":"lecture-mono-lc64","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276227","cpu0_khz":"5145193"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5741 2276228","cpu0_khz":"5142865"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.597,"p95_ms":1.618,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.591,1.592,1.594,1.597,1.598,1.606,1.618]},
+    {"cell":"lecture-mono-lc64","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276228","cpu0_khz":"5142865"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276229","cpu0_khz":"5142508"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":1.571,"p95_ms":1.599,"bytes":17062,"fnv1a":"cb363f0b8d33f4f9","samples_ms":[1.564,1.568,1.569,1.571,1.572,1.592,1.599]},
+    {"cell":"lecture-mono-q5","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276229","cpu0_khz":"5142508"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276230","cpu0_khz":"5134674"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.182,"p95_ms":1.198,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.162,1.17,1.179,1.182,1.186,1.189,1.198]},
+    {"cell":"lecture-mono-q5","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276230","cpu0_khz":"5137907"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5741 2276231","cpu0_khz":"5145446"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.144,"p95_ms":1.155,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.138,1.139,1.139,1.144,1.145,1.152,1.155]},
+    {"cell":"lecture-mono-q5","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276231","cpu0_khz":"5147150"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276232","cpu0_khz":"5146689"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.147,"p95_ms":1.158,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.134,1.139,1.142,1.147,1.15,1.151,1.158]},
+    {"cell":"lecture-mono-q5","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276232","cpu0_khz":"5146689"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276233","cpu0_khz":"5142024"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.163,"p95_ms":1.194,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.158,1.159,1.162,1.163,1.184,1.184,1.194]},
+    {"cell":"lecture-mono-q5","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276233","cpu0_khz":"5142024"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276234","cpu0_khz":"5146588"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.144,"p95_ms":1.164,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.134,1.136,1.143,1.144,1.148,1.159,1.164]},
+    {"cell":"lecture-mono-q5","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276234","cpu0_khz":"5144586"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276235","cpu0_khz":"5131233"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.172,"p95_ms":1.404,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.16,1.161,1.166,1.172,1.174,1.197,1.404]},
+    {"cell":"lecture-mono-q5","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276235","cpu0_khz":"5131233"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276236","cpu0_khz":"5142698"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.167,"p95_ms":1.18,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.165,1.165,1.166,1.167,1.17,1.176,1.18]},
+    {"cell":"lecture-mono-q5","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","lecture-mono-q5"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276236","cpu0_khz":"5143304"},"host_after":{"loadavg":"8.20 5.81 5.82 7/5741 2276237","cpu0_khz":"5146536"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.144,"p95_ms":1.156,"bytes":4144,"fnv1a":"109b71909ad0958a","samples_ms":[1.136,1.141,1.142,1.144,1.147,1.152,1.156]},
+    {"cell":"music-st-lc128","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5741 2276237","cpu0_khz":"5147054"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5741 2276238","cpu0_khz":"5142705"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.454,"p95_ms":6.49,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.428,6.436,6.44,6.454,6.458,6.465,6.49]},
+    {"cell":"music-st-lc128","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5741 2276238","cpu0_khz":"5145322"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276240","cpu0_khz":"5145717"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.128,"p95_ms":6.186,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.12,6.123,6.127,6.128,6.133,6.143,6.186]},
+    {"cell":"music-st-lc128","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276240","cpu0_khz":"5145717"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5742 2276242","cpu0_khz":"5145371"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.142,"p95_ms":6.203,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.116,6.123,6.14,6.142,6.144,6.145,6.203]},
+    {"cell":"music-st-lc128","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276242","cpu0_khz":"5146407"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276243","cpu0_khz":"5146005"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.429,"p95_ms":6.498,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.411,6.42,6.428,6.429,6.44,6.45,6.498]},
+    {"cell":"music-st-lc128","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276243","cpu0_khz":"5146454"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276244","cpu0_khz":"5145651"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.145,"p95_ms":6.227,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.135,6.137,6.143,6.145,6.149,6.152,6.227]},
+    {"cell":"music-st-lc128","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276244","cpu0_khz":"5145651"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276245","cpu0_khz":"5145458"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.43,"p95_ms":6.456,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.41,6.413,6.421,6.43,6.432,6.437,6.456]},
+    {"cell":"music-st-lc128","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 10/5742 2276245","cpu0_khz":"5146233"},"host_after":{"loadavg":"8.20 5.81 5.82 6/5742 2276246","cpu0_khz":"5138392"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.441,"p95_ms":6.471,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.405,6.422,6.44,6.441,6.442,6.447,6.471]},
+    {"cell":"music-st-lc128","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc128"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276246","cpu0_khz":"5138392"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276247","cpu0_khz":"5141416"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.177,"p95_ms":6.209,"bytes":33289,"fnv1a":"95393cd05fc554b6","samples_ms":[6.134,6.156,6.159,6.177,6.178,6.181,6.209]},
+    {"cell":"music-st-lc64","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 8/5742 2276247","cpu0_khz":"5142076"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276248","cpu0_khz":"5145295"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.037,"p95_ms":5.059,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[5.022,5.025,5.028,5.037,5.039,5.056,5.059]},
+    {"cell":"music-st-lc64","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276248","cpu0_khz":"5145978"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276249","cpu0_khz":"5142884"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":4.953,"p95_ms":4.975,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[4.933,4.945,4.946,4.953,4.955,4.959,4.975]},
+    {"cell":"music-st-lc64","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276249","cpu0_khz":"5142400"},"host_after":{"loadavg":"8.20 5.81 5.82 8/5742 2276251","cpu0_khz":"4984443"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":4.917,"p95_ms":5.025,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[4.915,4.916,4.916,4.917,4.926,4.932,5.025]},
+    {"cell":"music-st-lc64","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 5/5742 2276251","cpu0_khz":"5037085"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276252","cpu0_khz":"5128609"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.011,"p95_ms":5.054,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[5.004,5.007,5.009,5.011,5.016,5.044,5.054]},
+    {"cell":"music-st-lc64","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276252","cpu0_khz":"5128609"},"host_after":{"loadavg":"8.20 5.81 5.82 5/5742 2276253","cpu0_khz":"5145843"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":4.961,"p95_ms":4.967,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[4.944,4.956,4.961,4.961,4.962,4.962,4.967]},
+    {"cell":"music-st-lc64","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.20 5.81 5.82 6/5742 2276253","cpu0_khz":"5145843"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5742 2276254","cpu0_khz":"5146241"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.006,"p95_ms":5.029,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[5.003,5.004,5.005,5.006,5.007,5.011,5.029]},
+    {"cell":"music-st-lc64","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 8/5742 2276254","cpu0_khz":"5146241"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5742 2276255","cpu0_khz":"5146630"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.02,"p95_ms":5.048,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[5.015,5.018,5.019,5.02,5.039,5.04,5.048]},
+    {"cell":"music-st-lc64","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5742 2276255","cpu0_khz":"5147072"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5742 2276256","cpu0_khz":"5147788"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":4.95,"p95_ms":4.963,"bytes":17076,"fnv1a":"fffc0ffa16e097dd","samples_ms":[4.935,4.937,4.947,4.95,4.951,4.96,4.963]},
+    {"cell":"music-st-q5","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5742 2276256","cpu0_khz":"5147597"},"host_after":{"loadavg":"8.03 5.81 5.82 7/5742 2276258","cpu0_khz":"5145887"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":5.038,"p95_ms":5.05,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[5.035,5.035,5.036,5.038,5.04,5.042,5.05]},
+    {"cell":"music-st-q5","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 7/5742 2276258","cpu0_khz":"5146368"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5741 2276259","cpu0_khz":"5146179"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.505,"p95_ms":4.516,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[4.49,4.49,4.503,4.505,4.509,4.513,4.516]},
+    {"cell":"music-st-q5","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 7/5741 2276259","cpu0_khz":"5146179"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5738 2276260","cpu0_khz":"5146954"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.514,"p95_ms":4.54,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[4.499,4.506,4.511,4.514,4.514,4.514,4.54]},
+    {"cell":"music-st-q5","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5738 2276260","cpu0_khz":"5148028"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5737 2276261","cpu0_khz":"5142951"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":5.059,"p95_ms":5.114,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[5.046,5.05,5.057,5.059,5.061,5.085,5.114]},
+    {"cell":"music-st-q5","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5737 2276261","cpu0_khz":"5142951"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5736 2276262","cpu0_khz":"5147342"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.519,"p95_ms":4.539,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[4.508,4.517,4.519,4.519,4.521,4.529,4.539]},
+    {"cell":"music-st-q5","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276262","cpu0_khz":"5147342"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5736 2276263","cpu0_khz":"5141734"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":5.03,"p95_ms":5.047,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[5.022,5.022,5.026,5.03,5.03,5.032,5.047]},
+    {"cell":"music-st-q5","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276263","cpu0_khz":"5142049"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5736 2276265","cpu0_khz":"5141770"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":5.015,"p95_ms":5.163,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[5.002,5.012,5.014,5.015,5.017,5.023,5.163]},
+    {"cell":"music-st-q5","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","music-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 7/5736 2276265","cpu0_khz":"5141770"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5736 2276266","cpu0_khz":"5147090"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.525,"p95_ms":4.595,"bytes":86529,"fnv1a":"ee6e57145ccadc87","samples_ms":[4.505,4.517,4.524,4.525,4.527,4.529,4.595]},
+    {"cell":"noise-st-lc128","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276266","cpu0_khz":"5147090"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5736 2276267","cpu0_khz":"5145834"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":7.065,"p95_ms":7.113,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[7.058,7.061,7.065,7.065,7.076,7.087,7.113]},
+    {"cell":"noise-st-lc128","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276267","cpu0_khz":"5146657"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5734 2276269","cpu0_khz":"5146404"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.749,"p95_ms":6.781,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[6.739,6.745,6.748,6.749,6.754,6.758,6.781]},
+    {"cell":"noise-st-lc128","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5734 2276269","cpu0_khz":"5146404"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5733 2276270","cpu0_khz":"5113758"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.777,"p95_ms":6.804,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[6.751,6.751,6.761,6.777,6.779,6.79,6.804]},
+    {"cell":"noise-st-lc128","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5733 2276270","cpu0_khz":"5127685"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5733 2276272","cpu0_khz":"5146574"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":7.076,"p95_ms":7.111,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[7.065,7.066,7.07,7.076,7.079,7.101,7.111]},
+    {"cell":"noise-st-lc128","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5733 2276272","cpu0_khz":"5146574"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5733 2276273","cpu0_khz":"5145721"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.776,"p95_ms":6.809,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[6.755,6.756,6.757,6.776,6.776,6.807,6.809]},
+    {"cell":"noise-st-lc128","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5733 2276273","cpu0_khz":"5146318"},"host_after":{"loadavg":"8.03 5.81 5.82 7/5733 2276274","cpu0_khz":"5146399"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":7.065,"p95_ms":7.09,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[7.05,7.063,7.063,7.065,7.075,7.08,7.09]},
+    {"cell":"noise-st-lc128","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5733 2276274","cpu0_khz":"5146399"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5732 2276276","cpu0_khz":"5122888"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":7.058,"p95_ms":7.087,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[7.044,7.048,7.053,7.058,7.061,7.064,7.087]},
+    {"cell":"noise-st-lc128","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5732 2276276","cpu0_khz":"5122888"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5733 2276278","cpu0_khz":"5146264"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":6.763,"p95_ms":6.798,"bytes":33285,"fnv1a":"747e939b7a7f1964","samples_ms":[6.755,6.756,6.757,6.763,6.764,6.783,6.798]},
+    {"cell":"noise-st-lc64","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5733 2276278","cpu0_khz":"5146264"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5733 2276279","cpu0_khz":"5145956"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.265,"p95_ms":5.319,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.255,5.261,5.262,5.265,5.267,5.275,5.319]},
+    {"cell":"noise-st-lc64","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5733 2276279","cpu0_khz":"5146729"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5732 2276280","cpu0_khz":"5147024"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.25,"p95_ms":5.351,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.238,5.244,5.245,5.25,5.256,5.29,5.351]},
+    {"cell":"noise-st-lc64","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5732 2276280","cpu0_khz":"5147024"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5733 2276282","cpu0_khz":"5145839"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.236,"p95_ms":5.243,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.217,5.218,5.23,5.236,5.24,5.242,5.243]},
+    {"cell":"noise-st-lc64","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5733 2276282","cpu0_khz":"5145839"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5733 2276283","cpu0_khz":"5145451"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.274,"p95_ms":5.301,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.259,5.266,5.271,5.274,5.274,5.285,5.301]},
+    {"cell":"noise-st-lc64","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5733 2276283","cpu0_khz":"5145783"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5733 2276284","cpu0_khz":"5144847"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.222,"p95_ms":5.298,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.218,5.219,5.22,5.222,5.228,5.241,5.298]},
+    {"cell":"noise-st-lc64","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5733 2276284","cpu0_khz":"5144847"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5734 2276286","cpu0_khz":"5145034"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.275,"p95_ms":5.31,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.263,5.27,5.272,5.275,5.277,5.279,5.31]},
+    {"cell":"noise-st-lc64","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5734 2276286","cpu0_khz":"5145424"},"host_after":{"loadavg":"8.03 5.81 5.82 7/5740 2276326","cpu0_khz":"5141489"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.273,"p95_ms":5.279,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.264,5.265,5.268,5.273,5.273,5.275,5.279]},
+    {"cell":"noise-st-lc64","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5738 2276328","cpu0_khz":"5140480"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5737 2276332","cpu0_khz":"5143284"},"channels":2,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":5.228,"p95_ms":5.235,"bytes":17107,"fnv1a":"fcde33a0d6f42216","samples_ms":[5.218,5.218,5.226,5.228,5.229,5.233,5.235]},
+    {"cell":"noise-st-q5","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5737 2276332","cpu0_khz":"5143284"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5736 2276333","cpu0_khz":"5144347"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.523,"p95_ms":4.551,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.476,4.484,4.52,4.523,4.526,4.54,4.551]},
+    {"cell":"noise-st-q5","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276333","cpu0_khz":"5145374"},"host_after":{"loadavg":"8.03 5.81 5.82 7/5736 2276334","cpu0_khz":"5140885"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.0,"p95_ms":4.014,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[3.991,3.995,4.0,4.0,4.001,4.002,4.014]},
+    {"cell":"noise-st-q5","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276334","cpu0_khz":"5140885"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5736 2276335","cpu0_khz":"5142096"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.031,"p95_ms":4.035,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.021,4.025,4.031,4.031,4.032,4.032,4.035]},
+    {"cell":"noise-st-q5","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5736 2276335","cpu0_khz":"5141356"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5736 2276336","cpu0_khz":"5144794"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.519,"p95_ms":4.525,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.512,4.513,4.518,4.519,4.519,4.524,4.525]},
+    {"cell":"noise-st-q5","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5736 2276336","cpu0_khz":"5144794"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5736 2276337","cpu0_khz":"5141388"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.031,"p95_ms":4.07,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.023,4.027,4.028,4.031,4.031,4.033,4.07]},
+    {"cell":"noise-st-q5","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5736 2276337","cpu0_khz":"5141388"},"host_after":{"loadavg":"8.03 5.81 5.82 9/5739 2276351","cpu0_khz":"5145749"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.513,"p95_ms":4.52,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.508,4.51,4.511,4.513,4.52,4.52,4.52]},
+    {"cell":"noise-st-q5","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 7/5739 2276351","cpu0_khz":"5146268"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5736 2276362","cpu0_khz":"5144481"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.524,"p95_ms":4.67,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.516,4.521,4.523,4.524,4.525,4.538,4.67]},
+    {"cell":"noise-st-q5","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","noise-st-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5736 2276362","cpu0_khz":"5145295"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5736 2276363","cpu0_khz":"5141090"},"channels":2,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":4.033,"p95_ms":4.04,"bytes":124998,"fnv1a":"701732f7dd4a30af","samples_ms":[4.028,4.03,4.031,4.033,4.034,4.036,4.04]},
+    {"cell":"click-mono-lc128","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5736 2276363","cpu0_khz":"5141090"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5740 2276368","cpu0_khz":"5125365"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.353,"p95_ms":3.379,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.338,3.339,3.344,3.353,3.355,3.362,3.379]},
+    {"cell":"click-mono-lc128","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 8/5740 2276368","cpu0_khz":"5125906"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5741 2276370","cpu0_khz":"5144762"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.372,"p95_ms":3.403,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.356,3.359,3.371,3.372,3.376,3.384,3.403]},
+    {"cell":"click-mono-lc128","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276370","cpu0_khz":"5146540"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276372","cpu0_khz":"5146365"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.316,"p95_ms":3.357,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.302,3.309,3.311,3.316,3.318,3.321,3.357]},
+    {"cell":"click-mono-lc128","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276372","cpu0_khz":"5146609"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276373","cpu0_khz":"5141186"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.295,"p95_ms":3.305,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.288,3.292,3.292,3.295,3.295,3.302,3.305]},
+    {"cell":"click-mono-lc128","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276373","cpu0_khz":"5141186"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276374","cpu0_khz":"5144714"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.326,"p95_ms":3.365,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.306,3.308,3.324,3.326,3.352,3.36,3.365]},
+    {"cell":"click-mono-lc128","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276374","cpu0_khz":"5144714"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276375","cpu0_khz":"5145320"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.296,"p95_ms":3.315,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.29,3.295,3.296,3.296,3.298,3.303,3.315]},
+    {"cell":"click-mono-lc128","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276375","cpu0_khz":"5145320"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276376","cpu0_khz":"5141069"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.354,"p95_ms":3.363,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.351,3.352,3.354,3.354,3.355,3.356,3.363]},
+    {"cell":"click-mono-lc128","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc128"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276376","cpu0_khz":"5141069"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276377","cpu0_khz":"5144306"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":3.317,"p95_ms":3.37,"bytes":24961,"fnv1a":"1e7dd4b4e4e582a1","samples_ms":[3.302,3.305,3.312,3.317,3.322,3.333,3.37]},
+    {"cell":"click-mono-lc64","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5741 2276377","cpu0_khz":"5144663"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276378","cpu0_khz":"5143900"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.013,"p95_ms":3.019,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[2.991,3.004,3.012,3.013,3.014,3.014,3.019]},
+    {"cell":"click-mono-lc64","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276378","cpu0_khz":"5144205"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5741 2276379","cpu0_khz":"5143880"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.079,"p95_ms":3.081,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[3.074,3.075,3.077,3.079,3.08,3.081,3.081]},
+    {"cell":"click-mono-lc64","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5741 2276379","cpu0_khz":"5143475"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276380","cpu0_khz":"5142171"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.064,"p95_ms":3.071,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[3.061,3.061,3.062,3.064,3.066,3.069,3.071]},
+    {"cell":"click-mono-lc64","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276380","cpu0_khz":"5140124"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276381","cpu0_khz":"5140713"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.004,"p95_ms":3.024,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[2.998,3.001,3.004,3.004,3.008,3.01,3.024]},
+    {"cell":"click-mono-lc64","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276381","cpu0_khz":"5140713"},"host_after":{"loadavg":"8.03 5.81 5.82 6/5742 2276383","cpu0_khz":"5142327"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.02,"p95_ms":3.069,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[3.015,3.015,3.017,3.02,3.032,3.059,3.069]},
+    {"cell":"click-mono-lc64","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 6/5742 2276383","cpu0_khz":"5144154"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276384","cpu0_khz":"5140549"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.972,"p95_ms":3.046,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[2.964,2.966,2.97,2.972,2.975,2.982,3.046]},
+    {"cell":"click-mono-lc64","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276384","cpu0_khz":"5141166"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276385","cpu0_khz":"5143845"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":2.951,"p95_ms":2.976,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[2.943,2.943,2.947,2.951,2.957,2.964,2.976]},
+    {"cell":"click-mono-lc64","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-lc64"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5741 2276385","cpu0_khz":"5143941"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5741 2276386","cpu0_khz":"5141020"},"channels":1,"duration_seconds":2.0,"bitrate_bps":64000,"median_ms":3.045,"p95_ms":3.048,"bytes":12484,"fnv1a":"3d7fbb6c3852d201","samples_ms":[3.043,3.044,3.045,3.045,3.045,3.046,3.048]},
+    {"cell":"click-mono-q5","block":0,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276386","cpu0_khz":"5141020"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276387","cpu0_khz":"5142651"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.454,"p95_ms":1.491,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.429,1.441,1.445,1.454,1.455,1.456,1.491]},
+    {"cell":"click-mono-q5","block":1,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276387","cpu0_khz":"5141666"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5741 2276388","cpu0_khz":"5144487"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.051,"p95_ms":1.062,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.047,1.047,1.048,1.051,1.051,1.062,1.062]},
+    {"cell":"click-mono-q5","block":2,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5741 2276388","cpu0_khz":"5144487"},"host_after":{"loadavg":"8.03 5.81 5.82 8/5746 2276395","cpu0_khz":"5142309"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.044,"p95_ms":1.069,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.04,1.041,1.041,1.044,1.053,1.055,1.069]},
+    {"cell":"click-mono-q5","block":3,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 10/5746 2276395","cpu0_khz":"5141930"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5760 2276411","cpu0_khz":"5145797"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.148,"p95_ms":1.179,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.125,1.126,1.148,1.148,1.149,1.173,1.179]},
+    {"cell":"click-mono-q5","block":4,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5760 2276411","cpu0_khz":"5146215"},"host_after":{"loadavg":"8.03 5.81 5.82 5/5768 2276420","cpu0_khz":"5146065"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.059,"p95_ms":1.071,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.048,1.055,1.055,1.059,1.062,1.07,1.071]},
+    {"cell":"click-mono-q5","block":5,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 5/5768 2276420","cpu0_khz":"5146131"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5768 2276421","cpu0_khz":"5143642"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.116,"p95_ms":1.124,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.11,1.116,1.116,1.116,1.118,1.12,1.124]},
+    {"cell":"click-mono-q5","block":6,"variant":"baseline","command":["taskset","-c","0","/tmp/syom-guard-baseline/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 4/5768 2276421","cpu0_khz":"5141878"},"host_after":{"loadavg":"8.03 5.81 5.82 8/5769 2276423","cpu0_khz":"5145531"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.112,"p95_ms":1.143,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.106,1.107,1.11,1.112,1.115,1.117,1.143]},
+    {"cell":"click-mono-q5","block":7,"variant":"candidate","command":["taskset","-c","0","/tmp/syom-guard-candidate/lab/quality/target/release/syom_speed","7","click-mono-q5"],"host_before":{"loadavg":"8.03 5.81 5.82 8/5769 2276423","cpu0_khz":"5147346"},"host_after":{"loadavg":"8.03 5.81 5.82 4/5768 2276424","cpu0_khz":"5145630"},"channels":1,"duration_seconds":2.0,"bitrate_bps":128000,"median_ms":1.056,"p95_ms":1.081,"bytes":23402,"fnv1a":"da15f41c850dd7f9","samples_ms":[1.05,1.052,1.053,1.056,1.059,1.065,1.081]}
+  ]
+}

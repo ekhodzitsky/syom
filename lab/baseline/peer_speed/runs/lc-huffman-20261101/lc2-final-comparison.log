@@ -1,0 +1,114 @@
+block=0 voice128 baseline: 8.2805 ms
+block=0 voice128 candidate: 7.6421 ms
+block=0 voice128 fdk: 5.2134 ms
+block=0 voice24 baseline: 4.7039 ms
+block=0 voice24 candidate: 4.6928 ms
+block=0 voice24 fdk: 3.8950 ms
+block=0 lecture24 baseline: 0.3508 ms
+block=0 lecture24 candidate: 0.3318 ms
+block=0 lecture24 fdk: 0.4132 ms
+block=0 lecture-m24 baseline: 0.3548 ms
+block=0 lecture-m24 candidate: 0.3128 ms
+block=0 lecture-m24 fdk: 0.3803 ms
+block=1 voice128 baseline: 11.4069 ms
+block=1 voice128 fdk: 7.6318 ms
+block=1 voice128 candidate: 7.4745 ms
+block=1 voice24 baseline: 4.6565 ms
+block=1 voice24 fdk: 3.8936 ms
+block=1 voice24 candidate: 4.5990 ms
+block=1 lecture24 baseline: 0.3511 ms
+block=1 lecture24 fdk: 0.4109 ms
+block=1 lecture24 candidate: 0.3355 ms
+block=1 lecture-m24 baseline: 0.2131 ms
+block=1 lecture-m24 fdk: 0.2261 ms
+block=1 lecture-m24 candidate: 0.2057 ms
+block=2 voice128 candidate: 7.7049 ms
+block=2 voice128 baseline: 8.2253 ms
+block=2 voice128 fdk: 5.2928 ms
+block=2 voice24 candidate: 4.5906 ms
+block=2 voice24 baseline: 4.7690 ms
+block=2 voice24 fdk: 3.9499 ms
+block=2 lecture24 candidate: 0.3298 ms
+block=2 lecture24 baseline: 0.3517 ms
+block=2 lecture24 fdk: 0.4043 ms
+block=2 lecture-m24 candidate: 0.1958 ms
+block=2 lecture-m24 baseline: 0.2116 ms
+block=2 lecture-m24 fdk: 0.2260 ms
+block=3 voice128 candidate: 7.8243 ms
+block=3 voice128 fdk: 5.3782 ms
+block=3 voice128 baseline: 8.2445 ms
+block=3 voice24 candidate: 4.6172 ms
+block=3 voice24 fdk: 3.8769 ms
+block=3 voice24 baseline: 4.7242 ms
+block=3 lecture24 candidate: 0.4100 ms
+block=3 lecture24 fdk: 0.4083 ms
+block=3 lecture24 baseline: 0.3509 ms
+block=3 lecture-m24 candidate: 0.2661 ms
+block=3 lecture-m24 fdk: 0.2300 ms
+block=3 lecture-m24 baseline: 0.3120 ms
+block=4 voice128 fdk: 5.4995 ms
+block=4 voice128 baseline: 8.3031 ms
+block=4 voice128 candidate: 7.5764 ms
+block=4 voice24 fdk: 4.7634 ms
+block=4 voice24 baseline: 4.7026 ms
+block=4 voice24 candidate: 4.3867 ms
+block=4 lecture24 fdk: 0.3979 ms
+block=4 lecture24 baseline: 0.3365 ms
+block=4 lecture24 candidate: 0.3223 ms
+block=4 lecture-m24 fdk: 0.2265 ms
+block=4 lecture-m24 baseline: 0.2134 ms
+block=4 lecture-m24 candidate: 0.1933 ms
+block=5 voice128 fdk: 5.4536 ms
+block=5 voice128 candidate: 10.3349 ms
+block=5 voice128 baseline: 7.8792 ms
+block=5 voice24 fdk: 3.7141 ms
+block=5 voice24 candidate: 4.5549 ms
+block=5 voice24 baseline: 6.2221 ms
+block=5 lecture24 fdk: 0.3928 ms
+block=5 lecture24 candidate: 0.3319 ms
+block=5 lecture24 baseline: 0.3392 ms
+block=5 lecture-m24 fdk: 0.2232 ms
+block=5 lecture-m24 candidate: 0.1977 ms
+block=5 lecture-m24 baseline: 0.2120 ms
+[
+  {
+    "cell": "voice128",
+    "pooled_median_ms": {
+      "baseline": 8.29645,
+      "candidate": 7.716200000000001,
+      "fdk": 5.412000000000001
+    },
+    "candidate_vs_baseline": 0.9300604475408157,
+    "at_or_below_fdk": false
+  },
+  {
+    "cell": "voice24",
+    "pooled_median_ms": {
+      "baseline": 4.72345,
+      "candidate": 4.5865,
+      "fdk": 3.88055
+    },
+    "candidate_vs_baseline": 0.9710063618753243,
+    "at_or_below_fdk": false
+  },
+  {
+    "cell": "lecture24",
+    "pooled_median_ms": {
+      "baseline": 0.3481,
+      "candidate": 0.3328,
+      "fdk": 0.40715
+    },
+    "candidate_vs_baseline": 0.9560471128985922,
+    "at_or_below_fdk": true
+  },
+  {
+    "cell": "lecture-m24",
+    "pooled_median_ms": {
+      "baseline": 0.2195,
+      "candidate": 0.20315,
+      "fdk": 0.22735
+    },
+    "candidate_vs_baseline": 0.925512528473804,
+    "at_or_below_fdk": true
+  }
+]

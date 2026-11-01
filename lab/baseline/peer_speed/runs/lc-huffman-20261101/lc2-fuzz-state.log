@@ -1,0 +1,12 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom)
+   Compiling syom-lab-fuzz v0.0.0 (/home/ekhodzitsky/Projects/syom/lab/fuzz)
+    Finished `release` profile [optimized] target(s) in 9.48s
+     Running `lab/fuzz/target/release/syom_fuzz_state --seconds 30 --seed 1123`
+syom-lab-fuzz-state TASK-103
+seed 1123
+iters 25229
+wall_ms 30096
+panics 0

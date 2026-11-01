@@ -1,0 +1,201 @@
+[
+  {
+    "step": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "returncode": 0,
+    "wall_seconds": 4.279728259003605,
+    "log": "lc2-final-fmt.log",
+    "original_log": "syom-lc2-final-fmt.log"
+  },
+  {
+    "step": "size",
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.02973823899810668,
+    "log": "lc2-final-size.log",
+    "original_log": "syom-lc2-final-size.log"
+  },
+  {
+    "step": "changelog",
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.01970135999727063,
+    "log": "lc2-final-changelog.log",
+    "original_log": "syom-lc2-final-changelog.log"
+  },
+  {
+    "step": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "returncode": 0,
+    "wall_seconds": 5.523512459010817,
+    "log": "lc2-final-clippy.log",
+    "original_log": "syom-lc2-final-clippy.log"
+  },
+  {
+    "step": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "returncode": 0,
+    "wall_seconds": 44.395603480006685,
+    "log": "lc2-final-tests.log",
+    "original_log": "syom-lc2-final-tests.log"
+  },
+  {
+    "step": "docs",
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "returncode": 0,
+    "wall_seconds": 1.47011338500306,
+    "log": "lc2-final-docs.log",
+    "original_log": "syom-lc2-final-docs.log"
+  },
+  {
+    "step": "package",
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "returncode": 0,
+    "wall_seconds": 3.124192262010183,
+    "log": "lc2-final-package.log",
+    "original_log": "syom-lc2-final-package.log"
+  },
+  {
+    "step": "msrv",
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "returncode": 0,
+    "wall_seconds": 45.55264540699136,
+    "log": "lc2-final-msrv.log",
+    "original_log": "syom-lc2-final-msrv.log"
+  },
+  {
+    "step": "consumer",
+    "command": [
+      "python3",
+      "lab/consume/run.py"
+    ],
+    "returncode": 0,
+    "wall_seconds": 11.246135080000386,
+    "log": "lc2-final-consumer.log",
+    "original_log": "syom-lc2-final-consumer.log"
+  },
+  {
+    "step": "fuzz",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--manifest-path",
+      "lab/fuzz/Cargo.toml",
+      "--bin",
+      "syom_fuzz_state",
+      "--",
+      "--seconds",
+      "30",
+      "--seed",
+      "1124"
+    ],
+    "returncode": 0,
+    "wall_seconds": 37.70970729600231,
+    "log": "lc2-final-fuzz.log",
+    "original_log": "syom-lc2-final-fuzz.log"
+  },
+  {
+    "step": "peer-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--manifest-path",
+      "lab/baseline/peer_speed/Cargo.toml"
+    ],
+    "returncode": 0,
+    "wall_seconds": 21.920834358999855,
+    "log": "lc2-final-peer-build.log",
+    "original_log": "syom-lc2-final-peer-build.log"
+  },
+  {
+    "step": "stack-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--manifest-path",
+      "lab/footprint/Cargo.toml",
+      "--bin",
+      "stack"
+    ],
+    "returncode": 0,
+    "wall_seconds": 26.287381762987934,
+    "log": "lc2-final-stack-build.log",
+    "original_log": "syom-lc2-final-stack-build.log"
+  },
+  {
+    "step": "stack-enc-lc",
+    "command": [
+      "lab/footprint/target/release/stack",
+      "enc-lc",
+      "128"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.008054334000917152,
+    "log": "lc2-final-stack-enc-lc.log",
+    "original_log": "syom-lc2-final-stack-enc-lc.log"
+  },
+  {
+    "step": "stack-enc-he2",
+    "command": [
+      "lab/footprint/target/release/stack",
+      "enc-he2",
+      "128"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.007269333000294864,
+    "log": "lc2-final-stack-enc-he2.log",
+    "original_log": "syom-lc2-final-stack-enc-he2.log"
+  },
+  {
+    "step": "stack-enc-mc",
+    "command": [
+      "lab/footprint/target/release/stack",
+      "enc-mc",
+      "128"
+    ],
+    "returncode": 0,
+    "wall_seconds": 0.008994816002086736,
+    "log": "lc2-final-stack-enc-mc.log",
+    "original_log": "syom-lc2-final-stack-enc-mc.log"
+  }
+]
