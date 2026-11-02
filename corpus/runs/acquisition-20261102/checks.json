@@ -1,0 +1,99 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 3.97,
+    "log": "check-0.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.03,
+    "log": "check-1.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.02,
+    "log": "check-2.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 0.12,
+    "log": "check-3.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 28.78,
+    "log": "check-4.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 1.27,
+    "log": "check-5.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "seconds": 13.29,
+    "log": "check-6.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "seconds": 4.82,
+    "log": "check-7.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.0,
+    "log": "check-8.log"
+  }
+]

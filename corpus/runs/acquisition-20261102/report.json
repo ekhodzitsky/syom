@@ -1,0 +1,138 @@
+{
+  "timestamp_utc": "2026-11-02T11:37:27.660567+00:00",
+  "base_commit": "65776e9866a4a2f50100542baf8ed1be0cee4770",
+  "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "commands": [
+    {
+      "command": [
+        "python3",
+        "scripts/acquire_librispeech_holdouts.py"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "librispeech-offline.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/acquire_catalog_holdouts.py",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "catalog-offline.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/build_corpus_manifest.py"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "regenerate.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "inventory-only.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py",
+        "--acquisitions",
+        "target/corpus-cache/librispeech-acquisitions.json",
+        "--acquisitions",
+        "target/corpus-cache/catalog-acquisitions.json"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "local-availability.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py",
+        "--acquisitions",
+        "target/corpus-cache/librispeech-acquisitions.json",
+        "--acquisitions",
+        "target/corpus-cache/catalog-acquisitions.json",
+        "--require-holdouts"
+      ],
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "log": "strict-readiness.log"
+    }
+  ],
+  "registered_holdouts": 8,
+  "hash_verified_excerpts": 6,
+  "missing": [
+    "nat-cv-ar",
+    "nat-cv-ja"
+  ],
+  "inventory_regeneration_preserved_receipts": true,
+  "inventory_sha256": "f229fcdbee1b956777f500e4cac4ec6e3e264a1dbbbcb0b8f6451965d779a339",
+  "offline_pcm_hashes_reproduced": true,
+  "scope": "Source acquisition only. No AAC encodes, listening or SOTA qualification. Receipts preserve actual native source shapes; base inventory is unchanged.",
+  "rows": [
+    {
+      "id": "nat-librispeech-1580",
+      "recording_id": "openslr12-spk-1580",
+      "sha256": "c57b7ebe50c7549622e17a390e233fe26552a2c8e077d6a2faa21003ba5a10aa",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-1580.f32le",
+      "rate": 16000,
+      "channels": 1,
+      "samples_per_channel": 192000
+    },
+    {
+      "id": "nat-librispeech-1995",
+      "recording_id": "openslr12-spk-1995",
+      "sha256": "c2b9ee5ce2e3e6438ef605513260db0e43ae137190a70beeb1973f2ed68efe62",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-1995.f32le",
+      "rate": 16000,
+      "channels": 1,
+      "samples_per_channel": 192000
+    },
+    {
+      "id": "nat-librispeech-2094",
+      "recording_id": "openslr12-spk-2094",
+      "sha256": "8b4139efbf7d748c308582fb0b08e3334d67e20110ccb95000d7c5467bd82330",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-2094.f32le",
+      "rate": 16000,
+      "channels": 1,
+      "samples_per_channel": 192000
+    },
+    {
+      "id": "nat-librivox-war",
+      "recording_id": "librivox-war-of-the-worlds",
+      "sha256": "f5b98e992fc2575fdf1963ad64b60b7f832ff45031874eb62293de71af9ddc2a",
+      "cache_path": "target/corpus-cache/catalog/nat-librivox-war/first-12s-native.f32",
+      "rate": 44100,
+      "channels": 1,
+      "samples_per_channel": 529200
+    },
+    {
+      "id": "nat-musopen-chopin",
+      "recording_id": "musopen-chopin-op28",
+      "sha256": "1ccce934655da67cb547d55fafd116f7b3306d428efc52c4bd87bc9aff2d5a57",
+      "cache_path": "target/corpus-cache/catalog/nat-musopen-chopin/first-12s-native.f32",
+      "rate": 48000,
+      "channels": 2,
+      "samples_per_channel": 576000
+    },
+    {
+      "id": "nat-fma-percussion",
+      "recording_id": "fma-cc0-percussion",
+      "sha256": "9e99f475ec242c53c09670544e0da1f7118d09bb39e516a6f2a819119405e459",
+      "cache_path": "target/corpus-cache/catalog/nat-fma-percussion/first-12s-native.f32",
+      "rate": 44100,
+      "channels": 2,
+      "samples_per_channel": 529200
+    }
+  ]
+}

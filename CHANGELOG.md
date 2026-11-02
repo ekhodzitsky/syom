@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Keep local natural-corpus acquisition receipts separate from the generated
+  inventory; verify multiple batches without changing registered splits.
+  Reproducible acquisition tools retain fixed source selections and hashes;
+  recordings and PCM remain outside the published crate and Git history.
 - Local evaluation tools distinguish registered natural recordings from
   hash-verified files and provide an opt-in strict eight-holdout check.
   HE development comparisons reject truncated reference scoring and retain

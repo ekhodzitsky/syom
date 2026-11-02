@@ -49,9 +49,41 @@ the default inventory check still allows missing optional natural assets.
 
 Hash verification establishes byte availability and integrity, not audio format,
 duration, source/license provenance, or readiness of a listening study. Those
-require acquisition records and the listening protocol. The manifest generator
-currently resets natural acquisition fields; do not regenerate it over local
-acquisition metadata without preserving that metadata separately.
+require acquisition records and the listening protocol.
+
+## Local acquisition receipts
+
+See [source acquisition](ACQUISITION.md) for the pinned selection plan, local
+commands, attribution records and remaining listening-study limits.
+
+Keep local availability in a detached receipt, for example
+`target/corpus-cache/acquisitions.json`, rather than editing the generated
+inventory. The receipt has integer `version: 1` and a `records` list. Each
+record requires the registered `id` and `recording_id`, a 64-digit hexadecimal
+`sha256`, and a `cache_path` (absolute or repository-root-relative). Additional
+source-file, transformation and attribution metadata may be kept in that
+receipt; it is not automatically validated as provenance.
+
+```sh
+python3 scripts/verify_corpus.py --acquisitions target/corpus-cache/acquisitions.json
+python3 scripts/verify_corpus.py --acquisitions target/corpus-cache/acquisitions.json --require-holdouts
+python3 -m unittest discover -s scripts -p test_corpus_acquisition.py
+```
+
+`--acquisitions` is repeatable for separate acquisition batches; duplicate IDs
+across receipts are rejected. An explicit receipt requires every listed file to
+exist and match its hash,
+even without the eight-holdout option. A partial receipt can verify three
+available files while the strict eight-holdout check still fails. The overlay
+only updates `sha256`, `cache_path` and `presence=acquired-local` in memory;
+it cannot change split, source identity, registered rate/layout or license.
+Unknown or duplicate IDs and recording-identity mismatches are errors.
+
+The base manifest and receipt are never modified by verification. Regenerating
+`corpus/manifest.json` leaves detached receipts intact. Default verification
+without `--acquisitions` continues to report the portable registered inventory,
+not another machine's local cache. Keep receipt paths and audio under ignored
+`target/` or outside the repository; commit only reviewed textual evidence.
 
 ## Syntax inventory (not ISO 14496-26)
 

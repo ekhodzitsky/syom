@@ -1,0 +1,59 @@
+{
+  "verified_utc": "2026-11-02T11:26:08.442661+00:00",
+  "audio_downloaded": false,
+  "codec_outputs_opened": false,
+  "metadata_receipts": {
+    "musopen-chopin-metadata.json": {
+      "sha256": "0561baa9d314adcc14a785e66f35970571b8e1e95d37be58bfb621ce17671c65",
+      "bytes": 234804
+    },
+    "librivox-metadata.raw": {
+      "sha256": "13fcd9d6ef2fd7e506113dcb7f94fe932c9fd931ac5e288f633175da4b5394bf",
+      "bytes": 62087
+    },
+    "johnbartmann-music.html": {
+      "sha256": "6cfa41e7d38a587ddf6581a1877c2910c1b49e661b7aeda1e8d4b7ffaa6acb5a",
+      "bytes": 354078
+    },
+    "johnbartmann-music-page.js": {
+      "sha256": "4af270b8f7189d24e87fa4952f2224c00c652664c718e21cab806266cb5475bf",
+      "bytes": 409127
+    }
+  },
+  "primary_sources": {
+    "libriVox": "https://librivox.org/the-war-of-the-worlds-by-h-g-wells/",
+    "musopen": "https://archive.org/details/musopen-chopin",
+    "cv_ar": "https://mozilladatacollective.com/datasets/cmu5wom3z00ceo107guxtg4xa",
+    "cv_ja": "https://mozilladatacollective.com/datasets/cmu5xbhnf00fmnq07z9p3aa70",
+    "cv_access": "https://mozilladatacollective.com/api-reference/docs",
+    "fma_track": "https://freemusicarchive.org/music/John_Bartmann/hot-equatorial-night/congo-bongo-stomp/",
+    "author_track_catalog": "https://www.johnbartmann.com/music",
+    "author_download_script": "https://www.johnbartmann.com/_next/static/chunks/app/music/page-e08d322c8e81f275.js"
+  },
+  "candidate_fma_record": {
+    "title": "Congo Bongo Stomp",
+    "author": "John Bartmann",
+    "id_in_author_catalog": 265,
+    "license_in_author_catalog": "CC0",
+    "source_url": "https://track.johnbartmann.com/congo-bongo-stomp-master.mp3",
+    "source_filename": "congo-bongo-stomp-master.mp3",
+    "metadata_duration": "3:10",
+    "catalog_instruments": [
+      "electronic-beat",
+      "horns",
+      "double-bass"
+    ],
+    "fma_byte_equivalence": "not verified; author-distributed master, FMAcatalog same title",
+    "amendment_required": "formerly generic CC0 percussion source now exact track selection; source class metadata not independently listened/qualified"
+  },
+  "common_voice": {
+    "release": "cv-corpus-27.0-2026-09-11",
+    "release_date": "2026-09-17",
+    "arabic_dataset_id": "cmu5wom3z00ceo107guxtg4xa",
+    "japanese_dataset_id": "cmu5xbhnf00fmnq07z9p3aa70",
+    "arabic_archive_name": "common-voice-scripted-speech-27-0-arabic-b05a34b5.tar.gz",
+    "japanese_archive_name": "common-voice-scripted-speech-27-0-japane-ea5ad4e9.tar.gz",
+    "license": "CC0-1.0",
+    "access_blocker": "Official API requires key and terms agreement via web UI; no credentials or agreement supplied/used; individual clip selection remains pending release acquisition."
+  }
+}

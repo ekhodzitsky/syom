@@ -40,11 +40,11 @@
   "unresolved_records": [
     {
       "id": "nat-cv-ar",
-      "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
+      "reason": "Pinned release and metadata-only selection rule; authorized source archive access and exact selected member receipts still missing"
     },
     {
       "id": "nat-cv-ja",
-      "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
+      "reason": "Pinned release and metadata-only selection rule; authorized source archive access and exact selected member receipts still missing"
     }
   ],
   "constraints": [
@@ -107,5 +107,28 @@
       "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
       "caveat": "Lossy MP3 source, no published source checksum located; local SHA-256 is an acquisition receipt, not independently authenticated upstream integrity."
     }
-  ]
+  ],
+  "common_voice": {
+    "release": "cv-corpus-27.0-2026-09-11",
+    "license": "CC0-1.0",
+    "access_reference": "https://mozilladatacollective.com/api-reference/docs",
+    "access_state": "Not obtained: official API requires an API key and prior dataset-specific terms acceptance in the web interface. No credentials supplied or terms accepted in this run.",
+    "selection": "After authorized archive acquisition: read validated.tsv metadata, deduplicate path column and sort file paths lexicographically; concatenate clips in that order at native 48000 Hz mono and retain first 576000 samples as interleaved f32le. Fail on missing files, other shapes, nonfinite or insufficient audio; do not skip by sound, silence, demographics or codec output. Store exact paths and source hashes. This rule does not guarantee one human speaker and is not phonetic coverage qualification.",
+    "records": [
+      {
+        "id": "nat-cv-ar",
+        "recording_id": "commonvoice-ar-corpus",
+        "dataset_id": "cmu5wom3z00ceo107guxtg4xa",
+        "catalog_url": "https://mozilladatacollective.com/datasets/cmu5wom3z00ceo107guxtg4xa",
+        "archive_filename": "common-voice-scripted-speech-27-0-arabic-b05a34b5.tar.gz"
+      },
+      {
+        "id": "nat-cv-ja",
+        "recording_id": "commonvoice-ja-corpus",
+        "dataset_id": "cmu5xbhnf00fmnq07z9p3aa70",
+        "catalog_url": "https://mozilladatacollective.com/datasets/cmu5xbhnf00fmnq07z9p3aa70",
+        "archive_filename": "common-voice-scripted-speech-27-0-japane-ea5ad4e9.tar.gz"
+      }
+    ]
+  }
 }

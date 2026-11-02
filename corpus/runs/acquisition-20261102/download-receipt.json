@@ -1,0 +1,67 @@
+{
+  "url": "https://openslr.elda.org/resources/12/test-clean.tar.gz",
+  "bytes": 346663984,
+  "md5": "32fa31d27d2e1cad72775fee3f4849a9",
+  "sha256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23",
+  "ranges": 8,
+  "retry_commands": [
+    {
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "--retry",
+        "2",
+        "--connect-timeout",
+        "15",
+        "--max-time",
+        "600",
+        "--range",
+        "43332998-86665995",
+        "--output",
+        "target/corpus-cache/openslr12/chunk-1.part",
+        "https://openslr.elda.org/resources/12/test-clean.tar.gz"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "--retry",
+        "2",
+        "--connect-timeout",
+        "15",
+        "--max-time",
+        "600",
+        "--range",
+        "216664990-259997987",
+        "--output",
+        "target/corpus-cache/openslr12/chunk-5.part",
+        "https://openslr.elda.org/resources/12/test-clean.tar.gz"
+      ],
+      "exit_code": 0
+    },
+    {
+      "command": [
+        "curl",
+        "--fail",
+        "--location",
+        "--retry",
+        "2",
+        "--connect-timeout",
+        "15",
+        "--max-time",
+        "600",
+        "--range",
+        "129998994-173331991",
+        "--output",
+        "target/corpus-cache/openslr12/chunk-3.part",
+        "https://openslr.elda.org/resources/12/test-clean.tar.gz"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "note": "Initial five ranges completed; three timed out then completed in the bounded three-worker retry. Published MD5 validates complete combined archive."
+}

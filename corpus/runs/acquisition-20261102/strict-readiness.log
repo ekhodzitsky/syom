@@ -1,0 +1,6 @@
+natural excerpts: 24 registered / 6 hash-verified files; holdouts: 8 registered / 6 hash-verified files
+FAIL: corpus verification
+  - nat-cv-ar: needs a 64-digit hexadecimal SHA-256
+  - nat-cv-ar: needs a nonempty cache_path
+  - nat-cv-ja: needs a 64-digit hexadecimal SHA-256
+  - nat-cv-ja: needs a nonempty cache_path

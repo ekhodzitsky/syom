@@ -1,0 +1,232 @@
+{
+  "version": 1,
+  "plan_path": "corpus/acquisition-plan-v1.json",
+  "plan_sha256": "890b30147663fd248c85d017a1f3ee3a348141cef7bb648c6d905c37d42732a7",
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "ffprobe": "ffprobe version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2007-2024 the FFmpeg developers",
+  "records": [
+    {
+      "id": "nat-librivox-war",
+      "recording_id": "librivox-war-of-the-worlds",
+      "sha256": "f5b98e992fc2575fdf1963ad64b60b7f832ff45031874eb62293de71af9ddc2a",
+      "cache_path": "target/corpus-cache/catalog/nat-librivox-war/first-12s-native.f32",
+      "acquired_utc": "2026-11-02T11:37:26.623957+00:00",
+      "catalog_url": "https://librivox.org/the-war-of-the-worlds-by-h-g-wells/",
+      "metadata_url": "https://archive.org/metadata/waroftheworlds_2103_librivox",
+      "catalog_attribution": "The War of the Worlds (Version 5), H. G. Wells, reader Cliff Stone; LibriVox catalog 2021-03-12",
+      "license_url": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "license_scope_note": "LibriVox catalog states public domain in USA; no global legal clearance asserted",
+      "caveat": "Lossy MP3 source; not a lossless or original high-band reference.",
+      "source_url": "https://archive.org/download/waroftheworlds_2103_librivox/waroftheworlds_01_wells_128kb.mp3",
+      "source_filename": "waroftheworlds_01_wells_128kb.mp3",
+      "source_bytes": 14359913,
+      "source_sha256": "1cc306c7a644d46cf7be46a6250a4f2c280ebaf56f088c02bdb5ad2a55fccea0",
+      "source_pin_path": "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-librivox-war/source-sha256.txt",
+      "source_md5": "0b56b388e17016011da4e6453b323ba3",
+      "source_sha1": "e76bb373911ebd7fd937edce28c1798b5c42d3e0",
+      "source_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "channel_layout": "mono"
+          }
+        ],
+        "format": {
+          "duration": "897.201633"
+        }
+      },
+      "source_downloaded_this_run": false,
+      "rate": 44100,
+      "channels": 1,
+      "valid_samples": 529200,
+      "format": "interleaved f32le",
+      "finite_samples": true,
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "probe_command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=codec_name,sample_rate,channels,channel_layout:format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-librivox-war/waroftheworlds_01_wells_128kb.mp3"
+      ],
+      "decode_command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-librivox-war/waroftheworlds_01_wells_128kb.mp3",
+        "-map",
+        "0:a:0",
+        "-t",
+        "12",
+        "-c:a",
+        "pcm_f32le",
+        "-f",
+        "f32le",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-librivox-war/first-12s-native.f32.partial"
+      ],
+      "scope": "Source excerpt acquisition only; no audio listening, codec output, resampling, loudness normalization, quality or high-band qualification."
+    },
+    {
+      "id": "nat-musopen-chopin",
+      "recording_id": "musopen-chopin-op28",
+      "sha256": "1ccce934655da67cb547d55fafd116f7b3306d428efc52c4bd87bc9aff2d5a57",
+      "cache_path": "target/corpus-cache/catalog/nat-musopen-chopin/first-12s-native.f32",
+      "acquired_utc": "2026-11-02T11:37:26.701701+00:00",
+      "catalog_url": "https://archive.org/details/musopen-chopin",
+      "metadata_url": "https://archive.org/metadata/musopen-chopin",
+      "catalog_attribution": "Musopen - The Complete Chopin Collection; creator Aaron Dunn; primary Musopen uploader; public date 2015-01-29",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "license_scope_note": null,
+      "caveat": "Lossy MP3 source; not a lossless or original high-band reference.",
+      "source_url": "https://archive.org/download/musopen-chopin/Prelude%20Op.%2028%20no.%201.mp3",
+      "source_filename": "Prelude Op. 28 no. 1.mp3",
+      "source_bytes": 800976,
+      "source_sha256": "a22469156f43f84b0220d2fba39c8f720c6ff7e76e774c3eccc58189792f4524",
+      "source_pin_path": "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-musopen-chopin/source-sha256.txt",
+      "source_md5": "f78728cfbbd23cdafcfe02da27492257",
+      "source_sha1": "101856c495f84180dd8b55243773d25a1c3db00e",
+      "source_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "side_data_list": [
+              {}
+            ]
+          }
+        ],
+        "format": {
+          "duration": "39.864000"
+        }
+      },
+      "source_downloaded_this_run": false,
+      "rate": 48000,
+      "channels": 2,
+      "valid_samples": 576000,
+      "format": "interleaved f32le",
+      "finite_samples": true,
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "probe_command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=codec_name,sample_rate,channels,channel_layout:format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-musopen-chopin/Prelude Op. 28 no. 1.mp3"
+      ],
+      "decode_command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-musopen-chopin/Prelude Op. 28 no. 1.mp3",
+        "-map",
+        "0:a:0",
+        "-t",
+        "12",
+        "-c:a",
+        "pcm_f32le",
+        "-f",
+        "f32le",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-musopen-chopin/first-12s-native.f32.partial"
+      ],
+      "scope": "Source excerpt acquisition only; no audio listening, codec output, resampling, loudness normalization, quality or high-band qualification."
+    },
+    {
+      "id": "nat-fma-percussion",
+      "recording_id": "fma-cc0-percussion",
+      "sha256": "9e99f475ec242c53c09670544e0da1f7118d09bb39e516a6f2a819119405e459",
+      "cache_path": "target/corpus-cache/catalog/nat-fma-percussion/first-12s-native.f32",
+      "acquired_utc": "2026-11-02T11:37:27.031027+00:00",
+      "catalog_url": "https://freemusicarchive.org/music/John_Bartmann/hot-equatorial-night/congo-bongo-stomp/",
+      "metadata_url": "https://www.johnbartmann.com/music",
+      "catalog_attribution": "Congo Bongo Stomp, John Bartmann; FMA album Hot Equatorial Night; author site track ID 265, slug congo-bongo-stomp",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "license_scope_note": null,
+      "caveat": "Lossy MP3 source, no published source checksum located; local SHA-256 is an acquisition receipt, not independently authenticated upstream integrity.",
+      "source_url": "https://track.johnbartmann.com/congo-bongo-stomp-master.mp3",
+      "source_filename": "congo-bongo-stomp-master.mp3",
+      "source_bytes": 3449302,
+      "source_sha256": "6dda75eead422a48056a2e2a28430fcabdb7d02639a7722b982f6221ce00504c",
+      "source_pin_path": "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-fma-percussion/source-sha256.txt",
+      "source_md5": "110ebca1f15de82a091d4db94936e8e4",
+      "source_sha1": "43fca99c3cd78c9dcde80122164095c743300d90",
+      "source_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 2,
+            "channel_layout": "stereo"
+          }
+        ],
+        "format": {
+          "duration": "191.660408"
+        }
+      },
+      "source_downloaded_this_run": false,
+      "rate": 44100,
+      "channels": 2,
+      "valid_samples": 529200,
+      "format": "interleaved f32le",
+      "finite_samples": true,
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "probe_command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=codec_name,sample_rate,channels,channel_layout:format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-fma-percussion/congo-bongo-stomp-master.mp3"
+      ],
+      "decode_command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-fma-percussion/congo-bongo-stomp-master.mp3",
+        "-map",
+        "0:a:0",
+        "-t",
+        "12",
+        "-c:a",
+        "pcm_f32le",
+        "-f",
+        "f32le",
+        "/home/ekhodzitsky/Projects/syom/target/corpus-cache/catalog/nat-fma-percussion/first-12s-native.f32.partial"
+      ],
+      "scope": "Source excerpt acquisition only; no audio listening, codec output, resampling, loudness normalization, quality or high-band qualification."
+    }
+  ],
+  "failures": []
+}

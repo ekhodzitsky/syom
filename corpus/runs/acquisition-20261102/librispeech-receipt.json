@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "id": "nat-librispeech-1580",
+      "recording_id": "openslr12-spk-1580",
+      "sha256": "c57b7ebe50c7549622e17a390e233fe26552a2c8e077d6a2faa21003ba5a10aa",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-1580.f32le",
+      "format": {
+        "encoding": "f32le",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples_per_channel": 192000
+      },
+      "source_members": [
+        {
+          "member": "LibriSpeech/test-clean/1580/141083/1580-141083-0000.flac",
+          "sha256": "59123e88017e4bf645e39506a878b5734b3d94fe990018de25b712ba881cf7a5",
+          "decoded_samples": 143040,
+          "retained_samples": 143040,
+          "probe": [
+            {
+              "codec_name": "flac",
+              "sample_rate": "16000",
+              "channels": 1
+            }
+          ],
+          "probe_command": [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "json",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1580-141083-0000.flac"
+          ],
+          "decode_command": [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1580-141083-0000.flac",
+            "-f",
+            "f32le",
+            "-acodec",
+            "pcm_f32le",
+            "pipe:1"
+          ]
+        },
+        {
+          "member": "LibriSpeech/test-clean/1580/141083/1580-141083-0001.flac",
+          "sha256": "9914a442f04e4fed4a8144ec63326ec3b5f031ccd73203b1a9c309182a172ba7",
+          "decoded_samples": 164080,
+          "retained_samples": 48960,
+          "probe": [
+            {
+              "codec_name": "flac",
+              "sample_rate": "16000",
+              "channels": 1
+            }
+          ],
+          "probe_command": [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "json",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1580-141083-0001.flac"
+          ],
+          "decode_command": [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1580-141083-0001.flac",
+            "-f",
+            "f32le",
+            "-acodec",
+            "pcm_f32le",
+            "pipe:1"
+          ]
+        }
+      ],
+      "archive_hashes": {
+        "md5": "32fa31d27d2e1cad72775fee3f4849a9",
+        "sha256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23"
+      },
+      "tools": {
+        "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2007-2024 the FFmpeg developers",
+        "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+        "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43"
+      },
+      "catalog_url": "https://www.openslr.org/12/",
+      "archive_url": "https://openslr.trmal.net/resources/12/test-clean.tar.gz",
+      "license": "CC BY 4.0",
+      "attribution": "LibriSpeech ASR corpus, Vassil Panayotov and Daniel Povey; derived from LibriVox read audiobooks. Preserve archive LICENSE.TXT, README.TXT, SPEAKERS.TXT and CHAPTERS.TXT attribution metadata.",
+      "attribution_metadata_sha256": {
+        "LICENSE.TXT": "908b0b565ae9bf61b7b41447cb0b83564f320375723bcc884ec30e5537a0d5dc",
+        "README.TXT": "596ea41ecf75d10a0393f086d863d46d1a0b0afd6670717c352b8a46f42650bf",
+        "SPEAKERS.TXT": "3350f093382f8baa1d589c9f5a5cee8ec3705e656f521d6eafbaa31a5fcd8f76",
+        "CHAPTERS.TXT": "2e9db25c250a143b031ca003180acfce84b364e31fbc79250e306303e6f25306",
+        "BOOKS.TXT": "2e5a277207aeecad9f85db53f97e46320419c3d80e330d6524193b283ff5edb0"
+      },
+      "plan_sha256": "890b30147663fd248c85d017a1f3ee3a348141cef7bb648c6d905c37d42732a7",
+      "selection": "For each reserved speaker, order test-clean FLAC members by numeric chapter ID then numeric utterance ID, with member name as tie breaker. Decode in that order at native 16000 Hz mono, concatenate without inserted gaps, take the first 192000 samples. Do not skip silence, normalize loudness, listen, classify content or inspect encoder output. Fail rather than pad or substitute if insufficient samples or unexpected source shape."
+    },
+    {
+      "id": "nat-librispeech-1995",
+      "recording_id": "openslr12-spk-1995",
+      "sha256": "c2b9ee5ce2e3e6438ef605513260db0e43ae137190a70beeb1973f2ed68efe62",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-1995.f32le",
+      "format": {
+        "encoding": "f32le",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples_per_channel": 192000
+      },
+      "source_members": [
+        {
+          "member": "LibriSpeech/test-clean/1995/1826/1995-1826-0000.flac",
+          "sha256": "74596627a026feb72e3acba17ee9268f120ee25e9f4afb935bb2f3d3ba779e57",
+          "decoded_samples": 151760,
+          "retained_samples": 151760,
+          "probe": [
+            {
+              "codec_name": "flac",
+              "sample_rate": "16000",
+              "channels": 1
+            }
+          ],
+          "probe_command": [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "json",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1995-1826-0000.flac"
+          ],
+          "decode_command": [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1995-1826-0000.flac",
+            "-f",
+            "f32le",
+            "-acodec",
+            "pcm_f32le",
+            "pipe:1"
+          ]
+        },
+        {
+          "member": "LibriSpeech/test-clean/1995/1826/1995-1826-0001.flac",
+          "sha256": "56d8ebeb4138c7cc33c7f468aec078a3d76694b8759b1e860d876288f475e8ee",
+          "decoded_samples": 162720,
+          "retained_samples": 40240,
+          "probe": [
+            {
+              "codec_name": "flac",
+              "sample_rate": "16000",
+              "channels": 1
+            }
+          ],
+          "probe_command": [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "json",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1995-1826-0001.flac"
+          ],
+          "decode_command": [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/1995-1826-0001.flac",
+            "-f",
+            "f32le",
+            "-acodec",
+            "pcm_f32le",
+            "pipe:1"
+          ]
+        }
+      ],
+      "archive_hashes": {
+        "md5": "32fa31d27d2e1cad72775fee3f4849a9",
+        "sha256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23"
+      },
+      "tools": {
+        "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2007-2024 the FFmpeg developers",
+        "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+        "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43"
+      },
+      "catalog_url": "https://www.openslr.org/12/",
+      "archive_url": "https://openslr.trmal.net/resources/12/test-clean.tar.gz",
+      "license": "CC BY 4.0",
+      "attribution": "LibriSpeech ASR corpus, Vassil Panayotov and Daniel Povey; derived from LibriVox read audiobooks. Preserve archive LICENSE.TXT, README.TXT, SPEAKERS.TXT and CHAPTERS.TXT attribution metadata.",
+      "attribution_metadata_sha256": {
+        "LICENSE.TXT": "908b0b565ae9bf61b7b41447cb0b83564f320375723bcc884ec30e5537a0d5dc",
+        "README.TXT": "596ea41ecf75d10a0393f086d863d46d1a0b0afd6670717c352b8a46f42650bf",
+        "SPEAKERS.TXT": "3350f093382f8baa1d589c9f5a5cee8ec3705e656f521d6eafbaa31a5fcd8f76",
+        "CHAPTERS.TXT": "2e9db25c250a143b031ca003180acfce84b364e31fbc79250e306303e6f25306",
+        "BOOKS.TXT": "2e5a277207aeecad9f85db53f97e46320419c3d80e330d6524193b283ff5edb0"
+      },
+      "plan_sha256": "890b30147663fd248c85d017a1f3ee3a348141cef7bb648c6d905c37d42732a7",
+      "selection": "For each reserved speaker, order test-clean FLAC members by numeric chapter ID then numeric utterance ID, with member name as tie breaker. Decode in that order at native 16000 Hz mono, concatenate without inserted gaps, take the first 192000 samples. Do not skip silence, normalize loudness, listen, classify content or inspect encoder output. Fail rather than pad or substitute if insufficient samples or unexpected source shape."
+    },
+    {
+      "id": "nat-librispeech-2094",
+      "recording_id": "openslr12-spk-2094",
+      "sha256": "8b4139efbf7d748c308582fb0b08e3334d67e20110ccb95000d7c5467bd82330",
+      "cache_path": "target/corpus-cache/openslr12/nat-librispeech-2094.f32le",
+      "format": {
+        "encoding": "f32le",
+        "sample_rate": 16000,
+        "channels": 1,
+        "samples_per_channel": 192000
+      },
+      "source_members": [
+        {
+          "member": "LibriSpeech/test-clean/2094/142345/2094-142345-0000.flac",
+          "sha256": "557af1a29773cd4d78e62aa9e1ad55e2e46db5cde88b7a84c4692427df765279",
+          "decoded_samples": 361120,
+          "retained_samples": 192000,
+          "probe": [
+            {
+              "codec_name": "flac",
+              "sample_rate": "16000",
+              "channels": 1
+            }
+          ],
+          "probe_command": [
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,sample_rate,channels",
+            "-of",
+            "json",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/2094-142345-0000.flac"
+          ],
+          "decode_command": [
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/corpus-cache/openslr12/2094-142345-0000.flac",
+            "-f",
+            "f32le",
+            "-acodec",
+            "pcm_f32le",
+            "pipe:1"
+          ]
+        }
+      ],
+      "archive_hashes": {
+        "md5": "32fa31d27d2e1cad72775fee3f4849a9",
+        "sha256": "39fde525e59672dc6d1551919b1478f724438a95aa55f874b576be21967e6c23"
+      },
+      "tools": {
+        "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+        "ffprobe": "ffprobe version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2007-2024 the FFmpeg developers",
+        "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+        "host": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43"
+      },
+      "catalog_url": "https://www.openslr.org/12/",
+      "archive_url": "https://openslr.trmal.net/resources/12/test-clean.tar.gz",
+      "license": "CC BY 4.0",
+      "attribution": "LibriSpeech ASR corpus, Vassil Panayotov and Daniel Povey; derived from LibriVox read audiobooks. Preserve archive LICENSE.TXT, README.TXT, SPEAKERS.TXT and CHAPTERS.TXT attribution metadata.",
+      "attribution_metadata_sha256": {
+        "LICENSE.TXT": "908b0b565ae9bf61b7b41447cb0b83564f320375723bcc884ec30e5537a0d5dc",
+        "README.TXT": "596ea41ecf75d10a0393f086d863d46d1a0b0afd6670717c352b8a46f42650bf",
+        "SPEAKERS.TXT": "3350f093382f8baa1d589c9f5a5cee8ec3705e656f521d6eafbaa31a5fcd8f76",
+        "CHAPTERS.TXT": "2e9db25c250a143b031ca003180acfce84b364e31fbc79250e306303e6f25306",
+        "BOOKS.TXT": "2e5a277207aeecad9f85db53f97e46320419c3d80e330d6524193b283ff5edb0"
+      },
+      "plan_sha256": "890b30147663fd248c85d017a1f3ee3a348141cef7bb648c6d905c37d42732a7",
+      "selection": "For each reserved speaker, order test-clean FLAC members by numeric chapter ID then numeric utterance ID, with member name as tie breaker. Decode in that order at native 16000 Hz mono, concatenate without inserted gaps, take the first 192000 samples. Do not skip silence, normalize loudness, listen, classify content or inspect encoder output. Fail rather than pad or substitute if insufficient samples or unexpected source shape."
+    }
+  ]
+}

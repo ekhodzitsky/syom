@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from corpus_synth import sha256_of  # noqa: E402
+from corpus_acquisition import apply_acquisitions, load_acquisitions  # noqa: E402
 
 MANIFEST = ROOT / "corpus" / "manifest.json"
 REQUIRED_NATURAL = 24
@@ -199,6 +200,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--manifest", type=Path, default=MANIFEST)
     ap.add_argument(
+        "--acquisitions", type=Path, action="append",
+        help="apply a detached receipt and require its cached bytes (repeatable)",
+    )
+    ap.add_argument(
         "--require-holdouts",
         action="store_true",
         help="require exactly eight unique natural holdouts with hash-verified cache files",
@@ -212,8 +217,28 @@ def main() -> int:
     if not args.manifest.is_file():
         print(f"FAIL: missing manifest {args.manifest}", file=sys.stderr)
         return 1
-    man = load_manifest(args.manifest)
+    try:
+        man = load_manifest(args.manifest)
+        receipt = {"version": 1, "records": []}
+        seen_acquisitions: set[str] = set()
+        for path in args.acquisitions or []:
+            local = load_acquisitions(path)
+            man = apply_acquisitions(man, local)
+            for record in local["records"]:
+                if record["id"] in seen_acquisitions:
+                    raise ValueError(f"{record['id']}: duplicate acquisition record across receipts")
+                seen_acquisitions.add(record["id"])
+                receipt["records"].append(record)
+    except (OSError, ValueError) as exc:
+        print(f"FAIL: corpus metadata: {exc}", file=sys.stderr)
+        return 1
     errors = validate(man, flip_path=args.flip, require_holdouts=args.require_holdouts)
+    if args.acquisitions:
+        for record in receipt["records"]:
+            for error in natural_cache_errors(record):
+                message = f"{record['id']}: {error}"
+                if message not in errors:
+                    errors.append(message)
     naturals = [c for c in man.get("cases", []) if c.get("kind") == "external_natural"]
     holdouts = [c for c in naturals if c.get("split") == "holdout"]
     acquired = sum(not natural_cache_errors(c) for c in naturals)

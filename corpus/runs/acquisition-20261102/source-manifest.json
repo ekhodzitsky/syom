@@ -1,0 +1,14 @@
+{
+  "corpus/manifest.json": "f229fcdbee1b956777f500e4cac4ec6e3e264a1dbbbcb0b8f6451965d779a339",
+  "corpus/acquisition-plan-v1.json": "890b30147663fd248c85d017a1f3ee3a348141cef7bb648c6d905c37d42732a7",
+  "scripts/build_corpus_manifest.py": "b6547c9759b7ff2b8f466bd7b5beafc800dd890c5dffd9335a24abd53455b385",
+  "scripts/corpus_synth.py": "363bdb35554a57b1663d1433af93facc663bad36837def53ae7f592e44a53182",
+  "scripts/corpus_acquisition.py": "edd9043ff67e51fd5b8e88824d921a4e9fa05e6d3a1e1f660c4ad13cd3a658c1",
+  "scripts/verify_corpus.py": "c8b0a35bd576e88e254f6526317dd88c5e8e75032f7b74a61d426fe4ee6924d1",
+  "scripts/acquire_librispeech_holdouts.py": "2884428529f4f185fd8674b55c70e1b72a8204936f163bd0489b36181b075440",
+  "scripts/acquire_catalog_holdouts.py": "9c4f00e90a120f5aaf8f8d1b24d406b37ea6b1e0383e01bbaab485bbcfcd05b3",
+  "scripts/test_acquire_librispeech.py": "b1441a2173a3ff1377cd5aa17fd72ad5cc5f48a3390dc28d34553baf6c25b3e4",
+  "scripts/test_acquire_catalog_holdouts.py": "70df902d35caf9358f6b633cb34d9e2c8c295383ebe8a08dcc1ddc69f15f62dd",
+  "scripts/test_corpus_acquisition.py": "8eedd5916bafd4f796a9799e42ea4f8b94fb7ccab77a09ebe78690f5e4bb1d35",
+  "scripts/test_verify_corpus.py": "11e3accc5e914dc5f4cedca8d9535a7243851d02740f54a2a8de830638c533c4"
+}
