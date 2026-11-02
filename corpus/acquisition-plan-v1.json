@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "scope": "Source acquisition only; no codec encoding, listening, quality ranking or tuning",
+  "registration_note": "The Git commit containing this plan precedes the archive download; commit time is the authoritative registration time.",
+  "inventory": "corpus/manifest.json",
+  "librispeech": {
+    "catalog_url": "https://www.openslr.org/12/",
+    "archive_url": "https://openslr.trmal.net/resources/12/test-clean.tar.gz",
+    "checksum_url": "https://openslr.trmal.net/resources/12/md5sum.txt",
+    "archive_md5": "32fa31d27d2e1cad72775fee3f4849a9",
+    "license": "CC BY 4.0",
+    "attribution": "LibriSpeech ASR corpus, Vassil Panayotov and Daniel Povey; derived from LibriVox read audiobooks. Preserve archive LICENSE.TXT, README.TXT, SPEAKERS.TXT and CHAPTERS.TXT attribution metadata.",
+    "source_sample_rate": 16000,
+    "source_channels": 1,
+    "excerpt_samples": 192000,
+    "excerpt_format": "f32le",
+    "selection": "For each reserved speaker, order test-clean FLAC members by numeric chapter ID then numeric utterance ID, with member name as tie breaker. Decode in that order at native 16000 Hz mono, concatenate without inserted gaps, take the first 192000 samples. Do not skip silence, normalize loudness, listen, classify content or inspect encoder output. Fail rather than pad or substitute if insufficient samples or unexpected source shape.",
+    "records": [
+      {
+        "id": "nat-librispeech-1580",
+        "recording_id": "openslr12-spk-1580",
+        "speaker_id": 1580
+      },
+      {
+        "id": "nat-librispeech-1995",
+        "recording_id": "openslr12-spk-1995",
+        "speaker_id": 1995
+      },
+      {
+        "id": "nat-librispeech-2094",
+        "recording_id": "openslr12-spk-2094",
+        "speaker_id": 2094
+      }
+    ]
+  },
+  "unresolved_records": [
+    {
+      "id": "nat-cv-ar",
+      "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
+    },
+    {
+      "id": "nat-cv-ja",
+      "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
+    },
+    {
+      "id": "nat-musopen-chopin",
+      "reason": "Exact performance/file and recording license not fixed yet"
+    },
+    {
+      "id": "nat-librivox-war",
+      "reason": "Catalog version, exact file and attribution need a separate metadata decision"
+    },
+    {
+      "id": "nat-fma-percussion",
+      "reason": "Exact track with independently verified CC0 recording license not fixed yet"
+    }
+  ],
+  "constraints": [
+    "Keep existing recording_id and dev/holdout split unchanged",
+    "No audio in Git; local detached receipts and cache survive inventory regeneration",
+    "16 kHz speech sources have no independent information above 8 kHz and cannot support full-band HE quality claims",
+    "Class labels are inherited registrations, not verified phonetic coverage; no content-based replacement",
+    "A 12-second concatenation is an acquisition amendment, not an assertion that the earlier registration named an exact excerpt",
+    "Final listening stimuli require independent candidate freeze, rate matching, loudness and rendering qualification"
+  ],
+  "registered_on": "2026-11-02"
+}
