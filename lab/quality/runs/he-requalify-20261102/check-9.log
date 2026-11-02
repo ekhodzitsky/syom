@@ -1,0 +1,9 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.00s
+     Running unittests src/tune133.rs (target/debug/deps/syom_tune133-6f7d9b6273cd241e)
+
+running 3 tests
+test complete_alignment::tests::complete_padded_decode_preserves_reference_and_tail ... ok
+test complete_alignment::tests::missing_tail_is_rejected_instead_of_scoring_overlap ... ok
+test complete_alignment::tests::negative_lag_cannot_discard_reference_prefix ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

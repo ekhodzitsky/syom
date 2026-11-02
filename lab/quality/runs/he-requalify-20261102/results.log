@@ -1,0 +1,12 @@
+speech2: 2 s, 48000 Hz, voice() + two formants + plosives at 0 and 50400
+L seed 41 f0 132 F1 270 F2 2290; R seed 73 f0 196 F1 730 F2 1090; mono = mean
+| clip | engine | req k | actual k | delay | source samples/ch | decoded samples/ch | scored samples/ch | SNR ↑ | LF SNR ↑ | HF err ↓ | note |
+|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---|
+| speech2 | syom-he1 | 24 | 26.7 | 3018 | 96000 | 100352/100352 | 96000 | 12.4 | 15.5 | 22.2 |  |
+| speech2 | fdk-he1 | 24 | 27.4 | 5057 | 96000 | 102400/102400 | 96000 | 2.5 | 5.5 | 17.2 |  |
+| speech2-m | syom-he1 | 24 | 26.6 | 3018 | 96000 | 100352/100352 | 96000 | 17.8 | 22.0 | 17.5 | dual-mono upmix; collapsed bit-identical decoded planes |
+| speech2-m | fdk-he1 | 24 | 26.1 | 5057 | 96000 | 102400/102400 | 96000 | 13.3 | 16.9 | 6.6 | dual-mono upmix; collapsed bit-identical decoded planes |
+| lecture | syom-he1 | 24 | 39.0 | 3018 | 12000 | 16384/16384 | 12000 | 36.0 | 36.6 | 17.6 |  |
+| lecture | fdk-he1 | 24 | 38.3 | 5057 | 12000 | 18432/18432 | 12000 | 29.9 | 34.9 | 22.4 |  |
+| lecture-m | syom-he1 | 24 | 37.9 | 3018 | 12000 | 16384/16384 | 12000 | 37.5 | 37.8 | 21.5 | dual-mono upmix; collapsed bit-identical decoded planes |
+| lecture-m | fdk-he1 | 24 | 38.6 | 5057 | 12000 | 18432/18432 | 12000 | 28.4 | 33.3 | 25.7 | dual-mono upmix; collapsed bit-identical decoded planes |

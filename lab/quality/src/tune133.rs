@@ -13,6 +13,7 @@ use std::process::{Command, ExitCode};
 use syom::{decode_with, encode_with, DecodeOptions, EncodeOptions};
 
 mod cbr_qualification;
+mod complete_alignment;
 
 const RATE: u32 = 48_000;
 const SECS: usize = 2;
@@ -124,14 +125,14 @@ fn speech2_report(repo: &Path) -> ExitCode {
             pcm: vec![lec_m],
         },
     ];
-    println!("| clip | engine | req k | actual k | delay | SNR | LF SNR | HF err | note |");
-    println!("|---|---|---:|---:|---:|---:|---:|---:|---|");
+    println!("| clip | engine | req k | actual k | delay | source samples/ch | decoded samples/ch | scored samples/ch | SNR ↑ | LF SNR ↑ | HF err ↓ | note |");
+    println!("|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|---|");
     let mut failed = false;
     for clip in &clips {
         if let Err(err) = speech2_syom(&work, clip) {
             failed = true;
             println!(
-                "| {} | syom-he1 | 24 | — | — | — | — | — | {} |",
+                "| {} | syom-he1 | 24 | — | — | — | — | — | — | — | — | {} |",
                 clip.name,
                 err.replace('|', "/")
             );
@@ -139,7 +140,7 @@ fn speech2_report(repo: &Path) -> ExitCode {
         if let Err(err) = speech2_fdk(repo, &work, clip) {
             failed = true;
             println!(
-                "| {} | fdk-he1 | 24 | — | — | — | — | — | {} |",
+                "| {} | fdk-he1 | 24 | — | — | — | — | — | — | — | — | {} |",
                 clip.name,
                 err.replace('|', "/")
             );
@@ -207,11 +208,27 @@ struct CellScore {
     note: String,
 }
 
-fn print_score(clip: &str, engine: &str, s: &CellScore) {
+struct CompleteCellScore {
+    score: CellScore,
+    source_samples: usize,
+    decoded_samples: Vec<usize>,
+    scored_samples: usize,
+}
+
+fn print_score(clip: &str, engine: &str, complete: &CompleteCellScore) {
+    let s = &complete.score;
+    let decoded = complete
+        .decoded_samples
+        .iter()
+        .map(usize::to_string)
+        .collect::<Vec<_>>()
+        .join("/");
     println!(
-        "| {clip} | {engine} | 24 | {actual:.1} | {lag} | {snr:.1} | {lf:.1} | {hf:.1} | {note} |",
+        "| {clip} | {engine} | 24 | {actual:.1} | {lag} | {source} | {decoded} | {scored} | {snr:.1} | {lf:.1} | {hf:.1} | {note} |",
         actual = s.actual_k,
         lag = s.lag,
+        source = complete.source_samples,
+        scored = complete.scored_samples,
         snr = s.snr,
         lf = s.lf,
         hf = s.hf,
@@ -234,15 +251,30 @@ fn score_adts(
     pcm: &[Vec<f32>],
     adts: &[u8],
     declared: i32,
-) -> Result<CellScore, String> {
+) -> Result<CompleteCellScore, String> {
     let ch = pcm.len();
+    let source_samples = pcm.first().map_or(0, Vec::len);
+    if source_samples == 0 || pcm.iter().any(|p| p.len() != source_samples) {
+        return Err("empty or unequal source planes".into());
+    }
     let path = work.join(format!("{tag}.scored.adts"));
     fs::write(&path, adts).map_err(|e| e.to_string())?;
     let secs = pcm[0].len() as f64 / RATE as f64;
     let actual = adts.len() as f64 * 8.0 / secs / 1000.0;
     let out_ch = ffprobe_channels(&path).unwrap_or(ch);
     let dec = decode_ffmpeg(&path, out_ch)?;
+    let decoded_samples = dec.iter().map(Vec::len).collect();
+    let mut note = String::new();
     let dec = if ch == 1 && dec.len() == 2 {
+        if dec[0].len() != dec[1].len()
+            || !dec[0]
+                .iter()
+                .zip(&dec[1])
+                .all(|(left, right)| left.to_bits() == right.to_bits())
+        {
+            return Err("mono source decoded to non-identical stereo planes".into());
+        }
+        note.push_str("dual-mono upmix; collapsed bit-identical decoded planes");
         vec![dec[0].clone()]
     } else {
         dec
@@ -251,13 +283,16 @@ fn score_adts(
         return Err("silent/shape".into());
     }
     let lag = refine_lag(&pcm[0], &dec[0], declared, 128);
-    let mut note = String::new();
     if (lag - declared).abs() > 96 {
-        note = format!("align drift declared={declared} used={lag}");
+        if !note.is_empty() {
+            note.push_str("; ");
+        }
+        note.push_str(&format!("align drift declared={declared} used={lag}"));
     }
     let (mut ps, mut pe, mut lf, mut hf) = (0.0f64, 0.0f64, 0.0, 0.0);
     for c in 0..ch {
-        let (w, g) = aligned(&pcm[c], &dec[c], lag);
+        let (w, g) = complete_alignment::aligned(&pcm[c], &dec[c], lag)
+            .map_err(|err| format!("channel {c}: {err}"))?;
         for i in 0..w.len() {
             let s = f64::from(w[i]);
             let er = s - f64::from(g[i]);
@@ -273,13 +308,18 @@ fn score_adts(
     } else {
         10.0 * (ps / pe).log10()
     };
-    Ok(CellScore {
-        actual_k: actual,
-        lag,
-        snr,
-        lf,
-        hf,
-        note,
+    Ok(CompleteCellScore {
+        source_samples,
+        decoded_samples,
+        scored_samples: source_samples,
+        score: CellScore {
+            actual_k: actual,
+            lag,
+            snr,
+            lf,
+            hf,
+            note,
+        },
     })
 }
 

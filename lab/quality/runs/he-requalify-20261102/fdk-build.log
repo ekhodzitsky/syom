@@ -1,0 +1,12 @@
+In file included from /home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-prefix/include/aacdecoder_lib.h:432,
+                 from /home/ekhodzitsky/Projects/syom/lab/fdk/fdk_adapt.c:5:
+/home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-prefix/include/FDK_audio.h:757:29: warning: ‘FDKlibInfo_lookup’ defined but not used [-Wunused-function]
+  757 | static FDK_AUDIO_INLINE INT FDKlibInfo_lookup(const LIB_INFO* info,
+      |                             ^~~~~~~~~~~~~~~~~
+/home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-prefix/include/FDK_audio.h:745:1: warning: ‘FDKlibInfo_getCapabilities’ defined but not used [-Wunused-function]
+  745 | FDKlibInfo_getCapabilities(const LIB_INFO* info, FDK_MODULE_ID module_id) {
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/ekhodzitsky/Projects/syom/target/lc-speed/native/fdk-prefix/include/FDK_audio.h:735:30: warning: ‘FDKinitLibInfo’ defined but not used [-Wunused-function]
+  735 | static FDK_AUDIO_INLINE void FDKinitLibInfo(LIB_INFO* info) {
+      |                              ^~~~~~~~~~~~~~
+/home/ekhodzitsky/Projects/syom/lab/fdk/fdk_driver

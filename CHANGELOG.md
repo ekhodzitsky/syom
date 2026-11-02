@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Local evaluation tools distinguish registered natural recordings from
+  hash-verified files and provide an opt-in strict eight-holdout check.
+  HE development comparisons reject truncated reference scoring and retain
+  reproducible source, binary and stream metadata. Codec behavior is unchanged.
+
 ## [0.9.0] - 2026-11-02
 
 ### Fixed

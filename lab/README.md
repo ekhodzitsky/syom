@@ -38,7 +38,7 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [score](score/) | alignment / SNR diagnostics (not PEAQ) | TASK-13 |
 | [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
 | [prime](prime/) | encoder priming / omitted tail (TASK-40) | TASK-40 |
-| [quality](quality/) | same-bitrate LC encode SNR/rate (TASK-16) | TASK-16 |
+| [quality](quality/) | LC SNR/rate; [0.9.0 HE development recheck](quality/HE-REQUALIFY-2026-11-02.md), with full-reference scoring and explicit rate limits | TASK-16 / TASK-112.1 |
 | [footprint](footprint/) | minimal decode / encode consumers, size budgets, MSRV and package policy ([REPORT](footprint/REPORT.md)) | TASK-99 |
 | [wasm](wasm/) | `wasm32-unknown-unknown` smoke run under Node, native reference ([REPORT](wasm/REPORT.md)) | TASK-100 |
 | [consume](consume/) | consumer flows and kover/sluh call-pattern reproductions against the packaged crate ([REPORT](consume/REPORT.md)) | TASK-102 |

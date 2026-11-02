@@ -34,6 +34,25 @@ python3 scripts/verify_corpus.py           # offline; no network
 
 A flipped golden or overlapping train/holdout recording fails the verifier.
 
+To require the registered listening holdouts on this machine:
+
+```sh
+python3 scripts/verify_corpus.py --require-holdouts
+python3 -m unittest discover -s scripts -p test_verify_corpus.py
+```
+
+This opt-in mode requires exactly eight natural holdout rows with distinct
+recording identities, a SHA-256 and a readable matching cache file for each.
+`cache_path` may be absolute or relative to the repository root. Keep recordings
+outside Git. Both modes print registered and hash-verified file counts;
+the default inventory check still allows missing optional natural assets.
+
+Hash verification establishes byte availability and integrity, not audio format,
+duration, source/license provenance, or readiness of a listening study. Those
+require acquisition records and the listening protocol. The manifest generator
+currently resets natural acquisition fields; do not regenerate it over local
+acquisition metadata without preserving that metadata separately.
+
 ## Syntax inventory (not ISO 14496-26)
 
 `corpus/conformance/` records clause acquisition status, a coverage matrix

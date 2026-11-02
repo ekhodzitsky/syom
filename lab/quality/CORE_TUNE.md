@@ -1,5 +1,10 @@
 # TASK-133 — LC encoder core tuning on the TASK-95 deficits
 
+Historical tuning record. For the HF metric direction and a rebuilt full-drain
+FDK comparison on 0.9.0, see [the 2026-11-02 recheck](HE-REQUALIFY-2026-11-02.md).
+HF absolute level error is lower-is-better; these historical tables do not
+establish a lecture HF deficit.
+
 Recorded 2026-09-24. Host: Linux x86_64 (AMD Ryzen AI 9 HX 370), rustc
 1.97.1, ffmpeg 7.0.2-static (neutral decode, offline oracle only).
 Evidence harness: `lab/quality` bins `syom_tune133` (syom-only cells,

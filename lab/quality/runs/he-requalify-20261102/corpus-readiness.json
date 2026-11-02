@@ -1,0 +1,29 @@
+{
+  "checks": [
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py"
+      ],
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "log": "corpus-inventory.log"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py",
+        "--require-holdouts"
+      ],
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "log": "holdout-readiness.log"
+    }
+  ],
+  "source_hashes": {
+    "corpus/manifest.json": "f229fcdbee1b956777f500e4cac4ec6e3e264a1dbbbcb0b8f6451965d779a339",
+    "scripts/verify_corpus.py": "1aaa482f064faa227149c635d7f4cc82839505d87422efc3d8ec8cda49ed0c8a",
+    "scripts/test_verify_corpus.py": "11e3accc5e914dc5f4cedca8d9535a7243851d02740f54a2a8de830638c533c4",
+    "src/corpus_tests.rs": "0d97bbd29752144bd858c1c20d9cb9fc6040daff2ead4732b98896cd7126349e"
+  }
+}

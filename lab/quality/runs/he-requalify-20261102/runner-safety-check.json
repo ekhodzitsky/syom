@@ -1,0 +1,7 @@
+{
+  "existing_report_exit_code": 2,
+  "report_hash_preserved": true,
+  "custom_inherited_TMPDIR_test": "/tmp/unused-syom-review",
+  "effective_TMPDIR": "/home/ekhodzitsky/Projects/syom/target/he-requalify-work",
+  "scored_streams": 8
+}

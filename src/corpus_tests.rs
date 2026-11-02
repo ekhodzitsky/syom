@@ -28,7 +28,24 @@ fn verifier_accepts_committed_manifest_offline() {
     let (ok, text) = verify(&[]);
     assert!(ok, "verifier failed: {text}");
     assert!(text.contains("OK:"), "{text}");
-    assert!(text.contains("natural excerpts"), "{text}");
+    assert!(text.contains("natural excerpts: 24 registered /"), "{text}");
+    assert!(text.contains("holdouts: 8 registered /"), "{text}");
+    assert!(text.contains("hash-verified files"), "{text}");
+}
+
+#[test]
+fn strict_verifier_rejects_unacquired_registered_holdouts() {
+    let (ok, text) = verify(&["--require-holdouts"]);
+    assert!(!ok, "unacquired holdouts must fail: {text}");
+    assert!(
+        text.contains("holdouts: 8 registered / 0 hash-verified files"),
+        "{text}"
+    );
+    assert!(text.contains("needs a nonempty cache_path"), "{text}");
+    assert!(
+        text.contains("needs a 64-digit hexadecimal SHA-256"),
+        "{text}"
+    );
 }
 
 #[test]

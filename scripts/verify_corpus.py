@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -21,6 +22,7 @@ from corpus_synth import sha256_of  # noqa: E402
 MANIFEST = ROOT / "corpus" / "manifest.json"
 REQUIRED_NATURAL = 24
 REQUIRED_CASES = 48
+REQUIRED_HOLDOUTS = 8
 
 
 def sha256_file(path: Path) -> str:
@@ -39,7 +41,30 @@ def _err(errors: list[str], msg: str) -> None:
     errors.append(msg)
 
 
-def validate(manifest: dict, *, flip_path: Path | None = None) -> list[str]:
+def natural_cache_errors(case: dict) -> list[str]:
+    """Check byte availability/integrity only, not audio format or provenance."""
+    errors: list[str] = []
+    sha = case.get("sha256")
+    if not isinstance(sha, str) or re.fullmatch(r"[0-9a-fA-F]{64}", sha) is None:
+        errors.append("needs a 64-digit hexadecimal SHA-256")
+    cache_path = case.get("cache_path")
+    if not isinstance(cache_path, str) or not cache_path.strip() or "\x00" in cache_path:
+        errors.append("needs a nonempty cache_path")
+        return errors
+    path = ROOT / cache_path
+    try:
+        if not path.is_file():
+            errors.append(f"missing cache file {cache_path}")
+        elif not errors and sha256_file(path).lower() != sha.lower():
+            errors.append("cache sha256 mismatch")
+    except OSError as exc:
+        errors.append(f"cannot read cache file: {exc}")
+    return errors
+
+
+def validate(
+    manifest: dict, *, flip_path: Path | None = None, require_holdouts: bool = False
+) -> list[str]:
     errors: list[str] = []
     cases = manifest.get("cases")
     if not isinstance(cases, list) or len(cases) < REQUIRED_CASES:
@@ -98,6 +123,9 @@ def validate(manifest: dict, *, flip_path: Path | None = None) -> list[str]:
                     )
                 natural_recordings[rec] = split
                 split_recordings[split].add(rec)
+            if require_holdouts and split == "holdout":
+                # The strict pass below also validates malformed cache metadata.
+                continue
             if sha not in (None, ""):
                 # Optional local cache: if present, must match.
                 rel = c.get("cache_path")
@@ -150,12 +178,31 @@ def validate(manifest: dict, *, flip_path: Path | None = None) -> list[str]:
     both = split_recordings["dev"] & split_recordings["holdout"]
     for rec in sorted(both):
         _err(errors, f"recording {rec} in both dev and holdout")
+    if require_holdouts:
+        holdouts = [
+            c for c in cases
+            if c.get("kind") == "external_natural" and c.get("split") == "holdout"
+        ]
+        if len(holdouts) != REQUIRED_HOLDOUTS or nhold != REQUIRED_HOLDOUTS:
+            _err(
+                errors,
+                f"need exactly {REQUIRED_HOLDOUTS} natural holdout rows with unique "
+                f"recording identities, got {len(holdouts)} rows / {nhold} identities",
+            )
+        for case in holdouts:
+            for error in natural_cache_errors(case):
+                _err(errors, f"{case.get('id')}: {error}")
     return errors
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--manifest", type=Path, default=MANIFEST)
+    ap.add_argument(
+        "--require-holdouts",
+        action="store_true",
+        help="require exactly eight unique natural holdouts with hash-verified cache files",
+    )
     ap.add_argument(
         "--flip",
         type=Path,
@@ -166,15 +213,22 @@ def main() -> int:
         print(f"FAIL: missing manifest {args.manifest}", file=sys.stderr)
         return 1
     man = load_manifest(args.manifest)
-    errors = validate(man, flip_path=args.flip)
+    errors = validate(man, flip_path=args.flip, require_holdouts=args.require_holdouts)
+    naturals = [c for c in man.get("cases", []) if c.get("kind") == "external_natural"]
+    holdouts = [c for c in naturals if c.get("split") == "holdout"]
+    acquired = sum(not natural_cache_errors(c) for c in naturals)
+    acquired_holdouts = sum(not natural_cache_errors(c) for c in holdouts)
+    print(
+        f"natural excerpts: {len(naturals)} registered / {acquired} hash-verified files; "
+        f"holdouts: {len(holdouts)} registered / {acquired_holdouts} hash-verified files"
+    )
     if errors:
         print("FAIL: corpus verification")
         for e in errors:
             print(f"  - {e}")
         return 1
     n = len(man["cases"])
-    nat = sum(1 for c in man["cases"] if c.get("kind") == "external_natural")
-    print(f"OK: {n} cases, {nat} natural excerpts, offline checks passed")
+    print(f"OK: {n} cases, offline checks passed")
     return 0
 
 

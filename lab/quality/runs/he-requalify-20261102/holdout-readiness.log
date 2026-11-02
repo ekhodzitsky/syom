@@ -1,0 +1,18 @@
+natural excerpts: 24 registered / 0 hash-verified files; holdouts: 8 registered / 0 hash-verified files
+FAIL: corpus verification
+  - nat-librispeech-1580: needs a 64-digit hexadecimal SHA-256
+  - nat-librispeech-1580: needs a nonempty cache_path
+  - nat-librispeech-1995: needs a 64-digit hexadecimal SHA-256
+  - nat-librispeech-1995: needs a nonempty cache_path
+  - nat-librispeech-2094: needs a 64-digit hexadecimal SHA-256
+  - nat-librispeech-2094: needs a nonempty cache_path
+  - nat-cv-ar: needs a 64-digit hexadecimal SHA-256
+  - nat-cv-ar: needs a nonempty cache_path
+  - nat-musopen-chopin: needs a 64-digit hexadecimal SHA-256
+  - nat-musopen-chopin: needs a nonempty cache_path
+  - nat-cv-ja: needs a 64-digit hexadecimal SHA-256
+  - nat-cv-ja: needs a nonempty cache_path
+  - nat-librivox-war: needs a 64-digit hexadecimal SHA-256
+  - nat-librivox-war: needs a nonempty cache_path
+  - nat-fma-percussion: needs a 64-digit hexadecimal SHA-256
+  - nat-fma-percussion: needs a nonempty cache_path

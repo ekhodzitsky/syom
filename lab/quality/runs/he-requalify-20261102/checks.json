@@ -1,0 +1,127 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 3.02,
+    "log": "check-0.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.03,
+    "log": "check-1.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.02,
+    "log": "check-2.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 3.67,
+    "log": "check-3.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 21.25,
+    "log": "check-4.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 0.96,
+    "log": "check-5.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "seconds": 5.44,
+    "log": "check-6.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts",
+      "-p",
+      "test_verify_corpus.py"
+    ],
+    "exit_code": 0,
+    "seconds": 3.11,
+    "log": "check-7.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--manifest-path",
+      "lab/quality/Cargo.toml",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.07,
+    "log": "check-8.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--offline",
+      "--manifest-path",
+      "lab/quality/Cargo.toml",
+      "--bin",
+      "syom_tune133",
+      "complete_alignment"
+    ],
+    "exit_code": 0,
+    "seconds": 0.03,
+    "log": "check-9.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.0,
+    "log": "check-10.log"
+  }
+]
