@@ -1,0 +1,373 @@
+{
+  "date": "2026-11-02",
+  "baseline_revision": "16906015fc221dc96e37c24d5ce4fc18cf14eff1",
+  "standard": "Root README standard v1, accepted2026-10-27",
+  "readme_words_excluding_fenced_code": 535,
+  "readme_sha256": "2ad00fb06403b53da06947f6ec4c3073e6f3883386e4b1ac8e7560306c31af0b",
+  "runtime_code_or_version_changes": false,
+  "example": {
+    "source_from_readme": "fn main() -> syom::Result<()> {\n    let pcm: Vec<f32> = (0..48_000)\n        .map(|i| 0.3 * (i as f32 * 0.06).sin())\n        .collect();\n    let adts = syom::encode(&[&pcm], 48_000)?;\n    let audio = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;\n    assert_eq!((audio.channels.len(), audio.sample_rate), (1, 48_000));\n    println!(\"{} channel at {} Hz\", audio.channels.len(), audio.sample_rate);\n    Ok(())\n}\n",
+    "steps": [
+      {
+        "command": [
+          "cargo",
+          "new",
+          "syom-demo",
+          "--bin"
+        ],
+        "exit": 0,
+        "stdout": "",
+        "stderr": "    Creating binary (application) `syom-demo` package\nnote: see more `Cargo.toml` keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html\n"
+      },
+      {
+        "command": [
+          "cargo",
+          "add",
+          "syom@0.8.1"
+        ],
+        "exit": 0,
+        "stdout": "",
+        "stderr": "    Updating crates.io index\n      Adding syom v0.8.1 to dependencies\n    Updating crates.io index\n     Locking 1 package to latest Rust 1.97.1 compatible version\n"
+      },
+      {
+        "command": [
+          "cargo",
+          "run",
+          "--release",
+          "--locked"
+        ],
+        "exit": 0,
+        "stdout": "1 channel at 48000 Hz\n",
+        "stderr": "   Compiling syom v0.8.1\n   Compiling syom-demo v0.1.0 (/home/ekhodzitsky/Projects/syom/target/readme-v1-example/syom-demo)\n    Finished `release` profile [optimized] target(s) in 4.15s\n     Running `/home/ekhodzitsky/Projects/syom/target/release/syom-demo`\n"
+      },
+      {
+        "command": [
+          "cargo",
+          "+1.89.0",
+          "run",
+          "--release",
+          "--locked"
+        ],
+        "exit": 0,
+        "stdout": "1 channel at 48000 Hz\n",
+        "stderr": "   Compiling syom v0.8.1\n   Compiling syom-demo v0.1.0 (/home/ekhodzitsky/Projects/syom/target/readme-v1-example/syom-demo)\n    Finished `release` profile [optimized] target(s) in 4.46s\n     Running `/home/ekhodzitsky/Projects/syom/target/release/syom-demo`\n"
+      }
+    ],
+    "expected_stdout": "1 channel at 48000 Hz"
+  },
+  "pinned_primary_source_checks": [
+    {
+      "crate_version": "rusty_aac-2.0.1",
+      "package_sha256_matches_lockfile": "93388483e43ffd3bb3c347794a849edb204438258d8642b8449992a56433798a",
+      "primary_source_files": {
+        "README.md": "e4dcd086b2a89c8ed904c9684db14b5b94ae0272269b4c46d9cb3252a3013512",
+        "Cargo.toml": "35eb0dc65b494d921706e80ceaa1dd68cd368ccf6e396a79b5002c33da1563b7"
+      }
+    },
+    {
+      "crate_version": "symphonia-0.6.1",
+      "package_sha256_matches_lockfile": "a7edef6a96b696d4e0cab5ee9ebb7ca155ed95f30a6b45bbb8b97d2727f02424",
+      "primary_source_files": {
+        "README.md": "6d4cad3551352731a7933837f046a29c14fcea62fafec284b40ddb35aa179347",
+        "Cargo.toml": "3b4b82c2e844e3fbca8ae0d2c4a6f7028aaba091f060334633e3628bada2edb3"
+      }
+    },
+    {
+      "crate_version": "oxideav-aac-0.1.7",
+      "package_sha256_matches_lockfile": "35453ffa827080f322dba5d2233879f008627d4ffb07c496c0c6fe3190b35048",
+      "primary_source_files": {
+        "README.md": "6d5a73b50f1a36bd503f3c1466c41f731cc3e9dc386656940d63bbc9301a08a9",
+        "Cargo.toml": "6015915d44c0a68559fcb81e1b631b2ee7eefa2bb2ecd8927c272f8633f2927e"
+      }
+    }
+  ],
+  "gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 2.820486976999746,
+      "result_lines": []
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.02897927999993044,
+      "result_lines": [
+        "OK: all Rust sources within line caps"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.01981510799987518,
+      "result_lines": [
+        "OK: CHANGELOG.md has Unreleased and ## [0.9.0]"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 6.269211251000343,
+      "result_lines": []
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.939833971999633,
+      "result_lines": [
+        "test result: ok. 1167 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 19.34s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.8990456820001782,
+      "result_lines": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.871137729000111,
+      "result_lines": [
+        "OK: 183 files, 461071 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script"
+      ]
+    }
+  ],
+  "inventory": {
+    "tracked_files": 1112,
+    "tracked_markdown_files": 106,
+    "tracked_root_files": [
+      ".gitattributes",
+      ".gitignore",
+      "AGENTS.md",
+      "BENCH.md",
+      "CHANGELOG.md",
+      "Cargo.lock",
+      "Cargo.toml",
+      "LICENSE",
+      "NOTICE",
+      "README.md",
+      "rust-toolchain.toml",
+      "rustfmt.toml"
+    ],
+    "tracked_directory_file_counts": {
+      ".github": 1,
+      "benches": 5,
+      "corpus": 23,
+      "lab": 639,
+      "scripts": 10,
+      "src": 420,
+      "tests": 2
+    },
+    "new_markdown_files": [
+      "docs/usage-and-validation.md",
+      "docs/comparison.md"
+    ]
+  },
+  "manifest_generator_read_only_check": {
+    "method": "Read-only cases() call; main() and its manifest write were not invoked",
+    "committed_cases": 82,
+    "generated_cases": 82,
+    "missing_from_committed_manifest": [],
+    "only_in_committed_manifest": [],
+    "changed_existing_cases": []
+  },
+  "readme_v1_acceptance": {
+    "purpose": "pass",
+    "hook": "pass",
+    "first_run": "pass",
+    "alternatives": "pass",
+    "benchmarks": "pass",
+    "badges": "partial: current coverage missing, no fresh hosted CI; actual provenance labeled",
+    "constraints": "pass",
+    "presentation": "partial: Markdown rendered to HTML and links/structure checked; no browser available for visual preview"
+  },
+  "missing_measurements": [
+    "current branch coverage percentage and scope",
+    "fresh hosted CI (capacity restriction retained)",
+    "browser screenshot/light-dark visual inspection"
+  ],
+  "not_inapplicable": "Coverage applies; missing measurement is not treated as inapplicable.",
+  "scope": "Documentation/readme change; no new runtime, fuzz, platform or competitor timing claim. All old numerical results preserved.",
+  "link_checks": {
+    "markdown_documents_scanned": 109,
+    "relative_links_checked": 151,
+    "missing_relative_paths": [],
+    "anchor_candidates_for_manual_review": [],
+    "new_readme_github_paths": [
+      {
+        "from": "README.md",
+        "link": "Cargo.toml"
+      },
+      {
+        "from": "README.md",
+        "link": "LICENSE"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md"
+      },
+      {
+        "from": "README.md",
+        "link": "CHANGELOG.md"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/docs/comparison.md"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/docs/comparison.md#historical-decoding-measurements"
+      },
+      {
+        "from": "README.md",
+        "link": "BENCH.md"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/src/guide.rs"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md#validation-and-integration"
+      },
+      {
+        "from": "README.md",
+        "link": "https://github.com/ekhodzitsky/syom/blob/main/AGENTS.md"
+      },
+      {
+        "from": "README.md",
+        "link": "LICENSE"
+      },
+      {
+        "from": "README.md",
+        "link": "NOTICE"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/REPORT.md"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../BENCH.md"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/REPORT.md#current-rust-decoder-comparison"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/runs/peers-fast.log"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/runs/peers.log"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/Cargo.toml"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/release-audit/Cargo.lock"
+      },
+      {
+        "from": "docs/comparison.md",
+        "link": "../lab/baseline/SOTA-SPEED-2026-10-16.md"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../src/guide.rs"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../src/guide.rs"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../src/guide.rs"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/release-audit/CANDIDATE-0.8.1.md"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/release-audit/PUBLISHED-0.8.1.md"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/release-audit/HTTP-CANARY-0.8.1.md"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/release-audit/HTTP-LOAD-0.8.1.md"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/release-audit/REPORT.md#candidate-090--cold-start-fix"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../.github/workflows/ci.yml"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../Cargo.toml"
+      },
+      {
+        "from": "docs/usage-and-validation.md",
+        "link": "../lab/baseline/COVERAGE.md"
+      }
+    ],
+    "scope": "All tracked Markdown plus new reader guides and audit. External URLs not exhaustively checked. GitHub blob/main source links from new README are mapped to local target files and heading anchors."
+  },
+  "final_package_audit": {
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "stdout": "OK: 183 files, 461093 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script",
+    "reason": "Rechecked after final CHANGELOG wording; runtime source and README example unchanged."
+  },
+  "independent_review": "band_emit read-only review: no substantive blocker. Final audit link counts corrected to109documents/151relative links."
+}

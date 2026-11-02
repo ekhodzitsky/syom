@@ -1,159 +1,111 @@
 # syom
 
-AAC to planar `f32`.
+A zero-dependency Rust library for decoding AAC to planar `f32` and encoding
+AAC. Read files or bounded streams, preserve channel layout, and pass PCM
+directly to your application at the native sample rate.
 
-[![crates.io](https://img.shields.io/crates/v/syom.svg)](https://crates.io/crates/syom)
-[![docs.rs](https://img.shields.io/docsrs/syom)](https://docs.rs/syom)
-[![ci](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml/badge.svg)](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![crates.io version](https://img.shields.io/crates/v/syom?style=flat)](https://crates.io/crates/syom)
+[![crates.io monthly downloads](https://img.shields.io/crates/dm/syom?style=flat)](https://crates.io/crates/syom)
+[![Main CI: last hosted run](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml?query=branch%3Amain)
+[![Declared MSRV: Rust 1.89](https://img.shields.io/badge/MSRV-1.89-blue?style=flat)](Cargo.toml)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
+[![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
-An AAC codec in Rust. AAC-LC, HE-AAC v1/v2, and AAC-LD. ADTS, LATM/LOAS,
-M4A, and bounded fragmented MP4. Encode defaults to AAC-LC at 128 kbps,
-ADTS or M4A. HE and LD are opt-in. Output is planar `f32` at the
-bitstream rate (HE is twice the core rate). The product path pulls no
-crates. ffmpeg is an offline oracle, not a runtime dependency.
+## Quick start
 
-## Examples
+Requires Rust **1.89+**. Cargo downloads the published **0.8.1** crate;
+the example generates its own audio and needs no media files or native
+codec installation.
+
+```sh
+cargo new syom-demo --bin
+cd syom-demo
+cargo add syom@0.8.1
+```
+
+Replace `src/main.rs` with:
 
 ```rust
 fn main() -> syom::Result<()> {
-    let pcm: Vec<f32> = (0..48_000).map(|i| 0.3 * (i as f32 * 0.06).sin()).collect();
+    let pcm: Vec<f32> = (0..48_000)
+        .map(|i| 0.3 * (i as f32 * 0.06).sin())
+        .collect();
     let adts = syom::encode(&[&pcm], 48_000)?;
-    let back = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;
-    assert_eq!((back.channels.len(), back.sample_rate), (1, 48_000));
+    let audio = syom::decode_with(&adts, &syom::DecodeOptions::audio())?;
+    assert_eq!((audio.channels.len(), audio.sample_rate), (1, 48_000));
+    println!("{} channel at {} Hz", audio.channels.len(), audio.sample_rate);
     Ok(())
 }
 ```
 
-`decode` is the speech default (mono mix, 2 h at up to 48 kHz; higher
-rates keep that sample budget). `DecodeOptions::audio()`
-keeps the coded channels. From a path: `syom::read`. Push decode and
-encode: `Decoder::feed`, `Encoder::feed`. The
-[guide](https://docs.rs/syom/latest/syom/guide/) has one compiling
-example per task.
+Run `cargo run --release`. Expected output: `1 channel at 48000 Hz`.
 
-| task | section |
-|---|---|
-| one-call encode / decode, speech vs full fidelity | 1 |
-| borrowed PCM, `Read` / `Write` / `Seek` | 2 |
-| priming, tail, exact length | 3 |
-| push `Encoder` / `Decoder`, bounded memory | 4 |
-| raw access units and `AudioSpecificConfig` | 5 |
-| probe, sample-exact M4A seek | 6 |
-| LC, quality VBR, HE v1/v2, surround | 7 |
-| limits and typed errors | 8 |
-| profiles and containers | 9 |
-| behaviour changes since 0.6.0 | 10 |
+`DecodeOptions::audio()` preserves channels; `decode()` defaults to a mono
+speech mix with duration and memory limits. Output is not resampled.
+For files use `read`; for incremental input/output use `Decoder::feed`
+and `Encoder::feed`. LC encoding defaults to 128 kbps ABR with per-band
+M/S. HE and LD encoding are opt-in.
 
-## Decode and encode
+[API guide](https://docs.rs/syom/latest/syom/guide/) ·
+[Usage, formats and validation](https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md) ·
+[Changelog](CHANGELOG.md)
 
-| | ADTS | M4A | LATM/LOAS | fMP4 |
-|---|---|---|---|---|
-| AAC-LC decode | yes | yes | yes | yes |
-| HE-AAC v1/v2 decode | yes | yes | yes | yes |
-| AAC-LD decode (512) | no | yes | yes | yes |
-| LC encode | yes | yes | yes | no |
-| HE v1/v2 encode | yes | yes | yes | no |
-| AAC-LD encode | no | yes | yes | no |
+## Choosing a library
 
-LC encode is the default; M/S is per-band. `with_he`, `with_he_v2`, and
-`with_ld` are opt-in. ADTS cannot signal AAC-LD. Fragmented MP4 uses the
-same ASC path as M4A, so AAC-LD decodes there too; there is no separate
-LD fMP4 golden. Surround LC is 3, 4, 5, 6, or 8 planes
-(`channel_configuration` 3–7). Seven planes have no layout.
-No resample.
+Published-package snapshots for applications handling AAC:
 
-## Compared with Rust AAC libraries
+| Library | Integration boundary | HE-AAC v1/v2 decode |
+|---|---|---|
+| syom 0.8.1 | Built-in ADTS, M4A and LATM readers; planar `f32` | Supported |
+| rusty_aac 2.0.1 | Caller extracts M4A access units; interleaved `f32` | Supported |
+| Symphonia 0.6.1 | Multi-format media pipeline and audio buffers | Native AAC-LC core only |
 
-Capabilities below refer to the pinned published versions, not their main
-branches. Raw-AU support does not imply a built-in M4A demuxer.
+Choose Symphonia when one pipeline must handle other codecs and containers.
+Choose rusty_aac when its codec profiles or interleaved output suit an
+existing demuxer. Changing libraries can require different channel layout,
+gapless trimming and buffer handling.
+[Detailed comparison and primary sources](https://github.com/ekhodzitsky/syom/blob/main/docs/comparison.md)
+record pinned versions and verification dates, including oxideav-aac.
 
-| | syom 0.8.0 | rusty_aac 2.0.1 | symphonia 0.6.1 | oxideav-aac 0.1.7 |
-|---|---|---|---|---|
-| Job | AAC codec | AAC codec | media pipeline | AAC codec |
-| Runtime deps | none | none | several | oxideav-core |
-| HE-AAC v1/v2 decode | yes | yes | LC core only | yes |
-| AAC-LD decode | yes | yes | no | yes, with documented TNS limitations |
-| Built-in M4A demux | yes | caller supplies raw AUs | yes | caller supplies raw AUs |
-| LATM/LOAS decode | yes | yes | no built-in LATM reader | yes |
-| Encode profiles | LC, HE v1/v2, LD | LC | none | LC, HE v1 |
-| Decoded output | planar f32 | interleaved f32 | audio buffers | interleaved i16 |
+## Measured decoding time
 
-Sources: [rusty_aac](https://docs.rs/crate/rusty_aac/2.0.1),
-[Symphonia](https://github.com/pdeljanov/Symphonia),
-[oxideav-aac](https://docs.rs/crate/oxideav-aac/0.1.7).
+Historical medians; **lower is better**. These measure **syom 0.8.0**, not
+the current development candidate:
 
-## Speed
+| ADTS workload | syom 0.8.0 | rusty_aac 2.0.1 | Symphonia 0.6.1 |
+|---|---:|---:|---:|
+| LC mono, 48 kHz, 13312 samples | 59.6 µs | 152.3 µs | 135.2 µs |
+| HE v2 stereo, 48 kHz, 53248 samples | 1.211 ms | 1.120 ms | Core-only; excluded |
 
-Linux x86_64, AMD Ryzen AI 9 HX 370, rustc 1.97.1, `taskset -c 0`,
-release thin LTO, 8 warmup + 101 measured reps, 2026-10-28.
-Same bitstream and collected planar f32 shape; adapters include layout
-conversion. Checksums differ; matching shape is not a quality score.
-Median wall times from the Rust fast-peer pass:
+Linux x86_64, Ryzen AI 9 HX 370, rustc 1.97.1; one core, release thin LTO,
+8 warmups and 101 measured calls, 2026-10-28. Adapters collect the same
+planar shape; checksums differ. The busy-host sample favors different
+libraries on different profiles and establishes no quality ranking.
+[Method, all cells and raw results](https://github.com/ekhodzitsky/syom/blob/main/docs/comparison.md#historical-decoding-measurements)
+preserve unfavorable cases. [BENCH.md](BENCH.md) retains older results.
 
-| Workload | syom 0.8.0 | rusty_aac 2.0.1 | symphonia 0.6.1 |
-|---|---|---|---|
-| LC ADTS, 48 kHz mono, 13312 samples | 59.6 µs | 152.3 µs | 135.2 µs |
-| HE ADTS, 48 kHz stereo, 18432 samples | 190.8 µs | 354.9 µs | core-only, excluded |
-| HE-AAC v2 ADTS, 48 kHz stereo, 53248 samples | 1.211 ms | 1.120 ms | core-only, excluded |
-| LC 5.1 ADTS, 48 kHz, 20480 samples | 601.3 µs | 678.3 µs | decoder unavailable |
+## Status and limits
 
-This busy-host sample favors syom on LC/HE v1 and rusty_aac on HE v2;
-it is not a universal speed ranking. The separate four-peer run has
-substantial scheduling noise. Both runs, exact inputs, protocol and
-limitations are in the [release audit](lab/release-audit/REPORT.md).
-[BENCH.md](BENCH.md) retains historical results against older peers.
-Encoder quality superiority is not established; the earlier in-process
-LC encode comparison was slower than FDK (see the audit).
+The **0.9.0 unpublished candidate** adds budgeted exact M4A seeking for
+LC/LD mono/stereo and fixes cold decoder stack initialization. Exact plans
+require prefix replay, not arbitrary sparse access. For this checkout use
+`syom = { version = "0.9", path = "../syom" }`;
+[the candidate guide](https://github.com/ekhodzitsky/syom/blob/main/src/guide.rs)
+explains migration and replay limits.
 
-## Production scope
+Version, downloads and docs badges describe the registry; CI shows the
+last hosted `main` run. Hosted checks are paused. Candidate validation is
+local Linux x86_64, including Rust 1.89; other-platform parity is not
+established. Current coverage has not been measured; the historical
+[coverage report](https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md)
+defines its earlier scope.
 
-The historical [0.8.1 qualification](lab/release-audit/CANDIDATE-0.8.1.md)
-passed 19 cases from 16 recordings against FFmpeg and the actual gigastt
-decode adapter. The [published 0.8.1 release](lab/release-audit/PUBLISHED-0.8.1.md)
-includes fixes for padded-LC allocations and PNS history during M4A seek.
-The [paired HTTP ASR canary](lab/release-audit/HTTP-CANARY-0.8.1.md)
-matches normalized baseline transcripts and durations on 32 speech-format cases.
-The [local load/fault qualification](lab/release-audit/HTTP-LOAD-0.8.1.md)
-also passes 224 measured requests per binary at 1/2/4/8 clients, queue and
-watchdog timeouts, and recovery after client cancellation.
-Those checks use the original consumer snapshot. The maintained
-[opt-in gigastt integration](https://github.com/ekhodzitsky/gigastt/pull/442)
-has [separate refactored-adapter qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md).
-Cold or stateful seeks can replay the prefix; known noise-free LC/LD
-prefixes retain short preroll. Tagged/untagged LC ABR/CBR consumer checks
-allocate zero times after warmup. Encoder listening, physical mobile,
-full ISO conformance and live-service rollout qualification remain open. Use
-`DecodeOptions::audio()` to keep channels; `decode()` defaults to mono.
+Physical-mobile, full ISO conformance and listening qualification remain
+open. Encoder quality leadership is unproven; LC encoding still trails
+FDK on the long speech cases. See the
+[validation record](https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md#validation-and-integration)
+for consumer evidence and remaining limits.
 
-The unpublished [0.9.0 release candidate](lab/release-audit/REPORT.md#candidate-090--cold-start-fix)
-records its local Linux validation and remaining limits separately. These
-checks do not establish Windows, macOS or ARM parity, or state-of-the-art
-performance or quality.
-
-## Install
-
-The unpublished **0.9.0 candidate** adds `exact_seek_plan` and budgeted
-`seek_exact` for LC/LD mono/stereo interval consumers. Every nonempty exact
-plan requires the coded prefix from AU 0; arbitrary cold sparse seeking is
-not qualified. See [the integration guide](src/guide.rs) for byte ranges,
-native coordinates, logical-position restore and resource limits. Use a
-local path or this Git revision for that API; registry 0.8 remains separate.
-
-```toml
-[dependencies]
-syom = "0.8"
-```
-
-For the unpublished candidate checked out at `../syom`:
-
-```toml
-[dependencies]
-syom = { version = "0.9", path = "../syom" }
-```
-
-rustc **1.89**.
-
-[guide](https://docs.rs/syom/latest/syom/guide/) | [BENCH.md](BENCH.md) | [CHANGELOG](CHANGELOG.md)
-
-No resample. MIT. AAC patents: [NOTICE](NOTICE).
+[Questions and bugs](https://github.com/ekhodzitsky/syom/issues) ·
+[Development checks](https://github.com/ekhodzitsky/syom/blob/main/AGENTS.md) ·
+[MIT license](LICENSE) · [AAC patent notice](NOTICE)

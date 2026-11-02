@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reorganize the root README around a verified published-crate quick start,
+  compact comparisons and scoped historical measurements. Move detailed
+  format, integration and benchmark evidence into linked documentation;
+  distinguish registry badges from local candidate validation. Record a
+  prioritized documentation and root-layout audit with remaining gaps.
 - Further reduce LC Huffman cost/emission and section-planning work without
   changing encoded bytes. Store psychoacoustic spreading matrices at their
   active dimensions, saving 10404 logical bytes per 48 kHz LC encoder on
