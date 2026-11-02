@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9.0] - Unreleased
+## [0.9.0] - 2026-11-02
 
 ### Fixed
 
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Retain a balanced one-core comparison and raw observations: LC improves
   locally, but the strict FDK encode-speed gate remains unmet. Record the
   additional fixed encoder workspace and historical cold small-stack
-  finding, fixed in this candidate.
+  finding, fixed in this release.
 - Qualify the existing opt-in LC CBR reservoir against independently decoded
   CORE_TUNE speech/tremolo scores and separate 10-second payload-rate/cap
   checks. Retain a reproducible isolated runner and full-precision results;
@@ -1132,8 +1132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...HEAD
-[0.9.0]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/ekhodzitsky/syom/compare/v0.7.0...v0.7.1

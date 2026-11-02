@@ -14,14 +14,14 @@ directly to your application at the native sample rate.
 
 ## Quick start
 
-Requires Rust **1.89+**. Cargo downloads the published **0.8.1** crate;
+Requires Rust **1.89+**. Cargo downloads the **0.9.0** crate (`syom = "0.9"`);
 the example generates its own audio and needs no media files or native
 codec installation.
 
 ```sh
 cargo new syom-demo --bin
 cd syom-demo
-cargo add syom@0.8.1
+cargo add syom@0.9.0
 ```
 
 Replace `src/main.rs` with:
@@ -57,7 +57,7 @@ Published-package snapshots for applications handling AAC:
 
 | Library | Integration boundary | HE-AAC v1/v2 decode |
 |---|---|---|
-| syom 0.8.1 | Built-in ADTS, M4A and LATM readers; planar `f32` | Supported |
+| syom 0.9.0 | Built-in ADTS, M4A and LATM readers; planar `f32` | Supported |
 | rusty_aac 2.0.1 | Caller extracts M4A access units; interleaved `f32` | Supported |
 | Symphonia 0.6.1 | Multi-format media pipeline and audio buffers | Native AAC-LC core only |
 
@@ -87,15 +87,14 @@ preserve unfavorable cases. [BENCH.md](BENCH.md) retains older results.
 
 ## Status and limits
 
-The **0.9.0 unpublished candidate** adds budgeted exact M4A seeking for
+Release **0.9.0** adds budgeted exact M4A seeking for
 LC/LD mono/stereo and fixes cold decoder stack initialization. Exact plans
-require prefix replay, not arbitrary sparse access. For this checkout use
-`syom = { version = "0.9", path = "../syom" }`;
-[the candidate guide](https://github.com/ekhodzitsky/syom/blob/main/src/guide.rs)
+require prefix replay, not arbitrary sparse access. The
+[API guide](https://docs.rs/syom/0.9.0/syom/guide/)
 explains migration and replay limits.
 
 Version, downloads and docs badges describe the registry; CI shows the
-last hosted `main` run. Hosted checks are paused. Candidate validation is
+last hosted `main` run. Hosted checks are paused. Release validation is
 local Linux x86_64, including Rust 1.89; other-platform parity is not
 established. The local [library-line coverage report](https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
 records 92.71% on 2026-11-02; integration tests, doctests and branch coverage

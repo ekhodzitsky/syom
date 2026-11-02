@@ -1,0 +1,24 @@
+{
+  "version": "0.9.0",
+  "date": "2026-11-02",
+  "phase": "Prepublication qualification, not a registry receipt",
+  "baseline_revision": "60199081659c9fe8ee9bdf7bc07f304d5bf3c8b6",
+  "checks": "checks.json",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "48047ff6867acc124bf921a6c35ea3377751d12df4c136f8da5ec790b94b919a",
+  "local_scope": "Linux x86_64, currentRust1.97.1 and declaredMSRV1.89; no fresh hosted/platform matrix",
+  "passed": {
+    "unit": 1167,
+    "existing_ignored": 7,
+    "integration": 2,
+    "docs": 29,
+    "msrv_full_tests": true,
+    "cold_release_six_profiles_128_kib": true,
+    "packaged_consumer": true,
+    "packaged_readme_current_and_msrv": true,
+    "publish_dry_run_allow_dirty": true
+  },
+  "runtime_changes": "None since the preceding qualified source; this phase updates release metadata and installation/docs only",
+  "prior_fuzz": "../candidate-0.9.0/report.json records unchanged-runtime parser/state qualification; not rerun for documentation-only release metadata",
+  "ci": "Not dispatched. Existing workflow is main-branch-only push; all new commits use[skipci], and tags do not match pushbranches."
+}

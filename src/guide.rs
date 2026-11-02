@@ -149,12 +149,12 @@
 //! A cold M4A seek or a seek past PNS can replay the prefix to preserve
 //! decoder history; verified noise-free LC/LD prefixes use short preroll.
 //!
-//! ## Exact interval acquisition (0.9.0 candidate)
+//! ## Exact interval acquisition (since 0.9.0)
 //!
-//! The new API is available from this checkout/Git revision; 0.9.0 has not
-//! been published. For immutable LC/LD mono/stereo sources, plan before
-//! withholding media bytes. Coordinates are absolute native presentation
-//! samples after supported edit/gapless trimming, never resampled samples.
+//! Available in syom 0.9.0 and later. For immutable LC/LD mono/stereo
+//! sources, plan before withholding media bytes. Coordinates are absolute
+//! native presentation samples after supported edit/gapless trimming,
+//! never resampled samples.
 //!
 //! ```
 //! use std::io::Cursor;

@@ -1,6 +1,6 @@
 # Corpus coverage and implementation status
 
-Status review: **2026-11-02**, unpublished 0.9.0 candidate. Implementation
+Status review: **2026-11-02**, 0.9.0 release. Implementation
 support, registration in [manifest.json](manifest.json), and independent
 qualification are separate claims. The [API guide](../src/guide.rs) defines
 current supported profiles and containers; a registered fixture alone does

@@ -1,6 +1,6 @@
 # Offline native comparison lab
 
-The unpublished 0.9.0 candidate has
+The 0.9.0 release has
 [cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix),
 including fresh-process stack checks and decoded/encoded output comparisons.
 Its exact-seek work has separate

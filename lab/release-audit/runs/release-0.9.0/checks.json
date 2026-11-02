@@ -1,0 +1,193 @@
+[
+  {
+    "step": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 2.9525089290000324,
+    "log": "fmt.log"
+  },
+  {
+    "step": "size",
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.030158620000293013,
+    "log": "size.log"
+  },
+  {
+    "step": "changelog",
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.020109273998969,
+    "log": "changelog.log"
+  },
+  {
+    "step": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 7.368270035998648,
+    "log": "clippy.log"
+  },
+  {
+    "step": "tests",
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 28.547822664000705,
+    "log": "tests.log"
+  },
+  {
+    "step": "docs",
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.8836974670011841,
+    "log": "docs.log"
+  },
+  {
+    "step": "msrv",
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 31.533721271000104,
+    "log": "msrv.log"
+  },
+  {
+    "step": "cold-release",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--test",
+      "cold_stack",
+      "--",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 4.938072257000385,
+    "log": "cold-release.log"
+  },
+  {
+    "step": "package",
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 4.849715587999526,
+    "log": "package.log"
+  },
+  {
+    "step": "consumer",
+    "command": [
+      "python3",
+      "lab/consume/run.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 7.0304626369998005,
+    "log": "consumer.log"
+  },
+  {
+    "step": "packaged-example-clean-current",
+    "command": [
+      "cargo",
+      "clean",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release09-readme/Cargo.toml",
+      "-p",
+      "syom-release09-example",
+      "--release"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.027867696999237523,
+    "log": "packaged-example-clean-current.log"
+  },
+  {
+    "step": "packaged-example-current",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release09-readme/Cargo.toml",
+      "--quiet"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 4.576305698001306,
+    "log": "packaged-example-current.log"
+  },
+  {
+    "step": "packaged-example-clean-msrv",
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "clean",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release09-readme/Cargo.toml",
+      "-p",
+      "syom-release09-example",
+      "--release"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.030801725999481278,
+    "log": "packaged-example-clean-msrv.log"
+  },
+  {
+    "step": "packaged-example-msrv",
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "run",
+      "--release",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release09-readme/Cargo.toml",
+      "--quiet"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 5.033532903000378,
+    "log": "packaged-example-msrv.log"
+  },
+  {
+    "step": "dry-run-precommit",
+    "command": [
+      "cargo",
+      "publish",
+      "--dry-run",
+      "--locked",
+      "--allow-dirty"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 4.553474071000892,
+    "log": "dry-run-precommit.log"
+  }
+]

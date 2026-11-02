@@ -1,14 +1,14 @@
 # Usage and validation
 
 This page keeps integration detail separate from the root quick start.
-The recommended registry dependency is syom 0.8.1 (`syom = "0.8"`).
-The current checkout is the unpublished 0.9.0 candidate; its exact-seek
-APIs are not part of the registry release.
+The recommended registry dependency is syom 0.9.0 (`syom = "0.9"`).
+Exact interval planning and logical seek positions were introduced in
+0.9.0; the existing `seek` API remains available.
 
 ## API guide
 
 The [published guide](https://docs.rs/syom/latest/syom/guide/) contains a
-compiling example for each task. Candidate additions and migration are in
+compiling example for each task. Migration and source documentation are in
 [the checkout's guide](../src/guide.rs).
 
 | Task | Guide section |
@@ -48,9 +48,16 @@ The speech defaults cap duration at the sample budget for two hours at
 no resampling. HE output uses the extension's output rate, twice its core
 rate for the supported half-rate-core streams.
 
-## Unpublished 0.9.0 candidate
+## Exact interval acquisition since 0.9.0
 
-For a candidate checkout at `../syom`:
+For the registry release:
+
+```toml
+[dependencies]
+syom = "0.9"
+```
+
+To develop against a local checkout at `../syom`:
 
 ```toml
 [dependencies]
@@ -100,7 +107,7 @@ The `main` CI badge displays the last hosted workflow state. Hosted runs
 are paused to preserve capacity; the configured workflow and Rust 1.89 job
 remain in [.github/workflows/ci.yml](../.github/workflows/ci.yml).
 MSRV is declared in [Cargo.toml](../Cargo.toml) and locally tested for the
-candidate; the badge does not claim a new hosted run.
+release; the badge does not claim a new hosted run.
 
 The [2026-11-02 local library-line report](../lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
 measures **25802 / 27830 lines (92.71%)** on the recorded runtime sources.

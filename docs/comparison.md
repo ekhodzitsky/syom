@@ -2,9 +2,10 @@
 
 This comparison covers Rust AAC decoding into application PCM, including
 container acquisition and output layout where the adapter performs them.
-It is a pinned snapshot, not a ranking of the latest releases. syom 0.9.0
-is an unpublished candidate; the archived timings below remain attributed
-to syom 0.8.0 and must not be relabeled as 0.8.1 or 0.9.0 measurements.
+It is a pinned snapshot, not a ranking of the latest releases. The root
+README feature overview targets syom 0.9.0; the archived timings below
+remain attributed to syom 0.8.0 and must not be relabeled as 0.8.1 or
+0.9.0 measurements.
 
 ## Selection and verification
 

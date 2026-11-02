@@ -4,7 +4,7 @@
 
 | Status | Evidence |
 |---|---|
-| 0.9.0 unpublished candidate, locally qualified on Linux x86_64 | [Cold-start fix, package and consumer checks](#candidate-090--cold-start-fix) |
+| 0.9.0 release preparation, qualified on Linux x86_64 | [Release validation](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |
 | 0.8.0 historical audit | Original findings below, measured on `997bf56` on 2026-10-28 |
 
@@ -301,3 +301,21 @@ and archive hash distinguish it from any future published package.
 The registry check before qualification reports 0.8.1 as the latest release.
 No publication or deployment was performed; no new SOTA claim is made. The ordinary candidate is locally qualified within the stated
 Linux scope; current Windows/macOS/ARM validation remains outstanding.
+
+## Release 0.9.0
+
+Release preparation dated 2026-11-02. This release includes the exact-seek
+API additions, byte-preserving encoder optimizations and cold Huffman stack
+fix described in the [changelog](../../CHANGELOG.md). Runtime algorithms
+remain those qualified by the preceding candidate; release changes update
+installation, version/date labels and public API documentation.
+
+The [release preflight](runs/release-0.9.0/preflight.json) records the local
+checks and source hashes. No Windows/macOS/ARM parity, listening superiority
+or SOTA claim is added. Hosted GitHub checks remain paused. The existing
+workflow triggers main-branch pushes only; release commit messages retain
+`[skip ci]`, and tag pushes do not match its branch filter.
+
+Registry publication, downloaded-archive comparison and the exact source
+commit/tag are recorded separately after the upload. Historical candidate
+reports above preserve their original unpublished status at measurement time.

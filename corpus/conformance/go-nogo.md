@@ -1,6 +1,6 @@
 # Syntax inventory: current status and archived decisions
 
-Status review: **2026-11-02**, unpublished 0.9.0 candidate.
+Status review: **2026-11-02**, 0.9.0 release.
 **No conformance certificate** is claimed. ISO/IEC 14496-26 bitstreams
 remain unobtained. This page separates the original TASK-17 motivations
 from current authored regressions; neither source review nor a passing

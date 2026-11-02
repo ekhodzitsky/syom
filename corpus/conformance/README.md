@@ -6,7 +6,7 @@ spawns ffmpeg/FDK.
 
 ## Current contract and historical inventory
 
-Reviewed **2026-11-02** for the unpublished 0.9.0 candidate. Current support
+Reviewed **2026-11-02** for the 0.9.0 release. Current support
 and limits are defined in [the API guide](../../src/guide.rs), with release
 scope in [usage and validation](../../docs/usage-and-validation.md).
 The [supersession map](go-nogo.md#supersession-map) links original HE ASC,
