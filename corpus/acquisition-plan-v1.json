@@ -45,10 +45,6 @@
     {
       "id": "nat-cv-ja",
       "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
-    },
-    {
-      "id": "nat-fma-percussion",
-      "reason": "Exact track with independently verified CC0 recording license not fixed yet"
     }
   ],
   "constraints": [
@@ -95,6 +91,21 @@
       "selection_amendment": "Fixes formerly unspecified performance/archive by numerical-first Op. 28 prelude, No. 1",
       "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
       "caveat": "Lossy MP3 source; not a lossless or original high-band reference."
+    },
+    {
+      "id": "nat-fma-percussion",
+      "recording_id": "fma-cc0-percussion",
+      "catalog_url": "https://freemusicarchive.org/music/John_Bartmann/hot-equatorial-night/congo-bongo-stomp/",
+      "metadata_url": "https://www.johnbartmann.com/music",
+      "source_url": "https://track.johnbartmann.com/congo-bongo-stomp-master.mp3",
+      "source_filename": "congo-bongo-stomp-master.mp3",
+      "source_md5": null,
+      "catalog_attribution": "Congo Bongo Stomp, John Bartmann; FMA album Hot Equatorial Night; author site track ID 265, slug congo-bongo-stomp",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source_encoding": "MP3",
+      "selection_amendment": "Pins formerly unspecified FMA CC0 recording to this exact catalog title before fetching audio, using author-distributed master. Author metadata and FMA catalog identify same title; byte equality with FMA-hosted download is unverified. Genre/phonetic/transient coverage not established.",
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "caveat": "Lossy MP3 source, no published source checksum located; local SHA-256 is an acquisition receipt, not independently authenticated upstream integrity."
     }
   ]
 }
