@@ -31,6 +31,10 @@
         "recording_id": "openslr12-spk-2094",
         "speaker_id": 2094
       }
+    ],
+    "official_mirror_urls": [
+      "https://openslr.elda.org/resources/12/test-clean.tar.gz",
+      "https://openslr.magicdatatech.com/resources/12/test-clean.tar.gz"
     ]
   },
   "unresolved_records": [
@@ -41,14 +45,6 @@
     {
       "id": "nat-cv-ja",
       "reason": "Exact dataset release, permitted access and deterministic file/concatenation rule not fixed yet"
-    },
-    {
-      "id": "nat-musopen-chopin",
-      "reason": "Exact performance/file and recording license not fixed yet"
-    },
-    {
-      "id": "nat-librivox-war",
-      "reason": "Catalog version, exact file and attribution need a separate metadata decision"
     },
     {
       "id": "nat-fma-percussion",
@@ -63,5 +59,42 @@
     "A 12-second concatenation is an acquisition amendment, not an assertion that the earlier registration named an exact excerpt",
     "Final listening stimuli require independent candidate freeze, rate matching, loudness and rendering qualification"
   ],
-  "registered_on": "2026-11-02"
+  "registered_on": "2026-11-02",
+  "fixed_file_excerpts": [
+    {
+      "id": "nat-librivox-war",
+      "recording_id": "librivox-war-of-the-worlds",
+      "catalog_url": "https://librivox.org/the-war-of-the-worlds-by-h-g-wells/",
+      "metadata_url": "https://archive.org/metadata/waroftheworlds_2103_librivox",
+      "source_url": "https://archive.org/download/waroftheworlds_2103_librivox/waroftheworlds_01_wells_128kb.mp3",
+      "source_filename": "waroftheworlds_01_wells_128kb.mp3",
+      "source_bytes": 14359913,
+      "source_md5": "0b56b388e17016011da4e6453b323ba3",
+      "source_sha1": "e76bb373911ebd7fd937edce28c1798b5c42d3e0",
+      "catalog_attribution": "The War of the Worlds (Version 5), H. G. Wells, reader Cliff Stone; LibriVox catalog 2021-03-12",
+      "license_url": "http://creativecommons.org/publicdomain/mark/1.0/",
+      "license_scope_note": "LibriVox catalog states public domain in USA; no global legal clearance asserted",
+      "source_encoding": "128Kbps MP3",
+      "selection_amendment": "Fixes formerly unspecified catalog version and chapter: chapter 1, The Eve of the War",
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "caveat": "Lossy MP3 source; not a lossless or original high-band reference."
+    },
+    {
+      "id": "nat-musopen-chopin",
+      "recording_id": "musopen-chopin-op28",
+      "catalog_url": "https://archive.org/details/musopen-chopin",
+      "metadata_url": "https://archive.org/metadata/musopen-chopin",
+      "source_url": "https://archive.org/download/musopen-chopin/Prelude%20Op.%2028%20no.%201.mp3",
+      "source_filename": "Prelude Op. 28 no. 1.mp3",
+      "source_bytes": 800976,
+      "source_md5": "f78728cfbbd23cdafcfe02da27492257",
+      "source_sha1": "101856c495f84180dd8b55243773d25a1c3db00e",
+      "catalog_attribution": "Musopen - The Complete Chopin Collection; creator Aaron Dunn; primary Musopen uploader; public date 2015-01-29",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/",
+      "source_encoding": "VBR MP3",
+      "selection_amendment": "Fixes formerly unspecified performance/archive by numerical-first Op. 28 prelude, No. 1",
+      "selection": "Decode at native source rate/channel count verified by ffprobe; retain first 12 seconds (rate*12 samples/channel), interleaved f32le. No silence skipping, listening, resampling, fades, normalization or codec-output inspection. Fail on short/malformed/nonfinite audio.",
+      "caveat": "Lossy MP3 source; not a lossless or original high-band reference."
+    }
+  ]
 }
