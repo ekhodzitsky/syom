@@ -1,6 +1,9 @@
 # Offline native comparison lab
 
-The unpublished 0.9.0 exact-seek candidate has
+The unpublished 0.9.0 candidate has
+[cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix),
+including fresh-process stack checks and decoded/encoded output comparisons.
+Its exact-seek work has separate
 [native equality and observed-read evidence](release-audit/runs/exact-seek-0.9.0/report.json).
 All qualified intervals replay the coded prefix; no arbitrary cold bounded
 window is advertised. Linux x86_64 only; no new cross-platform claim.
@@ -44,8 +47,14 @@ ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
 | [aacjs](aacjs/) | AAC.js 0.1.3 / Aurora.js 0.4.9 browser-JS LC peer ([PIN](aacjs/PIN.md), [REPORT](aacjs/REPORT.md)) | TASK-20 |
 | [profiles](profiles/) | LD/ELD/USAC feasibility: FDK v2.0.3, libxaac v0.1.13, exhale v1.2.2 ([PIN](profiles/PIN.md), [REPORT](profiles/REPORT.md)) | TASK-97 |
 | [oxideav](oxideav/) | oxideav-aac 0.1.7 (pure-Rust LC + HE v1 encoder peer) ([PIN](oxideav/PIN.md), [REPORT](oxideav/REPORT.md)) | TASK-95 |
+| [fmp4](fmp4/) | fragmented-MP4 fixtures, timeline oracles and bounded-input contract ([PIN](fmp4/PIN.md), [REPORT](fmp4/REPORT.md)) | TASK-64 spike; follow-ups recorded in report |
+| [frame960](frame960/) | 960/120-frame feasibility and offline oracle probes ([PIN](frame960/PIN.md), [REPORT](frame960/REPORT.md)) | Original TASK-63 study; later decode regressions are in [frame_grid_tests](../src/frame_grid_tests.rs) |
+| [mobile](mobile/) | Android/iOS compile checks and integration evidence ([PIN](mobile/PIN.md), [REPORT](mobile/REPORT.md), [INTEGRATION](mobile/INTEGRATION.md)) | TASK-101; no device runtime qualification |
+| [jcodec](jcodec/) | JCodec 0.2.5 / JAAD AAC peer ([PIN](jcodec/PIN.md), [REPORT](jcodec/REPORT.md)) | TASK-19; Linux JVM runtime evidence |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for local prerequisites, command
+side effects and the distinction between checks, generators and measurements.
 
 ```sh
 # after a local FFmpeg 9.0.1 prefix exists:

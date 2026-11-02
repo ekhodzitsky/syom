@@ -7,6 +7,7 @@ directly to your application at the native sample rate.
 [![crates.io version](https://img.shields.io/crates/v/syom?style=flat)](https://crates.io/crates/syom)
 [![crates.io monthly downloads](https://img.shields.io/crates/dm/syom?style=flat)](https://crates.io/crates/syom)
 [![Main CI: last hosted run](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ekhodzitsky/syom/actions/workflows/ci.yml?query=branch%3Amain)
+[![Library line coverage: 92.71%, local 2026-11-02](https://img.shields.io/badge/library%20lines-92.71%25-brightgreen?style=flat)](https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
 [![Declared MSRV: Rust 1.89](https://img.shields.io/badge/MSRV-1.89-blue?style=flat)](Cargo.toml)
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
@@ -96,9 +97,9 @@ explains migration and replay limits.
 Version, downloads and docs badges describe the registry; CI shows the
 last hosted `main` run. Hosted checks are paused. Candidate validation is
 local Linux x86_64, including Rust 1.89; other-platform parity is not
-established. Current coverage has not been measured; the historical
-[coverage report](https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md)
-defines its earlier scope.
+established. The local [library-line coverage report](https://github.com/ekhodzitsky/syom/blob/main/lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
+records 92.71% on 2026-11-02; integration tests, doctests and branch coverage
+are outside that measurement.
 
 Physical-mobile, full ISO conformance and listening qualification remain
 open. Encoder quality leadership is unproven; LC encoding still trails
@@ -107,5 +108,5 @@ FDK on the long speech cases. See the
 for consumer evidence and remaining limits.
 
 [Questions and bugs](https://github.com/ekhodzitsky/syom/issues) ·
-[Development checks](https://github.com/ekhodzitsky/syom/blob/main/AGENTS.md) ·
+[Contributing](https://github.com/ekhodzitsky/syom/blob/main/CONTRIBUTING.md) ·
 [MIT license](LICENSE) · [AAC patent notice](NOTICE)

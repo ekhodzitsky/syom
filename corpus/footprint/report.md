@@ -1,5 +1,13 @@
 # TASK-18: API integration cost and deployment footprint
 
+**Historical snapshot: syom 0.6.0, 2026-09-14.** The gap and toolchain labels
+below describe the measured version. Raw AU/ASC decode, borrowed PCM encode
+and bounded seekable M4A input subsequently shipped; bounded fragmented MP4
+also has a push path. See the current [API guide](../../src/guide.rs),
+[integration route](../../docs/usage-and-validation.md) and
+[local candidate qualification](../../lab/release-audit/REPORT.md#candidate-090--cold-start-fix).
+The declared MSRV is now 1.89. Original figures and decisions remain below.
+
 Measured 2026-09-14. Host: Linux 7.0.0-31-generic x86_64, 24 threads.
 `rustc`/`cargo` **1.97.1**. Numbers are one-run lab values, not a
 leaderboard. Peers are identified by crate version, not by invented

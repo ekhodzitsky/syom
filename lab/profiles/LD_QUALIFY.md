@@ -1,5 +1,13 @@
 # TASK-131 — AAC-LD decode qualification
 
+**512-sample oracle qualification snapshot, 2026-09-26.** Later LD480
+decoding is covered by the authored one-frame
+[frame-grid regression](../../src/frame_grid_tests.rs), not by this
+512-sample waveform matrix. Statements below rejecting every 480-sample
+frame describe the original implementation and are superseded by the
+[current API contract](../../src/guide.rs). ELD/USAC and 480-sample encode
+remain unsupported. Original measurements and exclusions are preserved.
+
 Recorded 2026-09-26. Host: Linux x86_64, rustc 1.97.1. Oracles are offline
 and are not spawned by `cargo test`. Pins: FDK v2.0.3 and libxaac 0.1.13
 (`PIN.md`). libavcodec 7.0.2 rejects these FDK LOAS streams

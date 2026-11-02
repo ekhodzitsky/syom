@@ -11,8 +11,12 @@ never downloads files and never needs these natural recordings on disk.
 | Generated PCM | `scripts/corpus_synth.py` | no; regenerated and hashed |
 | Natural excerpts | origin URLs in the manifest | **no** (not vendored) |
 
-Natural rows are **identified** (origin, license, recording identity, split)
-but `presence=gap-until-obtained`. This environment could not fetch them.
+Registered natural rows are **identified** (origin, license, recording
+identity, split) but retain `presence=gap-until-obtained`. The acquisition
+limitation belongs to this manifest's recorded inventory, not to every later
+host or evaluation. Separate [consumer-recording qualification](../lab/release-audit/CANDIDATE-0.8.1.md)
+does not establish availability of the registered holdouts or change their
+split/presence. See [coverage](coverage.md) for that distinction.
 Do not commit `.wav`/`.flac`/`.pcm` of those sources.
 
 ## Holdout

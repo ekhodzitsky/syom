@@ -102,8 +102,11 @@ remain in [.github/workflows/ci.yml](../.github/workflows/ci.yml).
 MSRV is declared in [Cargo.toml](../Cargo.toml) and locally tested for the
 candidate; the badge does not claim a new hosted run.
 
-There is no current coverage percentage or branch report to badge honestly.
-The [2026-09-29 library-line report](../lab/baseline/COVERAGE.md) excludes
-test files, benches and the standard library. Its 93.88% result is not a
-measurement of the current candidate. A fresh scoped measurement remains
-missing; no synthetic coverage badge has been substituted.
+The [2026-11-02 local library-line report](../lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
+measures **25802 / 27830 lines (92.71%)** on the recorded runtime sources.
+It excludes `_tests.rs` files, integration tests, doctests, benches,
+dependencies and std. Branch/MC/DC coverage was not enabled. The badge
+links to that dated source-pinned report; it is not a rolling hosted score.
+The earlier 2026-09-29 result of 93.88% and its original scope are preserved
+in the same report. Different source populations make those percentages
+unsuitable for a direct coverage-regression claim.

@@ -4,6 +4,22 @@ Research artifact, not a conformance certificate. Ordinary `cargo test`
 never downloads ISO text, never needs ISO 14496-26 vectors, and never
 spawns ffmpeg/FDK.
 
+## Current contract and historical inventory
+
+Reviewed **2026-11-02** for the unpublished 0.9.0 candidate. Current support
+and limits are defined in [the API guide](../../src/guide.rs), with release
+scope in [usage and validation](../../docs/usage-and-validation.md).
+The [supersession map](go-nogo.md#supersession-map) links original HE ASC,
+LATM/PCE/CRC/CCE, frame-grid and 7.1 findings to current regression sources.
+[Corpus coverage](../coverage.md) distinguishes implementation, registered
+fixtures and independent qualification.
+
+The original TASK-17 clauses, vectors, matrix and decision rationale remain
+research snapshots. Passing the inventory verifier checks their internal
+consistency and provenance constraints; it does not prove current codec
+completeness. No new oracle comparison, additional-platform qualification
+or normative acquisition was made for this documentation update.
+
 ## What this is
 
 A clause-to-feature map for the **advertised** LC / HE v1 / HE v2 decode
@@ -17,7 +33,10 @@ Existing in-tree goldens are **not** treated as ISO evidence.
 - Not a license to copy standard text or competitor codec bodies.
 - Not a claim that syom matches every independent layout today.
 
-## Acquisition
+## Acquisition recorded by TASK-17
+
+This table preserves the acquisition context of the original investigation;
+“this session” refers to that work, not a fresh 2026-11-02 download attempt.
 
 | Document | Status |
 |---|---|
@@ -41,5 +60,6 @@ python3 scripts/verify_conformance_inventory.py
 
 ## Follow-on
 
-`go-nogo.md` says which S1 parser tasks can start without purchasing ISO
-text, and which cells stay unqualified.
+[go-nogo.md](go-nogo.md) separates current supersession evidence from the
+archived S1 parser decisions. Its remaining independent-qualification and
+normative-vector gaps must not be closed by self-roundtrips alone.

@@ -1,8 +1,12 @@
 # syom benches
 
-Current 0.8.0 decode comparison against rusty_aac 2.0.1, Symphonia 0.6.1
+Historical 0.8.0 decode comparison against rusty_aac 2.0.1, Symphonia 0.6.1
 and oxideav-aac 0.1.7: [2026-10-28 release audit](lab/release-audit/REPORT.md).
-The older tables below do not rank current rusty_aac.
+The tables below retain their measured versions and dates; they do not
+rank the current checkout or the latest competitors. See the
+[comparison guide](docs/comparison.md) for the evidence map and the
+[0.9.0 candidate qualification](lab/release-audit/REPORT.md#candidate-090--cold-start-fix)
+for current local validation. No historical timing is relabeled.
 
 `cargo bench --bench aac -- --quick` then `cargo bench --bench mem`.
 Decode groups now run an untimed equivalent-PCM preflight
@@ -42,11 +46,13 @@ peak live 121 KiB / 363 allocs; HE 576 KiB / 1889; PS 1.21 MiB / 11056.
 Streaming retained workspace ~37–40 KiB (plateau).
 
 Kernel `perf_event_paranoid=4` blocks function profiles on this host.
-A rerun of this same harness on the current tree, Linux x86_64 and
+A rerun of this same harness on the 2026-09-29 measured tree, Linux x86_64 and
 macOS aarch64, is in
 [lab/baseline/HOSTS-2026-09-29.md](lab/baseline/HOSTS-2026-09-29.md).
-In-process lavc/FDK wall cells are still not linked. C peers stay
-`c-peers-unavailable`.
+That historical harness did not link in-process lavc/FDK wall cells;
+its C-peer status was `c-peers-unavailable`. Subsequent native comparisons
+and the complete-input FDK correction are recorded separately in
+[SOTA-SPEED-2026-10-16.md](lab/baseline/SOTA-SPEED-2026-10-16.md).
 
 Machine: macOS aarch64, `profile.bench` thin LTO, 2026-09-05 (rev 2:
 one-shot mono fast path; rev-1 numbers, where changed, are in the notes).

@@ -297,8 +297,9 @@
 //! missing bytes and unsupported exact profiles remain typed errors.
 //! Exact guarantees cover LC/LD mono/stereo. A logical position belongs
 //! to its source and restores by replay; it is not a DSP-state checkpoint.
-//! Encoder optimizations keep existing byte-exact goldens. Cold decoder table
-//! initialization now fits the optimized 128 KiB thread-stack budget.
+//! Encoder optimizations keep existing byte-exact goldens. Cold decoder tables
+//! initialize on the heap; Linux x86_64 release regressions cover 128 KiB
+//! threads for LC, HE v1/v2, implicit PS, multichannel LC and LD fixtures.
 //!
 //! - Minimum Rust is 1.89 (was 1.97).
 //! - 3, 4, 5, 6 or 8 planes now encode as surround; they used to be an

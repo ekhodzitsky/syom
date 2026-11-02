@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-02",
+  "platform": "Linux x86_64",
+  "runtime_revision": "13d8fd76572f171784d2283ba86fa7c083edfe02",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo_llvm_cov": "cargo-llvm-cov 0.9.1",
+  "command": [
+    "cargo",
+    "llvm-cov",
+    "--lib",
+    "--ignore-filename-regex",
+    "_tests\\.rs$",
+    "--json",
+    "--summary-only",
+    "--output-path",
+    "target/documentation-coverage-20261102.json"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "unit_tests_passed": 1167,
+  "existing_ignored": 7,
+  "instrumented_test_seconds": 254.6,
+  "totals": {
+    "branches": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "functions": {
+      "count": 2147,
+      "covered": 2002,
+      "percent": 93.24639031206334
+    },
+    "instantiations": {
+      "count": 6206,
+      "covered": 3660,
+      "percent": 58.975185304543984
+    },
+    "lines": {
+      "count": 27830,
+      "covered": 25802,
+      "percent": 92.71289974847286
+    },
+    "mcdc": {
+      "count": 0,
+      "covered": 0,
+      "notcovered": 0,
+      "percent": 0
+    },
+    "regions": {
+      "count": 48756,
+      "covered": 44496,
+      "notcovered": 4260,
+      "percent": 91.26261383214373
+    }
+  },
+  "scope": "Library unit test execution;166 reported source files. Includes shipped hidden comparison helpers. Ignores filenames matching _tests\\.rs$, integration tests, doctests, benches, dependencies and std. Branch/MC/DC instrumentation not enabled. No cold-process/performance/platform certification follows from line coverage.",
+  "raw_export_sha256": "b8d9ea78bccce5d6c497ea2758bb1eb96e9b188f9a53b8d877f56908246301e9",
+  "retained_export": "summary.json: paths normalized to repository-relative; all per-file summary metrics and totals retained",
+  "source_manifest": "source-manifest.json",
+  "profile_binaries": "Not committed; generated under the shared target tree",
+  "hosted_ci": "Not run; restriction retained",
+  "historical_report": "../../COVERAGE.md#historical-measurement-2026-09-29",
+  "host": {
+    "cpu_model": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
+    "logical_cpus": 24,
+    "kernel": "7.0.0-38-generic",
+    "machine": "x86_64"
+  }
+}

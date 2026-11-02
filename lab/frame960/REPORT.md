@@ -1,5 +1,13 @@
 # TASK-63 — 960-sample AAC frame support: decision and decomposition
 
+**Historical feasibility decision, 2026-09-22; later decode scope supersedes
+the blanket no-go below.** LC960 and LD480 decoding subsequently shipped;
+the current [frame-grid regressions](../../src/frame_grid_tests.rs) and
+[API guide](../../src/guide.rs) define that scope. HE on a 960-sample core
+and 960/480 encoding remain outside it. The original oracle observations,
+negative results and product decision are preserved, not relabeled as
+current candidate qualification.
+
 Date: 2026-09-22. Verdict: **NO-GO for the 0.x product** (decode and encode),
 with the exact limitation documented and explicit revisit triggers below.
 Reproduce: `lab/frame960/run.sh` (offline oracles; never spawned by cargo

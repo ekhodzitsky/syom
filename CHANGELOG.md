@@ -32,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Separate current support and qualification from archived corpus,
+  conformance, footprint and frame-grid decisions. Add contributor setup,
+  complete lab navigation, portable local-state ignores and an executable
+  published-README check. Record fresh local library-line coverage with
+  explicit exclusions, preserving the earlier measurements.
 - Reorganize the root README around a verified published-crate quick start,
   compact comparisons and scoped historical measurements. Move detailed
   format, integration and benchmark evidence into linked documentation;

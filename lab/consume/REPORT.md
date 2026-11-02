@@ -1,5 +1,12 @@
 # TASK-102 — realistic consumer flows and one-engine integration
 
+Current evidence: [0.9.0 local candidate qualification](../release-audit/REPORT.md#candidate-090--cold-start-fix)
+and [published 0.8.1](../release-audit/PUBLISHED-0.8.1.md). The fill fix
+called unreleased in the intermediate history below shipped in 0.8.1.
+The present runner includes `flows`, `consumers` and `exact_seek`; the
+original two-binary method and Rust 1.88 figures below describe their
+recorded revision, not the current package or toolchain policy.
+
 **Historical 0.6.0 results.** The [0.8.0 rerun](../release-audit/REPORT.md)
 corrects the ADTS trim/probe assumptions and finds 915 steady-state
 allocations on padded LC; the zero-allocation claim below does not hold

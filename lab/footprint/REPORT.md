@@ -1,5 +1,12 @@
 # TASK-99 — toolchain, package and footprint budgets
 
+**Historical snapshot: 2026-09-18.** Toolchain and package figures below
+describe that run, not current policy. The declared MSRV is now **1.89**
+([Cargo.toml](../../Cargo.toml)); local checks and the hosted-CI pause are
+defined in [AGENTS.md](../../AGENTS.md). Current package/stack qualification
+is in the [0.9.0 candidate report](../release-audit/REPORT.md#candidate-090--cold-start-fix).
+The original measurements and policy observations are preserved below.
+
 Measured 2026-09-18, Linux x86_64 (Ryzen AI 9 HX 370).
 
 ## Toolchain policy

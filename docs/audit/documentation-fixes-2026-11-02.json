@@ -1,0 +1,190 @@
+{
+  "date": "2026-11-02",
+  "baseline_revision": "13d8fd76572f171784d2283ba86fa7c083edfe02",
+  "change_scope": "Documentation, contributor tooling and portable ignores; no runtime algorithms, Cargo versions/lockfiles, corpus manifests, goldens or CI workflows changed",
+  "readme_words_excluding_fenced_code": 545,
+  "readme_sha256": "4a8e17702e37583652c9dea421b02c41abbb3f10fe972cd673ca02b49376f792",
+  "readme_checker_sha256": "767797e8bf5247cc241a889ef3b43a30158d9f35cd23ce8c583631a0d174bdd0",
+  "readme_example_checks": [
+    {
+      "registry_version": "0.8.1",
+      "msrv": false,
+      "example_sha256": "02571acff44065acb4bdf5e243909354794381f481acbc37cfcc4d18980b1700",
+      "stdout": "1 channel at 48000 Hz",
+      "result": "pass"
+    },
+    {
+      "registry_version": "0.8.1",
+      "msrv": true,
+      "example_sha256": "02571acff44065acb4bdf5e243909354794381f481acbc37cfcc4d18980b1700",
+      "stdout": "1 channel at 48000 Hz",
+      "result": "pass"
+    }
+  ],
+  "readme_wrong_output_check": {
+    "exit_code": 1,
+    "stderr": "FAIL: expected 'incorrect expected result', got '1 channel at 48000 Hz'",
+    "result": "pass: expected rejection"
+  },
+  "shared_ignore_check": [
+    ".gitignore:8:/backlog/\tbacklog/example",
+    ".gitignore:4:/.codex/\t.codex/example",
+    ".gitignore:3:/.serena/\t.serena/example",
+    ".gitignore:5:/.grok/\t.grok/example",
+    ".gitignore:6:/.claude/\t.claude/example",
+    ".gitignore:7:/.cursor/\t.cursor/example",
+    ".gitignore:9:/CLAUDE.md\tCLAUDE.md",
+    ".gitignore:10:/GEMINI.md\tGEMINI.md",
+    ".gitignore:11:/CODEX.md\tCODEX.md"
+  ],
+  "historical_preservation": {
+    "corpus/coverage.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "corpus/conformance/go-nogo.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/footprint/REPORT.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "corpus/footprint/report.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/release-audit/REPORT.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/frame960/REPORT.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/profiles/LD_QUALIFY.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/consume/REPORT.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "lab/baseline/COVERAGE.md": "Original prose, heading text and data preserved; archive headings may be nested at a lower level",
+    "BENCH.md": "All original table rows preserved verbatim"
+  },
+  "gates": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.9540502169993488,
+      "result_lines": []
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.03212417700069636,
+      "result_lines": [
+        "OK: all Rust sources within line caps"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.021432147000268742,
+      "result_lines": [
+        "OK: CHANGELOG.md has Unreleased and ## [0.9.0]"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 6.5168062059992735,
+      "result_lines": []
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 30.466861695999796,
+      "result_lines": [
+        "test result: ok. 1167 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 20.81s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 0.9596769219997441,
+      "result_lines": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.56s"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.992238899999393,
+      "result_lines": [
+        "OK: 183 files, 461340 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_corpus.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.12014206000003469,
+      "result_lines": [
+        "OK: 82 cases, 24 natural excerpts, offline checks passed"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_conformance_inventory.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.025339485000586137,
+      "result_lines": [
+        "OK: 20 authored vectors, 9 clause topics, ISO 14496-26 not obtained, no ffmpeg invoked"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/verify_oracle_provenance.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.035845143999722495,
+      "result_lines": [
+        "OK: 98 oracle records, 94 explicit provenance gaps, no ffmpeg invoked"
+      ]
+    }
+  ],
+  "coverage": "../../lab/baseline/runs/coverage-20261102/report.json",
+  "source_identity": "Every one of 166 reported coverage source files matches baseline 13d8fd7 byte-for-byte; hashes retained with coverage report",
+  "independent_review": "band_emit and cost_pairs: no blockers; evidence scope and checker/cache/error behavior reviewed independently",
+  "execution_limits": [
+    "No GitHub CI: maintainer capacity restriction unchanged",
+    "No browser available for rendered visual screenshot/light-dark inspection",
+    "No new oracle, other-platform, listening or ISO qualification",
+    "No publication or deployment"
+  ],
+  "readme_v1_status": {
+    "badges": "Applicable indicators now present with real source/date/scope; current hosted validation remains paused and explicitly labeled",
+    "presentation": "English/length/parsed Markdown checks performed; visual browser inspection remains unavailable"
+  },
+  "links": {
+    "markdown_files": 110,
+    "local_and_mapped_github_links_checked": 251,
+    "missing_targets_or_anchors": [],
+    "scope": "Relative links plus this repository blob/main links; code fences excluded. Other remote URLs not exhaustively checked."
+  }
+}

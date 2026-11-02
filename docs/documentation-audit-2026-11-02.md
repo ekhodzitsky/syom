@@ -1,5 +1,39 @@
 # Documentation and repository layout audit
 
+## Correction status 2026-11-02
+
+The actionable findings below have been addressed in the documentation
+follow-up. Runtime algorithms, Cargo versions, corpus inventories and
+historical numerical results are unchanged. The original audit is retained
+below as a dated record of what was found, not as current unresolved status.
+
+| Finding | Resolution |
+|---|---|
+| Corpus support versus registered evidence | [Current table](../corpus/coverage.md#current-status-of-superseded-gap-rows); original rows retained as archive |
+| Original syntax defects presented as current | [Supersession map](../corpus/conformance/go-nogo.md#supersession-map) with exact regression references |
+| Historical policy and frame-grid no-go language | Date/status banners in BENCH, footprint, consumer, LD and frame960 reports; original data retained |
+| Release evidence entry point | [Release index](../lab/release-audit/REPORT.md#release-evidence-index) and current-candidate-first [lab index](../lab/README.md) |
+| Stack guarantee scope | [Guide](../src/guide.rs) limits the measured 128 KiB result to tested Linux release fixture families |
+| Contributor setup and command side effects | [CONTRIBUTING.md](../CONTRIBUTING.md), canonical AGENTS checks, and verify/generate/measure table |
+| Clone-local metadata exclusions | Existing root-local policy promoted to tracked [.gitignore](../.gitignore); AGENTS remains tracked |
+| Coverage and hosted-state ambiguity | [92.71% local library-line measurement](../lab/baseline/COVERAGE.md#local-measurement-2026-11-02); historical 93.88% retained; no fabricated hosted run |
+| Incomplete lab/script navigation | Missing laboratories and output/mutation notes now indexed |
+| Wording-only quick-start validation | [Executable checker](../scripts/check-readme-example.py), published dependency and MSRV runs, plus wrong-output rejection |
+
+Hosted CI remains paused by maintainer instruction. Browser visual review
+remains unavailable in this environment; no screenshot or light/dark pass
+is claimed. These are explicit execution limits, not unresolved factual
+contradictions. A security policy with an approved private contact was not
+invented merely to create a conventional file.
+
+The original audit's link to the 960 feasibility study has been corrected
+to the actual regression evidence: the old study is not itself proof of
+subsequent shipped support. The original acceptance table below describes
+the initial README-only change; current checks and scope are in the
+[correction verification record](audit/documentation-fixes-2026-11-02.json).
+
+## Original audit at 13d8fd7
+
 The main documentation risk is **conflicting descriptions of current support**,
 not an untidy root directory. Dated research results, current API contracts,
 and release status are mixed together. A reader can encounter an old
@@ -34,7 +68,7 @@ bytes. No fresh competitor benchmark or coverage measurement was performed.
 [corpus/coverage.md](../corpus/coverage.md#profiles--bitrates) still says
 960-sample frames are a 0.x no-go and LD480 remains `Unsupported`.
 The [current guide](../src/guide.rs) and
-[frame-grid qualification](../lab/frame960/REPORT.md) describe supported
+[frame-grid regressions](../src/frame_grid_tests.rs) describe supported
 960-sample LC and 480-sample LD. Its layouts table also marks 7.1 as a
 TASK-62 gap, although `corpus/manifest.json` contains `lc-mc71-adts`,
 `lc-mc71-m4a` and `lc-mc71p-adts`.

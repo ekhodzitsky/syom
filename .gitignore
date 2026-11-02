@@ -1,4 +1,14 @@
 /target
+# Local planning and agent state; AGENTS.md remains the shared workflow.
+/.serena/
+/.codex/
+/.grok/
+/.claude/
+/.cursor/
+/backlog/
+/CLAUDE.md
+/GEMINI.md
+/CODEX.md
 **/*.rs.bk
 __pycache__/
 *.pyc

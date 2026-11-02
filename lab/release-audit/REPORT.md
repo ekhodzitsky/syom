@@ -1,5 +1,19 @@
 # syom 0.8 production readiness audit
 
+## Release evidence index
+
+| Status | Evidence |
+|---|---|
+| 0.9.0 unpublished candidate, locally qualified on Linux x86_64 | [Cold-start fix, package and consumer checks](#candidate-090--cold-start-fix) |
+| 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |
+| 0.8.0 historical audit | Original findings below, measured on `997bf56` on 2026-10-28 |
+
+Publication, consumer deployment and SOTA eligibility are separate statuses.
+The historical zero-allocation no-go below was fixed before the published
+0.8.1 release; it is not the current candidate's allocation result.
+
+## Historical 0.8.0 audit
+
 Later [0.8.1 candidate qualification](CANDIDATE-0.8.1.md) adds real recordings
 and fixes a PNS seek defect absent from these original short fixtures.
 
