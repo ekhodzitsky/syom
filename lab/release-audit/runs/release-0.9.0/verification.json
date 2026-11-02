@@ -217,12 +217,17 @@
       "result": "pass"
     }
   ],
-  "ci": "No hosted dispatch; tag is outside main-only push filter; all commits use[skipci]",
+  "ci": "No hosted dispatch; tag is outside main-only push filter; all commits use [skip ci]",
   "tag": {
     "name": "v0.9.0",
     "type": "annotated",
     "source_commit": "1bb81520e4bda91f17e4e8b79d7c5cab93666a4f",
-    "object": "40886b8620f9ec790f66e40783b1e78cfd749ffa"
+    "object": "40886b8620f9ec790f66e40783b1e78cfd749ffa",
+    "remote_verified_utc": "2026-11-02T10:16:11.607717+00:00",
+    "remote_refs": {
+      "refs/tags/v0.9.0": "40886b8620f9ec790f66e40783b1e78cfd749ffa",
+      "refs/tags/v0.9.0^{}": "1bb81520e4bda91f17e4e8b79d7c5cab93666a4f"
+    }
   },
   "clean_dry_run": {
     "source_revision": "1bb81520e4bda91f17e4e8b79d7c5cab93666a4f",

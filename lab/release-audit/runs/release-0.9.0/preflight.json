@@ -20,5 +20,5 @@
   },
   "runtime_changes": "None since the preceding qualified source; this phase updates release metadata and installation/docs only",
   "prior_fuzz": "../candidate-0.9.0/report.json records unchanged-runtime parser/state qualification; not rerun for documentation-only release metadata",
-  "ci": "Not dispatched. Existing workflow is main-branch-only push; all new commits use[skipci], and tags do not match pushbranches."
+  "ci": "Not dispatched. Existing workflow is main-branch-only push; all new commits use [skip ci], and tags do not match pushbranches."
 }
