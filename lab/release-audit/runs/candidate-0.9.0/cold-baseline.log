@@ -1,0 +1,39 @@
+
+running 1 test
+test cold_decode_on_small_stack ... FAILED
+
+failures:
+
+failures:
+    cold_decode_on_small_stack
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.52s
+
+lc: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226153) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+he1: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226166) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+he2: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226203) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+implicit-ps: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226225) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+mc: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226258) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+ld: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (226284) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+
+thread 'cold_decode_on_small_stack' (226150) panicked at tests/cold_stack.rs:49:5:
+cold-stack failures: ["lc", "he1", "he2", "implicit-ps", "mc", "ld"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

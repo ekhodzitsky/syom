@@ -217,3 +217,73 @@ rust-src component. Toolchain identifiers and fixture SHA256 values are
 in [runs/host.json](runs/host.json). Registry crate checksums are in
 Cargo.lock. The 7 ignored library tests print lab timing/alignment tables
 and are not counted as passing tests.
+
+## Candidate 0.9.0 — cold-start fix
+
+This ordinary release candidate is independent of the SOTA eligibility
+work in TASK-112. The strict FDK encoder-speed gate remains open; the
+historical tables above and in the speed report retain their original
+versions and results. Version 0.9.0 is not published by this qualification.
+
+Baseline: `80c2c33`, the byte-preserving encoder increment. Its isolated
+optimized fresh-process regression fails on a 128 KiB worker stack for
+all six tested inputs: LC, HE v1, explicit HE v2, implicit PS, multichannel
+LC and LD. Initializing `LazyLock<[HuffTree; 11]>` constructs eleven inline
+12 KiB lookup pairs, exceeding the stack before normal decoding begins.
+A warm process or the full debug suite's 512 KiB test stack can hide this.
+
+The candidate keeps each lookup as a fixed-size boxed array, constructed
+from a heap-filled vector. Fixed lengths preserve lookup bounds and table
+contents; no full lookup array is built on the stack. There is no new
+unsafe code, product dependency, public API or per-frame allocation.
+The change adds 22 once-per-process retained heap allocations and moves
+135168 lookup payload bytes from inline static storage to the heap.
+Box pointers add 176 bytes across the eleven trees on x86_64, plus any
+allocator overhead. These figures are not RSS measurements.
+
+`tests/cold_stack.rs` starts a fresh process for each of the six profiles,
+then makes the first decode on a worker thread without prewarming tables.
+Optimized builds use 128 KiB, debug builds 512 KiB. The candidate passes
+all six and compares cold/warm PCM exactly. The same new regression test
+fails all six against unchanged baseline production sources. Original
+baseline failure logs remain preserved, not rewritten as passing results.
+
+The same-core warm decode guard runs CPU0 in ABBA/BAAB order, five warmups
+and 31 measured complete decode/free calls per process (124 observations
+per variant/cell), retaining every sample. Observed candidate/baseline
+pooled ratios: LC sine 0.9561, lecture 0.9408, HE v1 1.0126, HE v2 0.9942,
+multichannel 0.9601, LD 0.9724. The worst observed slowdown is 1.3%, within
+the 3% guard. This is a busy shared Linux x86_64 host; these observations
+are not a universal speed ranking or Windows/macOS/ARM qualification.
+
+[Source-pinned qualification evidence](runs/candidate-0.9.0/report.json)
+retains the cold failures/successes, all warm timing observations, source
+hashes, exact PCM and encoder comparisons, local checks and package audit.
+
+Final local checks pass on the frozen candidate sources: fmt, size,
+changelog, clippy all targets with warnings denied, **1167 unit tests**
+(7 existing ignored diagnostics), **two integration tests**, 29 doctests,
+and package audit. The fresh-process integration test covers six separate
+cold children. Full Rust **1.89** lib/tests and the release cold regression
+pass. The formerly failing isolated optimized latency test also passes.
+
+Actual output files were compared against unchanged `80c2c33`: **48 decoded
+fixtures have identical f32 bits and output shapes**, eight additional
+transport fixtures retain identical typed errors, and **60 encoder
+configurations match byte for byte**. Both same-version libraries were
+explicitly cleaned and rebuilt in one shared target directory before this
+comparison, avoiding stale dependency reuse. Initial unqualified snapshot
+logs are kept separately and are not used as evidence.
+
+The packaged consumer passes all flows, including exact seek and warm
+zero-allocation streaming. Parser fuzz seed1430 completed 2658 iterations;
+stateful fuzz seed1431 completed 50000 iterations; both had zero panics.
+`cargo publish --dry-run --locked --allow-dirty` verifies the packaged
+library and stops before uploading. The local candidate archive contains
+183 files, remains below the 512 KiB compressed budget, declares Rust1.89,
+and has no product dependencies or build script. Its dirty VCS metadata
+and archive hash distinguish it from any future published package.
+
+The registry check before qualification reports 0.8.1 as the latest release.
+No publication or deployment was performed; no new SOTA claim is made. The ordinary candidate is locally qualified within the stated
+Linux scope; current Windows/macOS/ARM validation remains outstanding.

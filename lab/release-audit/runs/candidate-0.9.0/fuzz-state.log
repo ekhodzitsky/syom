@@ -1,0 +1,8 @@
+   Compiling syom-lab-fuzz v0.0.0 (/home/ekhodzitsky/Projects/syom/lab/fuzz)
+    Finished `release` profile [optimized] target(s) in 0.67s
+     Running `target/release/syom_fuzz_state --seconds 30 --seed 1431`
+syom-lab-fuzz-state TASK-103
+seed 1431
+iters 50000
+wall_ms 27059
+panics 0

@@ -1,0 +1,38 @@
+
+running 1 test
+lc: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267045) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+he1: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267056) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+he2: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267128) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+implicit-ps: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267242) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+mc: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267667) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+ld: signal: 6 (SIGABRT) (core dumped)
+
+thread '<unknown>' (267678) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+
+thread 'cold_decode_on_small_stack' (267042) panicked at /home/ekhodzitsky/Projects/syom/tests/cold_stack.rs:53:5:
+cold-stack failures: ["lc", "he1", "he2", "implicit-ps", "mc", "ld"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test cold_decode_on_small_stack ... FAILED
+
+failures:
+
+failures:
+    cold_decode_on_small_stack
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.50s

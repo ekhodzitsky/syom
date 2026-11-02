@@ -1,0 +1,82 @@
+{
+  "task": "TASK-143",
+  "date": "2026-11-02",
+  "version": "0.9.0",
+  "state": "Validated ordinary release candidate; not published, tagged or deployed",
+  "decision": "Cold small-stack blocker resolved for tested profiles on Linux x86_64. Local package dry-run passed. SOTA gates are independent and still open.",
+  "baseline_revision": "80c2c33481016d03f266c2e51de341788d88e115",
+  "candidate_source_identity": "Sources and evidence committed together; source-manifest.json pins exact changed files",
+  "source_manifest_sha256": "b1dbeba95dafc13b0e5525f766dfa124fcd54b20a6b0f8a302af2b4409985d14",
+  "platform": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "msrv": "1.89.0",
+    "other_platforms": "Not freshly qualified; no Windows/macOS/ARM parity claimed"
+  },
+  "cold_regression": {
+    "profiles": 6,
+    "optimized_stack_kib": 128,
+    "debug_stack_kib": 512,
+    "baseline": "All6 fail with stack overflow in fresh processes",
+    "candidate": "All6 pass, exact cold/warm PCM match",
+    "fresh_process_source_proof": "identity-validation.json",
+    "source_notes": "Baseline/ candidate package cleaned and rebuilt explicitly in one shared target directory"
+  },
+  "identity": {
+    "decode_transport_cases": 56,
+    "pcm_bit_exact_cases": 48,
+    "unchanged_error_cases": 8,
+    "encoded_byte_exact_cases": 60,
+    "decode": "pcm-identity.json",
+    "encode": "encode-identity.json"
+  },
+  "checks": {
+    "unit_passed": 1167,
+    "existing_ignored": 7,
+    "integration_passed": 2,
+    "docs_passed": 29,
+    "fmt_size_changelog_clippy_package": "pass",
+    "msrv_full_lib_tests": "pass",
+    "msrv_release_cold": "pass",
+    "current_release_cold": "pass",
+    "original_release_latency_test": "pass",
+    "packaged_consumer": "all flows pass, including exact seek and steady-state zero-allocation streaming",
+    "fuzz_parser": {
+      "seed": 1430,
+      "iterations": 2658,
+      "panics": 0
+    },
+    "fuzz_state": {
+      "seed": 1431,
+      "iterations": 50000,
+      "panics": 0
+    },
+    "publish_dry_run": "passed; no upload performed",
+    "validation": "validation.json"
+  },
+  "decode_speed": "decode-speed.json",
+  "review": "Independent read-only band_emit review: no correctness blocker, fixed-array bounds preserved, no new unsafe/product dependencies/API changes. Added startup allocations acknowledged.",
+  "heap_tradeoff": {
+    "additional_global_allocations_once_per_process": 22,
+    "lookup_payload_bytes_moved_from_inline_static_to_heap": 135168,
+    "box_pointer_bytes_x86_64": 176,
+    "per_frame_allocation_change": 0,
+    "not_measured": "allocator rounding/RSS delta"
+  },
+  "local_dirty_candidate_archive": {
+    "sha256": "81bc3da39e93b386ff406e1ee94d5632aa6137e3767745d45a85c15f5e6f0830",
+    "bytes": 461771,
+    "note": "Not a published archive. A clean revision changes VCS metadata; package source content remains pinned."
+  },
+  "scope": [
+    "No GitHub CI dispatched",
+    "No publication, tag or consumer deployment",
+    "Historical 0.8/0.8.1 and pre-fix speed/stack results retained",
+    "No blind-listening, full ISO or physical-mobile superiority claim"
+  ],
+  "setup_notes": [
+    "Initial baseline source copy omitted benches required by Cargo; corrected before qualification.",
+    "Initial snapshot could reuse a same-version build; final comparison explicitly cleans/rebuilds both dependencies and retains expected baseline failures. Initial logs remain separate and are not qualification evidence."
+  ]
+}

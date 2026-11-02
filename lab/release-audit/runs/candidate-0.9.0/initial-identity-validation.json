@@ -1,0 +1,114 @@
+[
+  {
+    "step": "pcm-baseline-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--lib",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/cold-baseline-src/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.0459847299998728,
+    "log": "pcm-baseline-build.log"
+  },
+  {
+    "step": "pcm-baseline-tool",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "/tmp/syom-decode-snapshot.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.1943522619999385,
+    "log": "pcm-baseline-tool.log"
+  },
+  {
+    "step": "pcm-baseline",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-baseline",
+      "/home/ekhodzitsky/Projects/syom/src/goldens",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-pcm/baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.8087716449999789,
+    "log": "pcm-baseline.log"
+  },
+  {
+    "step": "pcm-candidate-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--lib",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 3.793356243999824,
+    "log": "pcm-candidate-build.log"
+  },
+  {
+    "step": "pcm-candidate-tool",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "/tmp/syom-decode-snapshot.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.22478399299961893,
+    "log": "pcm-candidate-tool.log"
+  },
+  {
+    "step": "pcm-candidate",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-candidate",
+      "/home/ekhodzitsky/Projects/syom/src/goldens",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-pcm/candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.7860547440000119,
+    "log": "pcm-candidate.log"
+  },
+  {
+    "step": "encode-corpus-baseline",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-baseline-peer",
+      "byte-corpus",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-encoded/baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.05185402699999031,
+    "log": "encode-corpus-baseline.log"
+  },
+  {
+    "step": "encode-corpus-candidate",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-candidate-peer",
+      "byte-corpus",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-encoded/candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.05025536499988448,
+    "log": "encode-corpus-candidate.log"
+  }
+]

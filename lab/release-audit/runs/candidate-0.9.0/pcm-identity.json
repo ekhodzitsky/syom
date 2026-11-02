@@ -1,0 +1,343 @@
+{
+  "method": "Actual full f32-bit/shape byte comparison, or identical typed error, across committed transport fixtures",
+  "baseline": "80c2c33",
+  "passed": 56,
+  "cells": [
+    {
+      "fixture": "enc48.adts",
+      "kind": "pcm",
+      "bytes": 245791,
+      "sha256": "5b0264a00a0e504caaf00b45e250455737babfe0ca46f8aeb7ef264f213a052f"
+    },
+    {
+      "fixture": "enc48l.adts",
+      "kind": "pcm",
+      "bytes": 245791,
+      "sha256": "1732c215b9bf4729188a3405ee9711218df505e13d9c25b960bf45fb207be93e"
+    },
+    {
+      "fixture": "enc48lt.latm",
+      "kind": "pcm",
+      "bytes": 245791,
+      "sha256": "5b0264a00a0e504caaf00b45e250455737babfe0ca46f8aeb7ef264f213a052f"
+    },
+    {
+      "fixture": "enc48m.m4a",
+      "kind": "pcm",
+      "bytes": 230431,
+      "sha256": "c2e74618528b8d8897394e281b7b3bb8b025805ee595c310ec655ecc284defbb"
+    },
+    {
+      "fixture": "enc48t.adts",
+      "kind": "pcm",
+      "bytes": 245791,
+      "sha256": "3eb92330a58e736a72aaa3a6df4b22905d858213354b3a55b73dc8bdef19a94f"
+    },
+    {
+      "fixture": "enc_mc51.adts",
+      "kind": "pcm",
+      "bytes": 393279,
+      "sha256": "bb140e319993f359fb1547908a4ca273c6e021d6922363dae2770e88087114a2"
+    },
+    {
+      "fixture": "enc_mc51.m4a",
+      "kind": "pcm",
+      "bytes": 480063,
+      "sha256": "4424fe244f80cdafde1de633670f84eb4af66096cbf2469e4009a38eaa0c74d7"
+    },
+    {
+      "fixture": "enc_mc71.adts",
+      "kind": "pcm",
+      "bytes": 524367,
+      "sha256": "2a47fd124c2608e695dafc68ca30cefcb837d35708f83e18ad330272ba078a9e"
+    },
+    {
+      "fixture": "enc_mc71.latm",
+      "kind": "pcm",
+      "bytes": 688207,
+      "sha256": "937497c3f995111d9725691554839c1c18aac19224516c444de4b12e07d1e3b0"
+    },
+    {
+      "fixture": "fmp4_2track.mp4",
+      "kind": "expected-error",
+      "bytes": 76,
+      "sha256": "5caa5afb012d90bc94c0e1e67f8f56fd85fb8ad3c266679ee2aac65a7fcec017"
+    },
+    {
+      "fixture": "fmp4_bbb_init.m4a",
+      "kind": "expected-error",
+      "bytes": 49,
+      "sha256": "b32045265187a185dd738b781be54df500adee46af23e42794b1d1f57c67cb11"
+    },
+    {
+      "fixture": "fmp4_bbb_seg1.m4a",
+      "kind": "expected-error",
+      "bytes": 24,
+      "sha256": "fb6a2a062f06a75daf103ed81fd4137dba2e35706acb39dcc0f494eaae2122b0"
+    },
+    {
+      "fixture": "fmp4_cenc.mp4",
+      "kind": "expected-error",
+      "bytes": 73,
+      "sha256": "723ccdb956224b82dcd39548354bcbcf2e7fc927e70a76cb7bfe170ada2e0646"
+    },
+    {
+      "fixture": "fmp4_dash_init.m4s",
+      "kind": "expected-error",
+      "bytes": 49,
+      "sha256": "b32045265187a185dd738b781be54df500adee46af23e42794b1d1f57c67cb11"
+    },
+    {
+      "fixture": "fmp4_dash_seg1.m4s",
+      "kind": "expected-error",
+      "bytes": 24,
+      "sha256": "fb6a2a062f06a75daf103ed81fd4137dba2e35706acb39dcc0f494eaae2122b0"
+    },
+    {
+      "fixture": "fmp4_dash_seg2.m4s",
+      "kind": "expected-error",
+      "bytes": 37,
+      "sha256": "4af1a625af5d30bc433db16ad95daf91ce19b9a1ada07fe20828836a181ad2af"
+    },
+    {
+      "fixture": "fmp4_he.mp4",
+      "kind": "pcm",
+      "bytes": 262175,
+      "sha256": "fe503b3848c081b44203c90c19e36676a2520e846b5d14f52363ac22b5173fee"
+    },
+    {
+      "fixture": "fmp4_he2.mp4",
+      "kind": "pcm",
+      "bytes": 524319,
+      "sha256": "d593e5c790e8e3ff58ce76cc7f896eedbf95ccc33cfe3db2198c823352787f27"
+    },
+    {
+      "fixture": "fmp4_lc.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "fmp4_lc_cmaf.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "fmp4_lc_dbmoof.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "fmp4_lc_flat.m4a",
+      "kind": "pcm",
+      "bytes": 960031,
+      "sha256": "43452cae7eb1d671b008673096a2b76a3e56efa24ed7f436e0192c405c67d029"
+    },
+    {
+      "fixture": "fmp4_lc_notfdt.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "fmp4_lc_omit.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "fmp4_lc_sidx.mp4",
+      "kind": "expected-error",
+      "bytes": 21,
+      "sha256": "f03786a7f543cad04d3489dad23db121938518166e7ce1dfca475554cb7de525"
+    },
+    {
+      "fixture": "fmp4_lc_v1.mp4",
+      "kind": "pcm",
+      "bytes": 974879,
+      "sha256": "18d6e21a38b88db69fc3a06e5247a8c1d219ae81936cecc3e9a443acc7334eb5"
+    },
+    {
+      "fixture": "he2_48e.adts",
+      "kind": "pcm",
+      "bytes": 524319,
+      "sha256": "d593e5c790e8e3ff58ce76cc7f896eedbf95ccc33cfe3db2198c823352787f27"
+    },
+    {
+      "fixture": "he2_48em.m4a",
+      "kind": "pcm",
+      "bytes": 497767,
+      "sha256": "c2719a2f5f64ae5abc33ab06f5032bab809b073c9705292f00d68e7f9d374bb9"
+    },
+    {
+      "fixture": "he48.adts",
+      "kind": "pcm",
+      "bytes": 147487,
+      "sha256": "c5a158e1b5c4e898ca734da393aba1da66761bafc68156a8853d80bb60d496d5"
+    },
+    {
+      "fixture": "he48.latm",
+      "kind": "pcm",
+      "bytes": 147487,
+      "sha256": "c5a158e1b5c4e898ca734da393aba1da66761bafc68156a8853d80bb60d496d5"
+    },
+    {
+      "fixture": "he48.m4a",
+      "kind": "pcm",
+      "bytes": 130591,
+      "sha256": "d2f3b5827749031eee924315a73d42db064a1d62efc7b9b7b1e44f27e5265fd3"
+    },
+    {
+      "fixture": "he48e.adts",
+      "kind": "pcm",
+      "bytes": 262175,
+      "sha256": "fe503b3848c081b44203c90c19e36676a2520e846b5d14f52363ac22b5173fee"
+    },
+    {
+      "fixture": "he48elt.latm",
+      "kind": "pcm",
+      "bytes": 262175,
+      "sha256": "fe503b3848c081b44203c90c19e36676a2520e846b5d14f52363ac22b5173fee"
+    },
+    {
+      "fixture": "he48em.m4a",
+      "kind": "pcm",
+      "bytes": 230431,
+      "sha256": "20bc45ad80dc4a62b498f6b7ff7f7b423645e638371c51d95415ec44b40e8f29"
+    },
+    {
+      "fixture": "latm48.latm",
+      "kind": "pcm",
+      "bytes": 53271,
+      "sha256": "d33e62ff2f828bb589b4e5af8e5977d884e989a4e88b6a3415b60cead60193cb"
+    },
+    {
+      "fixture": "ld48.loas",
+      "kind": "pcm",
+      "bytes": 387095,
+      "sha256": "b03c2d7f5b9e70f0b7b0a839bd411c65902942591d1c6086efdcd6359d7c5cf8"
+    },
+    {
+      "fixture": "ld64m.loas",
+      "kind": "pcm",
+      "bytes": 387095,
+      "sha256": "a87c45c6f516efcbefd28d9f2051e8e3ebf1443544d4b2b1398bb7fdb962ddad"
+    },
+    {
+      "fixture": "ld64mus.loas",
+      "kind": "pcm",
+      "bytes": 774175,
+      "sha256": "e4b4992b7f0e88135978b6fce555d23fac994d716d042cf1334aebfbc59935df"
+    },
+    {
+      "fixture": "ldenc128s.loas",
+      "kind": "pcm",
+      "bytes": 131103,
+      "sha256": "4b3958171138954d260059f0b734e7c855aa9526a19ac740da073b6b40f5d3f1"
+    },
+    {
+      "fixture": "ldenc64.loas",
+      "kind": "pcm",
+      "bytes": 65559,
+      "sha256": "06589fa66330a01a2cd21ffac34a8103d5ce5cc572d295cb81cc00d523d8869b"
+    },
+    {
+      "fixture": "lecture.m4a",
+      "kind": "pcm",
+      "bytes": 96031,
+      "sha256": "50ea6020bb0df042802b6848e63eb0c91f0a3d0e241a3ea5b1313fe47b0ce860"
+    },
+    {
+      "fixture": "mc30.adts",
+      "kind": "pcm",
+      "bytes": 245799,
+      "sha256": "c397dc83321449e70b7d573d7654f0dce86863a86bed00f9833ef62796da7edf"
+    },
+    {
+      "fixture": "mc40.adts",
+      "kind": "pcm",
+      "bytes": 327727,
+      "sha256": "4f541d5cdf81011f60fef0a22eea6bfc52f5eda642f2e247087d3a2307cb3466"
+    },
+    {
+      "fixture": "mc50.adts",
+      "kind": "pcm",
+      "bytes": 409655,
+      "sha256": "56b3054e5108877e60223ee4f578002746bc17c3c9c908c025cdf2ab2da6d64d"
+    },
+    {
+      "fixture": "mc51.adts",
+      "kind": "pcm",
+      "bytes": 491583,
+      "sha256": "1b764104eb6a5644f3d5ebe0ae128779d2aa105e015283549625b1d10a826cee"
+    },
+    {
+      "fixture": "mc51.m4a",
+      "kind": "pcm",
+      "bytes": 460863,
+      "sha256": "1f48b6a0aa0d54ac5a2fa60722f4d98711116b6805bb7fada1c855b81ec4617a"
+    },
+    {
+      "fixture": "mc71.adts",
+      "kind": "pcm",
+      "bytes": 524367,
+      "sha256": "0255dd58767ad4b01e0a4440b3d6ae01b5eed40fdff7e7af6d92aa05328a08a8"
+    },
+    {
+      "fixture": "mc71.m4a",
+      "kind": "pcm",
+      "bytes": 460879,
+      "sha256": "ad4baf189cc6aa29b33fc0ca90f9febbb969e6323d5c2d3f7aa503ef1fee03b5"
+    },
+    {
+      "fixture": "mc71p.adts",
+      "kind": "pcm",
+      "bytes": 524367,
+      "sha256": "1099ebfb4ef120849d9825ab7b7e7166efc92081ffe07a2e02fcf52d76942eef"
+    },
+    {
+      "fixture": "pns48.adts",
+      "kind": "pcm",
+      "bytes": 53271,
+      "sha256": "ab4359b3b9e08dd90f72fc8817bf34d85e557b39f4beec29ab3dafbfd2e79077"
+    },
+    {
+      "fixture": "ps48.adts",
+      "kind": "pcm",
+      "bytes": 426015,
+      "sha256": "8300cb58984c4c5b1ccaa1d7a1a473ca031be1b247c33cdddc8edd1b549d3db0"
+    },
+    {
+      "fixture": "ps48.m4a",
+      "kind": "pcm",
+      "bytes": 409119,
+      "sha256": "556affba0fd3d7c205af69b8ccd03b5992720a73c40318a06426fe7869d075f1"
+    },
+    {
+      "fixture": "sine441.m4a",
+      "kind": "pcm",
+      "bytes": 44123,
+      "sha256": "1408fade93e26593ef40635231ebb8321e4992bb62cc8d41e4a8e3d208999f0b"
+    },
+    {
+      "fixture": "sine48.adts",
+      "kind": "pcm",
+      "bytes": 53271,
+      "sha256": "2b21314fc686403eb6cbe4b0720c777ba4d1adb745cea62c23e2efd6846000e5"
+    },
+    {
+      "fixture": "tns48.adts",
+      "kind": "pcm",
+      "bytes": 4119,
+      "sha256": "bc7a12c1c1e01dae34cef5824a5f32a21b206f32981b909b0a3971d653729afa"
+    },
+    {
+      "fixture": "tns_gain.adts",
+      "kind": "pcm",
+      "bytes": 49183,
+      "sha256": "b22a55a3cfdb56e5c558f96da90197ce11989c8035d4ceaa7ef86b107c7a06d5"
+    }
+  ]
+}

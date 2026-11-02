@@ -108,9 +108,10 @@ LC encode comparison was slower than FDK (see the audit).
 
 ## Production scope
 
-The local [0.8.1 candidate](lab/release-audit/CANDIDATE-0.8.1.md) passes
-19 cases from 16 recordings against FFmpeg and the actual gigastt decode
-adapter. It fixes padded-LC allocations and PNS history during M4A seek.
+The historical [0.8.1 qualification](lab/release-audit/CANDIDATE-0.8.1.md)
+passed 19 cases from 16 recordings against FFmpeg and the actual gigastt
+decode adapter. The [published 0.8.1 release](lab/release-audit/PUBLISHED-0.8.1.md)
+includes fixes for padded-LC allocations and PNS history during M4A seek.
 The [paired HTTP ASR canary](lab/release-audit/HTTP-CANARY-0.8.1.md)
 matches normalized baseline transcripts and durations on 32 speech-format cases.
 The [local load/fault qualification](lab/release-audit/HTTP-LOAD-0.8.1.md)
@@ -124,6 +125,11 @@ prefixes retain short preroll. Tagged/untagged LC ABR/CBR consumer checks
 allocate zero times after warmup. Encoder listening, physical mobile,
 full ISO conformance and live-service rollout qualification remain open. Use
 `DecodeOptions::audio()` to keep channels; `decode()` defaults to mono.
+
+The unpublished [0.9.0 release candidate](lab/release-audit/REPORT.md#candidate-090--cold-start-fix)
+records its local Linux validation and remaining limits separately. These
+checks do not establish Windows, macOS or ARM parity, or state-of-the-art
+performance or quality.
 
 ## Install
 

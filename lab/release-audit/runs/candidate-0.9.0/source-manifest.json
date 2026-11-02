@@ -1,0 +1,34 @@
+{
+  "baseline_revision": "80c2c33481016d03f266c2e51de341788d88e115",
+  "candidate_source_files": {
+    "src/engine/huff.rs": "26bf5817d73153e7431bf60bf4e82f9efb7c6179a68796360d64da0e03e206bc",
+    "src/guide.rs": "7048100b157b5753c0008d28478980cbcb04955a96f09f46ff213d78a5f5a79c",
+    "tests/cold_stack.rs": "1905e8efa66133cd9a6f54de74dceed16b857ac25e925b8b0f64543aad3f08db",
+    "README.md": "9fc9cb475c630f50326920b3f076e29e9e843abef27072dca05bfdc90790d640",
+    "CHANGELOG.md": "a8e03984f38417d6b06074ce217a2cf46add343c023b95d389d0fdf281bfa9db",
+    "Cargo.toml": "8bac987bed1de5e42efa544c095b0c85e994c6c33e2e1bb3e816cf818627d40d",
+    "Cargo.lock": "346a4dee630e44f6b99bcd6200591b8d0631bde47a0571ae1b328f7a2f768b4b"
+  },
+  "cold_test_method": "Identical new regression harness built with rustc --test -C opt-level=3 -C debug-assertions=no against baseline/candidate release library, each profile in a new process on128KiB",
+  "cold_test_source": "//! Each profile starts in a new process, before any decoder table is warm.\n#![allow(clippy::unwrap_used)]\n\nuse std::process::Command;\nuse syom::{DecodeOptions, decode_with};\n\n#[test]\nfn cold_decode_on_small_stack() {\n    if let Ok(profile) = std::env::var(\"SYOM_COLD_STACK_PROFILE\") {\n        let data: &[u8] = match profile.as_str() {\n            \"lc\" => include_bytes!(\"../src/goldens/sine48.adts\"),\n            \"he1\" => include_bytes!(\"../src/goldens/he48e.adts\"),\n            \"he2\" => include_bytes!(\"../src/goldens/ps48.adts\"),\n            \"implicit-ps\" => include_bytes!(\"../src/goldens/he48.adts\"),\n            \"mc\" => include_bytes!(\"../src/goldens/mc51.adts\"),\n            \"ld\" => include_bytes!(\"../src/goldens/ld64m.loas\"),\n            _ => panic!(\"unknown cold-stack profile\"),\n        };\n        // Debug codec frames need more space; the optimized contract is 128 KiB.\n        let stack_kib = if cfg!(debug_assertions) { 512 } else { 128 };\n        let cold = std::thread::Builder::new()\n            .stack_size(stack_kib * 1024)\n            .spawn(move || decode_with(data, &DecodeOptions::unbounded()).unwrap())\n            .unwrap()\n            .join()\n            .unwrap();\n        assert!(!cold.channels.is_empty());\n        assert!(\n            cold.channels\n                .iter()\n                .all(|p| !p.is_empty() && p.iter().all(|x| x.is_finite()))\n        );\n        let warm = decode_with(data, &DecodeOptions::unbounded()).unwrap();\n        assert_eq!(cold.sample_rate, warm.sample_rate);\n        assert_eq!(cold.channels, warm.channels);\n        eprintln!(\"cold-stack {profile}: {stack_kib} KiB; cold/warm PCM equal\");\n        return;\n    }\n\n    let mut failures = Vec::new();\n    for profile in [\"lc\", \"he1\", \"he2\", \"implicit-ps\", \"mc\", \"ld\"] {\n        let output = Command::new(std::env::current_exe().unwrap())\n            .args([\"--exact\", \"cold_decode_on_small_stack\", \"--nocapture\"])\n            .env(\"SYOM_COLD_STACK_PROFILE\", profile)\n            .output()\n            .unwrap();\n        eprintln!(\"{profile}: {}\", output.status);\n        eprint!(\"{}\", String::from_utf8_lossy(&output.stderr));\n        if !output.status.success() {\n            failures.push(profile);\n        }\n    }\n    assert!(failures.is_empty(), \"cold-stack failures: {failures:?}\");\n}\n",
+  "source_platform": "Linux x86_64",
+  "cold_baseline_failure_profiles": [
+    "LC",
+    "HE1",
+    "HE2",
+    "implicitPS",
+    "MC",
+    "LD"
+  ],
+  "cold_candidate_passed_profiles": [
+    "LC",
+    "HE1",
+    "HE2",
+    "implicitPS",
+    "MC",
+    "LD"
+  ],
+  "extra_global_allocations": 22,
+  "lookup_payload_bytes_moved_to_heap": 135168,
+  "new_box_pointer_bytes_x86_64": 176
+}

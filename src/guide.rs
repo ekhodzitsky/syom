@@ -291,6 +291,15 @@
 //!
 //! # 10. Behaviour changes since 0.6.0
 //!
+//! Moving from 0.8 to 0.9: exact M4A interval planning and logical seek
+//! positions are opt-in additions. Existing `seek` remains available.
+//! `seek_exact` requires a sufficient prefix-replay budget before I/O;
+//! missing bytes and unsupported exact profiles remain typed errors.
+//! Exact guarantees cover LC/LD mono/stereo. A logical position belongs
+//! to its source and restores by replay; it is not a DSP-state checkpoint.
+//! Encoder optimizations keep existing byte-exact goldens. Cold decoder table
+//! initialization now fits the optimized 128 KiB thread-stack budget.
+//!
 //! - Minimum Rust is 1.89 (was 1.97).
 //! - 3, 4, 5, 6 or 8 planes now encode as surround; they used to be an
 //!   error. 7 planes and more than 8 still are.

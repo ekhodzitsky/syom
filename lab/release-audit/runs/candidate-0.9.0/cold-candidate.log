@@ -1,0 +1,18 @@
+
+running 1 test
+test cold_decode_on_small_stack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+lc: exit status: 0
+cold-stack lc: 128 KiB; cold/warm PCM equal
+he1: exit status: 0
+cold-stack he1: 128 KiB; cold/warm PCM equal
+he2: exit status: 0
+cold-stack he2: 128 KiB; cold/warm PCM equal
+implicit-ps: exit status: 0
+cold-stack implicit-ps: 128 KiB; cold/warm PCM equal
+mc: exit status: 0
+cold-stack mc: 128 KiB; cold/warm PCM equal
+ld: exit status: 0
+cold-stack ld: 128 KiB; cold/warm PCM equal

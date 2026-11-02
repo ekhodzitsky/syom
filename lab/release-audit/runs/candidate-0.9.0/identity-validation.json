@@ -1,0 +1,208 @@
+[
+  {
+    "step": "pcm-baseline-clean",
+    "command": [
+      "cargo",
+      "clean",
+      "-p",
+      "syom",
+      "--release",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/cold-baseline-src/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.03863686400018196,
+    "log": "pcm-baseline-clean.log"
+  },
+  {
+    "step": "pcm-baseline-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--lib",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/cold-baseline-src/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 3.9851368260001436,
+    "log": "pcm-baseline-build.log"
+  },
+  {
+    "step": "cold-proof-baseline-build",
+    "command": [
+      "rustc",
+      "--test",
+      "--edition",
+      "2024",
+      "/home/ekhodzitsky/Projects/syom/tests/cold_stack.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-C",
+      "debug-assertions=no",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/cold-proof-baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.2004212599999846,
+    "log": "cold-proof-baseline-build.log"
+  },
+  {
+    "step": "cold-proof-baseline",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-proof-baseline",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "wall_seconds": 6.504578435999974,
+    "log": "cold-proof-baseline.log"
+  },
+  {
+    "step": "pcm-baseline-tool",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "/tmp/syom-decode-snapshot.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.2102089969998815,
+    "log": "pcm-baseline-tool.log"
+  },
+  {
+    "step": "pcm-baseline",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-baseline",
+      "/home/ekhodzitsky/Projects/syom/src/goldens",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-pcm/baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.8488466019998668,
+    "log": "pcm-baseline.log"
+  },
+  {
+    "step": "pcm-candidate-clean",
+    "command": [
+      "cargo",
+      "clean",
+      "-p",
+      "syom",
+      "--release"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.03917577299989716,
+    "log": "pcm-candidate-clean.log"
+  },
+  {
+    "step": "pcm-candidate-build",
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--lib",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 4.151219584000046,
+    "log": "pcm-candidate-build.log"
+  },
+  {
+    "step": "cold-proof-candidate-build",
+    "command": [
+      "rustc",
+      "--test",
+      "--edition",
+      "2024",
+      "/home/ekhodzitsky/Projects/syom/tests/cold_stack.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-C",
+      "debug-assertions=no",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/cold-proof-candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.1872264579997136,
+    "log": "cold-proof-candidate-build.log"
+  },
+  {
+    "step": "cold-proof-candidate",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-proof-candidate",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.02592988400010654,
+    "log": "cold-proof-candidate.log"
+  },
+  {
+    "step": "pcm-candidate-tool",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "/tmp/syom-decode-snapshot.rs",
+      "--extern",
+      "syom=/home/ekhodzitsky/Projects/syom/target/release/libsyom.rlib",
+      "-L",
+      "dependency=/home/ekhodzitsky/Projects/syom/target/release/deps",
+      "-C",
+      "opt-level=3",
+      "-o",
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.2116514350000216,
+    "log": "pcm-candidate-tool.log"
+  },
+  {
+    "step": "pcm-candidate",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/pcm-snapshot-candidate",
+      "/home/ekhodzitsky/Projects/syom/src/goldens",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-pcm/candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.8406942090000484,
+    "log": "pcm-candidate.log"
+  },
+  {
+    "step": "encode-corpus-baseline",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-baseline-peer",
+      "byte-corpus",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-encoded/baseline"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.04220467400000416,
+    "log": "encode-corpus-baseline.log"
+  },
+  {
+    "step": "encode-corpus-candidate",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/cold-candidate-peer",
+      "byte-corpus",
+      "/home/ekhodzitsky/Projects/syom/target/rc09-encoded/candidate"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.06441418999975213,
+    "log": "encode-corpus-candidate.log"
+  }
+]

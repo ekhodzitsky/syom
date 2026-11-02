@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.0] - Unreleased
 
+### Fixed
+
+- Prevent stack overflow on the first cold decode on a 128 KiB thread
+  stack. Spectral Huffman lookup tables now initialize directly on the
+  heap; decoded PCM and steady-state allocation behavior are unchanged.
+  Fresh-process optimized regressions cover LC, HE v1/v2, implicit PS,
+  multichannel and LD. This fixes the cold small-stack limit recorded
+  during the earlier encoder measurements; those results are preserved.
+
 ### Added
 
 - Opt-in exact M4A interval planning with borrowed access-unit byte ranges,
@@ -36,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct the isolated FDK adapter to drain delayed output completely.
   Retain a balanced one-core comparison and raw observations: LC improves
   locally, but the strict FDK encode-speed gate remains unmet. Record the
-  additional fixed encoder workspace and existing cold small-stack limit.
+  additional fixed encoder workspace and historical cold small-stack
+  finding, fixed in this candidate.
 - Qualify the existing opt-in LC CBR reservoir against independently decoded
   CORE_TUNE speech/tremolo scores and separate 10-second payload-rate/cap
   checks. Retain a reproducible isolated runner and full-precision results;
