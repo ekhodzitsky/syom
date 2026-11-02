@@ -74,6 +74,11 @@ The old `seek` API remains available.
 
 ## Validation and integration
 
+[Release 0.9.0 publication verification](../lab/release-audit/REPORT.md#release-090)
+records the registry checksum, clean source commit/tag and actual
+registry quick-start checks on current Rust and MSRV 1.89. Historical
+prepublication qualifications retain their original status below.
+
 The historical [0.8.1 qualification](../lab/release-audit/CANDIDATE-0.8.1.md)
 passed 19 cases from 16 recordings against FFmpeg and the actual gigastt
 decode adapter. The [published release](../lab/release-audit/PUBLISHED-0.8.1.md)

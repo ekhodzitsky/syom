@@ -1,6 +1,7 @@
 # Offline native comparison lab
 
-The 0.9.0 release has
+[syom 0.9.0 is published](release-audit/REPORT.md#release-090), with verified
+registry/archive checksum and release source/tag. Its
 [cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix),
 including fresh-process stack checks and decoded/encoded output comparisons.
 Its exact-seek work has separate
@@ -8,8 +9,8 @@ Its exact-seek work has separate
 All qualified intervals replay the coded prefix; no arbitrary cold bounded
 window is advertised. Linux x86_64 only; no new cross-platform claim.
 
-syom [0.8.1 is published](release-audit/PUBLISHED-0.8.1.md), with verified
-registry checksum and a downstream manifest/lockfile upgrade patch.
+The [earlier 0.8.1 publication](release-audit/PUBLISHED-0.8.1.md) records its
+registry checksum and downstream manifest/lockfile upgrade patch.
 The [maintained consumer PR qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)
 separately covers the refactored, opt-in adapter and current upload admission.
 

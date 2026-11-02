@@ -4,7 +4,7 @@
 
 | Status | Evidence |
 |---|---|
-| 0.9.0 release preparation, qualified on Linux x86_64 | [Release validation](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
+| 0.9.0 published release, qualified on Linux x86_64 | [Publication and archive verification](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |
 | 0.8.0 historical audit | Original findings below, measured on `997bf56` on 2026-10-28 |
 
@@ -294,7 +294,7 @@ zero-allocation streaming. Parser fuzz seed1430 completed 2658 iterations;
 stateful fuzz seed1431 completed 50000 iterations; both had zero panics.
 `cargo publish --dry-run --locked --allow-dirty` verifies the packaged
 library and stops before uploading. The local candidate archive contains
-183 files, remains below the 512 KiB compressed budget, declares Rust1.89,
+183 files, remains below the 512 KiB compressed budget, declares Rust 1.89,
 and has no product dependencies or build script. Its dirty VCS metadata
 and archive hash distinguish it from any future published package.
 
@@ -319,3 +319,32 @@ workflow triggers main-branch pushes only; release commit messages retain
 Registry publication, downloaded-archive comparison and the exact source
 commit/tag are recorded separately after the upload. Historical candidate
 reports above preserve their original unpublished status at measurement time.
+
+### Registry receipt
+
+[syom 0.9.0](https://crates.io/crates/syom/0.9.0) was published on
+**2026-11-02 at 10:07:32 UTC** (13:07:32 Moscow). Annotated tag `v0.9.0`
+points to release source commit `1bb81520e4bda91f17e4e8b79d7c5cab93666a4f`.
+The publication-receipt follow-up changes documentation/evidence outside the package only;
+it does not change packaged sources.
+
+The registry download is **461255 bytes**, SHA-256:
+
+```text
+712d524186d1f1a9d2eff429118a02047a0e784479a7ea5fec7feccbe5a1c911
+```
+
+The registry checksum, downloaded bytes and actual uploaded archive match.
+Packaged VCS metadata names the clean release commit. All **175 runtime
+Rust files**, README, CHANGELOG, license/notices and original manifest
+byte-match that commit. The normalized manifest declares Rust 1.89 and no
+runtime/build dependencies. The
+[machine-readable verification](runs/release-0.9.0/verification.json)
+retains source hashes, timestamps, artifact provenance and registry checks.
+
+The exact README example then passed against **registry 0.9.0** on current
+Rust and MSRV 1.89, printing `1 channel at 48000 Hz`. Before publication,
+the clean-commit dry-run, required local gates, full MSRV tests, six cold
+128 KiB release regressions and packaged consumers passed. None of these
+Linux checks establishes fresh Windows/macOS/ARM parity or SOTA eligibility.
+No consumer deployment or GitHub Actions dispatch was performed.
