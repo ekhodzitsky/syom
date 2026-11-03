@@ -23,7 +23,7 @@ from pathlib import Path
 
 LAB = Path(__file__).resolve().parent
 ROOT = LAB.parents[1]
-BINS = ["flows", "consumers", "exact_seek"]
+BINS = ["flows", "consumers", "exact_seek", "checkpoint"]
 
 
 def run(*args: str, cwd: Path) -> str:
@@ -72,6 +72,7 @@ def main() -> int:
     for name in BINS:
         print(f"--- {name} ---")
         sys.stdout.write(run("cargo", "run", "--release", "--bin", name, cwd=LAB))
+    sys.stdout.write(run("cargo", "test", "--release", "--test", "strict_completion", cwd=LAB))
     print("OK: all consumer cells passed against the packaged crate")
     return 0
 

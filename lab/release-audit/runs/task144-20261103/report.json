@@ -1,0 +1,109 @@
+{
+  "task": "TASK-144",
+  "timestamp_utc": "2026-11-03T13:28:04.159798+00:00",
+  "candidate": "0.10.0 unpublished",
+  "base_commit": "91ad57dcc3ab8cec4419ddadd71b31ef9014154c",
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           48 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  24\nOn-line CPU(s) list:                     0-23\nVendor ID:                               AuthenticAMD\nModel name:                              AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nCPU family:                              26\nModel:                                   36\nThread(s) per core:                      2\nCore(s) per socket:                      12\nSocket(s):                               1\nStepping:                                0\nFrequency boost:                         enabled\nCPU(s) scaling MHz:                      88%\nCPU max MHz:                             5157.8950\nCPU min MHz:                             605.2640\nBogoMIPS:                                3992.75\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nVirtualization:                          AMD-V\nL1d cache:                               576 KiB (12 instances)\nL1i cache:                               384 KiB (12 instances)\nL2 cache:                                12 MiB (12 instances)\nL3 cache:                                24 MiB (2 instances)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-23\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Mitigation; IBPB on VMEXIT only\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Mitigation; IBPB on VMEXIT\n",
+  "toolchains": {
+    "stable": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "1.89.0": "rustc 1.89.0 (29483883e 2025-08-04)"
+  },
+  "runtime_dependencies": 0,
+  "checkpoint_format_version": 1,
+  "checkpoint_bytes": 8422,
+  "baseline_regression": {
+    "version": "0.9.0",
+    "source_commit": "91ad57d",
+    "expected_exit_code": 101,
+    "old_paths_incorrectly_succeeded": [
+      "slice",
+      "seek-reader",
+      "M4aSeek"
+    ],
+    "candidate_packaged_test": "bounded_presentation_must_not_finish_early"
+  },
+  "qualification": {
+    "library_tests_passed": 1185,
+    "library_existing_ignored": 7,
+    "integration_tests_passed": 5,
+    "doctests_passed": 29,
+    "new_completion_tests": 10,
+    "new_checkpoint_unit_tests": 7,
+    "process_cases_per_run": 28,
+    "fresh_restores_per_run": 56,
+    "matrix_profiles": [
+      "rustc1.97.1 debug",
+      "rustc1.89.0 debug",
+      "rustc1.97.1 release"
+    ],
+    "debug_restore_stack_kib": 512,
+    "release_restore_stack_kib": 128,
+    "actual_pns_rng_advance_test": "persistent_checkpoint_preserves_actual_advanced_pns_rng"
+  },
+  "fuzz": [
+    {
+      "lane": "parser",
+      "seed": 1440,
+      "iterations": 1604,
+      "panics": 0,
+      "accepted": null,
+      "rejected": null
+    },
+    {
+      "lane": "state",
+      "seed": 1441,
+      "iterations": 40436,
+      "panics": 0,
+      "accepted": null,
+      "rejected": null
+    },
+    {
+      "lane": "checkpoint",
+      "seed": 1442,
+      "iterations": 5000,
+      "panics": 0,
+      "accepted": 2777,
+      "rejected": 2223
+    }
+  ],
+  "artifacts": {
+    "target/release/syom_fuzz": {
+      "sha256": "2c7434784ebefd61b860a58b78d758cf6a5fbd4ba7618a41d9c9466a8a70740c",
+      "bytes": 2000048
+    },
+    "target/release/syom_fuzz_state": {
+      "sha256": "6bec4441a051f5bd3fe8b9c5b0c25a44e956d8506fc751277823660262c57fe1",
+      "bytes": 1993064
+    },
+    "target/release/syom_fuzz_checkpoint": {
+      "sha256": "e0f11f459665c47020c6957c72cc26f5a712c065e84f7d9b95b08daa7059d0da",
+      "bytes": 1862888
+    },
+    "target/package/syom-0.10.0.crate": {
+      "sha256": "ee6cf3c8c4a7e7ab59a554b2aaea9aa76bc71a63d5a33b511c851e2c59a290db",
+      "bytes": 468705
+    },
+    "target/debug/deps/persistent_checkpoint-2059626d546c2564": {
+      "sha256": "a96c5e550ab9f979968b384e0611c00e7c4e12f44b912bf1d3699e2ba19bc66a",
+      "bytes": 21953624
+    },
+    "target/debug/deps/persistent_checkpoint-bf45b7905815e9b8": {
+      "sha256": "fdadf3bdee59b1f00a40711a717d83c3aa5d4bc3f80c8821a6c74befc9852ebd",
+      "bytes": 19929240
+    },
+    "target/release/deps/persistent_checkpoint-331301a46f47a8f1": {
+      "sha256": "6df9ac3847a600753844ef2c41823e67e3cf18a029af422907874f479fdab08b",
+      "bytes": 2584232
+    }
+  },
+  "source_manifest": "source-manifest.json",
+  "limits": [
+    "Linux x86_64 only; no Windows/macOS/ARM parity qualification",
+    "Index/ASC geometry tag is not payload or blob authentication; caller binds source/options/exact build",
+    "No consumer-format compatibility or automatic agent-youtube migration",
+    "Complete validates declared presentation, not unused indexed padding or source authenticity",
+    "Push fMP4 lacks lifetime index proof and does not accept rounded remaining presentation",
+    "No hosted CI, registry publication or deployment"
+  ]
+}

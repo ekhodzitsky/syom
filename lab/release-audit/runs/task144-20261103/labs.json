@@ -1,0 +1,65 @@
+[
+  {
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "--offline",
+      "--manifest-path",
+      "lab/fuzz/Cargo.toml",
+      "--bins"
+    ],
+    "exit_code": 0,
+    "seconds": 28.58,
+    "log": "lab-0.log"
+  },
+  {
+    "command": [
+      "target/release/syom_fuzz",
+      "--seconds",
+      "30",
+      "--seed",
+      "1440"
+    ],
+    "exit_code": 0,
+    "seconds": 30.14,
+    "log": "lab-1.log"
+  },
+  {
+    "command": [
+      "target/release/syom_fuzz_state",
+      "--seconds",
+      "30",
+      "--iters",
+      "50000",
+      "--seed",
+      "1441"
+    ],
+    "exit_code": 0,
+    "seconds": 30.08,
+    "log": "lab-2.log"
+  },
+  {
+    "command": [
+      "target/release/syom_fuzz_checkpoint",
+      "--seconds",
+      "30",
+      "--iters",
+      "5000",
+      "--seed",
+      "1442"
+    ],
+    "exit_code": 0,
+    "seconds": 0.63,
+    "log": "lab-3.log"
+  },
+  {
+    "command": [
+      "python3",
+      "lab/consume/run.py"
+    ],
+    "exit_code": 0,
+    "seconds": 24.2,
+    "log": "lab-4.log"
+  }
+]

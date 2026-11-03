@@ -12,6 +12,15 @@ directly to your application at the native sample rate.
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
+Development `main` prepares **0.10.0**, an unpublished candidate with qualified persistent
+LC state and strict M4A completion; see the [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
+
+For the candidate from a sibling checkout, use this source dependency:
+
+```toml
+syom = { version = "0.10", path = "../syom" }
+```
+
 ## Quick start
 
 Requires Rust **1.89+**. Cargo downloads the **0.9.0** crate (`syom = "0.9"`);

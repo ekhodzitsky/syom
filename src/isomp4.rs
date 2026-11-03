@@ -115,6 +115,23 @@ impl AacTrack {
         Ok((skip, Some(play)))
     }
 
+    /// A nonzero fragment edit is bounded; only a zero-duration fragment
+    /// edit is open-ended. A flat zero-duration edit is an empty window.
+    pub(crate) fn bounded_presentation(&self) -> bool {
+        self.has_elst && !(self.edit_open_end && self.edit_duration == 0)
+    }
+
+    /// A fully decoded index can undershoot a rounded edit duration by less
+    /// than one movie-clock tick and less than one millisecond. This never
+    /// authorizes a missing AU or an unfinished priming skip.
+    pub(crate) fn rounded_presentation_tail(&self, left: u64, sample_rate: u32) -> bool {
+        self.bounded_presentation()
+            && self.movie_timescale != 0
+            && left > 0
+            && u128::from(left) * u128::from(self.movie_timescale.max(1000))
+                < u128::from(sample_rate)
+    }
+
     /// Presentation length in media units: `elst.segment_duration` converted
     /// with checked movie→media timescale. `None` if a timescale is missing
     /// or the multiply overflows.

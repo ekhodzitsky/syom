@@ -21,6 +21,8 @@ use crate::options::ChannelMode;
 
 use super::{Decoder, Frame};
 
+#[path = "fmp4_completion.rs"]
+mod completion;
 #[path = "fmp4_state.rs"]
 mod state;
 pub(super) use state::Fmp4Push;
@@ -53,6 +55,7 @@ impl Decoder {
                     self.abs_base + self.pos as u64,
                 )));
             }
+            self.validate_fmp4_completion()?;
         }
         Ok(())
     }

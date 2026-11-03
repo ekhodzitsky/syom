@@ -1,5 +1,9 @@
 # syom 0.8 production readiness audit
 
+Current development candidate: [0.10.0 / TASK-144](TASK144.md) has local
+persistent-state and strict completion qualification. It is unpublished;
+the 0.9.0 publication receipts below remain historical registry evidence.
+
 ## Release evidence index
 
 | Status | Evidence |

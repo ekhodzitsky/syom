@@ -24,6 +24,10 @@ pub(crate) struct FbPool {
 }
 
 impl FbPool {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.slots.is_empty()
+    }
+
     pub(crate) fn begin_frame(&mut self) {
         for s in &mut self.slots {
             s.seen = false;

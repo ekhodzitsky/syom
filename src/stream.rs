@@ -50,7 +50,10 @@ mod pump;
 mod read;
 
 pub use frame::{Frame, StreamInfo};
-pub use m4a_pos::{ExactSeekHistory, ExactSeekPlan, ExactSeekPosition, M4aSeek, preroll_aus};
+pub use m4a_pos::{
+    ExactSeekHistory, ExactSeekPlan, ExactSeekPosition, M4aSeek, PresentationCompletion,
+    preroll_aus,
+};
 pub use m4a_seek::decode_seek_streaming;
 pub use read::decode_read_streaming;
 
@@ -76,8 +79,6 @@ enum Container {
 /// trailing ADTS or LATM frame. A partial fMP4 box, or a fragment that still
 /// owes samples, is [`AacError::Truncated`]. ADTS that never decoded is
 /// [`AacError::NotAac`] at `finish`; LATM/LOAS keeps its decode-class error.
-/// Flat M4A is rejected on `feed`.
-///
 /// Lifecycle: **open** → `feed` / `finish`; a parser, limit, or callback
 /// error moves to **failed**; a successful `finish` moves to **finished**.
 /// `feed` / `finish` on failed or finished return an error until
@@ -358,6 +359,7 @@ impl Decoder {
             samples: self.samples_out,
             priming,
             remainder,
+            presentation_completion: self.presentation_completion_status(),
         })
     }
 }

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-03
+
+Unpublished candidate; local qualification is recorded separately from registry
+publication. Version 0.9.0 remains the published release.
+
+### Added
+
+- Versioned persistent AAC-LC decoder state for qualified mono-output M4A
+  consumers, including filterbank overlap and PNS history. Caller-owned source
+  and implementation authentication remains mandatory; logical exact-seek
+  positions keep their existing replay contract.
+- Observable M4A presentation completion with strict priming/end checks and
+  a bounded allowance for submillisecond movie-clock rounding after indexed EOF.
+
+### Fixed
+
+- Reject incomplete bounded M4A presentations instead of treating indexed EOF
+  as success. Seek/resume reports unplayed tail from the absolute presentation
+  position rather than counting previously delivered samples as a remainder.
+
 ### Changed
 
 - Keep local natural-corpus acquisition receipts separate from the generated

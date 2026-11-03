@@ -176,8 +176,8 @@
 //! ```
 //!
 //! Every nonempty plan includes coded AU 0 through the AU covering `end`.
-//! No bounded history-independent preroll or imported codec checkpoint is
-//! qualified, even for PNS-off encodes or a warm decoder. SIDX is no proof.
+//! On this exact-interval path, no imported codec checkpoint or bounded
+//! history-independent preroll is qualified. SIDX is no proof.
 //! `open` separately reads container metadata; payload ranges are in decode
 //! order and need not be contiguous. Missing prefix bytes cause I/O failure;
 //! an insufficient replay budget fails before I/O or position changes.
@@ -203,6 +203,27 @@
 //! Untagged ADTS and LATM leave duration and trim `Unknown`. A leading
 //! `iTunSMPB` tag whose sample counts equal the frames in the buffer
 //! fills both.
+//!
+//! ## Persistent LC process restart (0.10.0 candidate)
+//!
+//! This separate API preserves qualified LC overlap/window and PNS history.
+//! It does not alter exact-position replay or permit importing into exact mode.
+//! Use mono output from mono/stereo 1024-sample LC at the seven qualified rates.
+//! Capture `M4aSeek::checkpoint` only after accepting a full callback frame;
+//! restore into an independently opened source with identical options using
+//! `M4aSeek::restore_checkpoint`. Initial/EOF, HE/PS, PCE/coupling/prediction,
+//! unsafe gapless and failed histories are excluded. Rejected imports leave
+//! the prior state unchanged. No blob-dependent allocation or media replay occurs.
+//!
+//! Callers must authenticate the bytes and bind them to the immutable source,
+//! exact implementation/build and options. Index geometry is not payload
+//! authentication; no cross-build or consumer-format compatibility is promised.
+//! Application durability and resampler phase remain the consumer's responsibility.
+//!
+//! Inspect `StreamInfo::presentation_completion` or
+//! `M4aSeek::presentation_completion` for exact, qualified rounded, incomplete,
+//! unbounded or unknown scope. Required priming/PCM cannot silently disappear at
+//! EOF. No rounding allowance fabricates PCM or skips a required AAC frame.
 //!
 //! # 7. Choosing an encoder mode
 //!

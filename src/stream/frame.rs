@@ -43,4 +43,8 @@ pub struct StreamInfo {
     pub priming: Option<u64>,
     /// Unplayed coded tail, under the same rule as [`Self::priming`].
     pub remainder: Option<u64>,
+    /// Whether a declared M4A presentation was completely delivered. This is
+    /// not whole-file authentication; optional media after the presentation
+    /// cap is not decoded. Other container paths may report `Unknown`.
+    pub presentation_completion: super::PresentationCompletion,
 }

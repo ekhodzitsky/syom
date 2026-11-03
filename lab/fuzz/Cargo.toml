@@ -16,3 +16,7 @@ path = "src/main.rs"
 [[bin]]
 name = "syom_fuzz_state"
 path = "src/state.rs"
+
+[[bin]]
+name = "syom_fuzz_checkpoint"
+path = "src/checkpoint.rs"

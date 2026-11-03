@@ -13,6 +13,8 @@ use crate::isomp4::{self, AacTrack};
 use crate::options::{ChannelMode, DecodeOptions};
 use crate::stream::{Frame, StreamInfo};
 
+use super::m4a_pos::completion::{PresentationCompletion, classify};
+
 pub(crate) fn map_m4a_parse_err(e: AacError) -> AacError {
     // Unsupported/malformed elst must stay Format (precise), not collapse
     // to NotAac the way a random ftyp lookalike does.
@@ -214,6 +216,19 @@ where
         }
     }
 
+    let presentation_completion = classify(
+        &track,
+        skip_left as u64,
+        play_left.map(|n| n as u64),
+        aac_frames == track.frames.len() as u64,
+        out_rate,
+    );
+    if matches!(
+        presentation_completion,
+        PresentationCompletion::Incomplete { .. }
+    ) {
+        return Err(AacError::format("incomplete M4A presentation"));
+    }
     if emitted == 0 {
         return Err(AacError::NotAac);
     }
@@ -233,6 +248,7 @@ where
         samples: samples_out,
         priming,
         remainder,
+        presentation_completion,
     })
 }
 

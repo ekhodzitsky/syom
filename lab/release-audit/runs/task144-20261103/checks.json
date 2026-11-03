@@ -1,0 +1,122 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 3.81,
+    "log": "check-0.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.05,
+    "log": "check-1.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.04,
+    "log": "check-2.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 9.41,
+    "log": "check-3.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 55.19,
+    "log": "check-4.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 1.58,
+    "log": "check-5.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "seconds": 45.16,
+    "log": "check-6.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 79.32,
+    "log": "check-7.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 2.36,
+    "log": "check-8.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--test",
+      "persistent_checkpoint"
+    ],
+    "exit_code": 0,
+    "seconds": 14.5,
+    "log": "check-9.log"
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.01,
+    "log": "check-10.log"
+  }
+]

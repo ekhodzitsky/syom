@@ -15,6 +15,14 @@ pub struct Lcg {
 }
 
 impl Lcg {
+    pub(crate) fn checkpoint(self) -> u32 {
+        self.state
+    }
+
+    pub(crate) fn from_checkpoint(state: u32) -> Self {
+        Self { state }
+    }
+
     /// lavc `ff_aac_decode_init` seed.
     #[must_use]
     pub fn new() -> Self {

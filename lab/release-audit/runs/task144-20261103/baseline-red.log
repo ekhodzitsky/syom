@@ -1,0 +1,20 @@
+    Blocking waiting for file lock on build directory
+   Compiling syom v0.9.0 (/home/ekhodzitsky/Projects/syom/target/task144/baseline)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.61s
+     Running tests/strict_completion_regression.rs (target/debug/deps/strict_completion_regression-e230474e0d5036e6)
+
+running 1 test
+
+thread 'bounded_presentation_must_not_finish_early' (180580) panicked at tests/strict_completion_regression.rs:13:2:
+strict EOF refusal: slice=false reader=false seek=false
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test bounded_presentation_must_not_finish_early ... FAILED
+
+failures:
+
+failures:
+    bounded_presentation_must_not_finish_early
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--test strict_completion_regression`

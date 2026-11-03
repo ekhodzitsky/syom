@@ -4,14 +4,25 @@ use super::*;
 impl<R: Read + Seek> M4aSeek<R> {
     pub(super) fn decode_au(&mut self, idx: usize) -> Result<(u32, usize)> {
         let result = self.decode_au_inner(idx).and_then(|(rate, n)| {
+            if self.checkpoint_restored {
+                self.checkpoint_restored = false;
+                if self.scratch.iter().any(|v| !v.is_finite()) {
+                    return Err(AacError::format(
+                        "nonfinite PCM after LC checkpoint restore",
+                    ));
+                }
+            }
             if self.exact_mode {
                 self.check_exact_frame(rate, n)?;
             }
             Ok((rate, n))
         });
         if result.is_err() {
+            self.checkpoint_clean = false;
             self.noise_free_prefix = 0;
             self.exact_failed = self.exact_mode;
+        } else if let Ok((rate, n)) = result {
+            self.remember_checkpoint_frame(rate, n);
         }
         result
     }

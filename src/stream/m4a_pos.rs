@@ -12,8 +12,13 @@ use crate::stream::{Frame, StreamInfo};
 use super::m4a::map_m4a_parse_err;
 #[path = "m4a_pos_au.rs"]
 mod au;
+#[path = "m4a_pos_checkpoint.rs"]
+mod checkpoint;
+#[path = "m4a_pos_completion.rs"]
+pub(super) mod completion;
 #[path = "m4a_pos_exact.rs"]
 mod exact;
+pub use completion::PresentationCompletion;
 pub use exact::{ExactSeekHistory, ExactSeekPlan, ExactSeekPosition};
 
 fn read_exact<R: Read>(r: &mut R, buf: &mut [u8]) -> Result<()> {
@@ -84,6 +89,10 @@ pub struct M4aSeek<R> {
     exact_mode: bool,
     exact_failed: bool,
     source_identity: std::sync::Arc<()>,
+    checkpoint_gapless_safe: bool,
+    checkpoint_clean: bool,
+    checkpoint_restored: bool,
+    checkpoint_source_tag: u64,
     #[cfg(test)]
     last_seek_aus: u64,
 }
@@ -92,7 +101,13 @@ impl<R: Read + Seek> M4aSeek<R> {
     /// Parse `moov` and sit at presentation 0 (elst skip still to apply).
     pub fn open(mut reader: R, opts: DecodeOptions) -> Result<Self> {
         opts.validate()?;
-        let track = match load_track_boxes(&mut reader, &opts.memory)? {
+        let boxes = load_track_boxes(&mut reader, &opts.memory)?;
+        let tagged = match &boxes {
+            TrackBoxes::Flat { moov, .. } | TrackBoxes::Frag { moov, .. } => {
+                moov.windows(b"iTunSMPB".len()).any(|w| w == b"iTunSMPB")
+            }
+        };
+        let track = match boxes {
             TrackBoxes::Flat { moov, file_len } => {
                 isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
                     .map_err(map_m4a_parse_err)?
@@ -128,6 +143,8 @@ impl<R: Read + Seek> M4aSeek<R> {
         } else {
             preroll_aus(asc.sbr_present)
         };
+        let checkpoint_gapless_safe = track.has_elst || !tagged;
+        let checkpoint_source_tag = checkpoint::source_tag(&track);
         let mut s = Self {
             reader,
             track,
@@ -149,6 +166,10 @@ impl<R: Read + Seek> M4aSeek<R> {
             exact_mode: false,
             exact_failed: false,
             source_identity: std::sync::Arc::new(()),
+            checkpoint_gapless_safe,
+            checkpoint_clean: true,
+            checkpoint_restored: false,
+            checkpoint_source_tag,
             #[cfg(test)]
             last_seek_aus: 0,
         };
@@ -157,6 +178,7 @@ impl<R: Read + Seek> M4aSeek<R> {
     }
 
     fn reset_codec(&mut self) {
+        self.checkpoint_restored = false;
         self.exact_mode = false;
         self.exact_failed = false;
         self.dec.reset();
@@ -345,6 +367,7 @@ impl<R: Read + Seek> M4aSeek<R> {
                 })?;
             }
         }
+        self.validate_presentation_end()?;
         if emitted == 0 && samples_out == 0 && self.play > 0 && self.pos == 0 {
             return Err(AacError::NotAac);
         }
@@ -359,7 +382,8 @@ impl<R: Read + Seek> M4aSeek<R> {
             aac_frames,
             samples: samples_out,
             priming: self.track.has_elst.then_some(self.skip),
-            remainder: self.track.unplayed_tail(self.skip, samples_out),
+            remainder: self.track.unplayed_tail(self.skip, self.pos),
+            presentation_completion: self.presentation_completion(),
         })
     }
 }

@@ -1,0 +1,10 @@
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom)
+    Finished `release` profile [optimized] target(s) in 14.04s
+     Running tests/persistent_checkpoint.rs (target/release/deps/persistent_checkpoint-331301a46f47a8f1)
+
+running 3 tests
+test restore_and_decode_on_qualified_small_stack ... ok
+test checkpoint_exclusions_and_rejected_restore_leave_live_state_unchanged ... ok
+test fresh_process_restore_matches_uninterrupted_native_bits ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s

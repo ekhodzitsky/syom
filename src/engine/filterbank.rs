@@ -6,6 +6,8 @@ use super::imdct::imdct_into_f32;
 use super::swb::{LONG_WINDOW_LEN, SHORT_WINDOW_LEN};
 use std::sync::LazyLock;
 
+#[path = "filterbank_checkpoint.rs"]
+mod checkpoint;
 #[path = "filterbank_grid.rs"]
 mod grid;
 
