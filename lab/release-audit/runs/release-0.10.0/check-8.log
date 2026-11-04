@@ -1,0 +1,16 @@
+    Updating crates.io index
+   Packaging syom v0.10.0 (/home/ekhodzitsky/Projects/syom)
+warning: ignoring test `cold_stack` as `tests/cold_stack.rs` is not included in the published package
+warning: ignoring test `lc_borrowed_alloc` as `tests/lc_borrowed_alloc.rs` is not included in the published package
+warning: ignoring test `persistent_checkpoint` as `tests/persistent_checkpoint.rs` is not included in the published package
+warning: ignoring benchmark `aac` as `benches/aac.rs` is not included in the published package
+warning: ignoring benchmark `baseline` as `benches/baseline.rs` is not included in the published package
+warning: ignoring benchmark `mem` as `benches/mem.rs` is not included in the published package
+warning: ignoring benchmark `mem_iso` as `benches/mem_iso.rs` is not included in the published package
+    Updating crates.io index
+    Packaged 187 files, 1.7MiB (457.6KiB compressed)
+   Verifying syom v0.10.0 (/home/ekhodzitsky/Projects/syom)
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom/target/package/syom-0.10.0)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 7.09s
+   Uploading syom v0.10.0 (/home/ekhodzitsky/Projects/syom)
+warning: aborting upload due to dry run

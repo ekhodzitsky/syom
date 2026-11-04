@@ -1,13 +1,14 @@
 # syom 0.8 production readiness audit
 
-Current development candidate: [0.10.0 / TASK-144](TASK144.md) has local
-persistent-state and strict completion qualification. It is unpublished;
-the 0.9.0 publication receipts below remain historical registry evidence.
+Version [0.10.0 / TASK-144](TASK144.md) has local persistent-state and strict
+completion qualification. [Release preparation and registry verification](#release-0100)
+are recorded separately; historical candidate reports retain their original status.
 
 ## Release evidence index
 
 | Status | Evidence |
 |---|---|
+| 0.10.0 release preparation, qualified on Linux x86_64 | [Release preflight and registry receipt](#release-0100) |
 | 0.9.0 published release, qualified on Linux x86_64 | [Publication and archive verification](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |
 | 0.8.0 historical audit | Original findings below, measured on `997bf56` on 2026-10-28 |
@@ -352,3 +353,19 @@ the clean-commit dry-run, required local gates, full MSRV tests, six cold
 128 KiB release regressions and packaged consumers passed. None of these
 Linux checks establishes fresh Windows/macOS/ARM parity or SOTA eligibility.
 No consumer deployment or GitHub Actions dispatch was performed.
+
+
+## Release 0.10.0
+
+Release preparation dated 2026-11-04. Persistent AAC-LC checkpoints and strict
+M4A completion are qualified by [TASK-144](TASK144.md). Release preparation
+updates version/date labels and the README example; runtime Rust implementation
+files remain byte-identical to that candidate (only guide documentation changes).
+The original candidate measurements and limits remain preserved.
+
+Local release checks and source hashes are retained in
+[runs/release-0.10.0/preflight.json](runs/release-0.10.0/preflight.json).
+Registry publication, source commit, tag and downloaded-archive verification
+are appended after upload. Qualification is Linux x86_64 only. No SOTA,
+Windows/macOS/ARM parity or downstream consumer migration claim is added.
+GitHub Actions remain paused; release commits use `[skip ci]`.

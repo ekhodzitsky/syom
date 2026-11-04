@@ -204,7 +204,7 @@
 //! `iTunSMPB` tag whose sample counts equal the frames in the buffer
 //! fills both.
 //!
-//! ## Persistent LC process restart (0.10.0 candidate)
+//! ## Persistent LC process restart (since 0.10.0)
 //!
 //! This separate API preserves qualified LC overlap/window and PNS history.
 //! It does not alter exact-position replay or permit importing into exact mode.

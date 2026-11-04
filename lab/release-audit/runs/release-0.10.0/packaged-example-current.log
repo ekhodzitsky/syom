@@ -1,0 +1,6 @@
+     Locking 1 package to latest compatible version
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom/target/package/syom-0.10.0)
+   Compiling syom-release-readme v0.0.0 (/home/ekhodzitsky/Projects/syom/target/release-readme-0.10.0)
+    Finished `release` profile [optimized] target(s) in 15.59s
+     Running `target/release/syom-release-readme`
+1 channel at 48000 Hz

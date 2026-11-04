@@ -1,0 +1,29 @@
+[
+  {
+    "toolchain": "current",
+    "command": [
+      "cargo",
+      "run",
+      "--release",
+      "--offline",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release-readme-0.10.0/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "stdout": "1 channel at 48000 Hz"
+  },
+  {
+    "toolchain": "msrv",
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "run",
+      "--release",
+      "--offline",
+      "--manifest-path",
+      "/home/ekhodzitsky/Projects/syom/target/release-readme-0.10.0/Cargo.toml"
+    ],
+    "exit_code": 0,
+    "stdout": "1 channel at 48000 Hz"
+  }
+]

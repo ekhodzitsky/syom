@@ -7,10 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.0] - 2026-11-03
-
-Unpublished candidate; local qualification is recorded separately from registry
-publication. Version 0.9.0 remains the published release.
+## [0.10.0] - 2026-11-04
 
 ### Added
 

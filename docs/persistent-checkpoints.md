@@ -1,8 +1,8 @@
-# Persistent LC decoder state (0.10.0 candidate)
+# Persistent LC decoder state (since 0.10.0)
 
-This API is available in the unpublished 0.10.0 source candidate. The published
-0.9.0 crate does not expose it. It supports native AAC-LC continuation after
-process restart; it does not restore application jobs or resamplers.
+This API is available in syom 0.10.0 and later. Version 0.9.0 does not expose
+it. It supports native AAC-LC continuation after process restart; it does not
+restore application jobs or resamplers.
 
 `M4aSeek::save_exact_position` remains a source-instance-bound logical position.
 Its restore replays history under an explicit AU budget. It contains no DSP
@@ -99,7 +99,7 @@ still follows the existing exact-seek budget and prefix-replay contract.
 The agent-youtube reviewed patch supplied requirements and counterexamples;
 it was not applied wholesale. Its checkout, vendor files, job state, transcripts,
 network/authentication and resampler were not modified. Upstream qualification
-does not automatically migrate that consumer. Adopting this candidate requires
+does not automatically migrate that consumer. Adopting this version requires
 its own backend identity decision, source/options authentication, native PCM and
 resampled-tail comparisons, durable job-recovery tests and old-job refusal.
 A resampler has independent phase/history that these bytes do not contain.

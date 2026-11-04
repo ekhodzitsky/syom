@@ -1,0 +1,18 @@
+{
+  "version": "0.10.0",
+  "prepared_utc": "2026-11-04T13:21:02.378384+00:00",
+  "qualification_commit": "1383825e013f95ee565eb094122f3ec6fa2f7193",
+  "runtime_implementation_unchanged": true,
+  "changed_rust_files": [
+    "src/guide.rs"
+  ],
+  "guide_change": "Documentation heading only",
+  "checks": "checks.json",
+  "packaged_example": "packaged-example.json",
+  "msrv": "1.89.0",
+  "current_rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "candidate_full_msrv_and_fuzz_evidence": "../task144-20261103/report.json",
+  "platform": "Linux x86_64",
+  "publication": "pending; separate registry verification will record result",
+  "hosted_ci_dispatched": false
+}

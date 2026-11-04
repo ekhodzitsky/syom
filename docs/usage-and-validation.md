@@ -1,9 +1,10 @@
 # Usage and validation
 
 This page keeps integration detail separate from the root quick start.
-The recommended registry dependency is syom 0.9.0 (`syom = "0.9"`).
+The recommended registry dependency is syom 0.10.0 (`syom = "0.10"`).
 Exact interval planning and logical seek positions were introduced in
-0.9.0; the existing `seek` API remains available.
+0.9.0; the existing `seek` API remains available. Version 0.10.0 adds
+[persistent LC state and strict completion](persistent-checkpoints.md).
 
 ## API guide
 
@@ -22,7 +23,7 @@ compiling example for each task. Migration and source documentation are in
 | LC, quality VBR, HE v1/v2, surround | 7 |
 | Limits and typed errors | 8 |
 | Profiles and containers | 9 |
-| Behaviour changes and 0.8 → 0.9 migration | 10 |
+| Behaviour changes since 0.6.0 | 10 |
 
 ## Formats and channel layout
 

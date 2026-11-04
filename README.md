@@ -12,25 +12,19 @@ directly to your application at the native sample rate.
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
-Development `main` prepares **0.10.0**, an unpublished candidate with qualified persistent
-LC state and strict M4A completion; see the [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
-
-For the candidate from a sibling checkout, use this source dependency:
-
-```toml
-syom = { version = "0.10", path = "../syom" }
-```
+Version **0.10.0** adds qualified persistent LC state and strict M4A
+completion; see the [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
 
 ## Quick start
 
-Requires Rust **1.89+**. Cargo downloads the **0.9.0** crate (`syom = "0.9"`);
+Requires Rust **1.89+**. Cargo downloads the **0.10.0** crate (`syom = "0.10"`);
 the example generates its own audio and needs no media files or native
 codec installation.
 
 ```sh
 cargo new syom-demo --bin
 cd syom-demo
-cargo add syom@0.9.0
+cargo add syom@0.10.0
 ```
 
 Replace `src/main.rs` with:
@@ -66,7 +60,7 @@ Published-package snapshots for applications handling AAC:
 
 | Library | Integration boundary | HE-AAC v1/v2 decode |
 |---|---|---|
-| syom 0.9.0 | Built-in ADTS, M4A and LATM readers; planar `f32` | Supported |
+| syom 0.10.0 | Built-in ADTS, M4A and LATM readers; planar `f32` | Supported |
 | rusty_aac 2.0.1 | Caller extracts M4A access units; interleaved `f32` | Supported |
 | Symphonia 0.6.1 | Multi-format media pipeline and audio buffers | Native AAC-LC core only |
 
@@ -80,7 +74,7 @@ record pinned versions and verification dates, including oxideav-aac.
 ## Measured decoding time
 
 Historical medians; **lower is better**. These measure **syom 0.8.0**, not
-the current development candidate:
+the current release:
 
 | ADTS workload | syom 0.8.0 | rusty_aac 2.0.1 | Symphonia 0.6.1 |
 |---|---:|---:|---:|
@@ -96,11 +90,11 @@ preserve unfavorable cases. [BENCH.md](BENCH.md) retains older results.
 
 ## Status and limits
 
-Release **0.9.0** adds budgeted exact M4A seeking for
-LC/LD mono/stereo and fixes cold decoder stack initialization. Exact plans
-require prefix replay, not arbitrary sparse access. The
-[API guide](https://docs.rs/syom/0.9.0/syom/guide/)
-explains migration and replay limits.
+Release **0.10.0** adds persistent AAC-LC state for qualified mono-output
+restart and strict M4A presentation completion. Callers authenticate the saved
+state and bind it to the source and exact build. Budgeted exact seeking keeps
+its prefix-replay contract. The [API guide](https://docs.rs/syom/0.10.0/syom/guide/)
+explains eligibility, migration and replay limits.
 
 Version, downloads and docs badges describe the registry; CI shows the
 last hosted `main` run. Hosted checks are paused. Release validation is
