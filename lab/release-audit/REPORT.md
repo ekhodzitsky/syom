@@ -8,7 +8,7 @@ are recorded separately; historical candidate reports retain their original stat
 
 | Status | Evidence |
 |---|---|
-| 0.10.0 release preparation, qualified on Linux x86_64 | [Release preflight and registry receipt](#release-0100) |
+| 0.10.0 published release, qualified on Linux x86_64 | [Release preflight and registry receipt](#release-0100) |
 | 0.9.0 published release, qualified on Linux x86_64 | [Publication and archive verification](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |
 | 0.8.0 historical audit | Original findings below, measured on `997bf56` on 2026-10-28 |
@@ -369,3 +369,37 @@ Registry publication, source commit, tag and downloaded-archive verification
 are appended after upload. Qualification is Linux x86_64 only. No SOTA,
 Windows/macOS/ARM parity or downstream consumer migration claim is added.
 GitHub Actions remain paused; release commits use `[skip ci]`.
+
+### Registry receipt
+
+[syom 0.10.0](https://crates.io/crates/syom/0.10.0) was published on
+**2026-11-04 at 13:22:40 UTC** (16:22:40 Moscow). Annotated tag `v0.10.0`
+points to clean release source commit
+`eef30caa6b1596ee4ba15db81492bd087747426e`; both remote tag and peeled commit
+were verified. This receipt follow-up updates evidence outside the package.
+
+The registry archive is **468580 bytes**, SHA-256:
+
+```text
+864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce
+```
+
+The API checksum, downloaded archive and clean pre-upload package match.
+Packaged VCS metadata identifies the clean release commit. All **179 shipped
+Rust sources**, README, CHANGELOG, license/notices and original Cargo manifest
+byte-match that commit. The normalized manifest declares Rust 1.89, zero
+runtime/build dependencies and no build script. The exact README example
+passed against registry 0.10.0 on Rust 1.97.1 and MSRV 1.89.0, printing
+`1 channel at 48000 Hz`.
+
+[Machine-readable verification](runs/release-0.10.0/verification.json) retains
+publication time, source/tag identity, checksums and source comparison.
+[Publication log](runs/release-0.10.0/publish.log),
+[clean package verification](runs/release-0.10.0/clean-package.log) and
+[clean dry run](runs/release-0.10.0/clean-dry-run.log) are retained.
+The first archive inspection found an older precommit `.crate` left by the
+package check: Cargo's dry-run used a separate temporary package. A fresh
+`cargo package --locked` supplied the clean archive checked before upload;
+no stale candidate archive was published. Historical candidate reports keep
+their original unpublished status and are superseded only by this receipt.
+GitHub Actions were not dispatched; no consumer deployment/migration occurred.

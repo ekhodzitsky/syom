@@ -1,0 +1,12 @@
+{
+  "source_commit": "eef30caa6b1596ee4ba15db81492bd087747426e",
+  "archive_sha256": "864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce",
+  "archive_bytes": 468580,
+  "vcs": {
+    "git": {
+      "sha1": "eef30caa6b1596ee4ba15db81492bd087747426e"
+    },
+    "path_in_vcs": ""
+  },
+  "checked_utc": "2026-11-04T13:22:38.201924+00:00"
+}
