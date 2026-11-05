@@ -1,0 +1,233 @@
+[
+  {
+    "round": 0,
+    "case": "slice-manual",
+    "status": 0,
+    "result": {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "mode": "splitmix",
+      "median_ms": 33.832432000000004,
+      "samples_ms": [
+        34.204059,
+        34.049689,
+        33.832432000000004,
+        33.61257,
+        34.03432,
+        33.71367,
+        33.608102
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 0,
+    "case": "seek-file",
+    "status": 0,
+    "result": {
+      "kind": "file",
+      "median_ms": 34.436354,
+      "samples_ms": [
+        34.436354,
+        34.276395,
+        34.432968,
+        35.338675,
+        34.101817,
+        34.931492,
+        34.665103
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 0,
+    "case": "seek-bytes",
+    "status": 0,
+    "result": {
+      "kind": "bytes",
+      "median_ms": 33.43669,
+      "samples_ms": [
+        33.119756,
+        33.474962,
+        33.264909,
+        34.013882,
+        33.43669,
+        33.425990000000006,
+        33.913394
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 0,
+    "case": "seek-smart64k",
+    "status": 0,
+    "result": {
+      "kind": "smart64k",
+      "median_ms": 33.345698999999996,
+      "samples_ms": [
+        33.181642999999994,
+        33.203583,
+        33.64431,
+        36.560856,
+        34.533477,
+        33.273584,
+        33.345698999999996
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 1,
+    "case": "seek-smart64k",
+    "status": 0,
+    "result": {
+      "kind": "smart64k",
+      "median_ms": 33.141457,
+      "samples_ms": [
+        33.216597,
+        32.837477,
+        32.855361,
+        33.500039,
+        33.141457,
+        33.980289,
+        32.899814
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 1,
+    "case": "seek-bytes",
+    "status": 0,
+    "result": {
+      "kind": "bytes",
+      "median_ms": 33.711064,
+      "samples_ms": [
+        33.405051,
+        33.711064,
+        33.949812,
+        33.990970000000004,
+        33.214063,
+        33.156545,
+        33.984998000000004
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 1,
+    "case": "seek-file",
+    "status": 0,
+    "result": {
+      "kind": "file",
+      "median_ms": 33.963237,
+      "samples_ms": [
+        33.748905,
+        34.324335,
+        33.894418,
+        33.963237,
+        34.12991,
+        33.930727,
+        34.346606
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 1,
+    "case": "slice-manual",
+    "status": 0,
+    "result": {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "mode": "splitmix",
+      "median_ms": 33.347153,
+      "samples_ms": [
+        33.432833,
+        33.141226,
+        33.738115,
+        33.347153,
+        33.001273999999995,
+        33.634961999999994,
+        33.123643
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 2,
+    "case": "slice-manual",
+    "status": 0,
+    "result": {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "mode": "splitmix",
+      "median_ms": 33.494870000000006,
+      "samples_ms": [
+        33.338927,
+        34.048837999999996,
+        33.494870000000006,
+        33.741011,
+        33.442892,
+        33.429277,
+        33.98078
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 2,
+    "case": "seek-file",
+    "status": 0,
+    "result": {
+      "kind": "file",
+      "median_ms": 33.96449,
+      "samples_ms": [
+        33.934443,
+        34.564635,
+        33.887686,
+        33.963217,
+        34.309076,
+        33.96449,
+        34.263760999999995
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 2,
+    "case": "seek-bytes",
+    "status": 0,
+    "result": {
+      "kind": "bytes",
+      "median_ms": 33.762330999999996,
+      "samples_ms": [
+        38.708433,
+        37.609643,
+        33.904397,
+        33.518063,
+        33.762330999999996,
+        33.664187,
+        33.318989
+      ]
+    },
+    "stderr": ""
+  },
+  {
+    "round": 2,
+    "case": "seek-smart64k",
+    "status": 0,
+    "result": {
+      "kind": "smart64k",
+      "median_ms": 33.186521,
+      "samples_ms": [
+        33.745490000000004,
+        33.186521,
+        32.999972,
+        33.698029999999996,
+        32.996194,
+        33.336192000000004,
+        32.99366
+      ]
+    },
+    "stderr": ""
+  }
+]

@@ -1,0 +1,550 @@
+{
+  "binary_sha256": {
+    "base": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "candidate": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181"
+  },
+  "runner_sha256": "358f70f6840b9e45626a130db3c1b84c32f2cf2ef475a6d9b2a63f96898c0aef",
+  "cases": [
+    {
+      "id": "speech0-48k-m4a",
+      "input_sha256": "e7f0f3ee0300ca9951e22ca79a4ee0a22619eba37b56f208d4f644cd24781f13",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech1-48k-m4a",
+      "input_sha256": "7e2f16bfb7f4c5b179826d8fe78b19f22234ca667fbae3a986c8f06c8c4a4ef3",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 55295,
+            "sha256": "87b910cf2a73b2edb7b3d65847b9f26451fb6a146467a06408d86c42cc6b02c5"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 55295,
+            "sha256": "87b910cf2a73b2edb7b3d65847b9f26451fb6a146467a06408d86c42cc6b02c5"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech2-48k-m4a",
+      "input_sha256": "f0fa8cdd1ed0fcbc3b70a972125860ef352c0b6404a721caf06d82c644fcc3c9",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 49492,
+            "sha256": "0a7902db09f67ef97119f57ab9699ff4681ba1ec939ad49d402214816c558087"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 49492,
+            "sha256": "0a7902db09f67ef97119f57ab9699ff4681ba1ec939ad49d402214816c558087"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech3-48k-m4a",
+      "input_sha256": "082131f3c18f32d0ec53da06e7134810aacab1e50db3cf554e7f5c4679719f0c",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 87380,
+            "sha256": "732561af4188b4c5a493d723cfaa27830c6c98febe769b00dbb4b3ad16d6216b"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 87380,
+            "sha256": "732561af4188b4c5a493d723cfaa27830c6c98febe769b00dbb4b3ad16d6216b"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech4-48k-m4a",
+      "input_sha256": "5e06b04afdd93f0dc33e1425c2e0b7fdabe8946e10fd6e3a38c3fd74c0012fa6",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 83967,
+            "sha256": "d0f71e4a7bdd3b157940dbc007037a1f15700a0bdaaf25cb39716d9f9316f192"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 83967,
+            "sha256": "d0f71e4a7bdd3b157940dbc007037a1f15700a0bdaaf25cb39716d9f9316f192"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech5-48k-m4a",
+      "input_sha256": "ec4ce89f89bea4e79ea56040125b3030fac2fb34055ddcbb8d5e07cd8a3ebc56",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 51882,
+            "sha256": "07bd41ce768fd9d388e52c97fb208c30526a6bfdeea089e4214bca72304de127"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 51882,
+            "sha256": "07bd41ce768fd9d388e52c97fb208c30526a6bfdeea089e4214bca72304de127"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech6-48k-m4a",
+      "input_sha256": "dc5d3bb5b80c4d423a132d891fc2238795d32fc4c6ed984c16288382a0f2b0cb",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 80554,
+            "sha256": "7516b34161fc26845bf6771a133e24467aaa4342a081a19aca487708e6b291fa"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 80554,
+            "sha256": "7516b34161fc26845bf6771a133e24467aaa4342a081a19aca487708e6b291fa"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech7-48k-m4a",
+      "input_sha256": "cd579e15f06379a96d7429661dd591884b0d3f3067e179b2ab8ef92063caca56",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 33108,
+            "sha256": "49838715345b3efce108867bf39116d64e303ef45ec27575186db24cacbc1b19"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 33108,
+            "sha256": "49838715345b3efce108867bf39116d64e303ef45ec27575186db24cacbc1b19"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech8-48k-m4a",
+      "input_sha256": "8756c522f617c4cb0b3e4ddaca65d7549184f80d4f10ea15bf81ffb9cc7db3ab",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 79188,
+            "sha256": "b901c81a747cfcee12283f44f48f69c9bc801e1bc8daeb6d2b4ca15f565c6d31"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 79188,
+            "sha256": "b901c81a747cfcee12283f44f48f69c9bc801e1bc8daeb6d2b4ca15f565c6d31"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech9-48k-m4a",
+      "input_sha256": "2087db8ea5dc4ce015cab588409824360357499686051e048f084df06fcad8ef",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 53930,
+            "sha256": "69493fb6bc67e41d2949fba06f70cce8a3afe10fe0c93bf931d87acba03d3513"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 53930,
+            "sha256": "69493fb6bc67e41d2949fba06f70cce8a3afe10fe0c93bf931d87acba03d3513"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech10-48k-m4a",
+      "input_sha256": "07c541e6190f72590bcf5b6e90da6a193c50ec0a05c154d8ab9b7684c5c1d379",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 63146,
+            "sha256": "7dc50d36469526fb5aad276200b0a93c7184f66bcbd10f4442009515f9be0368"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 63146,
+            "sha256": "7dc50d36469526fb5aad276200b0a93c7184f66bcbd10f4442009515f9be0368"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech11-48k-m4a",
+      "input_sha256": "f2841bf361fc3f2a467984e59b8b29b380e27115e7a6afcdc03b52a7b86e0a0c",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 90794,
+            "sha256": "750e34c2db15343eb73a9e6e7ac52b31037734e97219ac88279ccea281fe949a"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 90794,
+            "sha256": "750e34c2db15343eb73a9e6e7ac52b31037734e97219ac88279ccea281fe949a"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech12-48k-m4a",
+      "input_sha256": "200c6cd0ea62a05f2fbc91ba9c5c1378ba6cea870f9b8fb7cda835e72f67d033",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 95572,
+            "sha256": "f9af5bda664f9cd90e2cc7c3302ba678f7c88e68352605f4bbeecb993091ad97"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 95572,
+            "sha256": "f9af5bda664f9cd90e2cc7c3302ba678f7c88e68352605f4bbeecb993091ad97"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech13-48k-m4a",
+      "input_sha256": "baa545fc7f0aa33bcb354b7a7b07d67ebb88ef8af245bc39fedc397f8e87620d",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 51540,
+            "sha256": "19a24363183c142a729ea2061f9d41f21018250254ac22971180f19bdbaf3d9e"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 51540,
+            "sha256": "19a24363183c142a729ea2061f9d41f21018250254ac22971180f19bdbaf3d9e"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "speech14-48k-m4a",
+      "input_sha256": "88d1123f8910f1172a2a0d14eee69d938e18c1830e73b86c92ace1a0eba599c7",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 54954,
+            "sha256": "d17aecc9bbd50527689952f7800953821121a97cc2ae967ff301dcd85a4e8115"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 54954,
+            "sha256": "d17aecc9bbd50527689952f7800953821121a97cc2ae967ff301dcd85a4e8115"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "he48.adts",
+      "input_sha256": "c07b549e26756a05ed59c023ecab058daf491dc9dba709245ea2e7efc7108809",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 6142,
+            "sha256": "0679d08528e13d1be3b835b05a7fe794697562af2dde0363ee0932279c63a9aa"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 6142,
+            "sha256": "0679d08528e13d1be3b835b05a7fe794697562af2dde0363ee0932279c63a9aa"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "he48.latm",
+      "input_sha256": "59ce65d3d4cb8f3785250daa9b607112b670611dcff52f9d6ef87d91a47a5581",
+      "mode": "file",
+      "outputs": {},
+      "pass": false,
+      "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found"
+    },
+    {
+      "id": "he48.m4a",
+      "input_sha256": "cdbff6fad512d33b0b9c8400fdfa1d9a2ba0fb5a7079c1fad47f4a5380be360e",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 3071,
+            "sha256": "4bcdbc1aface5e0b40be47619bfa13ee3211e126501cca0bc85c352ad257dd74"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 3071,
+            "sha256": "4bcdbc1aface5e0b40be47619bfa13ee3211e126501cca0bc85c352ad257dd74"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "ps48.adts",
+      "input_sha256": "fed0ba6e012ea13c9b09e2543f967102dc48a07a1d3075cf71e88ca9541de8dc",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 17748,
+            "sha256": "1233b69ec8ac5d4bab9b5940e3752dd81b078e8a9a84da03dd3fa8e85b31895b"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 17748,
+            "sha256": "1233b69ec8ac5d4bab9b5940e3752dd81b078e8a9a84da03dd3fa8e85b31895b"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "ps48.m4a",
+      "input_sha256": "74e3e7fa97363b7fb70aae783da15d0623f9818f44458926f2b98cdab98f35cf",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 8874,
+            "sha256": "5bde16330acbac6f41e4e6ec1c91cad61722a756571d305662d5c0defe0bf8b0"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 8874,
+            "sha256": "5bde16330acbac6f41e4e6ec1c91cad61722a756571d305662d5c0defe0bf8b0"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "ld48.loas",
+      "input_sha256": "793b3099faae24e09fbc3898a242a29ffdfe276c4af102bbb2a29e38d1a7ffcb",
+      "mode": "file",
+      "outputs": {},
+      "pass": false,
+      "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found"
+    },
+    {
+      "id": "fmp4_he2.mp4",
+      "input_sha256": "c4d5995958cc0759618e0d74eb12ae383217c6616d001c60b2b242ad36caa89a",
+      "mode": "file",
+      "outputs": {},
+      "pass": false,
+      "error": "Unsupported audio codec: unsupported feature: aac: aac too complex"
+    },
+    {
+      "id": "lc.latm",
+      "input_sha256": "f4be8d3a99f4901f4157a8a6428dd0704156c1bb65667384f9b6fbc1bcb8ff75",
+      "mode": "file",
+      "outputs": {},
+      "pass": false,
+      "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found"
+    },
+    {
+      "id": "lc-fragmented.mp4",
+      "input_sha256": "37b162782011d76fa8f24fed54f2ae74597ca79b603362bafe067eb57e469d6a",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "lc.mka",
+      "input_sha256": "e3d95cb170cdad51991b4b9111a104a35122ff98c98b137f6dab5b70fdf79946",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 64511,
+            "sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "mp3.mp4",
+      "input_sha256": "4c59b4c1960be5ddc20eda48c0720c2c35b215281c1ee68cf91db0eb3287e282",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 65664,
+            "sha256": "2b41c61107ae32e9bd8218d70757d43843294130cb3cc5fd0bec909d5dd0d461"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 65664,
+            "sha256": "2b41c61107ae32e9bd8218d70757d43843294130cb3cc5fd0bec909d5dd0d461"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "long-stereo-file",
+      "input_sha256": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328",
+      "mode": "file",
+      "outputs": {
+        "base": [
+          {
+            "samples": 1280340,
+            "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 1280340,
+            "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "long-stereo-bytes",
+      "input_sha256": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328",
+      "mode": "bytes",
+      "outputs": {
+        "base": [
+          {
+            "samples": 1280340,
+            "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 1280340,
+            "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+          }
+        ]
+      },
+      "pass": true
+    },
+    {
+      "id": "long-stereo-split",
+      "input_sha256": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328",
+      "mode": "split",
+      "outputs": {
+        "base": [
+          {
+            "samples": 1280340,
+            "sha256": "deb66ad927130dc26907f12888bc9f59008d79dd22dd08bb5d950ee058699ba3"
+          },
+          {
+            "samples": 1280340,
+            "sha256": "0da05f3d1e7daccacce382c290ba99208357404b9cd0043dfd459cae7ff5fc6a"
+          }
+        ],
+        "candidate": [
+          {
+            "samples": 1280340,
+            "sha256": "deb66ad927130dc26907f12888bc9f59008d79dd22dd08bb5d950ee058699ba3"
+          },
+          {
+            "samples": 1280340,
+            "sha256": "0da05f3d1e7daccacce382c290ba99208357404b9cd0043dfd459cae7ff5fc6a"
+          }
+        ]
+      },
+      "pass": true
+    }
+  ],
+  "pass": false
+}

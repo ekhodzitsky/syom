@@ -104,6 +104,50 @@ fn simd_fft_matches_scalar_bits() {
     }
 }
 
+/// Exercise the early-stage guards and retain signed zero/subnormal bits.
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn avx512_small_stages_preserve_ieee_bits() {
+    if !std::is_x86_feature_detected!("avx512f") || !std::is_x86_feature_detected!("avx") {
+        return;
+    }
+    let edges = [
+        0.0,
+        -0.0,
+        f32::from_bits(1),
+        -f32::from_bits(1),
+        f32::MIN_POSITIVE,
+        -f32::MIN_POSITIVE,
+        1.0,
+        -1.0,
+    ];
+    for n in [1, 2, 4, 8, 16, 64, 512] {
+        let bitrev = bitrev_table(n);
+        let (tw_re, tw_im) = twiddle_table(n);
+        for (mut re, mut im) in [
+            fill_soa(n, 7),
+            (
+                (0..n).map(|i| edges[i % edges.len()]).collect(),
+                (0..n).map(|i| edges[(i + 3) % edges.len()]).collect(),
+            ),
+        ] {
+            let (mut expected_re, mut expected_im) = (re.clone(), im.clone());
+            ifft_soa_scalar(&mut expected_re, &mut expected_im, &bitrev, &tw_re, &tw_im);
+            super::kernels::bitrev_swap(&mut re, &mut im, &bitrev);
+            // SAFETY: both features are detected above; every n is a power of
+            // two, the planes match, and the tables cover all n - 1 twiddles.
+            unsafe { super::avx512k::ifft_stages_avx512(&mut re, &mut im, &tw_re, &tw_im) };
+            for (actual, expected) in [(&re, &expected_re), (&im, &expected_im)] {
+                assert_eq!(
+                    actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                    expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+                    "FFT bits n={n}"
+                );
+            }
+        }
+    }
+}
+
 /// Isolated FFT wall: scalar vs dispatched SIMD, 2048-point IMDCT size (n=512).
 #[test]
 #[ignore = "manual TASK-82 transform CPU probe"]

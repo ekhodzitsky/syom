@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "+stable",
+    "check",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "lab/consume/gigastt/profile/Cargo.toml",
+    "--bins"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "target/task145/promoted-profile-final-target",
+    "CARGO_BUILD_JOBS": "2"
+  },
+  "exit_code": 0,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "files": {
+    "Cargo.toml": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b",
+    "lab/consume/gigastt/profile/Cargo.toml": "6ae8770d33a62aa28e976f92a72927d68aab239e8d81e1ed95d602c5c5425681",
+    "lab/consume/gigastt/profile/Cargo.lock": "49c774317d32f5180526810fe0b3d498decef23b29435ebd60ac165fbf17f364"
+  }
+}

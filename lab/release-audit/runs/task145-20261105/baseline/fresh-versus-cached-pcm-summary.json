@@ -1,0 +1,81 @@
+{
+  "command": [
+    "python3",
+    "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/scripts/compare-aac-pcm.py",
+    "--base-probe",
+    "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+    "--candidate-probe",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe",
+    "--manifest",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/pcm-manifest.json",
+    "--output",
+    "/home/ekhodzitsky/Projects/syom/target/task145/baseline/fresh-versus-cached-pcm.json"
+  ],
+  "exit_code": 1,
+  "manifest_sha256": "d228f727ae558b3f7063212ff90ca324dda779bb7c2ad22f22ffb281bd188b7f",
+  "eligible_pcm_matches": 25,
+  "total_cases": 29,
+  "unsupported": [
+    {
+      "id": "he48.latm",
+      "both_unsupported": true,
+      "same_error": true,
+      "outcomes": {
+        "cached": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        },
+        "fresh": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        }
+      }
+    },
+    {
+      "id": "ld48.loas",
+      "both_unsupported": true,
+      "same_error": true,
+      "outcomes": {
+        "cached": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        },
+        "fresh": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        }
+      }
+    },
+    {
+      "id": "fmp4_he2.mp4",
+      "both_unsupported": true,
+      "same_error": true,
+      "outcomes": {
+        "cached": {
+          "error": "Unsupported audio codec: unsupported feature: aac: aac too complex",
+          "mode": "file"
+        },
+        "fresh": {
+          "error": "Unsupported audio codec: unsupported feature: aac: aac too complex",
+          "mode": "file"
+        }
+      }
+    },
+    {
+      "id": "lc.latm",
+      "both_unsupported": true,
+      "same_error": true,
+      "outcomes": {
+        "cached": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        },
+        "fresh": {
+          "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+          "mode": "file"
+        }
+      }
+    }
+  ],
+  "all_eligible_match": true
+}

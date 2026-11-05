@@ -1,0 +1,18 @@
+{
+  "cpu_timed": 0,
+  "cpu_strace": 2,
+  "rust": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "hashes": {
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe": "ca133f73190cd127ce26a66424ecd5d9676384104a2740d670f8e6b08e5c7f0d",
+    "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-io-timing": "7de30d68d2b8517bf009a9a2d08e49e661ab44afe5e0c8bd053c59edb96f1200",
+    "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution": "0a7bfcaed05bb95e6f5f06356f3160900afcc9432a98dddea5d337f35dcdd0ba"
+  },
+  "loadavg_after": [
+    2.48974609375,
+    4.13232421875,
+    5.453125
+  ],
+  "note": "Controlled attribution only. Gate results remain unchanged harness campaigns. Native driver compiled earlier identical library sources; callback uses old manual mean vs candidate fused mean."
+}

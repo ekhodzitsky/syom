@@ -1,0 +1,63 @@
+{
+  "base_commit": "bdf4bbfbe8c1b0f0b83121a428f4621657ce36f2",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "native_build_flags": {
+    "compiler": "+stable 1.98.1",
+    "profile": "release",
+    "lto": true,
+    "codegen-units": 1,
+    "opt-level": 3,
+    "RUSTFLAGS": "",
+    "affinity": "2-7",
+    "jobs": 2,
+    "offline": true
+  },
+  "test_build_flags": {
+    "CARGO_PROFILE_RELEASE_LTO": "true",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+    "filter": "imdct",
+    "affinity": "2-7",
+    "jobs": 2
+  },
+  "file_sha256": {
+    "target/task145/syom-fft/src/engine/imdct_avx512.rs": "2238294efba4cf4c8d62485b6591acc5ab0ccb7063d75c40c8983ce37bd0c88c",
+    "src/engine/imdct_avx512.rs": "0eb92a2586fec15d617546a4223a2ba39934673e9a774ebcae920de67f092d41",
+    "target/task145/fft-native/src/common.rs": "673938936ba6b0f97adb6fbd04c5c24ace986a65f6a61b114ad2066d069447d8",
+    "target/task145/fft-native/src/new.rs": "2d8d65afd8d40e9a4213c4a06e287629759d77139af3c39100254080c136a174",
+    "target/task145/fft-native/src/old.rs": "00b518d91a4001732baf69b265a619d77729687a11ee8cc549105c538659cb69",
+    "target/task145/fft-native/base/Cargo.toml": "13f271e57b83fd051ad5fdc89eb01cb372ff44c7aa65b48b1fbac99ba2789a8d",
+    "target/task145/fft-native/base/Cargo.lock": "c45f791ef1c7f422b5855b172e627e9e4dfea285c30b204819ddd7002bbfe489",
+    "target/task145/fft-native/candidate/Cargo.toml": "192c71ce6bbb21c4001bed2cd8d99538b95b507d0c57b4e98496913b0b5d84c9",
+    "target/task145/fft-native/candidate/Cargo.lock": "ad05a314275694cc90df32ab01c17cc7f8ed170e684b931c14e4def841265941",
+    "target/task145/fft-native/prototype.patch": "4c512d028638d2a4db5753583b2433bee974fb123431ec0db9208783ad055b05",
+    "target/task145/fft-native/timing.py": "0d0a61814ebc9d238a1a6b24c0908e123229648ea7d61cd062c4d0204735851b",
+    "target/task145/fft-native/verify.py": "ede0b5d307bb5d315dc59cc75c247eea6de39eabd11bad6d537269d5506f8d61"
+  },
+  "avx512f": true,
+  "immutable_binaries": {
+    "base": {
+      "path": "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/bin/fft-native-base",
+      "sha256": "804e5cc8b36b237b7c2d6043b9415e98926c1d8202d88f2bcd8459cbde18c303",
+      "bytes": 1262528
+    },
+    "candidate": {
+      "path": "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/bin/fft-native-candidate",
+      "sha256": "e61c5d7b4e2ea025a5b6f419890f0430b412f3d645b744e2c451fc7647a34b52",
+      "bytes": 1267992
+    }
+  },
+  "prototype_source_sha256": "2238294efba4cf4c8d62485b6591acc5ab0ccb7063d75c40c8983ce37bd0c88c",
+  "tests": {
+    "command": "CARGO_TARGET_DIR=target/task145/fft-test-target CARGO_BUILD_JOBS=2 CARGO_PROFILE_RELEASE_LTO=true CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 RUSTFLAGS= taskset -c 2-7 cargo +stable test --release --offline --lib --manifest-path target/task145/syom-fft/Cargo.toml imdct",
+    "passed": 6,
+    "ignored": 1,
+    "filtered_out": 1184,
+    "log": "imdct-tests.log",
+    "fmt_check_pass": true
+  },
+  "native_parity": {
+    "cases": 3,
+    "exact_geometry_and_all_float_bits": true,
+    "artifact": "native-parity.json"
+  }
+}

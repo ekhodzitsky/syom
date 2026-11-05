@@ -1,0 +1,696 @@
+
+target/task145/direct-target/release/syom-direct-attribution:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000e5300 <<syom::engine::huff::SpectralBook>::fill+0x1d0>:
+   e5300:	mov    0x68(%rsp),%eax
+   e5304:	mov    %rax,0xd0(%rsp)
+   e530c:	mov    0x60(%r12),%rax
+   e5311:	mov    %rax,0x100(%rsp)
+   e5319:	mov    0x28(%r12),%rbx
+   e531e:	mov    0x20(%r12),%rax
+   e5323:	mov    %rax,0xe8(%rsp)
+   e532b:	mov    0x8(%r12),%rax
+   e5330:	mov    %rax,0x70(%rsp)
+   e5335:	mov    0x10(%r12),%rax
+   e533a:	mov    %rax,0xf0(%rsp)
+   e5342:	mov    0x40(%r12),%rax
+   e5347:	mov    %rax,0x68(%rsp)
+   e534c:	mov    0x38(%r12),%rax
+   e5351:	mov    %rax,0xc8(%rsp)
+   e5359:	mov    0x50(%r12),%rax
+   e535e:	mov    %rax,0x108(%rsp)
+   e5366:	movzbl 0x71(%r12),%eax
+   e536c:	mov    %al,0x1f(%rsp)
+   e5370:	shufps $0x0,%xmm0,%xmm0
+   e5374:	movaps %xmm0,0x120(%rsp)
+   e537c:	mov    $0x4,%eax
+   e5381:	xor    %r14d,%r14d
+   e5384:	mov    %rbx,0x28(%rsp)
+   e5389:	jmp    e6028 <<syom::engine::huff::SpectralBook>::fill+0xef8>
+   e538e:	mov    0x68(%r12),%rax
+   e5393:	mov    %rax,0x108(%rsp)
+   e539b:	mov    0x60(%r12),%rax
+   e53a0:	mov    %rax,0x140(%rsp)
+   e53a8:	mov    0x28(%r12),%rax
+   e53ad:	mov    %rax,0xe8(%rsp)
+   e53b5:	mov    0x20(%r12),%rax
+   e53ba:	mov    %rax,0x20(%rsp)
+   e53bf:	mov    0x8(%r12),%rax
+   e53c4:	mov    %rax,0xf0(%rsp)
+   e53cc:	mov    0x10(%r12),%rax
+   e53d1:	mov    %rax,0xc8(%rsp)
+   e53d9:	mov    %r12,%rax
+   e53dc:	mov    0x40(%r12),%r12
+   e53e1:	mov    0x38(%rax),%r14
+   e53e5:	mov    0x50(%rax),%rdx
+   e53e9:	mov    %rdx,0x120(%rsp)
+   e53f1:	test   %cl,%cl
+   e53f3:	setne  %dl
+   e53f6:	and    0x71(%rax),%dl
+   e53f9:	mov    %dl,0x94(%rsp)
+   e5400:	shufps $0x0,%xmm0,%xmm0
+   e5404:	movaps %xmm0,0x110(%rsp)
+   e540c:	mov    %cl,0x1f(%rsp)
+   e5410:	movzbl %cl,%eax
+   e5413:	shl    $0x2,%eax
+   e5416:	mov    %rax,0x68(%rsp)
+   e541b:	mov    $0x2,%eax
+   e5420:	xor    %r11d,%r11d
+   e5423:	mov    %r14,0x70(%rsp)
+   e5428:	mov    %r13,0x98(%rsp)
+   e5430:	jmp    e5496 <<syom::engine::huff::SpectralBook>::fill+0x366>
+   e5432:	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   e5440:	mov    0x48(%rsp),%r8d
+   e5445:	mov    0x4c(%rsp),%r10
+   e544a:	mov    0x54(%rsp),%r9
+   e544f:	movd   0x54(%rsp),%xmm0
+   e5455:	mov    %r10,%rax
+   e5458:	shr    $0x20,%rax
+   e545c:	movd   %eax,%xmm1
+   e5460:	punpckldq %xmm0,%xmm1
+   e5464:	mulps  0x110(%rsp),%xmm1
+   e546c:	mov    0x98(%rsp),%r13
+   e5474:	mov    0x28(%rsp),%rax
+   e5479:	movlps %xmm1,0x0(%r13,%rax,4)
+   e547f:	mov    0xd0(%rsp),%r11
+   e5487:	lea    0x2(%r11),%rax
+   e548b:	cmp    0x60(%rsp),%rax
+   e5490:	ja     e5261 <<syom::engine::huff::SpectralBook>::fill+0x131>
+   e5496:	mov    %r11,0x28(%rsp)
+   e549b:	mov    %rax,%r11
+   e549e:	mov    0x20(%r15),%eax
+   e54a2:	cmp    $0xc,%rax
+   e54a6:	mov    %r11,0xd0(%rsp)
+   e54ae:	jae    e5520 <<syom::engine::huff::SpectralBook>::fill+0x3f0>
+   e54b0:	mov    0x8(%r15),%rdx
+   e54b4:	mov    0x10(%r15),%rdi
+   e54b8:	mov    %rdx,%rcx
+   e54bb:	sub    %rdi,%rcx
+   e54be:	jbe    e5566 <<syom::engine::huff::SpectralBook>::fill+0x436>
+   e54c4:	test   %eax,%eax
+   e54c6:	setne  %sil
+   e54ca:	cmp    $0x8,%rcx
+   e54ce:	setb   %cl
+   e54d1:	or     %sil,%cl
+   e54d4:	jne    e57be <<syom::engine::huff::SpectralBook>::fill+0x68e>
+   e54da:	lea    0x8(%rdi),%rsi
+   e54de:	cmp    $0xfffffffffffffff7,%rdi
+   e54e2:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e54e8:	cmp    %rdx,%rsi
+   e54eb:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e54f1:	mov    (%r15),%rax
+   e54f4:	mov    (%rax,%rdi,1),%r11
+   e54f8:	bswap  %r11
+   e54fb:	mov    %r11,0x18(%r15)
+   e54ff:	mov    %rsi,0x10(%r15)
+   e5503:	movl   $0x40,0x20(%r15)
+   e550b:	mov    $0x40,%eax
+   e5510:	jmp    e5524 <<syom::engine::huff::SpectralBook>::fill+0x3f4>
+   e5512:	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   e5520:	mov    0x18(%r15),%r11
+   e5524:	mov    %r11,%rdx
+   e5527:	shr    $0x34,%rdx
+   e552b:	mov    0x108(%rsp),%rcx
+   e5533:	movzbl (%rcx,%rdx,1),%ecx
+   e5537:	test   %ecx,%ecx
+   e5539:	je     e555c <<syom::engine::huff::SpectralBook>::fill+0x42c>
+   e553b:	shl    %cl,%r11
+   e553e:	mov    %r11,0x18(%r15)
+   e5542:	sub    %ecx,%eax
+   e5544:	mov    %eax,0x20(%r15)
+   e5548:	mov    0x140(%rsp),%rcx
+   e5550:	movswq (%rcx,%rdx,2),%rsi
+   e5555:	mov    %eax,%ecx
+   e5557:	jmp    e5717 <<syom::engine::huff::SpectralBook>::fill+0x5e7>
+   e555c:	mov    0x8(%r15),%rdx
+   e5560:	mov    0x10(%r15),%rdi
+   e5564:	jmp    e556a <<syom::engine::huff::SpectralBook>::fill+0x43a>
+   e5566:	mov    0x18(%r15),%r11
+   e556a:	mov    %eax,%ecx
+   e556c:	mov    (%r15),%rbx
+   e556f:	xor    %eax,%eax
+   e5571:	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   e5580:	test   %ecx,%ecx
+   e5582:	jne    e56b0 <<syom::engine::huff::SpectralBook>::fill+0x580>
+   e5588:	mov    %rdx,%rcx
+   e558b:	sub    %rdi,%rcx
+   e558e:	jbe    e79d5 <<syom::engine::huff::SpectralBook>::fill+0x28a5>
+   e5594:	cmp    $0x8,%rcx
+   e5598:	jb     e55c9 <<syom::engine::huff::SpectralBook>::fill+0x499>
+   e559a:	lea    0x8(%rdi),%rsi
+   e559e:	cmp    $0xfffffffffffffff7,%rdi
+   e55a2:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e55a8:	cmp    %rdx,%rsi
+   e55ab:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e55b1:	mov    (%rbx,%rdi,1),%r11
+   e55b5:	bswap  %r11
+   e55b8:	mov    $0x40,%ecx
+   e55bd:	mov    %rsi,%rdi
+   e55c0:	mov    %rsi,0x10(%r15)
+   e55c4:	jmp    e56b0 <<syom::engine::huff::SpectralBook>::fill+0x580>
+   e55c9:	movzbl (%rbx,%rdi,1),%ecx
+   e55cd:	shl    $0x38,%rcx
+   e55d1:	or     %rcx,%r11
+   e55d4:	lea    0x1(%rdi),%rsi
+   e55d8:	mov    %rsi,0x10(%r15)
+   e55dc:	mov    $0x8,%ecx
+   e55e1:	cmp    %rdx,%rsi
+   e55e4:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e55ea:	movzbl 0x1(%rbx,%rdi,1),%ecx
+   e55ef:	shl    $0x30,%rcx
+   e55f3:	or     %rcx,%r11
+   e55f6:	lea    0x2(%rdi),%rsi
+   e55fa:	mov    %rsi,0x10(%r15)
+   e55fe:	mov    $0x10,%ecx
+   e5603:	cmp    %rdx,%rsi
+   e5606:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e560c:	movzbl 0x2(%rbx,%rdi,1),%ecx
+   e5611:	shl    $0x28,%rcx
+   e5615:	or     %rcx,%r11
+   e5618:	lea    0x3(%rdi),%rsi
+   e561c:	mov    %rsi,0x10(%r15)
+   e5620:	mov    $0x18,%ecx
+   e5625:	cmp    %rdx,%rsi
+   e5628:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e562a:	movzbl 0x3(%rbx,%rdi,1),%ecx
+   e562f:	shl    $0x20,%rcx
+   e5633:	or     %rcx,%r11
+   e5636:	lea    0x4(%rdi),%rsi
+   e563a:	mov    %rsi,0x10(%r15)
+   e563e:	mov    $0x20,%ecx
+   e5643:	cmp    %rdx,%rsi
+   e5646:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e5648:	movzbl 0x4(%rbx,%rdi,1),%ecx
+   e564d:	shl    $0x18,%ecx
+   e5650:	or     %rcx,%r11
+   e5653:	lea    0x5(%rdi),%rsi
+   e5657:	mov    %rsi,0x10(%r15)
+   e565b:	mov    $0x28,%ecx
+   e5660:	cmp    %rdx,%rsi
+   e5663:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e5665:	movzbl 0x5(%rbx,%rdi,1),%ecx
+   e566a:	shl    $0x10,%ecx
+   e566d:	or     %rcx,%r11
+   e5670:	lea    0x6(%rdi),%rsi
+   e5674:	mov    %rsi,0x10(%r15)
+   e5678:	mov    $0x30,%ecx
+   e567d:	cmp    %rdx,%rsi
+   e5680:	jae    e569e <<syom::engine::huff::SpectralBook>::fill+0x56e>
+   e5682:	movzbl 0x6(%rbx,%rdi,1),%ecx
+   e5687:	shl    $0x8,%ecx
+   e568a:	or     %rcx,%r11
+   e568d:	add    $0x7,%rdi
+   e5691:	mov    $0x38,%ecx
+   e5696:	mov    %rdi,%rsi
+   e5699:	jmp    e55c0 <<syom::engine::huff::SpectralBook>::fill+0x490>
+   e569e:	mov    %rsi,%rdi
+   e56a1:	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   e56b0:	dec    %ecx
+   e56b2:	movzwl %ax,%eax
+   e56b5:	test   %r11,%r11
+   e56b8:	lea    (%r11,%r11,1),%r11
+   e56bc:	mov    %r11,0x18(%r15)
+   e56c0:	mov    %ecx,0x20(%r15)
+   e56c4:	js     e56e0 <<syom::engine::huff::SpectralBook>::fill+0x5b0>
+   e56c6:	mov    0xf0(%rsp),%rsi
+   e56ce:	cmp    %rax,0xc8(%rsp)
+   e56d6:	ja     e56f3 <<syom::engine::huff::SpectralBook>::fill+0x5c3>
+   e56d8:	jmp    e9d8f <<syom::engine::huff::SpectralBook>::fill+0x4c5f>
+   e56dd:	nopl   (%rax)
+   e56e0:	mov    0x20(%rsp),%rsi
+   e56e5:	cmp    %rax,0xe8(%rsp)
+   e56ed:	jbe    e9dee <<syom::engine::huff::SpectralBook>::fill+0x4cbe>
+   e56f3:	movzwl (%rsi,%rax,2),%eax
+   e56f7:	test   %rax,%rax
+   e56fa:	je     e5fbd <<syom::engine::huff::SpectralBook>::fill+0xe8d>
+   e5700:	cmp    %rax,%r12
+   e5703:	jbe    e9d54 <<syom::engine::huff::SpectralBook>::fill+0x4c24>
+   e5709:	movswq (%r14,%rax,2),%rsi
+   e570e:	test   %rsi,%rsi
+   e5711:	js     e5580 <<syom::engine::huff::SpectralBook>::fill+0x450>
+   e5717:	mov    %rsi,0x100(%rsp)
+   e571f:	mov    %rsi,%rax
+   e5722:	shl    $0x5,%rax
+   e5726:	mov    0x120(%rsp),%rdx
+   e572e:	movaps (%rdx,%rax,1),%xmm0
+   e5732:	movaps 0x10(%rdx,%rax,1),%xmm1
+   e5737:	movaps %xmm1,0x50(%rsp)
+   e573c:	movaps %xmm0,0x40(%rsp)
+   e5741:	cmpb   $0x0,0xf8(%rsp)
+   e5749:	je     e5c60 <<syom::engine::huff::SpectralBook>::fill+0xb30>
+   e574f:	cmpb   $0x0,0x1f(%rsp)
+   e5754:	je     e5440 <<syom::engine::huff::SpectralBook>::fill+0x310>
+   e575a:	mov    (%r15),%rax
+   e575d:	mov    0x8(%r15),%rdx
+   e5761:	mov    0x10(%r15),%rdi
+   e5765:	mov    0x40(%rsp),%ebx
+   e5769:	test   %ebx,%ebx
+   e576b:	je     e5954 <<syom::engine::huff::SpectralBook>::fill+0x824>
+   e5771:	test   %ecx,%ecx
+   e5773:	jne    e5936 <<syom::engine::huff::SpectralBook>::fill+0x806>
+   e5779:	mov    %rdx,%rcx
+   e577c:	sub    %rdi,%rcx
+   e577f:	jbe    e92e5 <<syom::engine::huff::SpectralBook>::fill+0x41b5>
+   e5785:	cmp    $0x8,%rcx
+   e5789:	jb     e585e <<syom::engine::huff::SpectralBook>::fill+0x72e>
+   e578f:	lea    0x8(%rdi),%rsi
+   e5793:	cmp    $0xfffffffffffffff7,%rdi
+   e5797:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e579d:	cmp    %rdx,%rsi
+   e57a0:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e57a6:	mov    (%rax,%rdi,1),%r11
+   e57aa:	bswap  %r11
+   e57ad:	mov    $0x40,%ecx
+   e57b2:	mov    %rsi,%rdi
+   e57b5:	mov    %rsi,0x10(%r15)
+   e57b9:	jmp    e5936 <<syom::engine::huff::SpectralBook>::fill+0x806>
+   e57be:	mov    (%r15),%rsi
+   e57c1:	movzbl (%rsi,%rdi,1),%r11d
+   e57c6:	mov    $0x38,%cl
+   e57c8:	sub    %al,%cl
+   e57ca:	shl    %cl,%r11
+   e57cd:	or     0x18(%r15),%r11
+   e57d1:	lea    0x1(%rdi),%rcx
+   e57d5:	cmp    %rdx,%rcx
+   e57d8:	jne    e57fd <<syom::engine::huff::SpectralBook>::fill+0x6cd>
+   e57da:	lea    0x8(%rax),%rcx
+   e57de:	mov    %r11,0x18(%r15)
+   e57e2:	mov    %rdx,0x10(%r15)
+   e57e6:	mov    %ecx,0x20(%r15)
+   e57ea:	mov    %rdx,%rdi
+   e57ed:	cmp    $0x4,%eax
+   e57f0:	mov    %ecx,%eax
+   e57f2:	jae    e5524 <<syom::engine::huff::SpectralBook>::fill+0x3f4>
+   e57f8:	jmp    e556c <<syom::engine::huff::SpectralBook>::fill+0x43c>
+   e57fd:	movzbl 0x1(%rsi,%rdi,1),%r14d
+   e5803:	mov    $0x30,%cl
+   e5805:	sub    %al,%cl
+   e5807:	shl    %cl,%r14
+   e580a:	or     %r11,%r14
+   e580d:	lea    0x2(%rdi),%rcx
+   e5811:	mov    %rax,%rbx
+   e5814:	or     $0x10,%rbx
+   e5818:	cmp    %rdx,%rcx
+   e581b:	jne    e5822 <<syom::engine::huff::SpectralBook>::fill+0x6f2>
+   e581d:	mov    %r14,%r11
+   e5820:	jmp    e5846 <<syom::engine::huff::SpectralBook>::fill+0x716>
+   e5822:	movzbl 0x2(%rsi,%rdi,1),%r11d
+   e5828:	mov    $0x38,%cl
+   e582a:	sub    %bl,%cl
+   e582c:	shl    %cl,%r11
+   e582f:	or     %r14,%r11
+   e5832:	lea    0x3(%rdi),%rcx
+   e5836:	cmp    %rdx,%rcx
+   e5839:	jne    e59b4 <<syom::engine::huff::SpectralBook>::fill+0x884>
+   e583f:	add    $0x18,%rax
+   e5843:	mov    %rax,%rbx
+   e5846:	mov    0x70(%rsp),%r14
+   e584b:	mov    %r11,0x18(%r15)
+   e584f:	mov    %rdx,0x10(%r15)
+   e5853:	mov    %ebx,0x20(%r15)
+   e5857:	mov    %ebx,%eax
+   e5859:	jmp    e5524 <<syom::engine::huff::SpectralBook>::fill+0x3f4>
+   e585e:	movzbl (%rax,%rdi,1),%ecx
+   e5862:	shl    $0x38,%rcx
+   e5866:	or     %rcx,%r11
+   e5869:	lea    0x1(%rdi),%rsi
+   e586d:	mov    %rsi,0x10(%r15)
+   e5871:	mov    $0x8,%ecx
+   e5876:	cmp    %rdx,%rsi
+   e5879:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e587f:	movzbl 0x1(%rax,%rdi,1),%ecx
+   e5884:	shl    $0x30,%rcx
+   e5888:	or     %rcx,%r11
+   e588b:	lea    0x2(%rdi),%rsi
+   e588f:	mov    %rsi,0x10(%r15)
+   e5893:	mov    $0x10,%ecx
+   e5898:	cmp    %rdx,%rsi
+   e589b:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e58a1:	movzbl 0x2(%rax,%rdi,1),%ecx
+   e58a6:	shl    $0x28,%rcx
+   e58aa:	or     %rcx,%r11
+   e58ad:	lea    0x3(%rdi),%rsi
+   e58b1:	mov    %rsi,0x10(%r15)
+   e58b5:	mov    $0x18,%ecx
+   e58ba:	cmp    %rdx,%rsi
+   e58bd:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e58bf:	movzbl 0x3(%rax,%rdi,1),%ecx
+   e58c4:	shl    $0x20,%rcx
+   e58c8:	or     %rcx,%r11
+   e58cb:	lea    0x4(%rdi),%rsi
+   e58cf:	mov    %rsi,0x10(%r15)
+   e58d3:	mov    $0x20,%ecx
+   e58d8:	cmp    %rdx,%rsi
+   e58db:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e58dd:	movzbl 0x4(%rax,%rdi,1),%ecx
+   e58e2:	shl    $0x18,%ecx
+   e58e5:	or     %rcx,%r11
+   e58e8:	lea    0x5(%rdi),%rsi
+   e58ec:	mov    %rsi,0x10(%r15)
+   e58f0:	mov    $0x28,%ecx
+   e58f5:	cmp    %rdx,%rsi
+   e58f8:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e58fa:	movzbl 0x5(%rax,%rdi,1),%ecx
+   e58ff:	shl    $0x10,%ecx
+   e5902:	or     %rcx,%r11
+   e5905:	lea    0x6(%rdi),%rsi
+   e5909:	mov    %rsi,0x10(%r15)
+   e590d:	mov    $0x30,%ecx
+   e5912:	cmp    %rdx,%rsi
+   e5915:	jae    e5933 <<syom::engine::huff::SpectralBook>::fill+0x803>
+   e5917:	movzbl 0x6(%rax,%rdi,1),%ecx
+   e591c:	shl    $0x8,%ecx
+   e591f:	or     %rcx,%r11
+   e5922:	add    $0x7,%rdi
+   e5926:	mov    $0x38,%ecx
+   e592b:	mov    %rdi,%rsi
+   e592e:	jmp    e57b5 <<syom::engine::huff::SpectralBook>::fill+0x685>
+   e5933:	mov    %rsi,%rdi
+   e5936:	dec    %ecx
+   e5938:	test   %r11,%r11
+   e593b:	lea    (%r11,%r11,1),%r11
+   e593f:	mov    %r11,0x18(%r15)
+   e5943:	mov    %ecx,0x20(%r15)
+   e5947:	jns    e5954 <<syom::engine::huff::SpectralBook>::fill+0x824>
+   e5949:	neg    %ebx
+   e594b:	mov    %ebx,0x40(%rsp)
+   e594f:	xorb   $0x80,0x53(%rsp)
+   e5954:	cmpb   $0x1,0x1f(%rsp)
+   e5959:	je     e5c60 <<syom::engine::huff::SpectralBook>::fill+0xb30>
+   e595f:	mov    0x44(%rsp),%ebx
+   e5963:	test   %ebx,%ebx
+   e5965:	je     e5af7 <<syom::engine::huff::SpectralBook>::fill+0x9c7>
+   e596b:	test   %ecx,%ecx
+   e596d:	jne    e5ad9 <<syom::engine::huff::SpectralBook>::fill+0x9a9>
+   e5973:	mov    %rdx,%rcx
+   e5976:	sub    %rdi,%rcx
+   e5979:	jbe    e92e5 <<syom::engine::huff::SpectralBook>::fill+0x41b5>
+   e597f:	cmp    $0x7,%rcx
+   e5983:	jbe    e5a01 <<syom::engine::huff::SpectralBook>::fill+0x8d1>
+   e5985:	lea    0x8(%rdi),%rsi
+   e5989:	cmp    $0xfffffffffffffff7,%rdi
+   e598d:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e5993:	cmp    %rdx,%rsi
+   e5996:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e599c:	mov    (%rax,%rdi,1),%r11
+   e59a0:	bswap  %r11
+   e59a3:	mov    $0x40,%ecx
+   e59a8:	mov    %rsi,%rdi
+   e59ab:	mov    %rsi,0x10(%r15)
+   e59af:	jmp    e5ad9 <<syom::engine::huff::SpectralBook>::fill+0x9a9>
+   e59b4:	movzbl 0x3(%rsi,%rdi,1),%r14d
+   e59ba:	lea    0x20(%rax),%rcx
+   e59be:	neg    %rcx
+   e59c1:	shl    %cl,%r14
+   e59c4:	or     %r11,%r14
+   e59c7:	lea    0x4(%rdi),%rcx
+   e59cb:	mov    %rax,%rbx
+   e59ce:	or     $0x20,%rbx
+   e59d2:	cmp    %rdx,%rcx
+   e59d5:	je     e581d <<syom::engine::huff::SpectralBook>::fill+0x6ed>
+   e59db:	movzbl 0x4(%rsi,%rdi,1),%r11d
+   e59e1:	mov    $0x38,%cl
+   e59e3:	sub    %bl,%cl
+   e59e5:	shl    %cl,%r11
+   e59e8:	or     %r14,%r11
+   e59eb:	lea    0x5(%rdi),%rcx
+   e59ef:	cmp    %rdx,%rcx
+   e59f2:	jne    e5de5 <<syom::engine::huff::SpectralBook>::fill+0xcb5>
+   e59f8:	add    $0x28,%rax
+   e59fc:	jmp    e5843 <<syom::engine::huff::SpectralBook>::fill+0x713>
+   e5a01:	movzbl (%rax,%rdi,1),%ecx
+   e5a05:	shl    $0x38,%rcx
+   e5a09:	or     %rcx,%r11
+   e5a0c:	lea    0x1(%rdi),%rsi
+   e5a10:	mov    %rsi,0x10(%r15)
+   e5a14:	mov    $0x8,%ecx
+   e5a19:	cmp    %rdx,%rsi
+   e5a1c:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5a22:	movzbl 0x1(%rax,%rdi,1),%ecx
+   e5a27:	shl    $0x30,%rcx
+   e5a2b:	or     %rcx,%r11
+   e5a2e:	lea    0x2(%rdi),%rsi
+   e5a32:	mov    %rsi,0x10(%r15)
+   e5a36:	mov    $0x10,%ecx
+   e5a3b:	cmp    %rdx,%rsi
+   e5a3e:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5a44:	movzbl 0x2(%rax,%rdi,1),%ecx
+   e5a49:	shl    $0x28,%rcx
+   e5a4d:	or     %rcx,%r11
+   e5a50:	lea    0x3(%rdi),%rsi
+   e5a54:	mov    %rsi,0x10(%r15)
+   e5a58:	mov    $0x18,%ecx
+   e5a5d:	cmp    %rdx,%rsi
+   e5a60:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5a62:	movzbl 0x3(%rax,%rdi,1),%ecx
+   e5a67:	shl    $0x20,%rcx
+   e5a6b:	or     %rcx,%r11
+   e5a6e:	lea    0x4(%rdi),%rsi
+   e5a72:	mov    %rsi,0x10(%r15)
+   e5a76:	mov    $0x20,%ecx
+   e5a7b:	cmp    %rdx,%rsi
+   e5a7e:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5a80:	movzbl 0x4(%rax,%rdi,1),%ecx
+   e5a85:	shl    $0x18,%ecx
+   e5a88:	or     %rcx,%r11
+   e5a8b:	lea    0x5(%rdi),%rsi
+   e5a8f:	mov    %rsi,0x10(%r15)
+   e5a93:	mov    $0x28,%ecx
+   e5a98:	cmp    %rdx,%rsi
+   e5a9b:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5a9d:	movzbl 0x5(%rax,%rdi,1),%ecx
+   e5aa2:	shl    $0x10,%ecx
+   e5aa5:	or     %rcx,%r11
+   e5aa8:	lea    0x6(%rdi),%rsi
+   e5aac:	mov    %rsi,0x10(%r15)
+   e5ab0:	mov    $0x30,%ecx
+   e5ab5:	cmp    %rdx,%rsi
+   e5ab8:	jae    e5ad6 <<syom::engine::huff::SpectralBook>::fill+0x9a6>
+   e5aba:	movzbl 0x6(%rax,%rdi,1),%ecx
+   e5abf:	shl    $0x8,%ecx
+   e5ac2:	or     %rcx,%r11
+   e5ac5:	add    $0x7,%rdi
+   e5ac9:	mov    $0x38,%ecx
+   e5ace:	mov    %rdi,%rsi
+   e5ad1:	jmp    e59ab <<syom::engine::huff::SpectralBook>::fill+0x87b>
+   e5ad6:	mov    %rsi,%rdi
+   e5ad9:	dec    %ecx
+   e5adb:	test   %r11,%r11
+   e5ade:	lea    (%r11,%r11,1),%r11
+   e5ae2:	mov    %r11,0x18(%r15)
+   e5ae6:	mov    %ecx,0x20(%r15)
+   e5aea:	jns    e5af7 <<syom::engine::huff::SpectralBook>::fill+0x9c7>
+   e5aec:	neg    %ebx
+   e5aee:	mov    %ebx,0x44(%rsp)
+   e5af2:	xorb   $0x80,0x57(%rsp)
+   e5af7:	cmpb   $0x2,0x1f(%rsp)
+   e5afc:	je     e5c60 <<syom::engine::huff::SpectralBook>::fill+0xb30>
+   e5b02:	mov    0x48(%rsp),%ebx
+   e5b06:	test   %ebx,%ebx
+   e5b08:	je     e5c4d <<syom::engine::huff::SpectralBook>::fill+0xb1d>
+   e5b0e:	test   %ecx,%ecx
+   e5b10:	jne    e5c2f <<syom::engine::huff::SpectralBook>::fill+0xaff>
+   e5b16:	mov    %rdx,%rcx
+   e5b19:	sub    %rdi,%rcx
+   e5b1c:	jbe    e92e5 <<syom::engine::huff::SpectralBook>::fill+0x41b5>
+   e5b22:	cmp    $0x7,%rcx
+   e5b26:	jbe    e5b57 <<syom::engine::huff::SpectralBook>::fill+0xa27>
+   e5b28:	lea    0x8(%rdi),%rsi
+   e5b2c:	cmp    $0xfffffffffffffff7,%rdi
+   e5b30:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e5b36:	cmp    %rdx,%rsi
+   e5b39:	ja     e9e55 <<syom::engine::huff::SpectralBook>::fill+0x4d25>
+   e5b3f:	mov    (%rax,%rdi,1),%r11
+   e5b43:	bswap  %r11
+   e5b46:	mov    $0x40,%ecx
+   e5b4b:	mov    %rsi,%rdi
+   e5b4e:	mov    %rsi,0x10(%r15)
+   e5b52:	jmp    e5c2f <<syom::engine::huff::SpectralBook>::fill+0xaff>
+   e5b57:	movzbl (%rax,%rdi,1),%ecx
+   e5b5b:	shl    $0x38,%rcx
+   e5b5f:	or     %rcx,%r11
+   e5b62:	lea    0x1(%rdi),%rsi
+   e5b66:	mov    %rsi,0x10(%r15)
+   e5b6a:	mov    $0x8,%ecx
+   e5b6f:	cmp    %rdx,%rsi
+   e5b72:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5b78:	movzbl 0x1(%rax,%rdi,1),%ecx
+   e5b7d:	shl    $0x30,%rcx
+   e5b81:	or     %rcx,%r11
+   e5b84:	lea    0x2(%rdi),%rsi
+   e5b88:	mov    %rsi,0x10(%r15)
+   e5b8c:	mov    $0x10,%ecx
+   e5b91:	cmp    %rdx,%rsi
+   e5b94:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5b9a:	movzbl 0x2(%rax,%rdi,1),%ecx
+   e5b9f:	shl    $0x28,%rcx
+   e5ba3:	or     %rcx,%r11
+   e5ba6:	lea    0x3(%rdi),%rsi
+   e5baa:	mov    %rsi,0x10(%r15)
+   e5bae:	mov    $0x18,%ecx
+   e5bb3:	cmp    %rdx,%rsi
+   e5bb6:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5bb8:	movzbl 0x3(%rax,%rdi,1),%ecx
+   e5bbd:	shl    $0x20,%rcx
+   e5bc1:	or     %rcx,%r11
+   e5bc4:	lea    0x4(%rdi),%rsi
+   e5bc8:	mov    %rsi,0x10(%r15)
+   e5bcc:	mov    $0x20,%ecx
+   e5bd1:	cmp    %rdx,%rsi
+   e5bd4:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5bd6:	movzbl 0x4(%rax,%rdi,1),%ecx
+   e5bdb:	shl    $0x18,%ecx
+   e5bde:	or     %rcx,%r11
+   e5be1:	lea    0x5(%rdi),%rsi
+   e5be5:	mov    %rsi,0x10(%r15)
+   e5be9:	mov    $0x28,%ecx
+   e5bee:	cmp    %rdx,%rsi
+   e5bf1:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5bf3:	movzbl 0x5(%rax,%rdi,1),%ecx
+   e5bf8:	shl    $0x10,%ecx
+   e5bfb:	or     %rcx,%r11
+   e5bfe:	lea    0x6(%rdi),%rsi
+   e5c02:	mov    %rsi,0x10(%r15)
+   e5c06:	mov    $0x30,%ecx
+   e5c0b:	cmp    %rdx,%rsi
+   e5c0e:	jae    e5c2c <<syom::engine::huff::SpectralBook>::fill+0xafc>
+   e5c10:	movzbl 0x6(%rax,%rdi,1),%ecx
+   e5c15:	shl    $0x8,%ecx
+   e5c18:	or     %rcx,%r11
+   e5c1b:	add    $0x7,%rdi
+   e5c1f:	mov    $0x38,%ecx
+   e5c24:	mov    %rdi,%rsi
+   e5c27:	jmp    e5b4e <<syom::engine::huff::SpectralBook>::fill+0xa1e>
+   e5c2c:	mov    %rsi,%rdi
+   e5c2f:	dec    %ecx
+   e5c31:	test   %r11,%r11
+   e5c34:	lea    (%r11,%r11,1),%r11
+   e5c38:	mov    %r11,0x18(%r15)
+   e5c3c:	mov    %ecx,0x20(%r15)
+   e5c40:	jns    e5c4d <<syom::engine::huff::SpectralBook>::fill+0xb1d>
+   e5c42:	neg    %ebx
+   e5c44:	mov    %ebx,0x48(%rsp)
+   e5c48:	xorb   $0x80,0x5b(%rsp)
+   e5c4d:	cmpb   $0x3,0x1f(%rsp)
+   e5c52:	jne    e92c6 <<syom::engine::huff::SpectralBook>::fill+0x4196>
+   e5c58:	nopl   0x0(%rax,%rax,1)
+   e5c60:	cmpb   $0x0,0x94(%rsp)
+   e5c68:	je     e5440 <<syom::engine::huff::SpectralBook>::fill+0x310>
+   e5c6e:	xor    %r13d,%r13d
+   e5c71:	jmp    e5ca2 <<syom::engine::huff::SpectralBook>::fill+0xb72>
+   e5c73:	data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   e5c80:	xorps  -0xde487(%rip),%xmm0        # 7800 <__abi_tag+0x7504>
+   e5c87:	mov    0x70(%rsp),%r14
+   e5c8c:	movss  %xmm0,0x50(%rsp,%r13,1)
+   e5c93:	add    $0x4,%r13
+   e5c97:	cmp    %r13,0x68(%rsp)
+   e5c9c:	je     e5440 <<syom::engine::huff::SpectralBook>::fill+0x310>
+   e5ca2:	cmp    $0x10,%r13
+   e5ca6:	je     e9d3e <<syom::engine::huff::SpectralBook>::fill+0x4c0e>
+   e5cac:	mov    0x40(%rsp,%r13,1),%eax
+   e5cb1:	add    $0x10,%eax
+   e5cb4:	test   $0xffffffdf,%eax
+   e5cb9:	jne    e5c93 <<syom::engine::huff::SpectralBook>::fill+0xb63>
+   e5cbb:	lea    (%rsp,%r13,1),%rbx
+   e5cbf:	add    $0x40,%rbx
+   e5cc3:	lea    0x78(%rsp),%rdi
+   e5cc8:	mov    %r15,%rsi
+   e5ccb:	mov    %rbx,%rdx
+   e5cce:	call   e4c70 <syom::engine::huff::decode_esc>
+   e5cd3:	movzbl 0x78(%rsp),%eax
+   e5cd8:	cmp    $0xff,%al
+   e5cda:	jne    e79a5 <<syom::engine::huff::SpectralBook>::fill+0x2875>
+   e5ce0:	mov    (%rbx),%r14d
+   e5ce3:	mov    %r14d,%ebx
+   e5ce6:	neg    %ebx
+   e5ce8:	cmovs  %r14d,%ebx
+   e5cec:	mov    0x2507e(%rip),%eax        # 10ad70 <syom::engine::spectrum::POW43+0x8>
+   e5cf2:	test   %eax,%eax
+   e5cf4:	jne    e5d28 <<syom::engine::huff::SpectralBook>::fill+0xbf8>
+   e5cf6:	cmp    $0x2000,%ebx
+   e5cfc:	jae    e5d70 <<syom::engine::huff::SpectralBook>::fill+0xc40>
+   e5cfe:	mov    0x2506c(%rip),%eax        # 10ad70 <syom::engine::spectrum::POW43+0x8>
+   e5d04:	test   %eax,%eax
+   e5d06:	jne    e5da0 <<syom::engine::huff::SpectralBook>::fill+0xc70>
+   e5d0c:	mov    %ebx,%eax
+   e5d0e:	mov    0x25053(%rip),%rcx        # 10ad68 <syom::engine::spectrum::POW43>
+   e5d15:	movss  (%rcx,%rax,4),%xmm0
+   e5d1a:	test   %r14d,%r14d
+   e5d1d:	jns    e5c87 <<syom::engine::huff::SpectralBook>::fill+0xb57>
+   e5d23:	jmp    e5c80 <<syom::engine::huff::SpectralBook>::fill+0xb50>
+   e5d28:	lea    0x25039(%rip),%rax        # 10ad68 <syom::engine::spectrum::POW43>
+   e5d2f:	mov    %rax,0xb0(%rsp)
+   e5d37:	lea    0xb0(%rsp),%rax
+   e5d3f:	mov    %rax,0x78(%rsp)
+   e5d44:	lea    0x25025(%rip),%rdi        # 10ad70 <syom::engine::spectrum::POW43+0x8>
+   e5d4b:	mov    $0x1,%esi
+   e5d50:	lea    0x78(%rsp),%rdx
+   e5d55:	lea    0x16914(%rip),%rcx        # fc670 <__frame_dummy_init_array_entry+0x21d0>
+   e5d5c:	lea    0x165d5(%rip),%r8        # fc338 <__frame_dummy_init_array_entry+0x1e98>
+   e5d63:	call   79c40 <<std::sys::sync::once::futex::Once>::call>
+   e5d68:	cmp    $0x2000,%ebx
+   e5d6e:	jb     e5cfe <<syom::engine::huff::SpectralBook>::fill+0xbce>
+   e5d70:	mov    %ebx,%eax
+   e5d72:	xorps  %xmm0,%xmm0
+   e5d75:	cvtsi2ss %rax,%xmm0
+   e5d7a:	movss  %xmm0,0xe0(%rsp)
+   e5d83:	call   *0x199af(%rip)        # ff738 <_DYNAMIC+0x3f0>
+   e5d89:	mulss  0xe0(%rsp),%xmm0
+   e5d92:	test   %r14d,%r14d
+   e5d95:	jns    e5c87 <<syom::engine::huff::SpectralBook>::fill+0xb57>
+   e5d9b:	jmp    e5c80 <<syom::engine::huff::SpectralBook>::fill+0xb50>
+   e5da0:	lea    0x24fc1(%rip),%rax        # 10ad68 <syom::engine::spectrum::POW43>
+   e5da7:	mov    %rax,0xb0(%rsp)
+   e5daf:	lea    0xb0(%rsp),%rax
+   e5db7:	mov    %rax,0x78(%rsp)
+   e5dbc:	lea    0x24fad(%rip),%rdi        # 10ad70 <syom::engine::spectrum::POW43+0x8>
+   e5dc3:	mov    $0x1,%esi
+   e5dc8:	lea    0x78(%rsp),%rdx
+   e5dcd:	lea    0x1689c(%rip),%rcx        # fc670 <__frame_dummy_init_array_entry+0x21d0>
+   e5dd4:	lea    0x1655d(%rip),%r8        # fc338 <__frame_dummy_init_array_entry+0x1e98>
+   e5ddb:	call   79c40 <<std::sys::sync::once::futex::Once>::call>
+   e5de0:	jmp    e5d0c <<syom::engine::huff::SpectralBook>::fill+0xbdc>
+   e5de5:	movzbl 0x5(%rsi,%rdi,1),%ebx
+   e5dea:	mov    $0x10,%cl
+   e5dec:	sub    %al,%cl
+   e5dee:	shl    %cl,%rbx
+   e5df1:	or     %rbx,%r11
+   e5df4:	lea    0x6(%rdi),%rcx
+   e5df8:	mov    %rax,%rbx
+   e5dfb:	or     $0x30,%rbx
+   e5dff:	cmp    $0x8,%eax
+   e5e02:	mov    0x70(%rsp),%r14
+   e5e07:	ja     e5e5a <<syom::engine::huff::SpectralBook>::fill+0xd2a>
+   e5e09:	cmp    %rdx,%rcx
+   e5e0c:	je     e584b <<syom::engine::huff::SpectralBook>::fill+0x71b>
+   e5e12:	movzbl 0x6(%rsi,%rdi,1),%r14d
+   e5e18:	mov    $0x38,%cl
+   e5e1a:	sub    %bl,%cl
+   e5e1c:	shl    %cl,%r14
+   e5e1f:	or     %r14,%r11
+   e5e22:	lea    0x7(%rdi),%rcx
+   e5e26:	mov    %rax,%rbx
+   e5e29:	add    $0x38,%rbx
+   e5e2d:	test   %eax,%eax
+   e5e2f:	je     e5e38 <<syom::engine::huff::SpectralBook>::fill+0xd08>
+   e5e31:	mov    0x70(%rsp),%r14
+   e5e36:	jmp    e5e5a <<syom::engine::huff::SpectralBook>::fill+0xd2a>
+   e5e38:	cmp    %rdx,%rcx
+   e5e3b:	mov    0x70(%rsp),%r14
+   e5e40:	je     e584b <<syom::engine::huff::SpectralBook>::fill+0x71b>
+   e5e46:	movzbl 0x7(%rsi,%rdi,1),%eax
+   e5e4b:	or     %rax,%r11
+   e5e4e:	add    $0x8,%rdi
+   e5e52:	mov    $0x40,%ebx
+   e5e57:	mov    %rdi,%rcx
+   e5e5a:	mov    %r11,0x18(%r15)
+   e5e5e:	mov    %rcx,0x10(%r15)
+   e5e62:	jmp    e5853 <<syom::engine::huff::SpectralBook>::fill+0x723>
+   e5e67:	mov    %r13,0x98(%rsp)
+   e5e6f:	cmp    $0x4,%r8
+   e5e73:	mov    %r12,0xa0(%rsp)
+   e5e7b:	.byte 0xf
+   e5e7c:	cmpl   $0x0,0x10(%rdx)

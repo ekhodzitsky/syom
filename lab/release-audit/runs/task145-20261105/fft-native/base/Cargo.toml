@@ -1,0 +1,15 @@
+[package]
+name="fft-native-base"
+version="0.0.0"
+edition="2021"
+publish=false
+[workspace]
+[dependencies]
+syom={path="../../../.."}
+[profile.release]
+lto=true
+codegen-units=1
+opt-level=3
+[[bin]]
+name="fft-native-base"
+path="../src/common.rs"

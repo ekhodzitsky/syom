@@ -1,0 +1,10 @@
+{
+  "target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac.rs": "19ac23833b4fead8f988e92d3c4b2f5659af6965dda21683895ea1adee8ec0e6",
+  "target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/pull.rs": "d717217533d26e1f45eb3d4cc3ee0d34072e1e1244a54b62f41e8d9098486b04",
+  "target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/input.rs": "11772ceeef1425a6835aeb78eba8e892ee40c00c9bd5dd0007feb5da42071a8f",
+  "target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+  "src/goldens/he48.m4a": "cdbff6fad512d33b0b9c8400fdfa1d9a2ba0fb5a7079c1fad47f4a5380be360e",
+  "src/goldens/he48em.m4a": "e9e1d3dd4e877f11ef537a5daf4cdc4ec3a58dada10684c56cf66472ace8220a",
+  "src/goldens/he2_48em.m4a": "39ffa8686e08f7b56e4980d9b5a4523d5c8890184cd87ae214cf16dc64b60463",
+  "src/goldens/ps48.m4a": "74e3e7fa97363b7fb70aae783da15d0623f9818f44458926f2b98cdab98f35cf"
+}

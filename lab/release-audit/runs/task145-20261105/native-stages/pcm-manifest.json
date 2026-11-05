@@ -1,0 +1,26 @@
+{
+  "long.pull.std.resampled.f32": {
+    "bytes": 5119996,
+    "sha256": "cdd84919ccd9f80dc2ec0f232955a7f8cf0127f7e0c1e24aeb54cd255d4d804d"
+  },
+  "long.pull.pull.resampled.f32": {
+    "bytes": 5119996,
+    "sha256": "cdd84919ccd9f80dc2ec0f232955a7f8cf0127f7e0c1e24aeb54cd255d4d804d"
+  },
+  "long.std.pull.resampled.f32": {
+    "bytes": 5121360,
+    "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+  },
+  "long.pull.native.f32": {
+    "bytes": 15360000,
+    "sha256": "414f1186425b2e35833e758841c0748a9f146a0e9df0bf7cff38f26f5d990b15"
+  },
+  "long.std.native.f32": {
+    "bytes": 15364096,
+    "sha256": "47cd454ad4ad25250d938b2b5187d8b14947ce5f809bf5bcad17d8a1e89b6273"
+  },
+  "long.std.std.resampled.f32": {
+    "bytes": 5121360,
+    "sha256": "8e9af500aba991ecd00c185824f5cfbcb256d2f9bd9e9a0757d387c9fcb33ac9"
+  }
+}

@@ -1,0 +1,323 @@
+{
+  "scope": "DIAGNOSTIC ONLY: backgroundLTOcores2-7active, no gate/ranking. Exactoriginalconsumerresample.rs withrubato5.0.1, matchednativePCM fromsyom decode outsideclock. 2warm+7calls, two oppositeorders, allrawsamplesretained.",
+  "verification": [
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 192000,
+      "baseline_samples": 63999,
+      "candidate_samples": 63999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 192000,
+      "baseline_samples": 63999,
+      "candidate_samples": 63999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 192000,
+      "baseline_samples": 63999,
+      "candidate_samples": 63999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "baseline_samples": 1279999,
+      "candidate_samples": 1279999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "baseline_samples": 1279999,
+      "candidate_samples": 1279999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "baseline_samples": 1279999,
+      "candidate_samples": 1279999,
+      "differing_bits": 0,
+      "max_abs": 0.0,
+      "file": "long-stereo.m4a"
+    }
+  ],
+  "rows": [
+    {
+      "chunk": 1024,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 3.993094,
+      "samples_ms": [
+        4.276976,
+        3.914156,
+        3.9441220000000006,
+        3.867328,
+        4.215,
+        4.637221,
+        3.993094
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 3.9795689999999997,
+      "samples_ms": [
+        3.8951900000000004,
+        4.74343,
+        4.325176,
+        3.9579180000000003,
+        3.9795689999999997,
+        3.946456,
+        4.174184
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 3.936999,
+      "samples_ms": [
+        4.120032,
+        3.998705,
+        3.936999,
+        3.8947890000000003,
+        4.100996,
+        3.9321699999999997,
+        3.920789
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 3.9740089999999997,
+      "samples_ms": [
+        3.9740089999999997,
+        3.910078,
+        3.887165,
+        4.378055,
+        4.614418000000001,
+        3.9872229999999997,
+        3.9553230000000004
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 1024,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 38.058429,
+      "samples_ms": [
+        39.112373999999996,
+        37.727689000000005,
+        38.925764,
+        37.867692,
+        38.058429,
+        38.067546,
+        37.90958
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 38.336149,
+      "samples_ms": [
+        38.609943,
+        39.103257,
+        37.362465,
+        39.453514000000006,
+        37.520511,
+        38.336149,
+        38.091591
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.631586,
+      "samples_ms": [
+        48.214172,
+        48.189285999999996,
+        51.932623,
+        51.476738000000005,
+        48.631586,
+        50.41619,
+        48.590459
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.722255,
+      "samples_ms": [
+        48.465123999999996,
+        48.189698,
+        53.448633,
+        49.052262999999996,
+        48.937789,
+        48.722255,
+        47.774318
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 5.314391,
+      "samples_ms": [
+        5.330841,
+        5.370075,
+        5.227467000000001,
+        5.358212,
+        5.314391,
+        5.163157,
+        5.202942
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 5.25547,
+      "samples_ms": [
+        5.25547,
+        5.229962,
+        5.303009,
+        5.303579,
+        5.151976,
+        5.157466,
+        5.711013
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 5.263254,
+      "samples_ms": [
+        5.263254,
+        5.376477,
+        5.369905,
+        5.234481,
+        5.061085,
+        5.2184,
+        5.445435
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 1024,
+      "rate": 48000,
+      "native_samples": 192000,
+      "median_ms": 5.464432,
+      "samples_ms": [
+        5.300314,
+        5.407154,
+        5.602831,
+        5.464432,
+        5.2073789999999995,
+        5.548419,
+        6.426454
+      ],
+      "file": "speech0.m4a"
+    },
+    {
+      "chunk": 49152,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.102373,
+      "samples_ms": [
+        47.266366,
+        48.102373,
+        47.577841,
+        49.962339,
+        47.8125,
+        51.730663,
+        48.832973
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 48000,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.70346,
+      "samples_ms": [
+        47.935950999999996,
+        48.188595,
+        47.561791,
+        49.894722,
+        48.912401,
+        48.70346,
+        48.952467
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 24576,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.263365,
+      "samples_ms": [
+        48.263365,
+        48.018156,
+        47.292926,
+        49.92531,
+        47.632162,
+        48.376347,
+        48.485041
+      ],
+      "file": "long-stereo.m4a"
+    },
+    {
+      "chunk": 1024,
+      "rate": 48000,
+      "native_samples": 3840000,
+      "median_ms": 48.370637,
+      "samples_ms": [
+        48.290286,
+        48.370637,
+        46.664198,
+        47.899383,
+        49.037645999999995,
+        48.454142,
+        49.195682
+      ],
+      "file": "long-stereo.m4a"
+    }
+  ]
+}

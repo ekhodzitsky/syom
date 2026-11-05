@@ -1,0 +1,9 @@
+
+running 4 tests
+test buffered::tests::test_force_rewind_invalidates_cache_after_shared_offset_moves ... ok
+test buffered::tests::test_absolute_au_seeks_reuse_buffer_without_changing_bytes ... ok
+test buffered::tests::test_current_end_and_eof_match_unbuffered_reader ... ok
+test buffered::tests::test_read_and_seek_failures_invalidate_relative_position ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

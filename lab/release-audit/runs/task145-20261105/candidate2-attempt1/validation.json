@@ -1,0 +1,87 @@
+{
+  "source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68",
+    "OPENSSL_INCLUDE_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/include",
+    "OPENSSL_LIB_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/lib/x86_64-linux-gnu",
+    "CFLAGS": "-I/home/ekhodzitsky/toolchains/sysroot/usr/include/x86_64-linux-gnu"
+  },
+  "source_manifest": "source-manifest-before.json",
+  "started_utc": "2026-11-05T16:20:20.801007+00:00",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "gigastt",
+        "-p",
+        "gigastt-core",
+        "--bin",
+        "gigastt",
+        "--example",
+        "aac_probe",
+        "--features",
+        "gigastt-core/__internals,gigastt/extended-aac"
+      ],
+      "exit_code": 0,
+      "seconds": 262.4,
+      "log": "build.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt",
+        "--version"
+      ],
+      "exit_code": 0,
+      "seconds": 0.01,
+      "log": "server-smoke.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "gigastt-core",
+        "--lib",
+        "--features",
+        "extended-aac,__internals",
+        "inference::audio::aac"
+      ],
+      "exit_code": 101,
+      "seconds": 444.81,
+      "log": "guard-aac-tests.log"
+    }
+  ],
+  "binaries": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt": {
+      "sha256": "c2791c919fa4c353826c159b4d4d314e55f163179f4684ede59fb0ae55327c4c",
+      "bytes": 52731896
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe": {
+      "sha256": "ca133f73190cd127ce26a66424ecd5d9676384104a2740d670f8e6b08e5c7f0d",
+      "bytes": 40756088
+    }
+  }
+}

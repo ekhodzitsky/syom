@@ -1,0 +1,83 @@
+{
+  "purpose": "Exact extracted worker/packing mechanics only; not full consumer or codec/PCM qualification",
+  "source": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac.rs",
+  "source_sha256": "563adec64bc0485cd89301ddf59023b253d7d402ef0d10c8501188bde4657b0b",
+  "production_chunk_sha256": "7509be3aa6218d937c372182718f5c5aec57b2cd86b30ff46f8358fb5e294be0",
+  "test_bodies_sha256": "3d0faab4a6b12611328cdc6d8b5a342bce34e32e684ae8c84d07bf11d3ce186f",
+  "harness_sha256": "f917d2da0b298886ff9ceb34bcb2c9141906705a89ae28082daee7616eb92698",
+  "support": "Minimal GigasttError Display/Error stand-in only; real cached syom/anyhow rlibs. Worker/BlockSender/map_aac/test bodies extracted verbatim.",
+  "rlibs": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-fef9a9f1315da3a1.rlib": "b99888d2b9c38f87d196f3707093710feee0e4f8f79341503768a2b561ba92a0",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libsyom-d4c5a75982d960cd.rlib": "bfe15f1efc08502fde7bca6fd2d258a46377c9f4106d07b1697cf13f5ab915e1",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-7096a25d3dd2c373.rlib": "886e7a1d42eabeaa35ffaa16da4657d60df03da328f643431fbcaa82718e68c6"
+  },
+  "commands": [
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "rustc",
+        "+stable",
+        "--edition=2024",
+        "--test",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "debuginfo=0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adts-packing-mechanics/mechanics.rs",
+        "-L",
+        "dependency=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps",
+        "--extern",
+        "anyhow=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-fef9a9f1315da3a1.rlib",
+        "--extern",
+        "syom=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libsyom-d4c5a75982d960cd.rlib",
+        "-o",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adts-packing-mechanics/mechanics-tests"
+      ],
+      "exit_code": 1,
+      "log": "build-attempt1.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "rustc",
+        "+stable",
+        "--edition=2024",
+        "--test",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "debuginfo=0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adts-packing-mechanics/mechanics.rs",
+        "-L",
+        "dependency=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps",
+        "--extern",
+        "anyhow=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-7096a25d3dd2c373.rlib",
+        "--extern",
+        "syom=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libsyom-d4c5a75982d960cd.rlib",
+        "-o",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adts-packing-mechanics/mechanics-tests"
+      ],
+      "exit_code": 0,
+      "log": "build.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adts-packing-mechanics/mechanics-tests",
+        "--test-threads",
+        "2",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "log": "tests.log"
+    }
+  ],
+  "pass": true,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)"
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "fixture": "speech0.m4a",
+    "variants": {
+      "base": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/speech0.m4a.base.native-bits"
+        ],
+        "counts": {
+          "callbacks": 188,
+          "samples_per_channel": 192000,
+          "sample_rate": 48000
+        },
+        "sha256": "c02d768cde295cc17e2e69284bb19c0093fb500f297dd84b86167be676ac3705",
+        "bytes": 773264
+      },
+      "candidate": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/speech0.m4a.candidate.native-bits"
+        ],
+        "counts": {
+          "callbacks": 188,
+          "samples_per_channel": 192000,
+          "sample_rate": 48000
+        },
+        "sha256": "c02d768cde295cc17e2e69284bb19c0093fb500f297dd84b86167be676ac3705",
+        "bytes": 773264
+      }
+    },
+    "exact_match": true
+  },
+  {
+    "fixture": "lc.adts",
+    "variants": {
+      "base": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/lc.adts.base.native-bits"
+        ],
+        "counts": {
+          "callbacks": 189,
+          "samples_per_channel": 193536,
+          "sample_rate": 48000
+        },
+        "sha256": "d81b569a6d76ddb8e5c4d78e2151f4e34affe6765c14435835259a101389bf6d",
+        "bytes": 779436
+      },
+      "candidate": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/lc.adts.candidate.native-bits"
+        ],
+        "counts": {
+          "callbacks": 189,
+          "samples_per_channel": 193536,
+          "sample_rate": 48000
+        },
+        "sha256": "d81b569a6d76ddb8e5c4d78e2151f4e34affe6765c14435835259a101389bf6d",
+        "bytes": 779436
+      }
+    },
+    "exact_match": true
+  },
+  {
+    "fixture": "long-stereo.m4a",
+    "variants": {
+      "base": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/long-stereo.m4a.base.native-bits"
+        ],
+        "counts": {
+          "callbacks": 3750,
+          "samples_per_channel": 3840000,
+          "sample_rate": 48000
+        },
+        "sha256": "ca067d978f99365577e7295ff115c550e814be9c0a77f9508ac0c9efa850977b",
+        "bytes": 30855000
+      },
+      "candidate": {
+        "command": [
+          "taskset",
+          "-c",
+          "1",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+          "dump",
+          "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+          "/home/ekhodzitsky/Projects/syom/target/task145/fft-native/long-stereo.m4a.candidate.native-bits"
+        ],
+        "counts": {
+          "callbacks": 3750,
+          "samples_per_channel": 3840000,
+          "sample_rate": 48000
+        },
+        "sha256": "ca067d978f99365577e7295ff115c550e814be9c0a77f9508ac0c9efa850977b",
+        "bytes": 30855000
+      }
+    },
+    "exact_match": true
+  }
+]

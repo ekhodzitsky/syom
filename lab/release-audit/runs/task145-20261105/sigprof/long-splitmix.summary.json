@@ -1,0 +1,765 @@
+{
+  "samples": 30755,
+  "binary": "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+  "load_bias": "0x558e8fc41000",
+  "modules": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution": 29579,
+    "/usr/lib/x86_64-linux-gnu/libc.so.6": 1176
+  },
+  "functions": [
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "samples": 9677,
+      "percent_all": 31.464802471142903
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "samples": 7420,
+      "percent_all": 24.12615834823606
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "samples": 3194,
+      "percent_all": 10.385303202731263
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "samples": 1890,
+      "percent_all": 6.14534222077711
+    },
+    {
+      "function": "syom::engine::ics_body::parse_ics_into",
+      "samples": 1739,
+      "percent_all": 5.654365143879044
+    },
+    {
+      "function": "syom::engine::huff::decode_esc",
+      "samples": 1316,
+      "percent_all": 4.278979027800358
+    },
+    {
+      "function": "syom::engine::filterbank_simd::window_overlap_avx512",
+      "samples": 798,
+      "percent_all": 2.594700048772557
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_cpe",
+      "samples": 775,
+      "percent_all": 2.5199154609006666
+    },
+    {
+      "function": "syom_direct_attribution::decode::{closure#0}",
+      "samples": 663,
+      "percent_all": 2.155747033002764
+    },
+    {
+      "function": "<syom::engine::sf::SfTree>::decode",
+      "samples": 577,
+      "percent_all": 1.8761177044383026
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_frame_scaled",
+      "samples": 392,
+      "percent_all": 1.2745894976426597
+    },
+    {
+      "function": "syom::engine::tns::apply_dir",
+      "samples": 257,
+      "percent_all": 0.8356364818728662
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_into_bufs",
+      "samples": 161,
+      "percent_all": 0.5234921151032352
+    },
+    {
+      "function": "syom::engine::pns::apply",
+      "samples": 127,
+      "percent_all": 0.41294098520565764
+    },
+    {
+      "function": "syom::engine::stereo::apply_intensity",
+      "samples": 99,
+      "percent_all": 0.3218988782311819
+    },
+    {
+      "function": "<syom::engine::filterbank::Filterbank>::synthesize_into",
+      "samples": 96,
+      "percent_all": 0.312144366769631
+    },
+    {
+      "function": "syom_direct_attribution::decode",
+      "samples": 75,
+      "percent_all": 0.2438627865387742
+    },
+    {
+      "function": "syom::engine::sf::fit_i32",
+      "samples": 67,
+      "percent_all": 0.21785075597463827
+    },
+    {
+      "function": "syom::engine::det_math::wider::sincos_f64",
+      "samples": 36,
+      "percent_all": 0.1170541375386116
+    },
+    {
+      "function": "<syom::engine::ics::IcsInfo>::parse_mode",
+      "samples": 31,
+      "percent_all": 0.10079661843602666
+    },
+    {
+      "function": "<syom::engine::ics::IcsInfo>::swb_offsets",
+      "samples": 30,
+      "percent_all": 0.09754511461550967
+    },
+    {
+      "function": "syom::engine::filterbank_simd::overlap_add_avx512",
+      "samples": 27,
+      "percent_all": 0.0877906031539587
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::stash_chan",
+      "samples": 25,
+      "percent_all": 0.08128759551292473
+    },
+    {
+      "function": "<syom::engine::imdct::Plan>::apply_into",
+      "samples": 25,
+      "percent_all": 0.08128759551292473
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::store_meta",
+      "samples": 21,
+      "percent_all": 0.06828158023085677
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::synth_one",
+      "samples": 12,
+      "percent_all": 0.03901804584620387
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::push_pcm",
+      "samples": 12,
+      "percent_all": 0.03901804584620387
+    },
+    {
+      "function": "<syom::engine::stereo::MsInfo>::parse",
+      "samples": 11,
+      "percent_all": 0.03576654202568688
+    },
+    {
+      "function": "syom::isomp4::parse_mdia",
+      "samples": 7,
+      "percent_all": 0.022760526743618923
+    },
+    {
+      "function": "core::ptr::drop_glue::<alloc::vec::Vec<syom::engine::cce::CcePayload>>",
+      "samples": 4,
+      "percent_all": 0.013006015282067957
+    },
+    {
+      "function": "syom::isomp4::read_box",
+      "samples": 3,
+      "percent_all": 0.009754511461550968
+    },
+    {
+      "function": "<alloc::vec::Vec<alloc::vec::Vec<f32>>>::truncate",
+      "samples": 3,
+      "percent_all": 0.009754511461550968
+    },
+    {
+      "function": "<syom::engine::fb_pool::FbPool>::retain_seen",
+      "samples": 3,
+      "percent_all": 0.009754511461550968
+    },
+    {
+      "function": "<syom::engine::asc::AudioSpecificConfig>::parse_from_reader",
+      "samples": 2,
+      "percent_all": 0.006503007641033978
+    },
+    {
+      "function": "syom::isomp4::parse_stsd_asc",
+      "samples": 1,
+      "percent_all": 0.003251503820516989
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::new",
+      "samples": 1,
+      "percent_all": 0.003251503820516989
+    },
+    {
+      "function": "syom::isomp4::parse_mdhd_timescale",
+      "samples": 1,
+      "percent_all": 0.003251503820516989
+    },
+    {
+      "function": "syom::engine::asc::parse_implicit_sbr",
+      "samples": 1,
+      "percent_all": 0.003251503820516989
+    }
+  ],
+  "instructions": [
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5a6",
+      "elf_address": "0xd9666",
+      "samples": 1019,
+      "percent_all": 3.313282393106812
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5e1",
+      "elf_address": "0xd96a1",
+      "samples": 715,
+      "percent_all": 2.324825231669647
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x602",
+      "elf_address": "0xe5732",
+      "samples": 618,
+      "percent_all": 2.009429361079499
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb8f",
+      "elf_address": "0xe5cbf",
+      "samples": 547,
+      "percent_all": 1.778572589822793
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5d0",
+      "elf_address": "0xd9690",
+      "samples": 529,
+      "percent_all": 1.7200455210534873
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x639",
+      "elf_address": "0xe5769",
+      "samples": 507,
+      "percent_all": 1.6485124370021136
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x9cc",
+      "elf_address": "0xe5afc",
+      "samples": 439,
+      "percent_all": 1.4274101772069583
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5eb",
+      "elf_address": "0xd96ab",
+      "samples": 429,
+      "percent_all": 1.3948951390017883
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x31f",
+      "elf_address": "0xe544f",
+      "samples": 414,
+      "percent_all": 1.3461225816940334
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x31a",
+      "elf_address": "0xe544a",
+      "samples": 383,
+      "percent_all": 1.245325963258007
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x1bd",
+      "elf_address": "0xd927d",
+      "samples": 375,
+      "percent_all": 1.219313932693871
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x33c",
+      "elf_address": "0xe546c",
+      "samples": 372,
+      "percent_all": 1.20955942123232
+    },
+    {
+      "function": "syom_direct_attribution::decode::{closure#0}",
+      "offset": "0x3b8",
+      "elf_address": "0x2de08",
+      "samples": 367,
+      "percent_all": 1.193301902129735
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x600",
+      "elf_address": "0xd96c0",
+      "samples": 330,
+      "percent_all": 1.0729962607706065
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0xec",
+      "elf_address": "0xd91ac",
+      "samples": 317,
+      "percent_all": 1.0307267111038856
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x407",
+      "elf_address": "0xe5537",
+      "samples": 312,
+      "percent_all": 1.0144691920013007
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb67",
+      "elf_address": "0xe5c97",
+      "samples": 299,
+      "percent_all": 0.9721996423345798
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0x101",
+      "elf_address": "0xd81c1",
+      "samples": 282,
+      "percent_all": 0.916924077385791
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5f7",
+      "elf_address": "0xd96b7",
+      "samples": 263,
+      "percent_all": 0.8551455047959682
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x9be",
+      "elf_address": "0xe5aee",
+      "samples": 258,
+      "percent_all": 0.8388879856933832
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xef",
+      "elf_address": "0xd81af",
+      "samples": 253,
+      "percent_all": 0.8226304665907982
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x829",
+      "elf_address": "0xe5959",
+      "samples": 230,
+      "percent_all": 0.7478458787189075
+    },
+    {
+      "function": "syom::engine::huff::decode_esc",
+      "offset": "0x20a",
+      "elf_address": "0xe4e7a",
+      "samples": 220,
+      "percent_all": 0.7153308405137376
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x1efa",
+      "elf_address": "0xe702a",
+      "samples": 220,
+      "percent_all": 0.7153308405137376
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb81",
+      "elf_address": "0xe5cb1",
+      "samples": 212,
+      "percent_all": 0.6893188099496017
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_frame_scaled",
+      "offset": "0x12e",
+      "elf_address": "0x8a4ae",
+      "samples": 192,
+      "percent_all": 0.624288733539262
+    },
+    {
+      "function": "syom::engine::filterbank_simd::window_overlap_avx512",
+      "offset": "0x20",
+      "elf_address": "0xd5110",
+      "samples": 182,
+      "percent_all": 0.591773695334092
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb38",
+      "elf_address": "0xe5c68",
+      "samples": 182,
+      "percent_all": 0.591773695334092
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5dc",
+      "elf_address": "0xd969c",
+      "samples": 182,
+      "percent_all": 0.591773695334092
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x5be",
+      "elf_address": "0xd967e",
+      "samples": 174,
+      "percent_all": 0.5657616647699562
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xe5",
+      "elf_address": "0xd81a5",
+      "samples": 173,
+      "percent_all": 0.5625101609494391
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x384",
+      "elf_address": "0xe54b4",
+      "samples": 173,
+      "percent_all": 0.5625101609494391
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xd3",
+      "elf_address": "0xd8193",
+      "samples": 161,
+      "percent_all": 0.5234921151032352
+    },
+    {
+      "function": "syom::engine::filterbank_simd::window_overlap_avx512",
+      "offset": "0x70",
+      "elf_address": "0xd5160",
+      "samples": 160,
+      "percent_all": 0.5202406112827183
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x425",
+      "elf_address": "0xe5555",
+      "samples": 160,
+      "percent_all": 0.5202406112827183
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb6c",
+      "elf_address": "0xe5c9c",
+      "samples": 154,
+      "percent_all": 0.5007315883596163
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x136",
+      "elf_address": "0xe5266",
+      "samples": 152,
+      "percent_all": 0.49422858071858233
+    },
+    {
+      "function": "syom::engine::huff::decode_esc",
+      "offset": "0x44c",
+      "elf_address": "0xe50bc",
+      "samples": 141,
+      "percent_all": 0.4584620386928955
+    },
+    {
+      "function": "syom::engine::filterbank_simd::window_overlap_avx512",
+      "offset": "0x38",
+      "elf_address": "0xd5128",
+      "samples": 133,
+      "percent_all": 0.43245000812875956
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x184",
+      "elf_address": "0xd9244",
+      "samples": 130,
+      "percent_all": 0.42269549666720857
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0x15a",
+      "elf_address": "0xd707a",
+      "samples": 130,
+      "percent_all": 0.42269549666720857
+    },
+    {
+      "function": "syom::engine::filterbank_simd::window_overlap_avx512",
+      "offset": "0x50",
+      "elf_address": "0xd5140",
+      "samples": 130,
+      "percent_all": 0.42269549666720857
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_frame_scaled",
+      "offset": "0x131",
+      "elf_address": "0x8a4b1",
+      "samples": 129,
+      "percent_all": 0.4194439928466916
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0xe6",
+      "elf_address": "0xd91a6",
+      "samples": 120,
+      "percent_all": 0.3901804584620387
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xfd",
+      "elf_address": "0xd81bd",
+      "samples": 117,
+      "percent_all": 0.3804259470004877
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xec",
+      "elf_address": "0xd81ac",
+      "samples": 116,
+      "percent_all": 0.37717444317997073
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xb84",
+      "elf_address": "0xe5cb4",
+      "samples": 114,
+      "percent_all": 0.3706714355389368
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x291",
+      "elf_address": "0xd9351",
+      "samples": 112,
+      "percent_all": 0.36416842789790277
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x101",
+      "elf_address": "0xd91c1",
+      "samples": 112,
+      "percent_all": 0.36416842789790277
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x330",
+      "elf_address": "0xe5460",
+      "samples": 106,
+      "percent_all": 0.34465940497480085
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x641",
+      "elf_address": "0xe5771",
+      "samples": 103,
+      "percent_all": 0.33490489351324987
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0x112",
+      "elf_address": "0xd81d2",
+      "samples": 102,
+      "percent_all": 0.3316533896927329
+    },
+    {
+      "function": "syom::engine::ics_body::parse_ics_into",
+      "offset": "0x3f70",
+      "elf_address": "0x99230",
+      "samples": 99,
+      "percent_all": 0.3218988782311819
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xe1",
+      "elf_address": "0xd81a1",
+      "samples": 98,
+      "percent_all": 0.31864737441066493
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x1ba",
+      "elf_address": "0xd927a",
+      "samples": 96,
+      "percent_all": 0.312144366769631
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x81b",
+      "elf_address": "0xe594b",
+      "samples": 95,
+      "percent_all": 0.30889286294911394
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0x19f",
+      "elf_address": "0xd925f",
+      "samples": 91,
+      "percent_all": 0.295886847667046
+    },
+    {
+      "function": "syom::engine::huff::decode_esc",
+      "offset": "0x0",
+      "elf_address": "0xe4c70",
+      "samples": 91,
+      "percent_all": 0.295886847667046
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0x27d",
+      "elf_address": "0xd719d",
+      "samples": 90,
+      "percent_all": 0.292635343846529
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0xd0c",
+      "elf_address": "0xd7c2c",
+      "samples": 90,
+      "percent_all": 0.292635343846529
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x1ef7",
+      "elf_address": "0xe7027",
+      "samples": 89,
+      "percent_all": 0.28938384002601203
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0x14c",
+      "elf_address": "0xd706c",
+      "samples": 89,
+      "percent_all": 0.28938384002601203
+    },
+    {
+      "function": "<syom::engine::sf::SfTree>::decode",
+      "offset": "0x16",
+      "elf_address": "0xe08c6",
+      "samples": 88,
+      "percent_all": 0.28613233620549505
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x3afe",
+      "elf_address": "0xe8c2e",
+      "samples": 88,
+      "percent_all": 0.28613233620549505
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xde",
+      "elf_address": "0xd819e",
+      "samples": 87,
+      "percent_all": 0.2828808323849781
+    },
+    {
+      "function": "<syom::engine::decode::StreamDecoder>::decode_cpe",
+      "offset": "0xc76",
+      "elf_address": "0x94a56",
+      "samples": 87,
+      "percent_all": 0.2828808323849781
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0x116",
+      "elf_address": "0xd81d6",
+      "samples": 86,
+      "percent_all": 0.27962932856446104
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x315",
+      "elf_address": "0xe5445",
+      "samples": 86,
+      "percent_all": 0.27962932856446104
+    },
+    {
+      "function": "syom::engine::imdct::avx512k::ifft_stages_avx512",
+      "offset": "0xe0",
+      "elf_address": "0xd91a0",
+      "samples": 85,
+      "percent_all": 0.27637782474394407
+    },
+    {
+      "function": "<syom::engine::sf::SfTree>::decode",
+      "offset": "0x96",
+      "elf_address": "0xe0946",
+      "samples": 85,
+      "percent_all": 0.27637782474394407
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0xd4a",
+      "elf_address": "0xd7c6a",
+      "samples": 84,
+      "percent_all": 0.2731263209234271
+    },
+    {
+      "function": "syom::engine::imdct::ifft_soa",
+      "offset": "0xd0",
+      "elf_address": "0xd8190",
+      "samples": 82,
+      "percent_all": 0.2666233132823931
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x833",
+      "elf_address": "0xe5963",
+      "samples": 81,
+      "percent_all": 0.2633718094618761
+    },
+    {
+      "function": "syom::engine::huff::decode_esc",
+      "offset": "0x1",
+      "elf_address": "0xe4c71",
+      "samples": 79,
+      "percent_all": 0.25686880182084215
+    },
+    {
+      "function": "syom_direct_attribution::decode::{closure#0}",
+      "offset": "0x2f4",
+      "elf_address": "0x2dd44",
+      "samples": 78,
+      "percent_all": 0.2536172980003252
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0xd2e",
+      "elf_address": "0xe5e5e",
+      "samples": 75,
+      "percent_all": 0.2438627865387742
+    },
+    {
+      "function": "syom::engine::ics_body::parse_ics_into",
+      "offset": "0x3f4c",
+      "elf_address": "0x9920c",
+      "samples": 74,
+      "percent_all": 0.24061128271825719
+    },
+    {
+      "function": "<syom::engine::huff::SpectralBook>::fill",
+      "offset": "0x1f25",
+      "elf_address": "0xe7055",
+      "samples": 73,
+      "percent_all": 0.2373597788977402
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0xb60",
+      "elf_address": "0xd7a80",
+      "samples": 72,
+      "percent_all": 0.2341082750772232
+    },
+    {
+      "function": "syom::engine::imdct::kernels::apply_soa",
+      "offset": "0xb28",
+      "elf_address": "0xd7a48",
+      "samples": 71,
+      "percent_all": 0.23085677125670623
+    }
+  ],
+  "unknown_binary_samples": 0,
+  "unknown_binary_offsets": {}
+}

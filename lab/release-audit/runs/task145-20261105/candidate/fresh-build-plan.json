@@ -1,0 +1,313 @@
+{
+  "probe_source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "worktree": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt",
+  "instrumentation": {
+    "path": "crates/gigastt-core/examples/aac_probe.rs",
+    "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1",
+    "note": "Tracked unchanged probe source from pinned candidate49faef1; productdelta captured separately"
+  },
+  "declared_feature_scope": "exactcachedunion includes __internals benchmark/test support; never for deployment",
+  "build_command": [
+    "taskset",
+    "-c",
+    "2-7",
+    "cargo",
+    "+stable",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "gigastt",
+    "-p",
+    "gigastt-core",
+    "--bin",
+    "gigastt",
+    "--example",
+    "aac_probe",
+    "--features",
+    "gigastt-core/__internals,gigastt/extended-aac"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68",
+    "OPENSSL_INCLUDE_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/include",
+    "OPENSSL_LIB_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/lib/x86_64-linux-gnu",
+    "CFLAGS": "-I/home/ekhodzitsky/toolchains/sysroot/usr/include/x86_64-linux-gnu"
+  },
+  "expected_rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "release_profile": {
+    "lto": true,
+    "codegen-units": 1,
+    "strip": true
+  },
+  "copy_outputs": {
+    "release/gigastt": "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/gigastt",
+    "release/examples/aac_probe": "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/aac_probe"
+  },
+  "state": "built; stablebinariescopied",
+  "started_utc": "2026-11-05T15:59:59.649389+00:00",
+  "seconds": 230.89,
+  "source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "source_delta_sha256": "2c32e130d8beed31229695a5964faa988b8b9413c625dd2996be38da134b12cf",
+  "source_status": " M crates/gigastt-core/src/inference/audio/aac.rs\n",
+  "exit_code": 0,
+  "source_stable_during_build": true,
+  "binary_artifacts": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/gigastt": {
+      "sha256": "c552afbe00729da3cf8fad3a6775157e50448402326449590e7c4b3e1b8e9b53",
+      "bytes": 52703416
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/aac_probe": {
+      "sha256": "b124582d1b484cd52c51938180b1e2dbf0b1975d39130d534893fd677576977c",
+      "bytes": 40739448
+    }
+  },
+  "finished_utc": "2026-11-05T16:03:50.663248+00:00",
+  "comparison_base_commit": "adf4db0d7b06a150534734b69b925e3136f0a631",
+  "server_cli_smoke": {
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/gigastt",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "gigastt 2.22.0",
+    "stderr": ""
+  },
+  "model_assets": {
+    ".download.lock": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/.download.lock",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/.download.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "v3_rnnt_decoder.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_decoder.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_decoder.onnx",
+      "bytes": 3331429,
+      "sha256": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da"
+    },
+    "v3_rnnt_encoder_int8.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx",
+      "bytes": 319665270,
+      "sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
+    },
+    "v3_rnnt_joint.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_joint.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_joint.onnx",
+      "bytes": 1440448,
+      "sha256": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8"
+    },
+    "v3_vocab.txt": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_vocab.txt",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_vocab.txt",
+      "bytes": 198,
+      "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+    },
+    "wespeaker_resnet34.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/wespeaker_resnet34.onnx",
+      "resolved_path": "/home/ekhodzitsky/.gigastt/models/wespeaker_resnet34.onnx",
+      "bytes": 26535549,
+      "sha256": "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb"
+    }
+  },
+  "probe_fingerprint": {
+    "rustc": 1625334936438085654,
+    "features": "[\"__internals\", \"async-pool\", \"default\", \"diarization\", \"extended-aac\", \"file-decode\", \"net\", \"quantize\"]",
+    "declared_features": "[\"__internals\", \"ane\", \"async-pool\", \"candle\", \"coreml\", \"cuda\", \"default\", \"diarization\", \"extended-aac\", \"file-decode\", \"net\", \"nnapi\", \"ort-load-dynamic\", \"quantize\"]",
+    "target": 16038297022533165230,
+    "profile": 5200837052885743122,
+    "path": 10086508841410457032,
+    "deps": [
+      [
+        983970122737089291,
+        "gigastt_core",
+        false,
+        5005575260989873987
+      ],
+      [
+        1957009224993739128,
+        "thiserror",
+        false,
+        5154424981185428334
+      ],
+      [
+        3629170276479397743,
+        "proptest",
+        false,
+        130878242381961158
+      ],
+      [
+        4091053499939819895,
+        "sha2",
+        false,
+        18310775268443760487
+      ],
+      [
+        5330460842384404171,
+        "serde_json",
+        false,
+        6058498305461927127
+      ],
+      [
+        6298639288863494403,
+        "rustfft",
+        false,
+        9081167050320839874
+      ],
+      [
+        6444209561448300374,
+        "futures_util",
+        false,
+        14076580339220620865
+      ],
+      [
+        6557439603276904804,
+        "serde",
+        false,
+        4373799532264047158
+      ],
+      [
+        6736977218133096219,
+        "ryf",
+        false,
+        9152857957423541459
+      ],
+      [
+        6912460702706938475,
+        "opus_rs",
+        false,
+        15993499165484039634
+      ],
+      [
+        7957845893930849763,
+        "rubato",
+        false,
+        4987699282390972926
+      ],
+      [
+        8333724820698747522,
+        "wiremock",
+        false,
+        12843779272757261150
+      ],
+      [
+        9723370144619655183,
+        "tempfile",
+        false,
+        1113975492432542412
+      ],
+      [
+        10364619138950789809,
+        "anyhow",
+        false,
+        8227411059908433026
+      ],
+      [
+        11926622812581095017,
+        "bytes",
+        false,
+        12271512312564922943
+      ],
+      [
+        12032896046972637955,
+        "symphonia",
+        false,
+        12332269350789896331
+      ],
+      [
+        12167144768311316078,
+        "audio_codec",
+        false,
+        13826500722363484513
+      ],
+      [
+        12363101626952834514,
+        "ort",
+        false,
+        5551025677639855990
+      ],
+      [
+        12459942763388630573,
+        "parking_lot",
+        false,
+        1996796373753753896
+      ],
+      [
+        12613788554453945248,
+        "memchr",
+        false,
+        12803039548285310429
+      ],
+      [
+        13196351783047880178,
+        "reqwest",
+        false,
+        11387889258186772245
+      ],
+      [
+        14757622794040968908,
+        "tracing",
+        false,
+        4676686793139019882
+      ],
+      [
+        15366345389745645388,
+        "polyvoice",
+        false,
+        3588800987327831832
+      ],
+      [
+        16321741466644061277,
+        "criterion",
+        false,
+        1442207051346374958
+      ],
+      [
+        16401687005745357060,
+        "toml",
+        false,
+        16726802704477260025
+      ],
+      [
+        16697387384749934957,
+        "syom",
+        false,
+        15188807835557906637
+      ],
+      [
+        17010108107254028511,
+        "gigastt_quantize",
+        false,
+        2348392985000043942
+      ],
+      [
+        17866805608252134857,
+        "tokio",
+        false,
+        1843824201207776941
+      ],
+      [
+        18070707816531966863,
+        "libc",
+        false,
+        763615603335797544
+      ]
+    ],
+    "local": [
+      {
+        "CheckDepInfo": {
+          "dep_info": "release/.fingerprint/gigastt-core-784179c1a1d2cc0e/dep-example-aac_probe",
+          "checksum": false
+        }
+      }
+    ],
+    "rustflags": [],
+    "config": 9396254390672932401,
+    "compile_kind": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "command": "taskset -c 0 env LD_PRELOAD=<owned sampler.so> SYOM_SAMPLE_PREFIX=<owned long-splitmix> syom-direct-attribution splitmix long-stereo.m4a 2 700",
+  "interval_usec": 1000,
+  "cpu": 0,
+  "sampler": "Linux x86_64 SIGPROF/ITIMER_PROF; process CPU clock; interrupted RIP only, no backtrace, approximate samples not cycle cost",
+  "cc": "gcc-15 (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "files": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution": "0a7bfcaed05bb95e6f5f06356f3160900afcc9432a98dddea5d337f35dcdd0ba",
+    "/home/ekhodzitsky/Projects/syom/target/task145/sigprof/sampler.c": "26e542a555bc6cfb06c8da353dcb7bf141ec38c79b18c3b35a2395e30ee66635",
+    "/home/ekhodzitsky/Projects/syom/target/task145/sigprof/sampler.so": "6d8ab84a8332e6a56c5288d3c7e185fe0ba4ba6586431ef682cc308b7f0b79ff",
+    "/home/ekhodzitsky/Projects/syom/target/task145/sigprof/resolve.py": "410c5c3db756ce0d63df5d392660b803b8bf51ea9a59fa12d4f397718daaacc2",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328"
+  }
+}

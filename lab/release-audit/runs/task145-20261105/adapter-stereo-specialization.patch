@@ -1,0 +1,118 @@
+diff --git a/crates/gigastt-core/src/inference/audio/aac.rs b/crates/gigastt-core/src/inference/audio/aac.rs
+index 3458b54..d8497a0 100644
+--- a/crates/gigastt-core/src/inference/audio/aac.rs
++++ b/crates/gigastt-core/src/inference/audio/aac.rs
+@@ -201,22 +201,7 @@ fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
+                 out.extend_from_slice(plane);
+             }
+         }
+-        ChannelSelect::Mono => {
+-            let Some(first) = frame.planar.first() else {
+-                return;
+-            };
+-            let start = out.len();
+-            out.extend_from_slice(first);
+-            for plane in frame.planar.iter().skip(1) {
+-                for (sample, value) in out[start..].iter_mut().zip(plane.iter()) {
+-                    *sample += value;
+-                }
+-            }
+-            let count = frame.planar.len() as f32;
+-            for sample in &mut out[start..] {
+-                *sample /= count;
+-            }
+-        }
++        ChannelSelect::Mono => append_mono_planes(out, frame.planar),
+     }
+ }
+ 
+@@ -241,3 +226,89 @@ fn map_aac(error: AacError) -> anyhow::Error {
+         other => other.into(),
+     }
+ }
++
++// Preserve the existing add-then-divide order, with one output pass for stereo.
++// Unequal planes retain the defensive historical zip behavior.
++fn append_mono_planes(out: &mut Vec<f32>, planes: &[&[f32]]) {
++    if let [left, right] = planes
++        && left.len() == right.len()
++    {
++        out.extend(left.iter().zip(*right).map(|(a, b)| (*a + *b) / 2.0));
++        return;
++    }
++    let Some(first) = planes.first() else { return };
++    let start = out.len();
++    out.extend_from_slice(first);
++    for plane in planes.iter().skip(1) {
++        for (sample, value) in out[start..].iter_mut().zip(plane.iter()) {
++            *sample += value;
++        }
++    }
++    let count = planes.len() as f32;
++    for sample in &mut out[start..] {
++        *sample /= count;
++    }
++}
++
++#[cfg(test)]
++mod mono_plane_tests {
++    use super::append_mono_planes;
++
++    fn original(out: &mut Vec<f32>, planes: &[&[f32]]) {
++        let Some(first) = planes.first() else { return };
++        let start = out.len();
++        out.extend_from_slice(first);
++        for plane in planes.iter().skip(1) {
++            for (sample, value) in out[start..].iter_mut().zip(plane.iter()) {
++                *sample += value;
++            }
++        }
++        for sample in &mut out[start..] {
++            *sample /= planes.len() as f32;
++        }
++    }
++
++    #[test]
++    fn test_aac_mono_planes_preserve_add_then_divide_bits() {
++        let left = [
++            0.0,
++            -0.0,
++            1.0,
++            -1.0,
++            f32::MIN_POSITIVE,
++            f32::from_bits(1),
++            f32::MAX,
++            f32::INFINITY,
++            f32::NEG_INFINITY,
++            f32::NAN,
++        ];
++        let right = [
++            -0.0,
++            -0.0,
++            -0.5,
++            0.5,
++            -f32::MIN_POSITIVE,
++            f32::from_bits(1),
++            -f32::MAX,
++            f32::NEG_INFINITY,
++            f32::INFINITY,
++            1.0,
++        ];
++        for planes in [
++            vec![],
++            vec![&left[..]],
++            vec![&left[..], &right[..]],
++            vec![&left[..], &right[..], &left[..]],
++            vec![&left[..], &right[..3]],
++        ] {
++            let mut actual = vec![17.0, -0.0];
++            let mut expected = actual.clone();
++            original(&mut expected, &planes);
++            append_mono_planes(&mut actual, &planes);
++            assert_eq!(
++                actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
++                expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
++            );
++        }
++    }
++}

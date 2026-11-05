@@ -1,0 +1,6 @@
+# Run from syom repository root; diagnostic only; no other timed/build loads.
+cc -O2 -g -Wall -Wextra -Werror -Wno-format-truncation -shared -fPIC target/task145/sigprof/sampler.c -o target/task145/sigprof/sampler.so
+taskset -c 0 env LD_PRELOAD="$PWD/target/task145/sigprof/sampler.so" SYOM_SAMPLE_PREFIX="$PWD/target/task145/sigprof/long-splitmix" target/task145/direct-target/release/syom-direct-attribution splitmix /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a 2 700 > target/task145/sigprof/long-splitmix.stdout.json 2> target/task145/sigprof/long-splitmix.stderr.log
+python3 target/task145/sigprof/resolve.py target/task145/sigprof/long-splitmix target/task145/direct-target/release/syom-direct-attribution
+objdump -d -C --no-show-raw-insn --start-address=0xd9100 --stop-address=0xd9780 target/task145/direct-target/release/syom-direct-attribution
+objdump -d -C --no-show-raw-insn --start-address=0xe5300 --stop-address=0xe5e80 target/task145/direct-target/release/syom-direct-attribution

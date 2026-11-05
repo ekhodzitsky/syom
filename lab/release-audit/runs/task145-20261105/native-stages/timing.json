@@ -1,0 +1,920 @@
+[
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-std",
+    "samples_ms": [
+      27.960715,
+      27.187244999999997,
+      28.356468,
+      27.187625999999998,
+      27.028097000000002,
+      28.284452,
+      27.747786
+    ]
+  },
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-pull",
+    "samples_ms": [
+      32.744332,
+      33.248908,
+      33.361588999999995,
+      32.779008,
+      34.106786,
+      33.332535,
+      33.802566999999996
+    ]
+  },
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-std",
+    "samples_ms": [
+      33.642966,
+      33.229973,
+      33.496423,
+      34.428039,
+      33.635833,
+      35.188955,
+      33.651623
+    ]
+  },
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-std",
+    "samples_ms": [
+      34.942032,
+      36.1572,
+      34.492129000000006,
+      33.635633,
+      37.398337,
+      34.333171,
+      35.495951
+    ]
+  },
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-pull",
+    "samples_ms": [
+      34.002449999999996,
+      33.422193,
+      34.576628,
+      33.631806,
+      34.002772,
+      36.542632999999995,
+      33.472728000000004
+    ]
+  },
+  {
+    "round": 0,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-pull",
+    "samples_ms": [
+      38.022487,
+      38.409613,
+      37.312406,
+      38.019501,
+      33.42061,
+      35.094969,
+      34.100564
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-pull",
+    "samples_ms": [
+      33.810401,
+      34.941471,
+      33.919644999999996,
+      33.953869999999995,
+      35.991969999999995,
+      35.184367,
+      35.341451000000006
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-pull",
+    "samples_ms": [
+      36.737589,
+      33.633028,
+      34.449829,
+      33.844463999999995,
+      34.501827999999996,
+      33.824617,
+      33.343335
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-std",
+    "samples_ms": [
+      35.50619,
+      34.147774,
+      33.647426,
+      34.855991,
+      34.106205,
+      35.252174,
+      33.826551
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-std",
+    "samples_ms": [
+      33.818696,
+      35.025178,
+      33.989847,
+      33.554661,
+      35.8049,
+      34.177809,
+      35.125606
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-pull",
+    "samples_ms": [
+      34.335696,
+      33.186240999999995,
+      34.578070000000004,
+      33.399499999999996,
+      33.654539,
+      34.480297,
+      33.314381
+    ]
+  },
+  {
+    "round": 1,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-std",
+    "samples_ms": [
+      26.999664,
+      28.095899,
+      27.203836,
+      27.073601999999998,
+      28.469438999999998,
+      27.186082,
+      27.237739
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-std",
+    "samples_ms": [
+      27.177427,
+      28.236051000000003,
+      27.291891,
+      27.22239,
+      30.154057,
+      28.42739,
+      28.188762999999998
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "native-pull",
+    "samples_ms": [
+      35.020379,
+      34.29042999999999,
+      35.123913,
+      35.261842,
+      34.719776,
+      35.928641999999996,
+      34.444339
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-std",
+    "samples_ms": [
+      33.949141000000004,
+      36.621991,
+      34.968621999999996,
+      36.635677,
+      35.891312,
+      35.186941,
+      35.887895
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-std",
+    "samples_ms": [
+      34.840662,
+      35.936265,
+      34.193409,
+      34.838778,
+      35.133401,
+      33.43653,
+      33.977524
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-std-pull",
+    "samples_ms": [
+      34.912186,
+      34.158804,
+      35.060314000000005,
+      34.072853,
+      33.379362,
+      33.778902,
+      33.861216
+    ]
+  },
+  {
+    "round": 2,
+    "allocations": [
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      },
+      {
+        "allocs": 0,
+        "reallocs": 0,
+        "requested_bytes": 0
+      }
+    ],
+    "count_allocs": false,
+    "mode": "resample-pull-pull",
+    "samples_ms": [
+      34.300498999999995,
+      35.421751,
+      34.384326,
+      35.130015,
+      33.603673,
+      34.836404,
+      34.285601
+    ]
+  }
+]

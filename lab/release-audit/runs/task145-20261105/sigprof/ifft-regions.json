@@ -1,0 +1,27 @@
+{
+  "ifft_vector16": {
+    "samples": 828,
+    "percent_all": 2.692245163388067,
+    "percent_ifft": 11.159029649595688
+  },
+  "ifft_loop_control": {
+    "samples": 1630,
+    "percent_all": 5.299951227442692,
+    "percent_ifft": 21.967654986522913
+  },
+  "ifft_scalar_half1_half2": {
+    "samples": 4125,
+    "percent_all": 13.41245325963258,
+    "percent_ifft": 55.59299191374663
+  },
+  "ifft_vector4": {
+    "samples": 570,
+    "percent_all": 1.8533571776946838,
+    "percent_ifft": 7.681940700808625
+  },
+  "ifft_vector8": {
+    "samples": 267,
+    "percent_all": 0.8681515200780361,
+    "percent_ifft": 3.5983827493261455
+  }
+}

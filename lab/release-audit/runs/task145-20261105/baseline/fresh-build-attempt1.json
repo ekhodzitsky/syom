@@ -1,0 +1,54 @@
+{
+  "base_commit": "adf4db0d7b06a150534734b69b925e3136f0a631",
+  "probe_source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "worktree": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt-main",
+  "instrumentation": {
+    "path": "crates/gigastt-core/examples/aac_probe.rs",
+    "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1",
+    "change": "Untracked identical probe source copied from pinnedPR; no backend ormanifest changes; auto-discovered Cargoexample"
+  },
+  "declared_feature_scope": "exactcachedunion includes __internals benchmark/test support; never for deployment",
+  "build_command": [
+    "taskset",
+    "-c",
+    "2-7",
+    "cargo",
+    "+stable",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "gigastt",
+    "-p",
+    "gigastt-core",
+    "--bin",
+    "gigastt",
+    "--example",
+    "aac_probe",
+    "--features",
+    "gigastt-core/__internals"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68"
+  },
+  "expected_rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "release_profile": {
+    "lto": true,
+    "codegen-units": 1,
+    "strip": true
+  },
+  "copy_outputs": {
+    "release/gigastt": "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+    "release/examples/aac_probe": "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe"
+  },
+  "state": "failed; inspectfresh-build.log",
+  "started_utc": "2026-11-05T15:46:24.945466+00:00",
+  "exit_code": 101,
+  "seconds": 38.93,
+  "finished_utc": "2026-11-05T15:47:03.887535+00:00"
+}

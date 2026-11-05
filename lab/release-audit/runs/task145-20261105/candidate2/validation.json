@@ -1,0 +1,278 @@
+{
+  "source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68",
+    "OPENSSL_INCLUDE_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/include",
+    "OPENSSL_LIB_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/lib/x86_64-linux-gnu",
+    "CFLAGS": "-I/home/ekhodzitsky/toolchains/sysroot/usr/include/x86_64-linux-gnu"
+  },
+  "source_manifest": "source-manifest-before.json",
+  "started_utc": "2026-11-05T16:36:38.996450+00:00",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt",
+        "--version"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0,
+      "log": "server-smoke.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "gigastt-core",
+        "--lib",
+        "--features",
+        "extended-aac,__internals",
+        "inference::audio::aac"
+      ],
+      "exit_code": 0,
+      "seconds": 240.45,
+      "log": "guard-aac-tests.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.53,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--lib",
+        "--bins"
+      ],
+      "exit_code": 0,
+      "seconds": 895.16,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--lib",
+        "--bins",
+        "--features",
+        "gigastt/extended-aac"
+      ],
+      "exit_code": 0,
+      "seconds": 617.24,
+      "log": "check-2.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "clippy",
+        "--release",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 97.4,
+      "log": "check-3.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "clippy",
+        "--release",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "gigastt/extended-aac",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 10.72,
+      "log": "check-4.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-docs-drift.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.12,
+      "log": "check-5.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/test_docs_drift.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1,
+      "log": "check-6.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-publication.py"
+      ],
+      "exit_code": 0,
+      "seconds": 11.21,
+      "log": "check-7.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+1.94.0",
+        "check",
+        "--release",
+        "--locked",
+        "--offline",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "gigastt/extended-aac"
+      ],
+      "exit_code": 0,
+      "seconds": 175.6,
+      "log": "check-8.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "+stable",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "gigastt",
+        "-p",
+        "gigastt-core",
+        "--bin",
+        "gigastt",
+        "--example",
+        "aac_probe",
+        "--features",
+        "gigastt-core/__internals,gigastt/extended-aac"
+      ],
+      "exit_code": 0,
+      "seconds": 201.61,
+      "log": "final-build.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt",
+        "--version"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0,
+      "log": "final-server-smoke.log"
+    }
+  ],
+  "test_only_recovery": "test-assumption-fix.json",
+  "binaries": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt": {
+      "sha256": "c2791c919fa4c353826c159b4d4d314e55f163179f4684ede59fb0ae55327c4c",
+      "bytes": 52731896
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe": {
+      "sha256": "ca133f73190cd127ce26a66424ecd5d9676384104a2740d670f8e6b08e5c7f0d",
+      "bytes": 40756088
+    }
+  },
+  "working_tree_publication_scan": {
+    "pass": true,
+    "checked_files": [
+      "crates/gigastt-core/src/inference/audio/aac.rs",
+      "crates/gigastt-core/src/inference/audio/aac/buffered.rs",
+      "crates/gigastt-core/src/inference/audio/aac/input.rs",
+      "crates/gigastt-core/src/inference/audio/aac/pull.rs"
+    ]
+  },
+  "final_binaries": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/gigastt": {
+      "sha256": "c2791c919fa4c353826c159b4d4d314e55f163179f4684ede59fb0ae55327c4c",
+      "bytes": 52731896,
+      "matches_initial_production": true
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe": {
+      "sha256": "ca133f73190cd127ce26a66424ecd5d9676384104a2740d670f8e6b08e5c7f0d",
+      "bytes": 40756088,
+      "matches_initial_production": true
+    }
+  },
+  "finished_utc": "2026-11-05T17:14:09.639921+00:00",
+  "source_stable": true
+}

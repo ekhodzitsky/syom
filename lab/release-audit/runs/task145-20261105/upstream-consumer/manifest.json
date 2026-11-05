@@ -1,0 +1,44 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "2-7",
+    "python3",
+    "lab/consume/run.py"
+  ],
+  "environment": {
+    "RUSTUP_TOOLCHAIN": "1.89.0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_TARGET_DIR": "UNSET"
+  },
+  "started_utc": "2026-11-05T17:42:31.122249+00:00",
+  "source_HEAD": "bdf4bbfbe8c1b0f0b83121a428f4621657ce36f2",
+  "working_diff_sha256": "b77ac6d97219842a915fb519844724eba5297dce54225f35463365c090bf2ccd",
+  "compiler": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7\n",
+  "files_before": {
+    "Cargo.toml": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b",
+    "Cargo.lock": "c69abb01c2f0c902b6872c25bfb881bc32a090c92113a21d6f14a733e3130e8c",
+    "CHANGELOG.md": "a567dc1bd8ded8754358eeb8d76ff6bb902b5508a4c6d7906cbdc40ff63a1345",
+    "lab/consume/Cargo.lock": "658b7275d958417baefd572dff2ddff580a4c0793380b63d0d2c0f314af1bad9",
+    "lab/consume/run.py": "e63986b2536bcc0dad1ca96250acd48de7bb48abf0f862cb9da62ce3459cb3d5",
+    "src/engine/imdct_avx512.rs": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+    "src/engine/imdct_tests.rs": "c05df2ca0f697faa860eeeb6c73eb1eadca57b6fd4677fe63646dbba7a20d17f"
+  },
+  "exit_code": 0,
+  "finished_utc": "2026-11-05T17:42:48.423901+00:00",
+  "files_after": {
+    "Cargo.toml": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b",
+    "Cargo.lock": "c69abb01c2f0c902b6872c25bfb881bc32a090c92113a21d6f14a733e3130e8c",
+    "CHANGELOG.md": "a567dc1bd8ded8754358eeb8d76ff6bb902b5508a4c6d7906cbdc40ff63a1345",
+    "lab/consume/Cargo.lock": "ac2ed0e2ffd0f26d1b6235152198e9abc7e1c0d376010533d70265f001ca8946",
+    "lab/consume/run.py": "e63986b2536bcc0dad1ca96250acd48de7bb48abf0f862cb9da62ce3459cb3d5",
+    "src/engine/imdct_avx512.rs": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+    "src/engine/imdct_tests.rs": "c05df2ca0f697faa860eeeb6c73eb1eadca57b6fd4677fe63646dbba7a20d17f"
+  },
+  "package": {
+    "path": "/home/ekhodzitsky/Projects/syom/target/package/syom-0.10.1.crate",
+    "bytes": 469226,
+    "sha256": "4254f6c31f9ba3fc5ca34baf9de55df49641f27f506d337eb8cad2038277c0df"
+  }
+}

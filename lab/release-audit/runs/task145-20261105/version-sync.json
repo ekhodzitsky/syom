@@ -1,0 +1,105 @@
+{
+  "changed": [
+    {
+      "path": "Cargo.toml",
+      "before_sha256": "0ee6654647d7ea1c039c2a18c6798a8815d3fd5bfda3af61021d80e1279efece",
+      "after_sha256": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b"
+    },
+    {
+      "path": "Cargo.lock",
+      "before_sha256": "e97ea9ae62eb673158c351e8a5991eb3dda0594112d216a4ed85d5c14d9ff7e7",
+      "after_sha256": "c69abb01c2f0c902b6872c25bfb881bc32a090c92113a21d6f14a733e3130e8c"
+    },
+    {
+      "path": "lab/footprint/Cargo.lock",
+      "before_sha256": "35577d8508f387835fbdd55cdbfc48934538d2e525df6d5da81ec8293d8bd35e",
+      "after_sha256": "0e013ec01f17ff29482ebe4a82eccae06c432c8c1889d87461bdce8a7d4b0086"
+    },
+    {
+      "path": "lab/quality/Cargo.lock",
+      "before_sha256": "21cc672749f0f08bd475548dda1d8527d6e77545e585d1756e63e128ad7098a3",
+      "after_sha256": "f17ecb8e883e439bc11fb2152fd6d40db2299938263560db63117dddfc282b9e"
+    },
+    {
+      "path": "lab/release-audit/Cargo.lock",
+      "before_sha256": "a86018baa81d03c014a0f9e0f868e26ddc62d0fc3d360e52f147c5af8a271424",
+      "after_sha256": "36e27a297ab04d4600977f325229fd3e7f6666fc96928592856f75fa6cc25265"
+    },
+    {
+      "path": "lab/wasm/Cargo.lock",
+      "before_sha256": "8dfce9e3be5c7de075521a9b90dc7c88fa53822279e5c4e9b3eecd9b5e05bf7b",
+      "after_sha256": "35430a5ef139a81bf868f4de53bc48924d33437d0866a87972c789f00efd2ab8"
+    },
+    {
+      "path": "lab/fuzz/Cargo.lock",
+      "before_sha256": "abed5c5a38c9209c4320041c136777f099c6f96ccbba3292dd76a46091f35a96",
+      "after_sha256": "8e435e21a221bf44efc769eb8d7eac86a5b931120f08f5e21e614b8a3631c72b"
+    },
+    {
+      "path": "lab/glint/Cargo.lock",
+      "before_sha256": "4e4b7ab272e13157e24f590e5f31f72fab58336884ec7836c5aa9170bd5493d1",
+      "after_sha256": "0b1a9506192d69474faeb2608669e559ce803420968ba2403cab05882fdc721b"
+    },
+    {
+      "path": "lab/score/Cargo.lock",
+      "before_sha256": "2d4a514fa092a1e07d761c603e97e4703a9d245e0689f36a4d8744ed8c8b1e61",
+      "after_sha256": "62c1bd08998ca3b036b24a2a5196e07819ff5e5c557ceaab98f204b4fa6c66c6"
+    },
+    {
+      "path": "lab/fmp4/bridge/Cargo.lock",
+      "before_sha256": "51813bee1d08bd6346db499e89acd559ebb59a19ab94ff964ac6f64b462af0b7",
+      "after_sha256": "e5f7303d00b681d581d0060f02d532b3b07d50721bf97aeb360f29ee99bcd2ad"
+    },
+    {
+      "path": "lab/frame960/syom_probe/Cargo.lock",
+      "before_sha256": "98d83a74ebd0a67ee4b1bdb6d59e32ee64e20e930a9f383e5df86e7f3b70072d",
+      "after_sha256": "633a67dd30df8057f58d78234551d8a46c2251f3b80f60adb030efae085178a4"
+    },
+    {
+      "path": "lab/baseline/peer_speed/Cargo.lock",
+      "before_sha256": "3735a8943418581acefaf05e1bdaf9330eda10b3a302b51c2ff563c6b4f1d791",
+      "after_sha256": "9606f91396807ef712f4efd2eed89d86ce9fa8e7723d5632f8af05cf605078dc"
+    },
+    {
+      "path": "lab/faac/verify/Cargo.lock",
+      "before_sha256": "a72721dc674c84208fd9ddb317f1689fb0f48b54bfa11f1c8fa081334a4c4d48",
+      "after_sha256": "935b2e1a1dc470b243c0498a8f2c0e3efabba7187466d6ab5a9920b0d5fae149"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/Cargo.lock",
+      "before_sha256": "46d09da3c87678ca52e65c177f5fce24a824dcf30eb78504a572ed551bf754ea",
+      "after_sha256": "49c774317d32f5180526810fe0b3d498decef23b29435ebd60ac165fbf17f364"
+    },
+    {
+      "path": "lab/profiles/syom_probe/Cargo.lock",
+      "before_sha256": "484e414837105f62e7d0855591c68b16937913caa61ac8b5f51b5de0214a4346",
+      "after_sha256": "5a31db8251f06aee943fb31cafd7db99e164e2b216ad1930ec320a8b92059d23"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/cold_stack.lock",
+      "before_sha256": "f8524820788fa9c5520dffadf7f601be10b3edef5b96c1fb89b6a9ca539e5d8b",
+      "after_sha256": "ba106660c5aee0e35e15f6a6bddc4d95b169462f7fdc1305e25efaffe4d8c2d5"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/native_stages.lock",
+      "before_sha256": "37f609dc5f0fd4c2f1a23198f36cfcaf920cdf08d16a4156c50ae7bbbdeb2fc0",
+      "after_sha256": "4f8ef99952358b2f08271ae786ff407d5be1667ea518f6cfcd8a5389c9e9bb99"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "before_sha256": "e92413e1856a9a8eedda0e63c51af9288259a002065e8821f7a87b4b4966d328",
+      "after_sha256": "a567dc1bd8ded8754358eeb8d76ff6bb902b5508a4c6d7906cbdc40ff63a1345"
+    },
+    {
+      "path": "README.md",
+      "before_sha256": "d8f0adf1717ed278777627058b39f2d19c6a8f47837d2a067818ad7500dc53d7",
+      "after_sha256": "57c2688f522226cc658b5b24f14fade6b7478afd34d0e0a1189cc5b515a95bd3"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/README.md",
+      "before_sha256": "114d979a43814b426cad383963600fbe46e68dc890d9773c29571c1edc70522b",
+      "after_sha256": "e6eea05fac90f73d1003eee2ce23bc120bfab49aec542b07839833d1c625982e"
+    }
+  ],
+  "excluded": "Archived lab/release-audit/runs and ignored vendor/target evidence remain unchanged; lab/consume/Cargo.lock follows regenerated vendor package in root-owned consumer runner."
+}

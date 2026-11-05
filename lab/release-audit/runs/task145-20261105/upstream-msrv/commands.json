@@ -1,0 +1,51 @@
+{
+  "affinity": [
+    "taskset",
+    "-c",
+    "8-11"
+  ],
+  "env": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/upstream-msrv-target"
+  },
+  "commands": [
+    [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--doc"
+    ],
+    [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--test",
+      "cold_stack"
+    ],
+    [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--lib",
+      "imdct"
+    ]
+  ]
+}

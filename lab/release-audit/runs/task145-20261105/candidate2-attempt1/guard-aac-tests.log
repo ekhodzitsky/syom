@@ -1,0 +1,91 @@
+   Compiling log v0.4.29
+   Compiling serde_core v1.0.229
+   Compiling symphonia-core v0.6.1
+   Compiling serde v1.0.229
+   Compiling tokio v1.54.1
+   Compiling serde_json v1.0.151
+   Compiling tracing-core v0.1.36
+   Compiling symphonia-metadata v0.6.1
+   Compiling tracing v0.1.44
+   Compiling string-interner v0.20.0
+   Compiling erased-serde v0.4.10
+   Compiling tract-data v0.23.8
+   Compiling symphonia-common v0.6.1
+   Compiling tokio-util v0.7.20
+   Compiling h2 v0.4.19
+   Compiling tract-linalg v0.23.8
+   Compiling tract-core v0.23.8
+   Compiling hyper v1.9.0
+   Compiling hyper-util v0.1.20
+   Compiling regex-automata v0.4.14
+   Compiling form_urlencoded v1.2.2
+   Compiling tower v0.5.3
+   Compiling clap_builder v4.6.7
+   Compiling url v2.5.8
+   Compiling tract-nnef v0.23.8
+   Compiling tract-extra v0.23.8
+   Compiling tract-onnx-opl v0.23.8
+   Compiling tract-hir v0.23.8
+   Compiling regex v1.12.3
+   Compiling tokio-rustls v0.26.4
+   Compiling deadpool v0.12.3
+   Compiling tower-http v0.6.8
+   Compiling symphonia-format-riff v0.6.1
+   Compiling tract-onnx v0.23.8
+   Compiling hyper-rustls v0.27.9
+   Compiling digest v0.11.3
+   Compiling clap v4.6.7
+   Compiling ciborium v0.2.2
+   Compiling rustls-platform-verifier v0.7.0
+   Compiling symphonia-codec-vorbis v0.6.1
+   Compiling symphonia-bundle-flac v0.6.1
+   Compiling symphonia-format-ogg v0.6.1
+   Compiling symphonia-format-mkv v0.6.1
+   Compiling symphonia-codec-aac v0.6.1
+   Compiling symphonia-format-isomp4 v0.6.1
+   Compiling assert-json-diff v2.0.2
+   Compiling tinytemplate v1.2.1
+   Compiling symphonia-codec-pcm v0.6.1
+   Compiling symphonia-bundle-mp3 v0.6.1
+   Compiling symphonia-codec-adpcm v0.6.1
+   Compiling serde_spanned v1.1.1
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling criterion v0.8.2
+   Compiling reqwest v0.13.5
+   Compiling toml v1.1.6+spec-1.1.0
+   Compiling symphonia v0.6.1
+   Compiling wiremock v0.6.5
+   Compiling gigastt-quantize v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-quantize)
+   Compiling polyvoice v1.0.0
+   Compiling ort v2.0.0-rc.13
+   Compiling sha2 v0.11.0
+   Compiling gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)
+    Finished `release` profile [optimized] target(s) in 7m 24s
+     Running unittests src/lib.rs (/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/gigastt_core-e04670e939f60b67)
+
+running 9 tests
+test inference::audio::aac::buffered::tests::test_current_end_and_eof_match_unbuffered_reader ... ok
+test inference::audio::aac::buffered::tests::test_absolute_au_seeks_reuse_buffer_without_changing_bytes ... ok
+test inference::audio::aac::buffered::tests::test_force_rewind_invalidates_cache_after_shared_offset_moves ... ok
+test inference::audio::aac::buffered::tests::test_read_and_seek_failures_invalidate_relative_position ... ok
+test inference::audio::aac::mono_plane_tests::test_aac_mono_planes_preserve_add_then_divide_bits ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_fallback_rewinds_shared_file_cursor ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess ... FAILED
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_restores_on_small_stack_without_worker ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_preserves_worker_batches_and_native_bits ... ok
+
+failures:
+
+---- inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess stdout ----
+
+thread 'inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess' (2958922) panicked at crates/gigastt-core/src/inference/audio/aac/pull.rs:170:9:
+assertion failed: try_open(&mut reader, ChannelSelect::Mono, Some(0.1)).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 856 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p gigastt-core --lib`

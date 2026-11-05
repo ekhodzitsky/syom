@@ -1,0 +1,115 @@
+{
+  "base_commit": "adf4db0d7b06a150534734b69b925e3136f0a631",
+  "probe_source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "worktree": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt-main",
+  "instrumentation": {
+    "path": "crates/gigastt-core/examples/aac_probe.rs",
+    "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1",
+    "change": "Untracked identical probe source copied from pinnedPR; no backend ormanifest changes; auto-discovered Cargoexample"
+  },
+  "declared_feature_scope": "exactcachedunion includes __internals benchmark/test support; never for deployment",
+  "build_command": [
+    "taskset",
+    "-c",
+    "2-7",
+    "cargo",
+    "+stable",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "-p",
+    "gigastt",
+    "-p",
+    "gigastt-core",
+    "--bin",
+    "gigastt",
+    "--example",
+    "aac_probe",
+    "--features",
+    "gigastt-core/__internals"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68",
+    "OPENSSL_INCLUDE_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/include",
+    "OPENSSL_LIB_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/lib/x86_64-linux-gnu",
+    "CFLAGS": "-I/home/ekhodzitsky/toolchains/sysroot/usr/include/x86_64-linux-gnu"
+  },
+  "expected_rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "release_profile": {
+    "lto": true,
+    "codegen-units": 1,
+    "strip": true
+  },
+  "copy_outputs": {
+    "release/gigastt": "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+    "release/examples/aac_probe": "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe"
+  },
+  "state": "built; stablebinariescopied",
+  "started_utc": "2026-11-05T15:46:24.945466+00:00",
+  "exit_code": 0,
+  "seconds": 640.18,
+  "finished_utc": "2026-11-05T15:59:13.874626+00:00",
+  "retry_reason": "Missing systemOpenSSLheaders; useexistingdocumentedcompatibledevelopmentprefix",
+  "binary_artifacts": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt": {
+      "sha256": "bd18dd2dfb4fbace0f147762ca966d8fad33f3a22ecc84b98d3ae05779b64057",
+      "bytes": 51860440
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe": {
+      "sha256": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+      "bytes": 39887448
+    }
+  },
+  "server_cli_smoke": {
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "gigastt 2.22.0",
+    "stderr": ""
+  },
+  "model_assets": {
+    ".download.lock": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/.download.lock",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/.download.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "v3_rnnt_decoder.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_decoder.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_decoder.onnx",
+      "bytes": 3331429,
+      "sha256": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da"
+    },
+    "v3_rnnt_encoder_int8.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx",
+      "bytes": 319665270,
+      "sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
+    },
+    "v3_rnnt_joint.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_joint.onnx",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_joint.onnx",
+      "bytes": 1440448,
+      "sha256": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8"
+    },
+    "v3_vocab.txt": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_vocab.txt",
+      "resolved_path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_vocab.txt",
+      "bytes": 198,
+      "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+    },
+    "wespeaker_resnet34.onnx": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/wespeaker_resnet34.onnx",
+      "resolved_path": "/home/ekhodzitsky/.gigastt/models/wespeaker_resnet34.onnx",
+      "bytes": 26535549,
+      "sha256": "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb"
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "native-pull": {
+    "pooled_median_ms": 34.106786,
+    "round_medians_ms": [
+      33.332535,
+      33.654539,
+      35.020379
+    ],
+    "allocations": {
+      "allocs": 4126,
+      "reallocs": 32,
+      "requested_bytes": 17090063
+    }
+  },
+  "native-std": {
+    "pooled_median_ms": 27.291891,
+    "round_medians_ms": [
+      27.747786,
+      27.203836,
+      28.188762999999998
+    ],
+    "allocations": {
+      "allocs": 3802,
+      "reallocs": 2,
+      "requested_bytes": 1632888
+    }
+  },
+  "resample-pull-pull": {
+    "pooled_median_ms": 34.941471,
+    "round_medians_ms": [
+      37.312406,
+      34.941471,
+      34.384326
+    ],
+    "allocations": {
+      "allocs": 604,
+      "reallocs": 87,
+      "requested_bytes": 63670925
+    }
+  },
+  "resample-pull-std": {
+    "pooled_median_ms": 34.838778,
+    "round_medians_ms": [
+      34.942032,
+      34.147774,
+      34.838778
+    ],
+    "allocations": {
+      "allocs": 605,
+      "reallocs": 88,
+      "requested_bytes": 63886317
+    }
+  },
+  "resample-std-pull": {
+    "pooled_median_ms": 34.002449999999996,
+    "round_medians_ms": [
+      34.002449999999996,
+      33.844463999999995,
+      34.072853
+    ],
+    "allocations": {
+      "allocs": 604,
+      "reallocs": 87,
+      "requested_bytes": 63670925
+    }
+  },
+  "resample-std-std": {
+    "pooled_median_ms": 34.428039,
+    "round_medians_ms": [
+      33.642966,
+      34.177809,
+      35.887895
+    ],
+    "allocations": {
+      "allocs": 605,
+      "reallocs": 88,
+      "requested_bytes": 63886317
+    }
+  }
+}

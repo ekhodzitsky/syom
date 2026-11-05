@@ -1,0 +1,68 @@
+[
+  {
+    "command": [
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "log": "workspace.log",
+    "exit_code": 0
+  },
+  {
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--doc"
+    ],
+    "log": "doc.log",
+    "exit_code": 0,
+    "elapsed_seconds": 3.9702682495117188
+  },
+  {
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--test",
+      "cold_stack"
+    ],
+    "log": "release-cold-stack.log",
+    "exit_code": 0,
+    "elapsed_seconds": 69.59542894363403
+  },
+  {
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--lib",
+      "imdct"
+    ],
+    "log": "release-imdct.log",
+    "exit_code": 0,
+    "elapsed_seconds": 67.78792643547058
+  }
+]

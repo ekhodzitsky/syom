@@ -1,0 +1,12 @@
+{
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "binary_sha256": "0a7bfcaed05bb95e6f5f06356f3160900afcc9432a98dddea5d337f35dcdd0ba",
+  "driver_sha256": "080ce74f02a8aa7f0e29b34df4938463ffdb25658e3228f8b7f3ce15e53100ad",
+  "library_commit": "bdf4bbfbe8c1b0f0b83121a428f4621657ce36f2",
+  "fixtures": {
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a": "e7f0f3ee0300ca9951e22ca79a4ee0a22619eba37b56f208d4f644cd24781f13",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts": "6d3e903bdfe47d9e1cf7502132bae8a9f6cdf2992493d99541acf94c6bc6b596",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328"
+  },
+  "scope": "Library direct slice decoder only, no resampler/thread/handoff; default release fatLTO/codegen1, diagnostic mode differences not matched-work competitor ranking"
+}

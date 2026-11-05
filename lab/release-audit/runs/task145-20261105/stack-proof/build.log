@@ -1,0 +1,6 @@
+     Locking 3 packages to latest Rust 1.98.1 compatible versions
+   Compiling anyhow v1.0.104
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom)
+   Compiling bytes v1.12.1
+   Compiling syom-pull-stack-proof v0.0.0 (/home/ekhodzitsky/Projects/syom/target/task145/stack-proof)
+    Finished `release` profile [optimized] target(s) in 21.46s

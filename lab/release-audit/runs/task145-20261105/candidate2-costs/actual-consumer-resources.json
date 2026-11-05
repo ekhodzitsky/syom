@@ -1,0 +1,202 @@
+[
+  {
+    "round": 0,
+    "case": "base",
+    "status": 0,
+    "result": {
+      "detail": null,
+      "mode": "file",
+      "peak_rss_kib": 26156,
+      "planes": [
+        {
+          "energy": 199.2550006794906,
+          "finite": true,
+          "samples": 1280340
+        }
+      ],
+      "seconds": [
+        0.060691833,
+        0.062055008,
+        0.061007164,
+        0.059414348,
+        0.059593083,
+        0.060401037,
+        0.061787396,
+        0.061285335,
+        0.061082966,
+        0.061580799,
+        0.060495434,
+        0.06037047,
+        0.060592787,
+        0.061060043,
+        0.060251107,
+        0.060664592,
+        0.062364038,
+        0.060979021,
+        0.061160041,
+        0.061722866,
+        0.061860344,
+        0.060843757,
+        0.062854577,
+        0.061710352,
+        0.061001673,
+        0.060293857,
+        0.060399164,
+        0.061292298,
+        0.060667066,
+        0.060878012
+      ]
+    },
+    "resource_usage": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe file /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a 30\"\n\tUser time (seconds): 1.94\n\tSystem time (seconds): 0.01\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.95\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 26012\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 7087\n\tVoluntary context switches: 1\n\tInvoluntary context switches: 20\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  },
+  {
+    "round": 0,
+    "case": "candidate2",
+    "status": 0,
+    "result": {
+      "detail": null,
+      "mode": "file",
+      "peak_rss_kib": 25032,
+      "planes": [
+        {
+          "energy": 199.25433504789186,
+          "finite": true,
+          "samples": 1279999
+        }
+      ],
+      "seconds": [
+        0.066066498,
+        0.066388241,
+        0.066857991,
+        0.065911808,
+        0.06539029,
+        0.065429013,
+        0.065551773,
+        0.065333504,
+        0.065897801,
+        0.065568804,
+        0.066622451,
+        0.071988038,
+        0.065574205,
+        0.066152639,
+        0.065376815,
+        0.066619224,
+        0.065552044,
+        0.065158276,
+        0.065735528,
+        0.065360535,
+        0.065710561,
+        0.065517288,
+        0.065231032,
+        0.065757669,
+        0.065602118,
+        0.065809526,
+        0.065905676,
+        0.065490148,
+        0.065995515,
+        0.065905896
+      ]
+    },
+    "resource_usage": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe file /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a 30\"\n\tUser time (seconds): 2.10\n\tSystem time (seconds): 0.01\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:02.11\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 25152\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 6919\n\tVoluntary context switches: 1\n\tInvoluntary context switches: 24\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  },
+  {
+    "round": 1,
+    "case": "candidate2",
+    "status": 0,
+    "result": {
+      "detail": null,
+      "mode": "file",
+      "peak_rss_kib": 25148,
+      "planes": [
+        {
+          "energy": 199.25433504789186,
+          "finite": true,
+          "samples": 1279999
+        }
+      ],
+      "seconds": [
+        0.066383372,
+        0.066148963,
+        0.065470952,
+        0.065879878,
+        0.065399608,
+        0.065388167,
+        0.066317147,
+        0.06748669,
+        0.066051199,
+        0.065597159,
+        0.06524616,
+        0.065317765,
+        0.065407342,
+        0.065597639,
+        0.065055964,
+        0.065766034,
+        0.066065737,
+        0.065680825,
+        0.066150055,
+        0.065705892,
+        0.065229038,
+        0.065888855,
+        0.065582871,
+        0.06645713,
+        0.065866704,
+        0.065637213,
+        0.071811728,
+        0.06603617,
+        0.066260632,
+        0.065735778
+      ]
+    },
+    "resource_usage": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe file /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a 30\"\n\tUser time (seconds): 2.10\n\tSystem time (seconds): 0.01\n\tPercent of CPU this job got: 100%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:02.12\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 25204\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 6915\n\tVoluntary context switches: 1\n\tInvoluntary context switches: 19\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  },
+  {
+    "round": 1,
+    "case": "base",
+    "status": 0,
+    "result": {
+      "detail": null,
+      "mode": "file",
+      "peak_rss_kib": 26492,
+      "planes": [
+        {
+          "energy": 199.2550006794906,
+          "finite": true,
+          "samples": 1280340
+        }
+      ],
+      "seconds": [
+        0.061499767,
+        0.062950277,
+        0.06023152,
+        0.06142134,
+        0.060437406,
+        0.060805296,
+        0.060513378,
+        0.061206668,
+        0.060689579,
+        0.06027409,
+        0.060940269,
+        0.061068589,
+        0.061400622,
+        0.060438888,
+        0.061155011,
+        0.060548994,
+        0.060996444,
+        0.060677726,
+        0.060714374,
+        0.060611322,
+        0.060863044,
+        0.060224276,
+        0.060596584,
+        0.059896312,
+        0.060461361,
+        0.060312261,
+        0.060859006,
+        0.061047339,
+        0.060581866,
+        0.060586766
+      ]
+    },
+    "resource_usage": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe file /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a 30\"\n\tUser time (seconds): 1.94\n\tSystem time (seconds): 0.01\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.96\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 26412\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 7087\n\tVoluntary context switches: 1\n\tInvoluntary context switches: 24\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  }
+]

@@ -1,0 +1,4 @@
+{"detail":null,"mode":"file","peak_rss_kib":23664,"planes":[{"energy":199.25433504789186,"finite":true,"samples":1279999}],"seconds":[0.069367897]}
+dec_prof frames=3751 lc_ms=18.055 fin_ms=13.927 sbr_ms=0.000 scale_ms=0.370
+dec_prof frames=3751 lc_ms=17.965 fin_ms=14.006 sbr_ms=0.000 scale_ms=0.379
+dec_prof frames=3751 lc_ms=18.038 fin_ms=14.125 sbr_ms=0.000 scale_ms=0.386

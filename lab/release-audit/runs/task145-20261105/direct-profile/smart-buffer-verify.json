@@ -1,0 +1,89 @@
+{
+  "scope": "NativePCM bit equality; Cursor,naivebuffer,smart8K/64KvsplainFile across3fixtures. Seek/error testsembedded runeveryinvocation.",
+  "rows": [
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "kind": "bytes",
+      "samples": 192000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "kind": "buffer8k",
+      "samples": 192000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "kind": "smart8k",
+      "samples": 192000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "kind": "smart64k",
+      "samples": 192000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "kind": "bytes",
+      "samples": 193536,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "kind": "buffer8k",
+      "samples": 193536,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "kind": "smart8k",
+      "samples": 193536,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "kind": "smart64k",
+      "samples": 193536,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "kind": "bytes",
+      "samples": 3840000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "kind": "buffer8k",
+      "samples": 3840000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "kind": "smart8k",
+      "samples": 3840000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    },
+    {
+      "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "kind": "smart64k",
+      "samples": 3840000,
+      "differing_bits": 0,
+      "seek_error_tests": "pass"
+    }
+  ]
+}

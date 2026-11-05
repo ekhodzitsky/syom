@@ -1,0 +1,151 @@
+{
+  "timestamp_utc": "2026-11-05T15:39:14.569890+00:00",
+  "host": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "cpu_affinity_available": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "timed_cpu": 0,
+  "loadavg_before": [
+    9.369140625,
+    4.8251953125,
+    3.556640625
+  ],
+  "source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "artifacts": {
+    "base_probe": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+      "bytes": 39887448,
+      "sha256": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181"
+    },
+    "candidate_probe": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+      "bytes": 40739064,
+      "sha256": "142db12da8db8b856c2cb31d7854f5837b32f368671b0cd1cd827d9e2541cce6"
+    },
+    "base_server": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/gigastt",
+      "bytes": 51860696,
+      "sha256": "c81066929faa97acd5af46d02a55fe8ecedba1124b539664b19adc63dfce749a"
+    },
+    "candidate_server": {
+      "path": "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/gigastt",
+      "bytes": 52703288,
+      "sha256": "0332c6673d960e13e0ad405c3fc0eca904d005bbaba7ffb33b137b93ae5e87d3"
+    },
+    "harness": {
+      "path": "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/scripts/compare-aac-decoders.py",
+      "bytes": 5797,
+      "sha256": "effe2ab6eae604ee36dc2b9da083feea86dece0ec03a15b5ed9d00cd9a72a0cb"
+    },
+    "fixture_speech0.m4a": {
+      "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "bytes": 33526,
+      "sha256": "e7f0f3ee0300ca9951e22ca79a4ee0a22619eba37b56f208d4f644cd24781f13"
+    },
+    "fixture_lc.adts": {
+      "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "bytes": 33287,
+      "sha256": "6d3e903bdfe47d9e1cf7502132bae8a9f6cdf2992493d99541acf94c6bc6b596"
+    },
+    "fixture_long-stereo.m4a": {
+      "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "bytes": 1247676,
+      "sha256": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328"
+    }
+  },
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "python3",
+    "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/scripts/compare-aac-decoders.py",
+    "--base-probe",
+    "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+    "--candidate-probe",
+    "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+    "--fixtures",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures",
+    "--output",
+    "/home/ekhodzitsky/Projects/syom/target/task145/baseline/decoder-timing.json"
+  ],
+  "exit_code": 1,
+  "loadavg_after": [
+    6.9384765625,
+    4.76806640625,
+    3.59130859375
+  ],
+  "finished_utc": "2026-11-05T15:39:54.108737+00:00",
+  "active_checkout_rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "build_provenance": {
+    "base": {
+      "cached_rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+      "fingerprint_file": "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/.fingerprint/gigastt-core-a46af4cd5d62c0b1/example-aac_probe.json",
+      "fingerprint_sha256": "6a3ec822e51a2810c67639580156d752be998a8732c54113208945ebeb1f5f4d",
+      "rustc_fingerprint": 1625334936438085654,
+      "profile_fingerprint": 5200837052885743122,
+      "features": "[\"__internals\", \"async-pool\", \"default\", \"diarization\", \"file-decode\", \"net\", \"quantize\"]",
+      "rustflags": [],
+      "config_fingerprint": 9396254390672932401
+    },
+    "candidate": {
+      "cached_rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+      "fingerprint_file": "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/.fingerprint/gigastt-core-784179c1a1d2cc0e/example-aac_probe.json",
+      "fingerprint_sha256": "267ec75f84b5c0553807ed558a5d96e588bfed1b7976e1e7710df02f2f037b17",
+      "rustc_fingerprint": 1625334936438085654,
+      "profile_fingerprint": 5200837052885743122,
+      "features": "[\"__internals\", \"async-pool\", \"default\", \"diarization\", \"extended-aac\", \"file-decode\", \"net\", \"quantize\"]",
+      "rustflags": [],
+      "config_fingerprint": 9396254390672932401
+    }
+  },
+  "nominal_release_profile": {
+    "lto": true,
+    "codegen-units": 1,
+    "strip": true,
+    "source": "pinned gigastt Cargo.toml; cached profile fingerprints equal"
+  },
+  "static_ort_archive": {
+    "path": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+    "sha256": "0bb8a9982b44df690195c2c34b75ca791c3b9f20070b8cecbd8f50c6264dd2e2",
+    "bytes": 105481448
+  },
+  "active_model_encoder": {
+    "path": "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx",
+    "sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+    "bytes": 319665270,
+    "note": "Not executed by decoder-only timing campaign"
+  },
+  "cached_base_source": {
+    "commit": "adf4db0d7b06a150534734b69b925e3136f0a631",
+    "path": "/home/ekhodzitsky/.cache/gigastt-worktrees/repository-cleanup",
+    "probe_note": "Copied public timing probe used in baselinebuild is no longer present at that checkout; binaryhash matches originalpublishedmeasurement. Candidateprobe sourcehash retained."
+  },
+  "provenance_limits": [
+    "Cached fingerprints identify same compiler/profile/flags; original full shell build commands not retained here",
+    "Base copied timing-probe source removed from current basecheckout; do not claim clean-source rebuild in this reproduction",
+    "Only Linux x86_64; busy shared host, no outlier deletion"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "command": "CARGO_TARGET_DIR=/home/ekhodzitsky/Projects/syom/target/task145/resample-recycle-target CARGO_BUILD_JOBS=2 RUSTFLAGS= taskset -c 8-9 cargo +stable build --release --offline --manifest-path target/task145/resample-recycle/Cargo.toml",
+  "source_sha256": {
+    "target/task145/resample-recycle/Cargo.lock": "048e3009827e290f6cb450c96b21663aaccd7b6064aa7f8209687b0a0b7654f9",
+    "target/task145/resample-recycle/Cargo.toml": "2ccd4589c44a92be89f6b6ad8792307527c7e132a93d25413cf562fb162d2465",
+    "target/task145/resample-recycle/src/main.rs": "0f5aaba99371b02baf6f3caf7fd4a68c7f07830e1a30c319c7e9b6ed8aa69362",
+    "target/task145/resample-recycle/src/original.rs": "aed9dce69efc65ee4fae0c8644e38aedff031f68f788fb5c9a5cc3573359e1c3",
+    "target/task145/resample-recycle/src/recycled.rs": "f2086935a8e9ac16cab6660e0bdde22a9e2f9f25acfec35a991fefc46b191288"
+  },
+  "original_matches_consumer": true,
+  "inherited_profile_environment": {},
+  "scope": "Diagnostic only; exact original and recycled capacity variant; identical >=24K native M4A logical batches and resampling cuts; allocation count separately untimed."
+}

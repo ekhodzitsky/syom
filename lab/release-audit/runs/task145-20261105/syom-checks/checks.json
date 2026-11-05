@@ -1,0 +1,89 @@
+[
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 3.01,
+    "log": "0.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-file-size.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.03,
+    "log": "1.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-changelog.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.02,
+    "log": "2.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit_code": 0,
+    "seconds": 5.67,
+    "log": "3.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 38.17,
+    "log": "4.log"
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 1.04,
+    "log": "5.log"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/check-package.py"
+    ],
+    "exit_code": 0,
+    "seconds": 24.68,
+    "log": "6.log"
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "lab/consume/gigastt",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "seconds": 0.08,
+    "log": "7.log"
+  }
+]

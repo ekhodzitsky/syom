@@ -1,0 +1,302 @@
+[
+  {
+    "allocations": [
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      },
+      {
+        "allocs": 3802,
+        "reallocs": 2,
+        "requested_bytes": 1632888
+      }
+    ],
+    "count_allocs": true,
+    "mode": "native-std",
+    "samples_ms": [
+      26.998652,
+      27.152158999999997,
+      28.630802,
+      27.202374000000002,
+      27.106023,
+      27.98972,
+      27.586102
+    ]
+  },
+  {
+    "allocations": [
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      },
+      {
+        "allocs": 4126,
+        "reallocs": 32,
+        "requested_bytes": 17090063
+      }
+    ],
+    "count_allocs": true,
+    "mode": "native-pull",
+    "samples_ms": [
+      33.036971,
+      34.763878,
+      33.395282,
+      33.049875,
+      34.222343,
+      32.901617,
+      34.10333
+    ]
+  },
+  {
+    "allocations": [
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      }
+    ],
+    "count_allocs": true,
+    "mode": "resample-std-std",
+    "samples_ms": [
+      35.195387000000004,
+      34.213316,
+      35.513704,
+      34.378786,
+      34.915563,
+      37.765705,
+      34.436013
+    ]
+  },
+  {
+    "allocations": [
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      },
+      {
+        "allocs": 605,
+        "reallocs": 88,
+        "requested_bytes": 63886317
+      }
+    ],
+    "count_allocs": true,
+    "mode": "resample-pull-std",
+    "samples_ms": [
+      35.410790999999996,
+      34.360693,
+      34.237141,
+      34.536843,
+      33.971402,
+      34.944246,
+      34.364188
+    ]
+  },
+  {
+    "allocations": [
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      }
+    ],
+    "count_allocs": true,
+    "mode": "resample-std-pull",
+    "samples_ms": [
+      35.680234999999996,
+      35.027042,
+      33.897724,
+      34.023329999999994,
+      35.739247,
+      33.806784,
+      34.787603
+    ]
+  },
+  {
+    "allocations": [
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      },
+      {
+        "allocs": 604,
+        "reallocs": 87,
+        "requested_bytes": 63670925
+      }
+    ],
+    "count_allocs": true,
+    "mode": "resample-pull-pull",
+    "samples_ms": [
+      34.74884,
+      33.726854,
+      34.986024,
+      34.452034,
+      33.309512,
+      34.817268999999996,
+      34.713684
+    ]
+  }
+]

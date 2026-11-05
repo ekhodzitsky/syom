@@ -1,0 +1,85 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling syn v3.0.4
+   Compiling serde_core v1.0.229
+   Compiling bytemuck v1.25.2
+   Compiling crossbeam-utils v0.8.22
+   Compiling zmij v1.0.23
+   Compiling num-complex v0.4.6
+   Compiling syn v2.0.119
+   Compiling crossbeam-epoch v0.9.20
+   Compiling smallvec v1.16.0
+   Compiling log v0.4.34
+   Compiling serde_json v1.0.151
+   Compiling lazy_static v1.5.0
+   Compiling zerocopy v0.8.56
+   Compiling bitflags v2.13.1
+   Compiling symphonia-core v0.6.1
+   Compiling zerocopy-derive v0.8.56
+   Compiling serde v1.0.229
+   Compiling regex-lite v0.1.9
+   Compiling shlex v2.0.1
+   Compiling itoa v1.0.18
+   Compiling crossbeam-deque v0.8.7
+   Compiling memchr v2.8.3
+   Compiling find-msvc-tools v0.1.12
+   Compiling cc v1.4.5
+   Compiling symphonia-metadata v0.6.1
+   Compiling serde_derive v1.0.229
+   Compiling cfg-if v1.0.4
+   Compiling rayon-core v1.13.0
+   Compiling thiserror v2.0.20
+   Compiling either v1.18.0
+   Compiling libc v0.2.189
+   Compiling half v2.7.1
+   Compiling symphonia-common v0.6.1
+   Compiling alloca v0.4.0
+   Compiling thiserror-impl v2.0.20
+   Compiling clap_lex v1.1.0
+   Compiling regex-syntax v0.8.11
+   Compiling plotters-backend v0.3.7
+   Compiling ciborium-io v0.2.2
+   Compiling anstyle v1.0.14
+   Compiling clap_builder v4.6.6
+   Compiling ciborium-ll v0.2.2
+   Compiling plotters-svg v0.3.7
+   Compiling regex-automata v0.4.18
+   Compiling itertools v0.13.0
+   Compiling cast v0.3.0
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling page_size v0.6.0
+   Compiling rayon v1.12.0
+   Compiling criterion-plot v0.8.2
+   Compiling oxideav-core v0.1.35
+   Compiling regex v1.13.1
+   Compiling plotters v0.3.7
+   Compiling ciborium v0.2.2
+   Compiling clap v4.6.6
+   Compiling symphonia-codec-aac v0.6.1
+   Compiling symphonia-format-isomp4 v0.6.1
+   Compiling tinytemplate v1.2.1
+   Compiling anes v0.1.6
+   Compiling oorandom v11.1.5
+   Compiling criterion v0.8.2
+   Compiling symphonia v0.6.1
+   Compiling oxideav-aac v0.1.7
+   Compiling rusty_aac v0.5.0
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom/target/task145/syom-fft)
+    Finished `release` profile [optimized] target(s) in 2m 33s
+     Running unittests src/lib.rs (target/task145/fft-test-target/release/deps/syom-2523ca3eef46033c)
+
+running 7 tests
+test engine::imdct::imdct_tests::fft_cpu_probe ... ignored, manual TASK-82 transform CPU probe
+test engine::imdct::imdct_tests::declared_x86_minimum_is_sse2 ... ok
+test engine::imdct::imdct_tests::simd_fft_matches_scalar_bits ... ok
+test engine::imdct::imdct_tests::fast_matches_naive_short ... ok
+test engine::imdct::imdct_tests::naive_zero_is_silence ... ok
+test engine::imdct::imdct_tests::fast_matches_naive_long_impulse ... ok
+test engine::golden_tests::sine_lc_matches_naive_imdct_within_1lsb ... ok
+
+test result: ok. 6 passed; 0 failed; 1 ignored; 0 measured; 1184 filtered out; finished in 0.02s
+

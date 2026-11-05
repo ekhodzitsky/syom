@@ -1,0 +1,37 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "0",
+    "python3",
+    "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/scripts/compare-aac-decoders.py",
+    "--base-probe",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe",
+    "--candidate-probe",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate-bin/aac_probe",
+    "--fixtures",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures",
+    "--output",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate/campaign1/decoder-timing.json"
+  ],
+  "timestamp_utc": "2026-11-05T16:04:51.937867+00:00",
+  "cpu": 0,
+  "loadavg_before": [
+    6.27490234375,
+    8.78955078125,
+    8.41748046875
+  ],
+  "variant": "stereo-only adapter specialization",
+  "binary_sha256": {
+    "base": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "candidate": "b124582d1b484cd52c51938180b1e2dbf0b1975d39130d534893fd677576977c"
+  },
+  "exit_code": 1,
+  "seconds": 41.42,
+  "loadavg_after": [
+    6.298828125,
+    8.47119140625,
+    8.32421875
+  ],
+  "finished_utc": "2026-11-05T16:05:33.437638+00:00"
+}

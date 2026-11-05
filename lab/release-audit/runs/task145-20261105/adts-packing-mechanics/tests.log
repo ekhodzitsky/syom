@@ -1,0 +1,9 @@
+
+running 4 tests
+test adapter::worker_packet_tests::test_aac_worker_packet_queue_has_explicit_two_block_bound ... ok
+test adapter::worker_packet_tests::test_aac_worker_packets_keep_first_block_immediate_and_drop_unblocks_sender ... ok
+test adapter::worker_packet_tests::test_aac_worker_packets_flush_completed_blocks_before_typed_error ... ok
+test adapter::worker_packet_tests::test_aac_worker_packets_preserve_odd_even_full_partial_eof ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

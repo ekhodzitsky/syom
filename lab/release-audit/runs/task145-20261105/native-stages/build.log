@@ -1,0 +1,10 @@
+     Locking 3 packages to latest Rust 1.98.1 compatible versions
+ Downgrading audioadapter-buffers v5.2.0 -> v5.1.0 (available: v5.2.0)
+ Downgrading audioadapter-sample v5.2.0 -> v5.1.0 (available: v5.2.0)
+ Downgrading realfft v3.5.1 -> v3.5.0 (available: v3.5.1)
+   Compiling audioadapter-sample v5.1.0
+   Compiling realfft v3.5.0
+   Compiling audioadapter-buffers v5.1.0
+   Compiling rubato v5.0.1
+   Compiling syom-native-stages v0.0.0 (/home/ekhodzitsky/Projects/syom/target/task145/native-stages)
+    Finished `release` profile [optimized] target(s) in 24.35s

@@ -1,0 +1,180 @@
+#![allow(dead_code)]
+use anyhow::Result;
+mod audio {
+    pub const MAX_SAMPLE_RATE:u32=192_000;
+    pub mod stream { #[derive(Clone,Copy)] pub enum ChannelSelect { Mono, One(usize) } }
+    pub mod aac {
+        use syom::{AacError, DecodeOptions, Frame};
+        use super::{MAX_SAMPLE_RATE,stream::ChannelSelect};
+        #[derive(Debug)]
+        enum GigasttError { AudioTooLong { observed_secs:f64, limit_secs:f64 } }
+        impl std::fmt::Display for GigasttError { fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {write!(f,"{self:?}")} }
+        impl std::error::Error for GigasttError {}
+        const BATCH_FRAMES:usize=24*1024;
+        pub struct AacBlock {frames:usize,samples:Vec<f32>,rate:u32,channels:usize}
+        #[path=@@BUFFERED@@] mod buffered;
+        #[path=@@INPUT@@] mod input;
+        #[path=@@PULL@@] mod pull;
+fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
+    match channel {
+        ChannelSelect::One(index) => {
+            if let Some(plane) = frame.planar.get(index) {
+                out.extend_from_slice(plane);
+            }
+        }
+        ChannelSelect::Mono => append_mono_planes(out, frame.planar),
+    }
+}
+
+fn stream_options(max_audio_secs: Option<f64>) -> DecodeOptions {
+    let mut opts = DecodeOptions::unbounded().with_max_sample_rate(MAX_SAMPLE_RATE);
+    if let Some(secs) = max_audio_secs.filter(|secs| secs.is_finite() && *secs > 0.0) {
+        opts = opts.with_max_duration_secs(secs);
+    }
+    opts
+}
+
+fn map_aac(error: AacError) -> anyhow::Error {
+    match error {
+        AacError::TooLong {
+            observed_secs,
+            max_secs,
+        } => GigasttError::AudioTooLong {
+            observed_secs,
+            limit_secs: max_secs,
+        }
+        .into(),
+        other => other.into(),
+    }
+}
+
+// Preserve the existing add-then-divide order, with one output pass for stereo.
+// Unequal planes retain the defensive historical zip behavior.
+fn append_mono_planes(out: &mut Vec<f32>, planes: &[&[f32]]) {
+    if let [left, right] = planes
+        && left.len() == right.len()
+    {
+        out.extend(left.iter().zip(*right).map(|(a, b)| (*a + *b) / 2.0));
+        return;
+    }
+    let Some(first) = planes.first() else { return };
+    let start = out.len();
+    out.extend_from_slice(first);
+    for plane in planes.iter().skip(1) {
+        for (sample, value) in out[start..].iter_mut().zip(plane.iter()) {
+            *sample += value;
+        }
+    }
+    let count = planes.len() as f32;
+    for sample in &mut out[start..] {
+        *sample /= count;
+    }
+}
+
+        pub fn native(path:&str, retain:bool)->anyhow::Result<crate::Native> {
+            let mut reader=input::Reader::File(std::fs::File::open(path)?);
+            let mut pull=Box::new(pull::try_open(&mut reader,ChannelSelect::Mono,None)?.ok_or_else(||anyhow::anyhow!("not M4A pull"))?);
+            let mut result=crate::Native{rate:0,pcm:Vec::with_capacity(49152),geometry:Vec::new()};
+            while let Some(block)=pull.recv()? {
+                result.rate=block.rate;
+                if retain{result.geometry.push(block.samples.len());}
+                result.pcm.extend_from_slice(&block.samples);
+                if !retain&&result.pcm.len()>=49152{std::hint::black_box(&result.pcm);result.pcm.clear();}
+            }
+            Ok(result)
+        }
+    }
+}
+#[path="snapshot/resample_original.rs"] mod resample;
+use std::{alloc::{GlobalAlloc,Layout,System},sync::atomic::{AtomicBool,AtomicU64,Ordering},time::Instant};
+struct Counter;
+static ENABLED:AtomicBool=AtomicBool::new(false);
+static ALLOCS:AtomicU64=AtomicU64::new(0);
+static REALLOCS:AtomicU64=AtomicU64::new(0);
+static BYTES:AtomicU64=AtomicU64::new(0);
+unsafe impl GlobalAlloc for Counter {
+ unsafe fn alloc(&self,l:Layout)->*mut u8 {if ENABLED.load(Ordering::Relaxed){ALLOCS.fetch_add(1,Ordering::Relaxed);BYTES.fetch_add(l.size() as u64,Ordering::Relaxed);} unsafe{System.alloc(l)}}
+ unsafe fn dealloc(&self,p:*mut u8,l:Layout){unsafe{System.dealloc(p,l)}}
+ unsafe fn realloc(&self,p:*mut u8,l:Layout,n:usize)->*mut u8 {if ENABLED.load(Ordering::Relaxed){REALLOCS.fetch_add(1,Ordering::Relaxed);BYTES.fetch_add(n as u64,Ordering::Relaxed);}unsafe{System.realloc(p,l,n)}}
+}
+#[global_allocator] static GLOBAL:Counter=Counter;
+struct Native{rate:u32,pcm:Vec<f32>,geometry:Vec<usize>}
+fn standard(path:&str, retain:bool)->Result<Native>{
+ use anyhow::Context;
+ use symphonia::core::{codecs::audio::AudioDecoderOptions,formats::{FormatOptions,TrackType,probe::Hint},io::MediaSourceStream,meta::MetadataOptions};
+ let mss=MediaSourceStream::new(Box::new(std::fs::File::open(path)?),Default::default());
+ let mut hint=Hint::new(); if let Some(ext)=std::path::Path::new(path).extension().and_then(|s|s.to_str()){hint.with_extension(ext);}
+ let mut format=symphonia::default::get_probe().probe(&hint,mss,FormatOptions::default(),MetadataOptions::default())?;
+ let track=format.default_track(TrackType::Audio).context("no audio")?;
+ let track_id=track.id;
+ let params=track.codec_params.as_ref().and_then(|p|p.audio()).context("no params")?;
+ let rate=params.sample_rate.context("no rate")?;
+ let mut decoder=symphonia::default::get_codecs().make_audio_decoder(params,&AudioDecoderOptions::default())?;
+ let mut result=Native{rate,pcm:Vec::with_capacity(49152),geometry:Vec::new()}; let mut interleaved:Vec<f32>=Vec::new();
+ while let Some(packet)=format.next_packet()? {
+  if packet.track_id!=track_id{continue;}
+  let decoded=decoder.decode(&packet)?;
+  let num_frames=decoded.frames();let ch=decoded.spec().channels().count();
+  if retain{result.geometry.push(num_frames);}
+  let stage=&mut result.pcm;
+  if ch>1 {
+   interleaved.clear();decoded.copy_to_vec_interleaved(&mut interleaved);
+   for frame in 0..num_frames {
+    let mut sum=0.0_f32;
+    for c in 0..ch {sum+=interleaved[frame*ch+c];}
+    stage.push(sum/ch as f32);
+   }
+  }else{
+   let offset=stage.len();stage.resize(offset+num_frames,0.0);decoded.copy_to_slice_interleaved(&mut stage[offset..]);
+  }
+  if !retain&&result.pcm.len()>=49152{std::hint::black_box(&result.pcm);result.pcm.clear();}
+ }
+ Ok(result)
+}
+fn convert(native:&Native,geometry:&[usize])->Result<Vec<f32>> {
+ let mut r=resample::ResampleTo16k::new(resample::SampleRate(native.rate),None);
+ let mut output=Vec::new();let mut at=0;
+ for &size in geometry {
+  let end=(at+size).min(native.pcm.len());
+  r.stage().extend_from_slice(&native.pcm[at..end]);r.flush_full()?;r.drain_ready_into(&mut output);at=end;
+ }
+ if at<native.pcm.len(){r.stage().extend_from_slice(&native.pcm[at..]);r.flush_full()?;r.drain_ready_into(&mut output);}
+ r.finish_into(&mut output)?;Ok(output)
+}
+fn write_pcm(path:&str,pcm:&[f32])->Result<()> {
+ use std::io::Write;
+ let mut file=std::io::BufWriter::new(std::fs::File::create(path)?);
+ for v in pcm{file.write_all(&v.to_le_bytes())?;}file.flush()?;Ok(())
+}
+fn geometry(g:&[usize])->serde_json::Value {
+ let mut chunks=Vec::new();let mut stage=0;for &n in g{stage+=n;if stage>=48000{chunks.push(stage);stage=0;}}
+ if stage>0{chunks.push(stage);}
+ serde_json::json!({"batches":g,"resample_chunks":chunks})
+}
+fn main()->Result<()> {
+ let args:Vec<String>=std::env::args().collect();let mode=&args[1];let path=&args[2];
+ if mode=="verify" {
+  let s=standard(path,true)?;let p=audio::aac::native(path,true)?;
+  write_pcm(&format!("{}.std.native.f32",args[3]),&s.pcm)?;
+  write_pcm(&format!("{}.pull.native.f32",args[3]),&p.pcm)?;
+  let mut result=serde_json::json!({"std":{"rate":s.rate,"samples":s.pcm.len(),"geometry":geometry(&s.geometry)},"pull":{"rate":p.rate,"samples":p.pcm.len(),"geometry":geometry(&p.geometry)}});
+  for (n,pcm) in [("std",&s),("pull",&p)]{for (g,geometry) in [("std",&s.geometry),("pull",&p.geometry)]{
+   let out=convert(pcm,geometry)?;write_pcm(&format!("{}.{n}.{g}.resampled.f32",args[3]),&out)?;result[format!("{n}-{g}")]=serde_json::json!({"samples":out.len()});
+  }}
+  println!("{result}");return Ok(());
+ }
+ let natives=if mode.starts_with("resample-"){Some((standard(path,true)?,audio::aac::native(path,true)?))}else{None};
+ let count_allocs=std::env::var_os("COUNT_ALLOCS").is_some();
+ let mut times=Vec::new();let mut counts=Vec::new();
+ for i in 0..9 {
+  ALLOCS.store(0,Ordering::Relaxed);REALLOCS.store(0,Ordering::Relaxed);BYTES.store(0,Ordering::Relaxed);
+  let start=Instant::now();ENABLED.store(count_allocs,Ordering::Relaxed);
+  if mode=="native-std"{std::hint::black_box(standard(path,false)?);}else if mode=="native-pull"{std::hint::black_box(audio::aac::native(path,false)?);}else{
+   let (s,p)=natives.as_ref().unwrap();let names:Vec<_>=mode.split('-').collect();
+   std::hint::black_box(convert(if names[1]=="std"{s}else{p},if names[2]=="std"{&s.geometry}else{&p.geometry})?);
+  }
+  ENABLED.store(false,Ordering::Relaxed);let ms=start.elapsed().as_secs_f64()*1000.;
+  if i>=2{times.push(ms);counts.push(serde_json::json!({"allocs":ALLOCS.load(Ordering::Relaxed),"reallocs":REALLOCS.load(Ordering::Relaxed),"requested_bytes":BYTES.load(Ordering::Relaxed)}));}
+ }
+ println!("{}",serde_json::json!({"mode":mode,"count_allocs":count_allocs,"samples_ms":times,"allocations":counts}));Ok(())
+}

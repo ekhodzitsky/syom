@@ -1,0 +1,8 @@
+{
+  "source_commit": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "source_path": "crates/gigastt-core/src/inference/audio/resample.rs",
+  "copied_path": "src/resample_original.rs",
+  "sha256": "aed9dce69efc65ee4fae0c8644e38aedff031f68f788fb5c9a5cc3573359e1c3",
+  "license": "MIT; LICENSE.gigastt",
+  "note": "Byte-identical consumer resampler copied for isolated diagnostic reproduction; never linked into syom product crate."
+}

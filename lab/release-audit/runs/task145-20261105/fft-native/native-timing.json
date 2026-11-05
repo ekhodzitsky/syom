@@ -1,0 +1,1247 @@
+{
+  "scope": "Diagnostic upstream AVX512 stages1/2 prototype; exact same native SDK bounded callback, two warmups+7 timed decodes per process;7alternating pairs; allraw retained. No consumer resampler/worker.",
+  "binary_sha256": {
+    "base": "804e5cc8b36b237b7c2d6043b9415e98926c1d8202d88f2bcd8459cbde18c303",
+    "candidate": "e61c5d7b4e2ea025a5b6f419890f0430b412f3d645b744e2c451fc7647a34b52"
+  },
+  "load_before": [
+    7.1337890625,
+    5.689453125,
+    5.29638671875
+  ],
+  "rows": [
+    {
+      "fixture": "speech0.m4a",
+      "pair": 0,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.850975,\"samples_ms\":[0.850975,0.849974,0.881302,0.882244,0.849803,0.862767,0.847418]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.850975,
+        "samples_ms": [
+          0.850975,
+          0.849974,
+          0.881302,
+          0.882244,
+          0.849803,
+          0.862767,
+          0.847418
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 0,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.733225,\"samples_ms\":[0.7410490000000001,0.7552760000000001,0.728606,0.741329,0.726843,0.733225,0.7206009999999999]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.733225,
+        "samples_ms": [
+          0.7410490000000001,
+          0.7552760000000001,
+          0.728606,
+          0.741329,
+          0.726843,
+          0.733225,
+          0.7206009999999999
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 1,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.7302190000000001,\"samples_ms\":[0.735529,0.743384,0.726282,0.726882,0.7243780000000001,0.735348,0.7302190000000001]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.7302190000000001,
+        "samples_ms": [
+          0.735529,
+          0.743384,
+          0.726282,
+          0.726882,
+          0.7243780000000001,
+          0.735348,
+          0.7302190000000001
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 1,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.855774,\"samples_ms\":[0.849803,1.018729,1.063153,0.855774,0.8591799999999999,0.8553229999999999,0.848992]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.855774,
+        "samples_ms": [
+          0.849803,
+          1.018729,
+          1.063153,
+          0.855774,
+          0.8591799999999999,
+          0.8553229999999999,
+          0.848992
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 2,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.867085,\"samples_ms\":[0.887254,0.84818,0.850404,0.955441,0.867085,0.857818,0.8787470000000001]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.867085,
+        "samples_ms": [
+          0.887254,
+          0.84818,
+          0.850404,
+          0.955441,
+          0.867085,
+          0.857818,
+          0.8787470000000001
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 2,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.7314510000000001,\"samples_ms\":[0.737742,0.7300479999999999,0.7314510000000001,0.731552,0.723446,0.7248279999999999,0.7327440000000001]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.7314510000000001,
+        "samples_ms": [
+          0.737742,
+          0.7300479999999999,
+          0.7314510000000001,
+          0.731552,
+          0.723446,
+          0.7248279999999999,
+          0.7327440000000001
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 3,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.7281949999999999,\"samples_ms\":[0.7308209999999999,0.856605,0.7281949999999999,0.722464,0.718507,0.718928,0.74171]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.7281949999999999,
+        "samples_ms": [
+          0.7308209999999999,
+          0.856605,
+          0.7281949999999999,
+          0.722464,
+          0.718507,
+          0.718928,
+          0.74171
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 3,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.8509950000000001,\"samples_ms\":[0.8509950000000001,0.846217,0.873437,0.84777,0.867506,0.847369,0.855804]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.8509950000000001,
+        "samples_ms": [
+          0.8509950000000001,
+          0.846217,
+          0.873437,
+          0.84777,
+          0.867506,
+          0.847369,
+          0.855804
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 4,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.855033,\"samples_ms\":[0.850744,0.8753810000000001,0.845455,0.876012,0.8629479999999999,0.855033,0.845004]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.855033,
+        "samples_ms": [
+          0.850744,
+          0.8753810000000001,
+          0.845455,
+          0.876012,
+          0.8629479999999999,
+          0.855033,
+          0.845004
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 4,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.723286,\"samples_ms\":[0.7269629999999999,0.7269829999999999,0.723286,0.721443,0.718226,0.718938,0.765235]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.723286,
+        "samples_ms": [
+          0.7269629999999999,
+          0.7269829999999999,
+          0.723286,
+          0.721443,
+          0.718226,
+          0.718938,
+          0.765235
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 5,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.7326929999999999,\"samples_ms\":[0.7326929999999999,0.727234,0.740688,0.747972,0.725961,0.737192,0.7257]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.7326929999999999,
+        "samples_ms": [
+          0.7326929999999999,
+          0.727234,
+          0.740688,
+          0.747972,
+          0.725961,
+          0.737192,
+          0.7257
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 5,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.8759020000000001,\"samples_ms\":[0.845736,0.877655,0.846888,0.8993150000000001,1.10931,0.8759020000000001,0.864861]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.8759020000000001,
+        "samples_ms": [
+          0.845736,
+          0.877655,
+          0.846888,
+          0.8993150000000001,
+          1.10931,
+          0.8759020000000001,
+          0.864861
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 6,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.858239,\"samples_ms\":[0.8898079999999999,0.858239,0.867185,0.851026,0.850804,0.848881,0.860203]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.858239,
+        "samples_ms": [
+          0.8898079999999999,
+          0.858239,
+          0.867185,
+          0.851026,
+          0.850804,
+          0.848881,
+          0.860203
+        ]
+      }
+    },
+    {
+      "fixture": "speech0.m4a",
+      "pair": 6,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.728505,\"samples_ms\":[0.740748,0.734136,0.728505,0.726993,0.722685,0.7270329999999999,0.753112]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.728505,
+        "samples_ms": [
+          0.740748,
+          0.734136,
+          0.728505,
+          0.726993,
+          0.722685,
+          0.7270329999999999,
+          0.753112
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 0,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.85883,\"samples_ms\":[0.886582,0.888967,0.85883,0.847248,0.8464269999999999,0.961933,0.84249]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.85883,
+        "samples_ms": [
+          0.886582,
+          0.888967,
+          0.85883,
+          0.847248,
+          0.8464269999999999,
+          0.961933,
+          0.84249
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 0,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.727373,\"samples_ms\":[0.73096,0.729237,0.7263620000000001,0.7272430000000001,0.727373,0.735078,0.725701]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.727373,
+        "samples_ms": [
+          0.73096,
+          0.729237,
+          0.7263620000000001,
+          0.7272430000000001,
+          0.727373,
+          0.735078,
+          0.725701
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 1,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.73113,\"samples_ms\":[0.739807,0.748724,0.723707,0.836959,0.73113,0.727133,0.7243879999999999]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.73113,
+        "samples_ms": [
+          0.739807,
+          0.748724,
+          0.723707,
+          0.836959,
+          0.73113,
+          0.727133,
+          0.7243879999999999
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 1,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.847619,\"samples_ms\":[0.86412,0.8599519999999999,0.843812,0.862086,0.847619,0.839534,0.845074]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.847619,
+        "samples_ms": [
+          0.86412,
+          0.8599519999999999,
+          0.843812,
+          0.862086,
+          0.847619,
+          0.839534,
+          0.845074
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 2,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.857317,\"samples_ms\":[0.8853599999999999,0.857317,0.847309,0.867827,0.8484,0.8653730000000001,0.854101]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.857317,
+        "samples_ms": [
+          0.8853599999999999,
+          0.857317,
+          0.847309,
+          0.867827,
+          0.8484,
+          0.8653730000000001,
+          0.854101
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 2,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.723887,\"samples_ms\":[0.7347779999999999,0.730309,0.7288760000000001,0.723887,0.7198699999999999,0.719048,0.718046]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.723887,
+        "samples_ms": [
+          0.7347779999999999,
+          0.730309,
+          0.7288760000000001,
+          0.723887,
+          0.7198699999999999,
+          0.719048,
+          0.718046
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 3,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.7694620000000001,\"samples_ms\":[0.748964,0.7694620000000001,0.744937,1.02447,1.118377,0.972123,0.746469]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.7694620000000001,
+        "samples_ms": [
+          0.748964,
+          0.7694620000000001,
+          0.744937,
+          1.02447,
+          1.118377,
+          0.972123,
+          0.746469
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 3,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.858139,\"samples_ms\":[0.8462660000000001,0.8783559999999999,0.845315,0.858139,0.935513,0.8893669999999999,0.844233]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.858139,
+        "samples_ms": [
+          0.8462660000000001,
+          0.8783559999999999,
+          0.845315,
+          0.858139,
+          0.935513,
+          0.8893669999999999,
+          0.844233
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 4,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.857337,\"samples_ms\":[0.857337,0.86392,0.843792,0.8659330000000001,0.856265,0.869119,0.8384010000000001]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.857337,
+        "samples_ms": [
+          0.857337,
+          0.86392,
+          0.843792,
+          0.8659330000000001,
+          0.856265,
+          0.869119,
+          0.8384010000000001
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 4,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.724719,\"samples_ms\":[0.733996,0.849221,0.720881,0.724719,0.732232,0.72008,0.717565]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.724719,
+        "samples_ms": [
+          0.733996,
+          0.849221,
+          0.720881,
+          0.724719,
+          0.732232,
+          0.72008,
+          0.717565
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 5,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.719729,\"samples_ms\":[0.730189,0.7159519999999999,0.7267830000000001,0.734206,0.716723,0.7176049999999999,0.719729]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.719729,
+        "samples_ms": [
+          0.730189,
+          0.7159519999999999,
+          0.7267830000000001,
+          0.734206,
+          0.716723,
+          0.7176049999999999,
+          0.719729
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 5,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.8534499999999999,\"samples_ms\":[0.8665539999999999,0.847418,0.8534499999999999,0.852017,0.850164,0.8641089999999999,0.855484]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.8534499999999999,
+        "samples_ms": [
+          0.8665539999999999,
+          0.847418,
+          0.8534499999999999,
+          0.852017,
+          0.850164,
+          0.8641089999999999,
+          0.855484
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 6,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.850594,\"samples_ms\":[0.84288,0.855283,0.850594,0.851847,0.84297,0.8499230000000001,0.887594]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.850594,
+        "samples_ms": [
+          0.84288,
+          0.855283,
+          0.850594,
+          0.851847,
+          0.84297,
+          0.8499230000000001,
+          0.887594
+        ]
+      }
+    },
+    {
+      "fixture": "lc.adts",
+      "pair": 6,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":0.724027,\"samples_ms\":[0.724849,0.717405,0.717475,0.728075,0.724027,0.716072,0.724718]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 0.724027,
+        "samples_ms": [
+          0.724849,
+          0.717405,
+          0.717475,
+          0.728075,
+          0.724027,
+          0.716072,
+          0.724718
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 0,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.632026,\"samples_ms\":[33.632026,32.631009000000006,32.604890999999995,33.652264,33.570952,34.264462,33.887585]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.632026,
+        "samples_ms": [
+          33.632026,
+          32.631009000000006,
+          32.604890999999995,
+          33.652264,
+          33.570952,
+          34.264462,
+          33.887585
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 0,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":28.047697,\"samples_ms\":[28.047697,28.028161,28.622185,27.712228,28.857215,28.379268999999997,27.986663]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 28.047697,
+        "samples_ms": [
+          28.047697,
+          28.028161,
+          28.622185,
+          27.712228,
+          28.857215,
+          28.379268999999997,
+          27.986663
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 1,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":28.524141,\"samples_ms\":[28.220963,28.03275,28.876711,28.332321,28.524141,28.53984,28.752439000000003]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 28.524141,
+        "samples_ms": [
+          28.220963,
+          28.03275,
+          28.876711,
+          28.332321,
+          28.524141,
+          28.53984,
+          28.752439000000003
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 1,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.10061,\"samples_ms\":[32.973111,33.309321000000004,33.10061,33.265479,33.085882,33.005141,33.545503]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.10061,
+        "samples_ms": [
+          32.973111,
+          33.309321000000004,
+          33.10061,
+          33.265479,
+          33.085882,
+          33.005141,
+          33.545503
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 2,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.504897,\"samples_ms\":[33.468669,33.339227,33.698359999999994,34.363928,35.204012999999996,33.432181,33.504897]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.504897,
+        "samples_ms": [
+          33.468669,
+          33.339227,
+          33.698359999999994,
+          34.363928,
+          35.204012999999996,
+          33.432181,
+          33.504897
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 2,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":29.290678,\"samples_ms\":[29.454244,29.080302999999997,29.036471000000002,29.353426,28.757498,29.290678,29.770998]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 29.290678,
+        "samples_ms": [
+          29.454244,
+          29.080302999999997,
+          29.036471000000002,
+          29.353426,
+          28.757498,
+          29.290678,
+          29.770998
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 3,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":29.191281999999998,\"samples_ms\":[28.482573000000002,28.672779,29.149804000000003,29.602913,29.235745,29.655622,29.191281999999998]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 29.191281999999998,
+        "samples_ms": [
+          28.482573000000002,
+          28.672779,
+          29.149804000000003,
+          29.602913,
+          29.235745,
+          29.655622,
+          29.191281999999998
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 3,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":34.070217,\"samples_ms\":[33.935695,34.220469,33.708158000000005,34.212694,34.070217,33.711594999999996,34.083152]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 34.070217,
+        "samples_ms": [
+          33.935695,
+          34.220469,
+          33.708158000000005,
+          34.212694,
+          34.070217,
+          33.711594999999996,
+          34.083152
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 4,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.382388,\"samples_ms\":[34.565616,33.941907,34.342748,33.382388,32.744121,33.174108000000004,32.942683]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.382388,
+        "samples_ms": [
+          34.565616,
+          33.941907,
+          34.342748,
+          33.382388,
+          32.744121,
+          33.174108000000004,
+          32.942683
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 4,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":28.663833,\"samples_ms\":[29.328669,29.394913000000003,28.663833,28.172691999999998,28.478145,29.590119,28.094365]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 28.663833,
+        "samples_ms": [
+          29.328669,
+          29.394913000000003,
+          28.663833,
+          28.172691999999998,
+          28.478145,
+          29.590119,
+          28.094365
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 5,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":28.300541,\"samples_ms\":[27.985431000000002,28.300541,28.019925,28.441817,28.686655,27.944554,28.677038]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 28.300541,
+        "samples_ms": [
+          27.985431000000002,
+          28.300541,
+          28.019925,
+          28.441817,
+          28.686655,
+          27.944554,
+          28.677038
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 5,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.26122,\"samples_ms\":[33.373091,33.156114,33.441389,33.421862,32.80695,33.26122,32.894794]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.26122,
+        "samples_ms": [
+          33.373091,
+          33.156114,
+          33.441389,
+          33.421862,
+          32.80695,
+          33.26122,
+          32.894794
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 6,
+      "mode": "base",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-base",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":33.238458,\"samples_ms\":[33.195508,33.367791000000004,33.238458,33.434556,33.167756,33.075583,33.499117000000005]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 33.238458,
+        "samples_ms": [
+          33.195508,
+          33.367791000000004,
+          33.238458,
+          33.434556,
+          33.167756,
+          33.075583,
+          33.499117000000005
+        ]
+      }
+    },
+    {
+      "fixture": "long-stereo.m4a",
+      "pair": 6,
+      "mode": "candidate",
+      "command": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/fft-target/release/fft-native-candidate",
+        "timing",
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+      ],
+      "exit_code": 0,
+      "stdout": "{\"median_ms\":28.030736,\"samples_ms\":[28.445734,28.030736,28.119401,28.296013,27.751973,27.970794,27.918957000000002]}\n",
+      "stderr": "",
+      "result": {
+        "median_ms": 28.030736,
+        "samples_ms": [
+          28.445734,
+          28.030736,
+          28.119401,
+          28.296013,
+          27.751973,
+          27.970794,
+          27.918957000000002
+        ]
+      }
+    }
+  ],
+  "cpu": 0,
+  "summary": {
+    "speech0.m4a": {
+      "paired_median_ratio": 0.8488369789767186,
+      "pair_ratios": [
+        0.8616293075589765,
+        0.8532848625922265,
+        0.8435747360408726,
+        0.8556983296024064,
+        0.8459158886265208,
+        0.8365011154215881,
+        0.8488369789767186
+      ],
+      "median_process_ms": {
+        "base": 0.855774,
+        "candidate": 0.7302190000000001
+      }
+    },
+    "lc.adts": {
+      "paired_median_ratio": 0.8469347833680706,
+      "pair_ratios": [
+        0.8469347833680706,
+        0.8625691495825364,
+        0.8443632868588864,
+        0.8966635941263597,
+        0.845314036370762,
+        0.8433171246118695,
+        0.8512016308603164
+      ],
+      "median_process_ms": {
+        "base": 0.857317,
+        "candidate": 0.724719
+      }
+    },
+    "long-stereo.m4a": {
+      "paired_median_ratio": 0.856797654091842,
+      "pair_ratios": [
+        0.8339579958697699,
+        0.8617406446588144,
+        0.8742208042006516,
+        0.856797654091842,
+        0.8586513643062325,
+        0.8508569739775028,
+        0.8433223947994218
+      ],
+      "median_process_ms": {
+        "base": 33.382388,
+        "candidate": 28.524141
+      }
+    }
+  },
+  "load_after": [
+    6.72265625,
+    5.6279296875,
+    5.2783203125
+  ],
+  "seconds": 4.23044958000537
+}

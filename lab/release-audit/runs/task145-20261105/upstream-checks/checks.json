@@ -1,0 +1,120 @@
+{
+  "started_utc": "2026-11-05T17:39:43.041438+00:00",
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.15,
+      "log": "0.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "1.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "2.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 8.72,
+      "log": "3.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 52.56,
+      "log": "4.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 1.7,
+      "log": "5.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 27.55,
+      "log": "6.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "lab/consume/gigastt",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.07,
+      "log": "7.log"
+    }
+  ],
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "platform": "Linux x1pro 7.0.0-42-generic #42-Ubuntu SMP PREEMPT_DYNAMIC Thu Oct 15 08:06:44 UTC 2026 x86_64 GNU/Linux\n",
+  "cpu_affinity": "2-7",
+  "finished_utc": "2026-11-05T17:41:16.859183+00:00"
+}

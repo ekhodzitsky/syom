@@ -1,0 +1,76 @@
+[
+  {
+    "label": "baseline",
+    "kind": "strace",
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "strace",
+      "-f",
+      "-c",
+      "-o",
+      "target/task145/adts-handoff-profile/baseline-strace.txt",
+      "target/task145/base-bin/aac_probe",
+      "file",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "0"
+    ],
+    "exit_code": 0
+  },
+  {
+    "label": "baseline",
+    "kind": "time",
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/usr/bin/time",
+      "-v",
+      "-o",
+      "target/task145/adts-handoff-profile/baseline-time.txt",
+      "target/task145/base-bin/aac_probe",
+      "file",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "0"
+    ],
+    "exit_code": 0
+  },
+  {
+    "label": "candidate2",
+    "kind": "strace",
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "strace",
+      "-f",
+      "-c",
+      "-o",
+      "target/task145/adts-handoff-profile/candidate2-strace.txt",
+      "target/task145/candidate2-bin/aac_probe",
+      "file",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "0"
+    ],
+    "exit_code": 0
+  },
+  {
+    "label": "candidate2",
+    "kind": "time",
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/usr/bin/time",
+      "-v",
+      "-o",
+      "target/task145/adts-handoff-profile/candidate2-time.txt",
+      "target/task145/candidate2-bin/aac_probe",
+      "file",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "0"
+    ],
+    "exit_code": 0
+  }
+]

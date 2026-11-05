@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - Unreleased
+
+### Changed
+
+- Vectorize the first two radix-2 FFT stages on x86 AVX-512 while preserving
+  the existing scalar multiplication, addition and subtraction order. Local
+  native-decoder comparisons retain identical PCM bits and presentation geometry;
+  this candidate has not been published.
+
+### Added
+
+- Reproducible gigastt adapter profiling and independently validated HTTP
+  presentation references for local decoder and load qualification, plus a
+  downstream bounded M4A pull/buffering patch and HE/PS cold-stack regressions.
+  These evaluation tools do not change the published codec implementation.
+
 ## [0.10.0] - 2026-11-04
 
 ### Added

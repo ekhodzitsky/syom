@@ -1,0 +1,14 @@
+[package]
+name="syom-pull-stack-proof"
+version="0.0.0"
+edition="2024"
+publish=false
+[workspace]
+[dependencies]
+syom={path="../../.."}
+anyhow="1"
+bytes="1"
+[profile.release]
+lto=true
+codegen-units=1
+opt-level=3

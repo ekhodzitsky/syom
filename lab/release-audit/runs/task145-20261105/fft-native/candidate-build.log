@@ -1,0 +1,4 @@
+     Locking 1 package to latest compatible version
+   Compiling syom v0.10.0 (/home/ekhodzitsky/Projects/syom/target/task145/syom-fft)
+   Compiling fft-native-candidate v0.0.0 (/home/ekhodzitsky/Projects/syom/target/task145/fft-native/candidate)
+    Finished `release` profile [optimized] target(s) in 14.90s

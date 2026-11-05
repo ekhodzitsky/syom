@@ -1,0 +1,1 @@
+error: package collision in the lockfile: packages syom v0.10.0 (/home/ekhodzitsky/Projects/syom) and syom v0.10.0 (/home/ekhodzitsky/Projects/syom/target/task145/syom-fft) are different, but only one can be written to lockfile unambiguously

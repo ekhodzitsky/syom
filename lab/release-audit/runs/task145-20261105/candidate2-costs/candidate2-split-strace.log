@@ -1,0 +1,8 @@
+{"detail":null,"mode":"split","peak_rss_kib":44316,"planes":[{"energy":199.2543350445054,"finite":true,"samples":1279999},{"energy":199.25433506920876,"finite":true,"samples":1279999}],"seconds":[0.106539638]}
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 98.21    0.000329          17        19           read
+  1.49    0.000005           2         2           lseek
+  0.30    0.000001           1         1           futex
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.000335          15        22           total

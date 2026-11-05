@@ -1,0 +1,1 @@
+PASS stack_bytes=131072 fixture=/home/ekhodzitsky/Projects/syom/src/goldens/ps48.m4a reader=file blocks=2 samples=51136 bit_differences=0

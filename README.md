@@ -12,8 +12,13 @@ directly to your application at the native sample rate.
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
-Version **0.10.0** adds qualified persistent LC state and strict M4A
+Published **0.10.0** adds qualified persistent LC state and strict M4A
 completion; see the [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
+
+This checkout is **0.10.1, an unpublished performance candidate** with an
+x86 AVX-512 FFT optimization. Local qualification and consumer results are
+recorded in the [candidate evaluation](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/TASK145.md);
+the registry quick start below remains on published 0.10.0.
 
 ## Quick start
 

@@ -1,0 +1,336 @@
+
+target/task145/direct-target/release/syom-direct-attribution:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000d90c0 <syom::engine::imdct::avx512k::ifft_stages_avx512>:
+   d90c0:	push   %rbp
+   d90c1:	push   %r15
+   d90c3:	push   %r14
+   d90c5:	push   %r13
+   d90c7:	push   %r12
+   d90c9:	push   %rbx
+   d90ca:	mov    %rsi,-0x8(%rsp)
+   d90cf:	cmp    $0x2,%rsi
+   d90d3:	jae    d90e3 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x23>
+   d90d5:	pop    %rbx
+   d90d6:	pop    %r12
+   d90d8:	pop    %r13
+   d90da:	pop    %r14
+   d90dc:	pop    %r15
+   d90de:	pop    %rbp
+   d90df:	vzeroupper
+   d90e2:	ret
+   d90e3:	mov    %rdx,%r11
+   d90e6:	mov    %rdi,%rcx
+   d90e9:	mov    0x38(%rsp),%rax
+   d90ee:	mov    $0x2,%esi
+   d90f3:	xor    %edx,%edx
+   d90f5:	vmovdqa -0xced5d(%rip),%ymm0        # a3a0 <__abi_tag+0xa0a4>
+   d90fd:	vpbroadcastq -0xd13fe(%rip),%ymm1        # 7d08 <__abi_tag+0x7a0c>
+   d9106:	vmovdqa64 -0xcf010(%rip),%zmm2        # a100 <__abi_tag+0x9e04>
+   d9110:	vmovdqa64 -0xcefda(%rip),%zmm3        # a140 <__abi_tag+0x9e44>
+   d911a:	vpbroadcastq -0xd1404(%rip),%zmm4        # 7d20 <__abi_tag+0x7a24>
+   d9124:	mov    %r8,-0x18(%rsp)
+   d9129:	jmp    d9151 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x91>
+   d912b:	nopl   0x0(%rax,%rax,1)
+   d9130:	mov    -0x28(%rsp),%rdx
+   d9135:	add    %rbx,%rdx
+   d9138:	mov    -0x10(%rsp),%rax
+   d913d:	mov    %rax,%rsi
+   d9140:	cmp    -0x8(%rsp),%rax
+   d9145:	mov    0x38(%rsp),%rax
+   d914a:	mov    -0x18(%rsp),%r8
+   d914f:	ja     d90d5 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x15>
+   d9151:	mov    %rsi,%rbx
+   d9154:	shr    $1,%rbx
+   d9157:	lea    0x0(,%rsi,4),%r10
+   d915f:	lea    (%rsi,%rsi,1),%rdi
+   d9163:	mov    %rdi,-0x10(%rsp)
+   d9168:	lea    (%rax,%rdx,4),%r15
+   d916c:	mov    %rdx,-0x28(%rsp)
+   d9171:	lea    (%r8,%rdx,4),%r12
+   d9175:	lea    (%r11,%rbx,4),%r13
+   d9179:	lea    (%rcx,%rbx,4),%rbp
+   d917d:	mov    %rcx,%rdi
+   d9180:	mov    %r11,%rdx
+   d9183:	xor    %r8d,%r8d
+   d9186:	xor    %r14d,%r14d
+   d9189:	mov    %rsi,-0x38(%rsp)
+   d918e:	mov    %r10,-0x40(%rsp)
+   d9193:	jmp    d91bd <syom::engine::imdct::avx512k::ifft_stages_avx512+0xfd>
+   d9195:	data16 cs nopw 0x0(%rax,%rax,1)
+   d91a0:	add    %rsi,%r14
+   d91a3:	inc    %r8
+   d91a6:	add    %r10,%rdx
+   d91a9:	add    %r10,%rdi
+   d91ac:	add    %r10,%r13
+   d91af:	add    %r10,%rbp
+   d91b2:	cmp    -0x8(%rsp),%r14
+   d91b7:	jae    d9130 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x70>
+   d91bd:	cmp    $0x20,%rsi
+   d91c1:	jae    d91d0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x110>
+   d91c3:	xor    %eax,%eax
+   d91c5:	jmp    d927a <syom::engine::imdct::avx512k::ifft_stages_avx512+0x1ba>
+   d91ca:	nopw   0x0(%rax,%rax,1)
+   d91d0:	xor    %r9d,%r9d
+   d91d3:	data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   d91e0:	vmovups (%r12,%r9,4),%zmm5
+   d91e7:	vmovups (%r15,%r9,4),%zmm6
+   d91ee:	vmovups 0x0(%rbp,%r9,4),%zmm7
+   d91f6:	vmovups 0x0(%r13,%r9,4),%zmm8
+   d91fe:	vmulps %zmm7,%zmm5,%zmm9
+   d9204:	vmulps %zmm8,%zmm6,%zmm10
+   d920a:	vsubps %zmm10,%zmm9,%zmm9
+   d9210:	vmulps %zmm8,%zmm5,%zmm5
+   d9216:	vmulps %zmm7,%zmm6,%zmm6
+   d921c:	vaddps %zmm5,%zmm6,%zmm5
+   d9222:	vmovups (%rdi,%r9,4),%zmm6
+   d9229:	vmovups (%rdx,%r9,4),%zmm7
+   d9230:	vsubps %zmm9,%zmm6,%zmm8
+   d9236:	vmovups %zmm8,0x0(%rbp,%r9,4)
+   d923e:	vsubps %zmm5,%zmm7,%zmm8
+   d9244:	vmovups %zmm8,0x0(%r13,%r9,4)
+   d924c:	vaddps %zmm9,%zmm6,%zmm6
+   d9252:	vmovups %zmm6,(%rdi,%r9,4)
+   d9259:	vaddps %zmm5,%zmm7,%zmm5
+   d925f:	vmovups %zmm5,(%rdx,%r9,4)
+   d9266:	lea    0x10(%r9),%rax
+   d926a:	add    $0x20,%r9
+   d926e:	cmp    %rbx,%r9
+   d9271:	mov    %rax,%r9
+   d9274:	jbe    d91e0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x120>
+   d927a:	mov    %rax,%r9
+   d927d:	or     $0x8,%r9
+   d9281:	cmp    %rbx,%r9
+   d9284:	ja     d9304 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x244>
+   d928a:	nopw   0x0(%rax,%rax,1)
+   d9290:	vmovups (%r12,%rax,4),%ymm5
+   d9296:	vmovups (%r15,%rax,4),%ymm6
+   d929c:	vmovups 0x0(%rbp,%rax,4),%ymm7
+   d92a2:	vmovups 0x0(%r13,%rax,4),%ymm8
+   d92a9:	vmulps %ymm7,%ymm5,%ymm9
+   d92ad:	vmulps %ymm6,%ymm8,%ymm10
+   d92b1:	vsubps %ymm10,%ymm9,%ymm9
+   d92b6:	vmulps %ymm5,%ymm8,%ymm5
+   d92ba:	vmulps %ymm7,%ymm6,%ymm6
+   d92be:	vaddps %ymm5,%ymm6,%ymm5
+   d92c2:	vmovups (%rdi,%rax,4),%ymm6
+   d92c7:	vmovups (%rdx,%rax,4),%ymm7
+   d92cc:	vsubps %ymm9,%ymm6,%ymm8
+   d92d1:	vmovups %ymm8,0x0(%rbp,%rax,4)
+   d92d7:	vsubps %ymm5,%ymm7,%ymm8
+   d92db:	vmovups %ymm8,0x0(%r13,%rax,4)
+   d92e2:	vaddps %ymm6,%ymm9,%ymm6
+   d92e6:	vmovups %ymm6,(%rdi,%rax,4)
+   d92eb:	vaddps %ymm5,%ymm7,%ymm5
+   d92ef:	vmovups %ymm5,(%rdx,%rax,4)
+   d92f4:	lea    0x8(%rax),%r9
+   d92f8:	add    $0x10,%rax
+   d92fc:	cmp    %rbx,%rax
+   d92ff:	mov    %r9,%rax
+   d9302:	jbe    d9290 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x1d0>
+   d9304:	lea    0x4(%rax),%r9
+   d9308:	cmp    %rbx,%r9
+   d930b:	ja     d9384 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x2c4>
+   d930d:	nopl   (%rax)
+   d9310:	vmovups (%r12,%rax,4),%xmm5
+   d9316:	vmovups (%r15,%rax,4),%xmm6
+   d931c:	vmovups 0x0(%rbp,%rax,4),%xmm7
+   d9322:	vmovups 0x0(%r13,%rax,4),%xmm8
+   d9329:	vmulps %xmm7,%xmm5,%xmm9
+   d932d:	vmulps %xmm6,%xmm8,%xmm10
+   d9331:	vsubps %xmm10,%xmm9,%xmm9
+   d9336:	vmulps %xmm5,%xmm8,%xmm5
+   d933a:	vmulps %xmm7,%xmm6,%xmm6
+   d933e:	vaddps %xmm5,%xmm6,%xmm5
+   d9342:	vmovups (%rdi,%rax,4),%xmm6
+   d9347:	vmovups (%rdx,%rax,4),%xmm7
+   d934c:	vsubps %xmm9,%xmm6,%xmm8
+   d9351:	vmovups %xmm8,0x0(%rbp,%rax,4)
+   d9357:	vsubps %xmm5,%xmm7,%xmm8
+   d935b:	vmovups %xmm8,0x0(%r13,%rax,4)
+   d9362:	vaddps %xmm6,%xmm9,%xmm6
+   d9366:	vmovups %xmm6,(%rdi,%rax,4)
+   d936b:	vaddps %xmm5,%xmm7,%xmm5
+   d936f:	vmovups %xmm5,(%rdx,%rax,4)
+   d9374:	lea    0x4(%rax),%r9
+   d9378:	add    $0x8,%rax
+   d937c:	cmp    %rbx,%rax
+   d937f:	mov    %r9,%rax
+   d9382:	jbe    d9310 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x250>
+   d9384:	mov    %rbx,%r9
+   d9387:	sub    %rax,%r9
+   d938a:	jbe    d91a0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0xe0>
+   d9390:	cmp    $0x4,%r9
+   d9394:	jb     d9660 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x5a0>
+   d939a:	mov    %r9,-0x48(%rsp)
+   d939f:	mov    %r8,%rsi
+   d93a2:	lea    (%rbx,%r14,1),%r9
+   d93a6:	mov    %r14,%r8
+   d93a9:	mov    %r10,%r14
+   d93ac:	mov    %rsi,-0x30(%rsp)
+   d93b1:	imul   %rsi,%r14
+   d93b5:	add    %r14,%r10
+   d93b8:	lea    (%rcx,%r10,1),%rsi
+   d93bc:	mov    %rsi,-0x20(%rsp)
+   d93c1:	add    -0x10(%rsp),%r14
+   d93c6:	lea    (%rcx,%r14,1),%rsi
+   d93ca:	mov    %rsi,-0x50(%rsp)
+   d93cf:	add    %r11,%r10
+   d93d2:	add    %r11,%r14
+   d93d5:	add    %rax,%r9
+   d93d8:	lea    (%rcx,%r9,4),%rsi
+   d93dc:	cmp    -0x50(%rsp),%rsi
+   d93e1:	mov    %r8,-0x50(%rsp)
+   d93e6:	lea    (%rax,%r8,1),%rsi
+   d93ea:	lea    (%rcx,%rsi,4),%r8
+   d93ee:	setb   -0x51(%rsp)
+   d93f3:	cmp    -0x20(%rsp),%r8
+   d93f8:	lea    (%r11,%r9,4),%r9
+   d93fc:	setb   %r8b
+   d9400:	cmp    %r14,%r9
+   d9403:	lea    (%r11,%rsi,4),%r14
+   d9407:	setb   %r9b
+   d940b:	cmp    %r10,%r14
+   d940e:	setb   %r14b
+   d9412:	test   %r8b,-0x51(%rsp)
+   d9417:	jne    d943a <syom::engine::imdct::avx512k::ifft_stages_avx512+0x37a>
+   d9419:	and    %r14b,%r9b
+   d941c:	jne    d943a <syom::engine::imdct::avx512k::ifft_stages_avx512+0x37a>
+   d941e:	vmovq  -0x50(%rsp),%xmm5
+   d9424:	mov    -0x48(%rsp),%r9
+   d9429:	cmp    $0x10,%r9
+   d942d:	jae    d9453 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x393>
+   d942f:	xor    %r9d,%r9d
+   d9432:	mov    %rax,%r8
+   d9435:	jmp    d9565 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x4a5>
+   d943a:	mov    -0x38(%rsp),%rsi
+   d943f:	mov    -0x40(%rsp),%r10
+   d9444:	mov    -0x30(%rsp),%r8
+   d9449:	mov    -0x50(%rsp),%r14
+   d944e:	jmp    d9660 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x5a0>
+   d9453:	movabs $0x7ffffffffffffff0,%rsi
+   d945d:	and    %rsi,%r9
+   d9460:	vpbroadcastq %rax,%zmm7
+   d9466:	vpaddq %zmm2,%zmm7,%zmm6
+   d946c:	vpaddq %zmm3,%zmm7,%zmm7
+   d9472:	mov    %r9,%r14
+   d9475:	mov    -0x28(%rsp),%r8
+   d947a:	nopw   0x0(%rax,%rax,1)
+   d9480:	vmovq  %xmm7,%rsi
+   d9485:	add    %r8,%rsi
+   d9488:	mov    -0x18(%rsp),%r10
+   d948d:	vmovups (%r10,%rsi,4),%zmm8
+   d9494:	mov    0x38(%rsp),%r10
+   d9499:	vmovups (%r10,%rsi,4),%zmm9
+   d94a0:	vpaddq %xmm5,%xmm7,%xmm10
+   d94a4:	vmovq  %xmm10,%rsi
+   d94a9:	lea    (%rsi,%rbx,1),%r10
+   d94ad:	vmovups (%rcx,%r10,4),%zmm10
+   d94b4:	vmovups (%r11,%r10,4),%zmm11
+   d94bb:	vmovups (%rcx,%rsi,4),%zmm12
+   d94c2:	vmovups (%r11,%rsi,4),%zmm13
+   d94c9:	vmulps %zmm10,%zmm8,%zmm14
+   d94cf:	vmulps %zmm11,%zmm9,%zmm15
+   d94d5:	vsubps %zmm15,%zmm14,%zmm14
+   d94db:	vmulps %zmm11,%zmm8,%zmm8
+   d94e1:	vmulps %zmm10,%zmm9,%zmm9
+   d94e7:	vaddps %zmm8,%zmm9,%zmm8
+   d94ed:	vsubps %zmm14,%zmm12,%zmm9
+   d94f3:	vmovups %zmm9,(%rcx,%r10,4)
+   d94fa:	vsubps %zmm8,%zmm13,%zmm9
+   d9500:	vmovups %zmm9,(%r11,%r10,4)
+   d9507:	vaddps %zmm14,%zmm12,%zmm9
+   d950d:	vmovups %zmm9,(%rcx,%rsi,4)
+   d9514:	vaddps %zmm8,%zmm13,%zmm8
+   d951a:	vmovups %zmm8,(%r11,%rsi,4)
+   d9521:	vpaddq %zmm4,%zmm7,%zmm7
+   d9527:	vpaddq %zmm4,%zmm6,%zmm6
+   d952d:	add    $0xfffffffffffffff0,%r14
+   d9531:	jne    d9480 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x3c0>
+   d9537:	cmp    %r9,-0x48(%rsp)
+   d953c:	mov    -0x38(%rsp),%rsi
+   d9541:	mov    -0x40(%rsp),%r10
+   d9546:	mov    -0x30(%rsp),%r8
+   d954b:	mov    -0x50(%rsp),%r14
+   d9550:	je     d91a0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0xe0>
+   d9556:	testb  $0xc,-0x48(%rsp)
+   d955b:	je     d96d2 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x612>
+   d9561:	lea    (%rax,%r9,1),%r8
+   d9565:	movabs $0x7ffffffffffffff0,%rsi
+   d956f:	add    $0xc,%rsi
+   d9573:	and    -0x48(%rsp),%rsi
+   d9578:	add    %rsi,%rax
+   d957b:	vmovq  %r8,%xmm6
+   d9580:	vpbroadcastq %xmm6,%ymm6
+   d9585:	vpaddq %ymm0,%ymm6,%ymm6
+   d9589:	mov    %rsi,-0x20(%rsp)
+   d958e:	sub    %rsi,%r9
+   d9591:	mov    -0x28(%rsp),%rsi
+   d9596:	mov    -0x18(%rsp),%r8
+   d959b:	nopl   0x0(%rax,%rax,1)
+   d95a0:	vmovq  %xmm6,%r10
+   d95a5:	add    %rsi,%r10
+   d95a8:	vmovups (%r8,%r10,4),%xmm7
+   d95ae:	mov    0x38(%rsp),%r14
+   d95b3:	vmovups (%r14,%r10,4),%xmm8
+   d95b9:	vpaddq %xmm5,%xmm6,%xmm9
+   d95bd:	vmovq  %xmm9,%r14
+   d95c2:	lea    (%r14,%rbx,1),%r10
+   d95c6:	vmovups (%rcx,%r10,4),%xmm9
+   d95cc:	vmovups (%r11,%r10,4),%xmm10
+   d95d2:	vmovups (%rcx,%r14,4),%xmm11
+   d95d8:	vmovups (%r11,%r14,4),%xmm12
+   d95de:	vmulps %xmm7,%xmm9,%xmm13
+   d95e2:	vmulps %xmm10,%xmm8,%xmm14
+   d95e7:	vsubps %xmm14,%xmm13,%xmm13
+   d95ec:	vmulps %xmm7,%xmm10,%xmm7
+   d95f0:	vmulps %xmm9,%xmm8,%xmm8
+   d95f5:	vaddps %xmm7,%xmm8,%xmm7
+   d95f9:	vsubps %xmm13,%xmm11,%xmm8
+   d95fe:	vmovups %xmm8,(%rcx,%r10,4)
+   d9604:	vsubps %xmm7,%xmm12,%xmm8
+   d9608:	vmovups %xmm8,(%r11,%r10,4)
+   d960e:	vaddps %xmm13,%xmm11,%xmm8
+   d9613:	vmovups %xmm8,(%rcx,%r14,4)
+   d9619:	vaddps %xmm7,%xmm12,%xmm7
+   d961d:	vmovups %xmm7,(%r11,%r14,4)
+   d9623:	vpaddq %ymm1,%ymm6,%ymm6
+   d9627:	add    $0x4,%r9
+   d962b:	jne    d95a0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x4e0>
+   d9631:	mov    -0x20(%rsp),%rsi
+   d9636:	cmp    %rsi,-0x48(%rsp)
+   d963b:	mov    -0x38(%rsp),%rsi
+   d9640:	mov    -0x40(%rsp),%r10
+   d9645:	mov    -0x30(%rsp),%r8
+   d964a:	mov    -0x50(%rsp),%r14
+   d964f:	je     d91a0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0xe0>
+   d9655:	data16 cs nopw 0x0(%rax,%rax,1)
+   d9660:	vmovss (%r12,%rax,4),%xmm5
+   d9666:	vmovss (%r15,%rax,4),%xmm6
+   d966c:	vmovss 0x0(%rbp,%rax,4),%xmm7
+   d9672:	vmovss 0x0(%r13,%rax,4),%xmm8
+   d9679:	vmovss (%rdi,%rax,4),%xmm9
+   d967e:	vmovss (%rdx,%rax,4),%xmm10
+   d9683:	vmulss %xmm7,%xmm5,%xmm11
+   d9687:	vmulss %xmm6,%xmm8,%xmm12
+   d968b:	vsubss %xmm12,%xmm11,%xmm11
+   d9690:	vmulss %xmm5,%xmm8,%xmm5
+   d9694:	vmulss %xmm7,%xmm6,%xmm6
+   d9698:	vaddss %xmm5,%xmm6,%xmm5
+   d969c:	vsubss %xmm11,%xmm9,%xmm6
+   d96a1:	vmovss %xmm6,0x0(%rbp,%rax,4)
+   d96a7:	vsubss %xmm5,%xmm10,%xmm6
+   d96ab:	vmovss %xmm6,0x0(%r13,%rax,4)
+   d96b2:	vaddss %xmm11,%xmm9,%xmm6
+   d96b7:	vmovss %xmm6,(%rdi,%rax,4)
+   d96bc:	vaddss %xmm5,%xmm10,%xmm5
+   d96c0:	vmovss %xmm5,(%rdx,%rax,4)
+   d96c5:	inc    %rax
+   d96c8:	cmp    %rax,%rbx
+   d96cb:	jne    d9660 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x5a0>
+   d96cd:	jmp    d91a0 <syom::engine::imdct::avx512k::ifft_stages_avx512+0xe0>
+   d96d2:	add    %r9,%rax
+   d96d5:	jmp    d9660 <syom::engine::imdct::avx512k::ifft_stages_avx512+0x5a0>

@@ -1,0 +1,8 @@
+{
+  "old_source_sha256": "78f79c39e67f124348fe545348f4ff2311be2cbf99cb7240613f8fc85f8342d4",
+  "reconstructed_old_source_sha256": "78f79c39e67f124348fe545348f4ff2311be2cbf99cb7240613f8fc85f8342d4",
+  "current_source_sha256": "d717217533d26e1f45eb3d4cc3ee0d34072e1e1244a54b62f41e8d9098486b04",
+  "production_prefix_sha256": "cff0c14e7f530f2843c98440d8a0b30f3dcaf7624f942dd37e999bc15a1ffffd",
+  "production_unchanged": true,
+  "change": "Only cfg(test) budget assertion replaced by public File/Bytes AudioTooLong contract checks; old implementation never promised open-time duration rejection."
+}

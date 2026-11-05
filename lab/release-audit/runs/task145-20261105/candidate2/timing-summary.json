@@ -1,0 +1,194 @@
+{
+  "campaign1": {
+    "exit_code": 1,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.0494915696369564,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15972,
+          "candidate": 14408
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3409,
+          "candidate": 4.5326
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.0407761320002946,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15944,
+          "candidate": 14400
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3689,
+          "candidate": 4.5174
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0735038439189373,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 15592,
+          "candidate": 14700
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3441,
+          "candidate": 4.6476
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0783399720899003,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 26288,
+          "candidate": 25132
+        },
+        "all_decodes_median_ms": {
+          "base": 61.5933,
+          "candidate": 66.4796
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 1.0165022571043674,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 37132,
+          "candidate": 54276
+        },
+        "all_decodes_median_ms": {
+          "base": 101.2116,
+          "candidate": 102.7686
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 1.0158985370738092,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 17568,
+          "candidate": 16212
+        },
+        "all_decodes_median_ms": {
+          "base": 103.5561,
+          "candidate": 104.6534
+        }
+      }
+    },
+    "loadavg_before": [
+      4.2685546875,
+      6.103515625,
+      6.3095703125
+    ],
+    "loadavg_after": [
+      3.5986328125,
+      5.74072265625,
+      6.1796875
+    ],
+    "top_processes_before": [
+      "    PID    PPID PSR %CPU COMMAND         COMMAND",
+      "3052077 3052075   1  100 ps              ps -eo pid,ppid,psr,pcpu,comm,args --sort=-pcpu",
+      "3052075  651874  23 81.2 python3         python3 target/task145/run-candidate2-campaigns.py",
+      " 778166   10184   2 63.6 python3         /usr/bin/python3 -B /home/ekhodzitsky/Projects/job-search/tools/semantic_index.py --root /home/ekhodzitsky/Projects/job-search watch",
+      "  15100   14488  18 35.6 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=renderer --crashpad-handler-pid=14704 --enable-crash-reporter=19dd1ef5-a086-4c60-bf52-0d3745c9d1bf,no_channel --user-data-dir=/home/ekhodzitsky/.config/orca --standard-schemes=orca-preview,orca-media,orca-jira-image --secure-schemes=orca-preview,orca-media,orca-jira-image --cors-schemes=orca-preview --fetch-schemes=orca-preview --streaming-schemes=orca-preview,orca-media,orca-jira-image --app-path=/tmp/.mount_orca-lFKfEDk/resources/app.asar --enable-sandbox --no-sandbox --max-active-webgl-contexts=128 --js-flags=--max-old-space-size=4096 --ozone-platform=wayland --lang=ru --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1793779237897500 --launch-time-ticks=56743427 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,12975307048508890241,4577397057869736256,262144 --enable-features=GlobalShortcutsPortalPreferredTrigger,PdfUseShowSaveFilePicker --disable-features=DirectSockets,DirectSocketsInServiceWorkers,DirectSocketsInSharedWorkers,DropInputEventsWhilePaintHolding,FedCm,IntensiveWakeUpThrottling,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=7,i,12864284276214739689,11303058099160800768,4 --trace-process-track-uuid=3190708990060038890 --orca-browser-client-host-id=9724c8de-4bc3-4932-bf6a-d0fff42122da",
+      "2578159   15780   6  5.9 Isolated Web Co /snap/firefox/8995/usr/lib/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:50741 -prefMapHandle 1:296899 -jsInitHandle 2:162336 -parentBuildID 20260925125819 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {2b77f298-360b-420b-87dd-6a588a9897e2} -parentPid 14845 -crashHelperPid 15220 -crashHelper 6 -crashReporter 7 -greomni /snap/firefox/8995/usr/lib/firefox/omni.ja -appomni /snap/firefox/8995/usr/lib/firefox/browser/omni.ja -appDir /snap/firefox/8995/usr/lib/firefox/browser 766 tab",
+      "  14470   10745  18  4.4 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --no-sandbox"
+    ]
+  },
+  "campaign2": {
+    "exit_code": 1,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.0481324979357909,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15940,
+          "candidate": 14344
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3664,
+          "candidate": 4.527
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.0457161086009594,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15896,
+          "candidate": 14344
+        },
+        "all_decodes_median_ms": {
+          "base": 4.2943,
+          "candidate": 4.4766
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0698853541035975,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 15532,
+          "candidate": 14776
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3058,
+          "candidate": 4.6126
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0958587426624227,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 26268,
+          "candidate": 25088
+        },
+        "all_decodes_median_ms": {
+          "base": 62.2611,
+          "candidate": 68.0404
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 1.0260438194498929,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 36768,
+          "candidate": 54316
+        },
+        "all_decodes_median_ms": {
+          "base": 102.311,
+          "candidate": 105.2475
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 1.008809497562604,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 17608,
+          "candidate": 16268
+        },
+        "all_decodes_median_ms": {
+          "base": 105.2025,
+          "candidate": 105.6257
+        }
+      }
+    },
+    "loadavg_before": [
+      3.5986328125,
+      5.74072265625,
+      6.1796875
+    ],
+    "loadavg_after": [
+      4.14111328125,
+      5.6416015625,
+      6.13037109375
+    ],
+    "top_processes_before": [
+      "    PID    PPID PSR %CPU COMMAND         COMMAND",
+      " 778166   10184  15 63.6 python3         /usr/bin/python3 -B /home/ekhodzitsky/Projects/job-search/tools/semantic_index.py --root /home/ekhodzitsky/Projects/job-search watch",
+      "  15100   14488  18 35.6 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=renderer --crashpad-handler-pid=14704 --enable-crash-reporter=19dd1ef5-a086-4c60-bf52-0d3745c9d1bf,no_channel --user-data-dir=/home/ekhodzitsky/.config/orca --standard-schemes=orca-preview,orca-media,orca-jira-image --secure-schemes=orca-preview,orca-media,orca-jira-image --cors-schemes=orca-preview --fetch-schemes=orca-preview --streaming-schemes=orca-preview,orca-media,orca-jira-image --app-path=/tmp/.mount_orca-lFKfEDk/resources/app.asar --enable-sandbox --no-sandbox --max-active-webgl-contexts=128 --js-flags=--max-old-space-size=4096 --ozone-platform=wayland --lang=ru --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=4 --time-ticks-at-unix-epoch=-1793779237897500 --launch-time-ticks=56743427 --shared-files=v8_context_snapshot_data:100 --field-trial-handle=3,i,12975307048508890241,4577397057869736256,262144 --enable-features=GlobalShortcutsPortalPreferredTrigger,PdfUseShowSaveFilePicker --disable-features=DirectSockets,DirectSocketsInServiceWorkers,DirectSocketsInSharedWorkers,DropInputEventsWhilePaintHolding,FedCm,IntensiveWakeUpThrottling,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=7,i,12864284276214739689,11303058099160800768,4 --trace-process-track-uuid=3190708990060038890 --orca-browser-client-host-id=9724c8de-4bc3-4932-bf6a-d0fff42122da",
+      "2578159   15780   8  5.9 Isolated Web Co /snap/firefox/8995/usr/lib/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:50741 -prefMapHandle 1:296899 -jsInitHandle 2:162336 -parentBuildID 20260925125819 -sandboxReporter 3 -chrootClient 4 -ipcHandle 5 -initialChannelId {2b77f298-360b-420b-87dd-6a588a9897e2} -parentPid 14845 -crashHelperPid 15220 -crashHelper 6 -crashReporter 7 -greomni /snap/firefox/8995/usr/lib/firefox/omni.ja -appomni /snap/firefox/8995/usr/lib/firefox/browser/omni.ja -appDir /snap/firefox/8995/usr/lib/firefox/browser 766 tab",
+      "  14470   10745  19  4.4 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --no-sandbox",
+      "  14836   14470  18  4.4 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=gpu-process --disable-gpu-sandbox --no-sandbox --ozone-platform=wayland --render-node-override=/dev/dri/renderD128 --crashpad-handler-pid=14704 --enable-crash-reporter=19dd1ef5-a086-4c60-bf52-0d3745c9d1bf,no_channel --user-data-dir=/home/ekhodzitsky/.config/orca --gpu-preferences=WAAAAAAAAAAgAQAEAAAAAAAAAAAAAGAAQAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAACAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAACAAAAAAAAAAIAAAAAAAAAA== --shared-files --field-trial-handle=3,i,12975307048508890241,4577397057869736256,262144 --enable-features=GlobalShortcutsPortalPreferredTrigger,PdfUseShowSaveFilePicker --disable-features=DirectSockets,DirectSocketsInServiceWorkers,DirectSocketsInSharedWorkers,DropInputEventsWhilePaintHolding,FedCm,IntensiveWakeUpThrottling,LocalNetworkAccessChecks,ScreenAIOCREnabled,SpareRendererForSitePerProcess,TraceSiteInstanceGetProcessCreation --variations-seed-version --pseudonymization-salt-handle=7,i,12864284276214739689,11303058099160800768,4 --trace-process-track-uuid=3190708988185955192",
+      "  10745   10184   3  3.6 gnome-shell     /usr/bin/gnome-shell --mode=ubuntu"
+    ]
+  }
+}

@@ -1,0 +1,677 @@
+[
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "split",
+    "median_ms": 1.248309,
+    "samples_ms": [
+      1.2094969999999998,
+      1.282424,
+      1.2091960000000002,
+      1.330363,
+      1.314844,
+      1.248309,
+      0.946063
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "splitmix",
+    "median_ms": 0.940132,
+    "samples_ms": [
+      0.935723,
+      0.937166,
+      0.932067,
+      1.0334269999999999,
+      1.2427899999999998,
+      1.112595,
+      0.940132
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "mono",
+    "median_ms": 0.914083,
+    "samples_ms": [
+      0.914083,
+      0.906079,
+      0.93401,
+      0.9040050000000001,
+      0.904425,
+      0.915045,
+      0.91732
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "split",
+    "median_ms": 0.9169080000000001,
+    "samples_ms": [
+      0.943569,
+      0.914955,
+      0.958647,
+      0.9169080000000001,
+      0.911138,
+      0.9097649999999999,
+      0.93886
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "splitmix",
+    "median_ms": 0.932618,
+    "samples_ms": [
+      1.0557290000000001,
+      1.06196,
+      0.932618,
+      0.9242319999999999,
+      0.925094,
+      0.9448110000000001,
+      0.91768
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "mono",
+    "median_ms": 0.940964,
+    "samples_ms": [
+      0.940964,
+      1.128415,
+      1.0459200000000002,
+      0.945602,
+      0.911419,
+      0.9070900000000001,
+      0.9148449999999999
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "split",
+    "median_ms": 35.836945,
+    "samples_ms": [
+      36.097995,
+      35.836945,
+      36.009249,
+      36.001914000000006,
+      35.780369,
+      35.690241,
+      35.806438
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "splitmix",
+    "median_ms": 37.04046099999999,
+    "samples_ms": [
+      37.273227,
+      37.04046099999999,
+      37.556629,
+      36.856206,
+      36.039746,
+      37.141581,
+      36.316024
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "mono",
+    "median_ms": 37.446983,
+    "samples_ms": [
+      37.528837,
+      37.446983,
+      36.397777,
+      36.534603,
+      37.493921,
+      37.393944,
+      38.232124
+    ],
+    "round": 0,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "mono",
+    "median_ms": 0.897001,
+    "samples_ms": [
+      0.954018,
+      0.896099,
+      0.947305,
+      0.897001,
+      0.89103,
+      0.911378,
+      0.8923019999999999
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "splitmix",
+    "median_ms": 1.3272169999999999,
+    "samples_ms": [
+      1.2922820000000002,
+      1.308052,
+      1.3059479999999999,
+      1.391277,
+      1.344761,
+      1.424179,
+      1.3272169999999999
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "split",
+    "median_ms": 1.297201,
+    "samples_ms": [
+      1.300918,
+      1.313782,
+      1.279288,
+      1.282374,
+      1.3002960000000001,
+      1.2480289999999998,
+      1.297201
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "mono",
+    "median_ms": 0.8960199999999999,
+    "samples_ms": [
+      0.9020210000000001,
+      0.8960199999999999,
+      0.903633,
+      0.894557,
+      0.894817,
+      0.897873,
+      0.890529
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "splitmix",
+    "median_ms": 1.250744,
+    "samples_ms": [
+      1.3874,
+      1.236307,
+      1.25404,
+      1.250744,
+      1.268688,
+      1.234915,
+      1.219255
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "split",
+    "median_ms": 1.2183540000000002,
+    "samples_ms": [
+      1.19536,
+      1.241797,
+      1.2183540000000002,
+      1.220116,
+      1.230796,
+      1.2044169999999998,
+      1.177006
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "mono",
+    "median_ms": 35.916104,
+    "samples_ms": [
+      39.273908000000006,
+      35.916104,
+      35.381060999999995,
+      36.394691,
+      36.022764,
+      35.864346999999995,
+      35.379198
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "splitmix",
+    "median_ms": 36.523944,
+    "samples_ms": [
+      36.855245000000004,
+      36.210626000000005,
+      35.494604,
+      36.310503000000004,
+      37.729462,
+      40.115885,
+      36.523944
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "split",
+    "median_ms": 35.957350999999996,
+    "samples_ms": [
+      36.083478,
+      35.959095000000005,
+      35.94575,
+      35.88988500000001,
+      35.419173,
+      35.957350999999996,
+      36.056728
+    ],
+    "round": 1,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "splitmix",
+    "median_ms": 0.95024,
+    "samples_ms": [
+      0.95024,
+      0.9423860000000001,
+      0.943508,
+      0.9731040000000001,
+      0.964638,
+      0.955982,
+      0.94962
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "split",
+    "median_ms": 0.906068,
+    "samples_ms": [
+      0.923831,
+      0.905797,
+      0.904215,
+      0.9153260000000001,
+      0.906068,
+      0.90665,
+      0.905958
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+    "mode": "mono",
+    "median_ms": 0.914634,
+    "samples_ms": [
+      0.932007,
+      0.909725,
+      0.910446,
+      0.902772,
+      0.91784,
+      0.914634,
+      0.918642
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "splitmix",
+    "median_ms": 0.948587,
+    "samples_ms": [
+      0.957525,
+      0.961122,
+      0.945271,
+      0.940783,
+      0.959709,
+      0.938839,
+      0.948587
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "split",
+    "median_ms": 0.934041,
+    "samples_ms": [
+      0.9356530000000001,
+      0.934041,
+      0.90724,
+      0.918251,
+      0.944921,
+      0.94997,
+      0.920516
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+    "mode": "mono",
+    "median_ms": 1.262877,
+    "samples_ms": [
+      1.240786,
+      1.2420179999999998,
+      1.335793,
+      1.264069,
+      1.196212,
+      1.262877,
+      1.297602
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "splitmix",
+    "median_ms": 50.624469999999995,
+    "samples_ms": [
+      50.456925999999996,
+      49.570004,
+      50.624469999999995,
+      50.594855,
+      50.953908,
+      50.943388,
+      50.754233
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "splitmix",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "split",
+    "median_ms": 36.494819,
+    "samples_ms": [
+      35.702373,
+      35.579043,
+      36.230273,
+      36.494819,
+      36.771397,
+      43.731902000000005,
+      51.735252
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "split",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  },
+  {
+    "file": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "mono",
+    "median_ms": 37.515812000000004,
+    "samples_ms": [
+      51.715325,
+      50.145252,
+      50.405089,
+      36.273284000000004,
+      36.117852,
+      37.515812000000004,
+      37.113317
+    ],
+    "round": 2,
+    "command": [
+      "taskset",
+      "-c",
+      "0",
+      "/home/ekhodzitsky/Projects/syom/target/task145/direct-target/release/syom-direct-attribution",
+      "mono",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+      "2",
+      "7"
+    ]
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "workspace.log": {
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 1186 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 65.76s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s",
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s",
+      "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 18.08s"
+    ],
+    "sha256": "5eda32fa51d88a98099680232a51bee0ceedfbbd92e7a691d8a333c42df7beec"
+  },
+  "doc.log": {
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.23s"
+    ],
+    "sha256": "a12082cb66ce72530c98c78c1e925e2bfc66c7351eb51344c11c1fcecb977c4a"
+  },
+  "release-cold-stack.log": {
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+    ],
+    "sha256": "b1f69ff62da9d28458302235f4029b8c3368288fba7536e02d516f6fd2cd1a59"
+  },
+  "release-imdct.log": {
+    "exit_code": 0,
+    "test_results": [
+      "test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 1184 filtered out; finished in 0.02s"
+    ],
+    "sha256": "512c1adec1db4cd3b4e6cb404f244c46513f7b7f9d754b686763e66ba1dd568e"
+  },
+  "new_bit_regression": {
+    "debug_pass": true,
+    "release_pass": true
+  },
+  "small_stack_profiles": [
+    "lc",
+    "he1",
+    "he2",
+    "implicit-ps",
+    "mc",
+    "ld"
+  ],
+  "optimized_stack_bytes": 131072,
+  "source_guard": {
+    "changed": [],
+    "checked": 327
+  },
+  "platform_scope": "Linux x86_64 only; no Windows/macOS/ARM parity established"
+}
