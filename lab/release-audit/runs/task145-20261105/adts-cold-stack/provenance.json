@@ -1,0 +1,66 @@
+{
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "compiler": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+  "binary_path": "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+  "binary_sha256": "83f04820d31dd01ee2c29b303b6b853c8a0f25a6ef83df17fe999fa1bec533b3",
+  "harness_source_sha256": "e0636b3932493b8c9ffdcfb159dc154f77204f3f7354c87a9b58cd08f8ba318f",
+  "lock_sha256": "44cc6589acdf6fe271f8b4b0453c5e522f1df0d87b10db82b4936ce9f92169c1",
+  "source_snapshot_matches_candidate5_freeze": true,
+  "source_manifest": {
+    "aac.rs": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9",
+    "aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+    "aac/input.rs": "3d1ce00d4dc4aa4c9d694e37a4e70dc82473626f95da123c9b58782dad1f966f",
+    "aac/adts_pull.rs": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+  },
+  "fixtures": {
+    "lc": {
+      "path": "/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts",
+      "original_bytes": 4452,
+      "original_sha256": "49bda98ba67c9662218495ff0bbfca61cc14a739ff788a8baec566b95a1c04c7",
+      "stripped_id3_bytes": 0,
+      "bare_sha256": "49bda98ba67c9662218495ff0bbfca61cc14a739ff788a8baec566b95a1c04c7",
+      "bare_bytes": 4452
+    },
+    "he1": {
+      "path": "/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts",
+      "original_bytes": 4364,
+      "original_sha256": "808257506793601de6f1da3b681734f9e10ff6f65596c48c0f8576b4f8a461dc",
+      "stripped_id3_bytes": 0,
+      "bare_sha256": "808257506793601de6f1da3b681734f9e10ff6f65596c48c0f8576b4f8a461dc",
+      "bare_bytes": 4364
+    },
+    "ps": {
+      "path": "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts",
+      "original_bytes": 2440,
+      "original_sha256": "fed0ba6e012ea13c9b09e2543f967102dc48a07a1d3075cf71e88ca9541de8dc",
+      "stripped_id3_bytes": 0,
+      "bare_sha256": "fed0ba6e012ea13c9b09e2543f967102dc48a07a1d3075cf71e88ca9541de8dc",
+      "bare_bytes": 2440
+    },
+    "implicit-ps": {
+      "path": "/home/ekhodzitsky/Projects/syom/src/goldens/he48.adts",
+      "original_bytes": 832,
+      "original_sha256": "c07b549e26756a05ed59c023ecab058daf491dc9dba709245ea2e7efc7108809",
+      "stripped_id3_bytes": 0,
+      "bare_sha256": "c07b549e26756a05ed59c023ecab058daf491dc9dba709245ea2e7efc7108809",
+      "bare_bytes": 832
+    }
+  },
+  "sdk_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "sdk_version": "0.10.1",
+  "cpu": "8",
+  "build_cpu": "8-11",
+  "jobs": 2,
+  "stack_bytes": 131072,
+  "passed": 8,
+  "total": 8,
+  "profile_verification": "Only aftercoldthread+warm comparison: decoded FrameMeta core/output rates, actualdecoded channelcount and purewirechannelcfg. Noencoder/probe/codecdecode beforecold.",
+  "scope": "ExactADTSproducer/Reader/appendhelpers; validgoldens/nativePCM only. Noactualpublicbudget/cancel/model/HTTPqualification; minimalparenterrorstubnormalpathonly.",
+  "build_command": "taskset -c 8-11 env CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR=<owned native-stages-target> cargo +stable build --release --offline --manifest-path target/task145/adts-cold-stack/Cargo.toml",
+  "profile": {
+    "opt_level": 3,
+    "lto": "fat",
+    "codegen_units": 1
+  },
+  "cargo_manifest_sha256": "6f8b97dc235ee99f70b8fa7f1fb1e21837b4814e1eb4a8a357218a6613298848"
+}

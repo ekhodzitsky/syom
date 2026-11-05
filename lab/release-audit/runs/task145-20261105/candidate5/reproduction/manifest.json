@@ -1,0 +1,108 @@
+{
+  "scope": "Text only, no binaries/models/recordings. Eight final consumer Rust sources plus exact SDK AVX512 kernel =nine Rust files, alongside consumer Cargo manifest+lock and SDK manifest. Initial cfgtestfailure source/proof retained. All benchmark/recovery drivers and unchanged harness/probe instrumentation archived.",
+  "sdk_git_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "consumer_head": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "consumer_frozen_files": 10,
+  "files": {
+    "consumer/Cargo.lock": {
+      "bytes": 146978,
+      "sha256": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+    },
+    "consumer/crates/gigastt-core/Cargo.toml": {
+      "bytes": 8822,
+      "sha256": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": {
+      "bytes": 7518,
+      "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": {
+      "bytes": 14492,
+      "sha256": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/buffered.rs": {
+      "bytes": 7438,
+      "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/channels.rs": {
+      "bytes": 6106,
+      "sha256": "332f07e6fccbb3726c2dbeae97bdb88b6965a5b13b3b7706502353b0671761ce"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/input.rs": {
+      "bytes": 8722,
+      "sha256": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/probe.rs": {
+      "bytes": 9619,
+      "sha256": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac/pull.rs": {
+      "bytes": 11535,
+      "sha256": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+    },
+    "consumer/crates/gigastt-core/src/inference/audio/aac.rs": {
+      "bytes": 17302,
+      "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+    },
+    "provenance/input.rs.at-failure": {
+      "bytes": 8696,
+      "sha256": "3d1ce00d4dc4aa4c9d694e37a4e70dc82473626f95da123c9b58782dad1f966f"
+    },
+    "provenance/proof.json": {
+      "bytes": 2500,
+      "sha256": "61eec6de2ed986d6cceed8e2e1c00a93e74976317244d0b7939259bda9608b04"
+    },
+    "provenance/same-class-preregistered-selection.json": {
+      "bytes": 14846,
+      "sha256": "293cbaa19150faff34d255124a694b40455237d5521608c289198d3625da9bc8"
+    },
+    "provenance/source-freeze.json": {
+      "bytes": 2053,
+      "sha256": "1f054d1f5adf9251afc1f348802f254aae0841eaa2abf73590e985cf822a7850"
+    },
+    "scripts/aac_probe.rs": {
+      "bytes": 2971,
+      "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1"
+    },
+    "scripts/compare-aac-decoders.py": {
+      "bytes": 5797,
+      "sha256": "effe2ab6eae604ee36dc2b9da083feea86dece0ec03a15b5ed9d00cd9a72a0cb"
+    },
+    "scripts/compare-aac-pcm.py": {
+      "bytes": 3326,
+      "sha256": "358f70f6840b9e45626a130db3c1b84c32f2cf2ef475a6d9b2a63f96898c0aef"
+    },
+    "scripts/finalize-candidate5-evidence.py": {
+      "bytes": 4044,
+      "sha256": "79f9e2fec6cf53dce842431db9c1f422c6b93aca09045f0bc4151576649e292c"
+    },
+    "scripts/resume-candidate5-and-checks.py": {
+      "bytes": 12577,
+      "sha256": "5aa918ef22a74432083cbd5094bf35a61456376751752d3e863c15346c4ea83b"
+    },
+    "scripts/run-candidate5-and-checks.py": {
+      "bytes": 13592,
+      "sha256": "67964bbba3aedc74989a8a52b574d01ea2593b5450c51a9ea4a2e4457f90889a"
+    },
+    "scripts/run-candidate5-campaigns.py": {
+      "bytes": 3230,
+      "sha256": "bdddd21903211f74ea85c32311c37708e81ae73146f059387b4dee11ac82094d"
+    },
+    "scripts/run-candidate5-preregistered-confirmation.py": {
+      "bytes": 6657,
+      "sha256": "36ebb38e0b675b3cf93e578e4d2aee3fa1916fbf2e0ed616bdf9e29dd94553f6"
+    },
+    "sdk/Cargo.toml": {
+      "bytes": 1449,
+      "sha256": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b"
+    },
+    "sdk/src/engine/imdct_avx512.rs": {
+      "bytes": 6995,
+      "sha256": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188"
+    }
+  },
+  "frozen_product_rust_files": 9,
+  "probe_instrumentation_rust_files": 1,
+  "total_rs_files": 10,
+  "summary_scope": "finalize-candidate5-evidence.py preserves the original CPU0 outcome; final CPU1 summaries are supplemental preregistered-confirmation-summary.json and combined-timing-summary.json, never a replacement of original failures."
+}

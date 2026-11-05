@@ -1,0 +1,10 @@
+{
+  "released": true,
+  "owner": "/root/decoder_costs",
+  "timestamp_utc": "2026-11-05T19:16:53.808744+00:00",
+  "passed_cells": 8,
+  "total_cells": 8,
+  "scope": "Four LC/HE/PS profiles x File/Bytes; fresh process first Decoder created/decoded on128KiB caller stack, geometry/bits exactwarm; no builds/process loads remain",
+  "evidence_directory": "target/task145/adts-cold-stack",
+  "source_freeze_sha256": "11ee8e1df7c12e19fa5d9e2118e7430500fea5fdbe19d858f4fa69aad5ba2a85"
+}

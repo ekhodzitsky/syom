@@ -1,0 +1,41 @@
+{
+  "cwd": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt",
+  "command": [
+    "taskset",
+    "-c",
+    "8-11",
+    "cargo",
+    "+1.94.0",
+    "check",
+    "--release",
+    "--locked",
+    "--offline",
+    "--workspace",
+    "--all-targets",
+    "--features",
+    "gigastt/extended-aac"
+  ],
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/consumer-msrv-target",
+    "CARGO_BUILD_JOBS": "2",
+    "RUSTFLAGS": "",
+    "ORT_SKIP_DOWNLOAD": "1",
+    "ORT_LIB_LOCATION": "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68",
+    "OPENSSL_INCLUDE_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/include",
+    "OPENSSL_LIB_DIR": "/home/ekhodzitsky/toolchains/sysroot/usr/lib/x86_64-linux-gnu",
+    "CFLAGS": "-I/home/ekhodzitsky/toolchains/sysroot/usr/include/x86_64-linux-gnu"
+  },
+  "removed_environment_keys": "CARGO_PROFILE_RELEASE_* and CARGO_ENCODED_RUSTFLAGS, matching pipeline",
+  "rust": "rustc 1.94.0 (4a4ef493e 2026-03-02)\nbinary: rustc\ncommit-hash: 4a4ef493e3a1488c6e321570238084b38948f6db\ncommit-date: 2026-03-02\nhost: x86_64-unknown-linux-gnu\nrelease: 1.94.0\nLLVM version: 21.1.8\n",
+  "started_utc": "2026-11-05T19:22:40.386203+00:00",
+  "plan_sha256": "67e782c37d512787d1fef18a03c1b2ff8a9d45ed7860a7fb2df29e36e497447e",
+  "candidate5_freeze_matched": true,
+  "frozen_files_count": 10,
+  "sdk_source_verified_files": 322,
+  "sdk_package_id": "git+https://github.com/ekhodzitsky/syom?rev=3e540231c9d71e3534be1ef856a91cf419efaead#0.10.1",
+  "exit_code": 0,
+  "elapsed_seconds": 13.682143469995935,
+  "source_unchanged": true,
+  "finished_utc": "2026-11-05T19:22:54.068660+00:00",
+  "log_sha256": "aeba56cb07ff26c196ac4e66ae3912f8d9ac33777ca94fb2f059894f9585ac03"
+}

@@ -1,0 +1,17 @@
+{
+  "cpu_affinity": [
+    0
+  ],
+  "iterations_per_round": 100000,
+  "ns_per_two_extra_read64_and_rewind_pairs": [
+    535.71756,
+    542.4625,
+    532.04457,
+    540.82684,
+    535.10271,
+    535.01414,
+    532.57126
+  ],
+  "median_ns": 535.10271,
+  "scope": "Warm-file raw syscall pairs plus Python overhead; no classification or worker scheduling. Diagnostic only."
+}

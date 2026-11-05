@@ -1,0 +1,93 @@
+{
+  "4096": {
+    "pooled_median_us": 4589.033,
+    "process_medians_us": [
+      4610.903,
+      4562.613,
+      4589.033,
+      4603.969999999999,
+      4664.705,
+      4535.001,
+      4551.9130000000005
+    ],
+    "paired_median_delta_us": 0.0,
+    "paired_median_ratio": 1.0,
+    "paired_deltas_us": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "wins": 0,
+    "scratch_bytes": 4096,
+    "additional_scratch_bytes_vs4096": 0,
+    "resident_input_budget": "unchanged opts.memory cap; largerfeed maygrow Decoder input allocation towardquantum, independent ofstreamlength",
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-quanta 4096 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.31\n\tSystem time (seconds): 0.04\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.35\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6392\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 57154\n\tVoluntary context switches: 2110\n\tInvoluntary context switches: 1819\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "resource_process_median_us": 4476.346
+  },
+  "16384": {
+    "pooled_median_us": 4545.241,
+    "process_medians_us": [
+      4518.721,
+      4500.165,
+      4574.965999999999,
+      4629.739,
+      4706.572,
+      4472.274,
+      4529.782
+    ],
+    "paired_median_delta_us": -22.131000000000313,
+    "paired_median_ratio": 0.9951380880961477,
+    "paired_deltas_us": [
+      -92.1820000000007,
+      -62.44800000000032,
+      -14.067000000000917,
+      25.769000000000233,
+      41.86700000000019,
+      -62.72699999999986,
+      -22.131000000000313
+    ],
+    "wins": 5,
+    "scratch_bytes": 16384,
+    "additional_scratch_bytes_vs4096": 12288,
+    "resident_input_budget": "unchanged opts.memory cap; largerfeed maygrow Decoder input allocation towardquantum, independent ofstreamlength",
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-quanta 16384 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.31\n\tSystem time (seconds): 0.03\n\tPercent of CPU this job got: 100%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.34\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6400\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 57164\n\tVoluntary context switches: 2107\n\tInvoluntary context switches: 1823\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "resource_process_median_us": 4456.959500000001
+  },
+  "65536": {
+    "pooled_median_us": 4574.355,
+    "process_medians_us": [
+      4548.657,
+      4489.636,
+      4651.118,
+      4684.611,
+      4540.591,
+      4542.655,
+      4522.408
+    ],
+    "paired_median_delta_us": -29.50500000000011,
+    "paired_median_ratio": 0.9935181098584265,
+    "paired_deltas_us": [
+      -62.246000000000095,
+      -72.97699999999986,
+      62.085000000000036,
+      80.64100000000053,
+      -124.11399999999958,
+      7.653999999999542,
+      -29.50500000000011
+    ],
+    "wins": 4,
+    "scratch_bytes": 65536,
+    "additional_scratch_bytes_vs4096": 61440,
+    "resident_input_budget": "unchanged opts.memory cap; largerfeed maygrow Decoder input allocation towardquantum, independent ofstreamlength",
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-quanta 65536 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.32\n\tSystem time (seconds): 0.03\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.37\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6440\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 57178\n\tVoluntary context switches: 2108\n\tInvoluntary context switches: 1825\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "resource_process_median_us": 4498.7835
+  },
+  "0": {
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-quanta 0 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.31\n\tSystem time (seconds): 0.04\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.36\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6308\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 57155\n\tVoluntary context switches: 2109\n\tInvoluntary context switches: 1827\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n",
+    "resource_process_median_us": 4466.979
+  }
+}

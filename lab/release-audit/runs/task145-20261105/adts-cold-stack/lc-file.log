@@ -1,0 +1,1 @@
+{"bit_differences":0,"fixture":"/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts","geometry":[[13312,48000,1]],"metadata":{"core_rate":48000,"decoded_channels":1,"header_channel_configuration":1,"output_rate":48000},"native_samples":13312,"profile":"lc","reader":"file","stack_bytes":131072}

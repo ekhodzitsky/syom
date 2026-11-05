@@ -1,0 +1,15 @@
+[package]
+name="syom-adts-cold-stack-proof"
+version="0.0.0"
+edition="2024"
+publish=false
+[workspace]
+[dependencies]
+syom={git="https://github.com/ekhodzitsky/syom",rev="3e540231c9d71e3534be1ef856a91cf419efaead"}
+anyhow="=1.0.104"
+bytes="=1.12.1"
+serde_json="1"
+[profile.release]
+lto=true
+codegen-units=1
+opt-level=3

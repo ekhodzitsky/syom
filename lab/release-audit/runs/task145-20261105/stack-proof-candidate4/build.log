@@ -1,0 +1,5 @@
+   Compiling anyhow v1.0.104
+   Compiling syom v0.10.1 (/home/ekhodzitsky/Projects/syom)
+   Compiling bytes v1.12.1
+   Compiling syom-pull-stack-proof v0.0.0 (/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate4)
+    Finished `release` profile [optimized] target(s) in 20.54s

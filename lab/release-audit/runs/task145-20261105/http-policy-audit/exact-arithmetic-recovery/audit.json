@@ -1,0 +1,66 @@
+{
+  "reviewed_utc": "2026-11-05T20:03:55.928190+00:00",
+  "mode": "Independent read-only source/evidence review; no tests/builds/models/HTTP requests executed by this audit",
+  "resolved_defect": "Original float subtraction rejected mathematically exact one-sample boundary in actual golos05/12; prior static audit did not exercise these real boundary values. Prior audit and failed reference are preserved.",
+  "bound_before_and_after": "Inclusive exact1/16000 second; noepsilon and no numeric timing/RSS/load/fault changes",
+  "implementation_review": "Exact type guards rejectbool/nonnumeric. FloatNaN/Infinity rejected. Finiteint/float recordeddecimal representations converted via Fraction(str(value)); absolute exactrational difference compared to Fraction(1,16000).",
+  "actual_boundary_rows": {
+    "golos_05-aac": {
+      "presentation_seconds": 3.204,
+      "source_wav_seconds": 3.2039375,
+      "old_binary_float_abs_delta": 6.250000000029843e-05,
+      "exact_recorded_decimal_delta": "1/16000",
+      "intended_bound": "1/16000 inclusive"
+    },
+    "golos_12-aac": {
+      "presentation_seconds": 5.944,
+      "source_wav_seconds": 5.9439375,
+      "old_binary_float_abs_delta": 6.250000000029843e-05,
+      "exact_recorded_decimal_delta": "1/16000",
+      "intended_bound": "1/16000 inclusive"
+    }
+  },
+  "owner_tests_observed": {
+    "log": "target/task145/http-candidate5/reference-attempt2/offline-tests.log",
+    "log_sha256": "818735f2adbeec69de18bc5cf0fc1e81b86545f7b0f920c9197e33ea1029d126",
+    "result": "17offlinepolicy/parsertestsPASS; bothactualboundarydirections, nextafterinside/outside, invalid/nonfinite controls. Audit inspected log and testsource, didnotrerun."
+  },
+  "unchanged_tool_sha256": {
+    "presentation_evidence.py": "6048525754ddd8795e9c57d27f7f68152143125fe8657cec26f37cf296cfc780",
+    "run_http_load.py": "5d3e608fa1b1c916dec60cfaf6a286e714bcf93e087ba022b1296f6552814102",
+    "run_http_canary.py": "3ea6ed22ee203075c1085419cfe55e3f054d8be1825e98df8b80a2b84e078b6f",
+    "mp4_clocks.py": "7de602c2fb9eaec50f09bbcc3c3196f35578c9ce8836c43b27ede174101ac0ce",
+    "test_mp4_clocks.py": "33ac59a779b22fdbe0215ddf402f1b7f6e1e9d27f200fb424bd811fd1f7143ae"
+  },
+  "changed_tool_sha256": {
+    "http_reference.py": "5e9f2f1c39b3cf44173e863c2e6986f55aa27986545d2676c0b3d30ed37034f8",
+    "test_http_reference.py": "04054448570b00cdfc2cf469261106522384ffca2b6b72a7c5ed59283989a537"
+  },
+  "raw_evidence_preserved": {
+    "canary_sha256": "61066e679bf6836e96e205cfc4c67047e3adaf5b6c94f06c5c9a9fde18b05112",
+    "independent_sha256": "45edd09d7723239f88a349985e489cdb1a73c1fbcda0952a65799198129b88ca",
+    "both_current_hashes_verified_equal_to_attempt1": true
+  },
+  "failed_reference_preserved": {
+    "path": "target/task145/http-candidate5/reference-attempt1/reference.json",
+    "qualified_for_load": false,
+    "errors": [
+      "golos_05-aac: unexplained source WAV/presentation duration difference",
+      "golos_12-aac: unexplained source WAV/presentation duration difference"
+    ]
+  },
+  "fresh_reference_observed": {
+    "path": "target/task145/http-candidate5/reference-attempt2/reference.json",
+    "sha256": "a596174031d8ad28209e1f6d33efdd8eb42cf588c9fe32940926a0cba5e4cf7f",
+    "qualified_for_load": true,
+    "errors": [],
+    "original_canary_pass": false
+  },
+  "full_ffmpeg_and_clock_guards": "Unchanged byte-prefix comparison/fullcoverage counts and pinned09/10 clock constraints; this arithmetic fix cannot fabricate PCM.",
+  "concrete_blockers": [],
+  "limitations": [
+    "Source/policy audit only; load/fault completion and final qualification require separate real execution evidence.",
+    "No binaries/consumer/runtime/model/input files changed by this arithmetic recovery.",
+    "Original canary parity failure remainsfalse and original failed reference remains archived."
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "scope": "ExactFraction(str()) arithmetic at inclusiveFraction(1,16000); noepsilon/tolerance/latency/RSS/loadthresholdchange",
+  "same_raw_evidence": {
+    "canary": true,
+    "independent": true
+  },
+  "source_sha256": {
+    "presentation_evidence.py": "6048525754ddd8795e9c57d27f7f68152143125fe8657cec26f37cf296cfc780",
+    "run_http_load.py": "5d3e608fa1b1c916dec60cfaf6a286e714bcf93e087ba022b1296f6552814102",
+    "run_http_canary.py": "3ea6ed22ee203075c1085419cfe55e3f054d8be1825e98df8b80a2b84e078b6f",
+    "http_reference.py": "5e9f2f1c39b3cf44173e863c2e6986f55aa27986545d2676c0b3d30ed37034f8",
+    "test_http_reference.py": "04054448570b00cdfc2cf469261106522384ffca2b6b72a7c5ed59283989a537",
+    "mp4_clocks.py": "7de602c2fb9eaec50f09bbcc3c3196f35578c9ce8836c43b27ede174101ac0ce",
+    "test_mp4_clocks.py": "33ac59a779b22fdbe0215ddf402f1b7f6e1e9d27f200fb424bd811fd1f7143ae"
+  },
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "lab/consume/gigastt",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "log": "offline-tests.log"
+    },
+    {
+      "stage": "reference",
+      "argv": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/http_reference.py",
+        "--canary",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/canary/result.json",
+        "--independent",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/independent/independent.json",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/reference-attempt2/reference.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.049,
+      "stdout": "reference.stdout",
+      "stderr": "reference.stderr"
+    },
+    {
+      "stage": "load",
+      "argv": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_load.py",
+        "--baseline",
+        "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+        "--candidate",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+        "--ort",
+        "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+        "--manifest",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-manifest.json",
+        "--reference",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/reference-attempt2/reference.json",
+        "--long-input",
+        "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/load-180s.m4a",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/load",
+        "--upload-admission"
+      ],
+      "exit_code": 0,
+      "seconds": 108.776,
+      "stdout": "load.stdout",
+      "stderr": "load.stderr"
+    }
+  ],
+  "plan_sha256": "a67b5c08dd4711ca155d4a2c000083da55614a6a3498d3ac53bceb3854843b2e",
+  "original_failed_reference": "../reference-attempt1/reference.json",
+  "pass": true
+}

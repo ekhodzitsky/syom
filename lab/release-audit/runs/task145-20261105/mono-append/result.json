@@ -1,0 +1,180 @@
+{
+  "scope": "Controlled helper microbench only; valid finite PCM bit identity, no signaling-NaN claim; not consumer gate",
+  "source_sha256": "64c92de6599019c6a6caa30d3c5c2af7239e4baa297add41d623ea8176668c7b",
+  "old_helper_sha256": "0402288358883ee36b1630fd81cf15eb9f2fef8eb4bad8a88dd8fb681eb2dcab",
+  "new_helper_sha256": "522d12801007e7326256b88e80cf6a2d121301b64aa8c092a6233da8c2daa341",
+  "test_bodies": "Exact current mono_plane_tests with existing old scalar oracle, adds positive/negative quiet NaN payloads",
+  "files": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/bench.rs": "33a38d1879995c67ec45ffa2d24cac7739c472b18ab2c18f4cb57e3f6ddd9364",
+    "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/tests.rs": "03b324726108b76bd16ee2c8d179536cd6ade4ab8ab7ac882978590cbcc12661"
+  },
+  "commands": [
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "14-17",
+        "rustc",
+        "+stable",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "codegen-units=1",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/bench.rs",
+        "-o",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/bench"
+      ],
+      "exit_code": 0,
+      "seconds": 0.145,
+      "log": "bench-build.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "14-17",
+        "rustc",
+        "+stable",
+        "--test",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "codegen-units=1",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/tests.rs",
+        "-o",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/tests"
+      ],
+      "exit_code": 0,
+      "seconds": 0.152,
+      "log": "tests-build.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "14-17",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/tests"
+      ],
+      "exit_code": 0,
+      "seconds": 0.002,
+      "stdout": "tests.stdout",
+      "stderr": "tests.stderr",
+      "binary_sha256": "c5996893c5022cb04140fd2f8db05c99946fd1fcb7f6ad604fe95241d6693e7a"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/mono-append/bench"
+      ],
+      "exit_code": 0,
+      "seconds": 0.026,
+      "stdout": "bench.stdout",
+      "stderr": "bench.stderr",
+      "binary_sha256": "9f80250c1beb399f9c6473208fc203bda65caec2f26a71dbd81523d2a295ad42"
+    }
+  ],
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "measurement": {
+    "finite_samples": 193536,
+    "bit_differences": 0,
+    "samples_per_append": 1024,
+    "iterations": 20000,
+    "rounds": [
+      {
+        "round": 0,
+        "label": "old",
+        "elapsed_ns": 2838231,
+        "ns_per_append": 141.91155
+      },
+      {
+        "round": 0,
+        "label": "new",
+        "elapsed_ns": 466274,
+        "ns_per_append": 23.3137
+      },
+      {
+        "round": 1,
+        "label": "new",
+        "elapsed_ns": 468238,
+        "ns_per_append": 23.4119
+      },
+      {
+        "round": 1,
+        "label": "old",
+        "elapsed_ns": 2839713,
+        "ns_per_append": 141.98565
+      },
+      {
+        "round": 2,
+        "label": "old",
+        "elapsed_ns": 2834854,
+        "ns_per_append": 141.7427
+      },
+      {
+        "round": 2,
+        "label": "new",
+        "elapsed_ns": 463930,
+        "ns_per_append": 23.1965
+      },
+      {
+        "round": 3,
+        "label": "new",
+        "elapsed_ns": 464010,
+        "ns_per_append": 23.2005
+      },
+      {
+        "round": 3,
+        "label": "old",
+        "elapsed_ns": 2838271,
+        "ns_per_append": 141.91355
+      },
+      {
+        "round": 4,
+        "label": "old",
+        "elapsed_ns": 2842288,
+        "ns_per_append": 142.1144
+      },
+      {
+        "round": 4,
+        "label": "new",
+        "elapsed_ns": 481012,
+        "ns_per_append": 24.0506
+      },
+      {
+        "round": 5,
+        "label": "new",
+        "elapsed_ns": 462778,
+        "ns_per_append": 23.1389
+      },
+      {
+        "round": 5,
+        "label": "old",
+        "elapsed_ns": 2846275,
+        "ns_per_append": 142.31375
+      },
+      {
+        "round": 6,
+        "label": "old",
+        "elapsed_ns": 2855973,
+        "ns_per_append": 142.79865
+      },
+      {
+        "round": 6,
+        "label": "new",
+        "elapsed_ns": 466324,
+        "ns_per_append": 23.3162
+      }
+    ]
+  },
+  "median_ns_per_1024_append": {
+    "old": 141.98565,
+    "new": 23.3137
+  },
+  "new_over_old": 0.16419757912155208,
+  "estimated_193536_sample_saving_us": 22.42899855,
+  "pass": true
+}

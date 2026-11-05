@@ -1,0 +1,127 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "1",
+    "python3",
+    "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/scripts/compare-aac-decoders.py",
+    "--base-probe",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe",
+    "--candidate-probe",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe",
+    "--fixtures",
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures",
+    "--output",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5/preregistered-cpu1-campaign1/decoder-timing.json"
+  ],
+  "started_utc": "2026-11-05T19:56:02.943687+00:00",
+  "cpu": 1,
+  "smt_siblings": [
+    13
+  ],
+  "observer_cpu": 8,
+  "preregistration": {
+    "path": "/home/ekhodzitsky/Projects/syom/target/task145/quiet-core-selection/same-class-preregistered-selection.json",
+    "sha256": "293cbaa19150faff34d255124a694b40455237d5521608c289198d3625da9bc8",
+    "registered_utc": "2026-11-05T19:53:39.749431+00:00"
+  },
+  "scope": "Exactly two preregistered confirmations after independent idle/topology selection; original CPU0 failure retained; no benchmark-based CPU selection or threshold edits",
+  "sdk_git_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "binary_sha256": {
+    "base": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "candidate": "6fd6ca682a88d17b76725ecfe57f5ead7f7464b50ed44390051a959b67534894"
+  },
+  "harness_sha256": "effe2ab6eae604ee36dc2b9da083feea86dece0ec03a15b5ed9d00cd9a72a0cb",
+  "qualification_manifest_sha256": "2190dee2239cfb2861c7bf137d4be8df2581e19d57ffcd01505a5bd661e8f755",
+  "fixture_sha256": {
+    "speech0.m4a": "e7f0f3ee0300ca9951e22ca79a4ee0a22619eba37b56f208d4f644cd24781f13",
+    "lc.adts": "6d3e903bdfe47d9e1cf7502132bae8a9f6cdf2992493d99541acf94c6bc6b596",
+    "long-stereo.m4a": "020cca4fdb044c9daf0c74f7d35fa03ef3392af5e7a2ae0f5d8051f7a8edd328"
+  },
+  "loadavg_before": [
+    3.13671875,
+    3.6669921875,
+    4.046875
+  ],
+  "passive_observer": {
+    "interval_seconds": 0.1,
+    "affinity": [
+      8
+    ],
+    "metrics": "/proc/stat CPU1/13 ticks, reported scaling_cur_freq, owned probe PID/args/CPU/affinity/ticks",
+    "limits": "Reported cpufreq is not APERF/MPERF effective frequency; proc ticks quantized; short probes may end between samples. No PMU claims. Sampler only reads files; no loads/governor/process changes."
+  },
+  "exit_code": 0,
+  "seconds": 35.988365418990725,
+  "loadavg_after": [
+    3.5751953125,
+    3.71044921875,
+    4.0439453125
+  ],
+  "finished_utc": "2026-11-05T19:56:39.013743+00:00",
+  "observer_cpu_seconds": 0.16365154899999998,
+  "observer_one_core_percent": 0.4547345985145593,
+  "observer_samples": 358,
+  "utilization": {
+    "cpu1": {
+      "mean_interval_busy_percent": 100.0,
+      "median_interval_busy_percent": 100.0,
+      "max_interval_busy_percent": 100.0
+    },
+    "cpu13": {
+      "mean_interval_busy_percent": 6.125116713352008,
+      "median_interval_busy_percent": 0.0,
+      "max_interval_busy_percent": 100.0
+    }
+  },
+  "summary": {
+    "speech0.m4a:file": {
+      "median_paired_time_ratio": 1.0160468710268722,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 15864,
+        "candidate": 14452
+      }
+    },
+    "speech0.m4a:bytes": {
+      "median_paired_time_ratio": 1.0194163504321094,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 15836,
+        "candidate": 14472
+      }
+    },
+    "lc.adts:file": {
+      "median_paired_time_ratio": 1.0260137305438812,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 15488,
+        "candidate": 14584
+      }
+    },
+    "long-stereo.m4a:file": {
+      "median_paired_time_ratio": 1.020227886234562,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 26200,
+        "candidate": 25212
+      }
+    },
+    "long-stereo.m4a:split": {
+      "median_paired_time_ratio": 0.9813161236064215,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 37032,
+        "candidate": 54320
+      }
+    },
+    "long-stereo.m4a:scan": {
+      "median_paired_time_ratio": 0.978817705896722,
+      "latency_pass": true,
+      "median_peak_rss_kib": {
+        "base": 17440,
+        "candidate": 16252
+      }
+    }
+  }
+}

@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reproducible gigastt adapter profiling and independently validated HTTP
   presentation references for local decoder and load qualification, plus a
-  downstream bounded M4A pull/buffering patch and HE/PS cold-stack regressions.
+  downstream bounded M4A/ADTS pull/buffering patch and HE/PS cold-stack regressions.
   These evaluation tools do not change the published codec implementation.
 
 ## [0.10.0] - 2026-11-04

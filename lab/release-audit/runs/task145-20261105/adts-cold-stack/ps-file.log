@@ -1,0 +1,1 @@
+{"bit_differences":0,"fixture":"/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts","geometry":[[24576,48000,2],[24576,48000,2],[4096,48000,2]],"metadata":{"core_rate":24000,"decoded_channels":2,"header_channel_configuration":1,"output_rate":48000},"native_samples":53248,"profile":"ps","reader":"file","stack_bytes":131072}

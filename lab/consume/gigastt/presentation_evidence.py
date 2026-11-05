@@ -15,6 +15,7 @@ import wave
 
 from http_reference import MODEL_SHA, ORT_SHA, HUMAN_SHA, CASE_IDS, digest
 from run_http_canary import normalized
+from mp4_clocks import CLOCK_CASES, clock_evidence
 
 
 def main():
@@ -65,7 +66,8 @@ def main():
         source = Path(row['path']).resolve()
         wav = Path(by_id[cid.replace('-aac', '-wav')]['path']).resolve()
         with wave.open(str(wav)) as original:
-            wav_seconds = original.getnframes() / original.getframerate()
+            wav_frames, wav_rate = original.getnframes(), original.getframerate()
+            wav_seconds = wav_frames / wav_rate
         probe_cmd = ['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'json', str(source)]
         probe_raw = run(probe_cmd, cid + '-ffprobe.log')
         (args.out / (cid + '-ffprobe.json')).write_bytes(probe_raw)
@@ -90,6 +92,7 @@ def main():
             frames[name] = response['planes'][0]['samples']
         record['cases'][cid] = dict(input_sha256=digest(source), source_wav_sha256=digest(wav),
                                     presentation_seconds=presentation, source_wav_seconds=wav_seconds,
+                                    source_wav_frames=wav_frames, source_wav_rate=wav_rate,
                                     ffmpeg_samples=len(pcm) // 4,
                                     ffmpeg_applied_presentation_seconds=presentation,
                                     ffmpeg_presentation_pcm_sha256=hashlib.sha256(pcm).hexdigest(),
@@ -98,6 +101,8 @@ def main():
                                     ffmpeg_surplus_samples=(len(full_pcm) - len(pcm)) // 4,
                                     ffmpeg_presentation_is_full_prefix=True,
                                     candidate_samples=frames['candidate'], baseline_samples=frames['baseline'])
+        if cid in CLOCK_CASES:
+            record['cases'][cid]['clock_rounding'] = clock_evidence(cid, source, wav, wav_frames, wav_rate)
         # Only this one independent presentation is recognized, after native
         # geometry was collected. The source corpus and timed canary stay intact.
         if cid == 'golos_04-aac':

@@ -1,0 +1,18 @@
+load baseline 0 1 True
+load candidate 0 1 True
+load candidate 1 2 True
+load baseline 1 2 True
+load baseline 2 4 True
+load candidate 2 4 True
+load candidate 3 8 True
+load baseline 3 8 True
+load baseline 4 8 True
+load candidate 4 8 True
+load candidate 5 8 True
+load baseline 5 8 True
+load baseline 6 8 True
+load candidate 6 8 True
+queue-cancel baseline True
+queue-cancel candidate True
+watchdog baseline True
+watchdog candidate True

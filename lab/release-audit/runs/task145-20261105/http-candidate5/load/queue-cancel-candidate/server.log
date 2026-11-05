@@ -1,0 +1,178 @@
+2026-11-05T20:03:36.306779Z  INFO gigastt::server::listen: gigastt bootstrapping on http://127.0.0.1:34369 — loading model, /health is up
+2026-11-05T20:03:36.306853Z  INFO gigastt_core::model::download: Using existing Rnnt model at /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt
+2026-11-05T20:03:36.456082Z  INFO gigastt_core::inference::engine::load: Detected model variant: Rnnt
+2026-11-05T20:03:36.456109Z  INFO gigastt_core::inference::engine::load: Using INT8 quantized encoder
+2026-11-05T20:03:36.456110Z  INFO gigastt_core::inference::engine::load: Loading ONNX models from /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt (pool_size=1)...
+2026-11-05T20:03:36.456112Z  INFO gigastt_core::inference::engine::load: Using CPU execution provider
+2026-11-05T20:03:36.456262Z  INFO gigastt_core::inference::load_files: Loading session triplet 1/1 (shared runtime)
+2026-11-05T20:03:36.466795Z  INFO gigastt_core::runtime::ort::session: encoder: loading source model and refreshing optimized graph cache path=/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/load/queue-cancel-candidate/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-79452cd3edd4c27818e6078a6c4df6f096e1101c3637412896a8db62d20464f5_optimized.ort.partial.3334096.1
+2026-11-05T20:03:37.588461Z  INFO gigastt_core::inference::tokenizer: Loaded vocabulary: 34 tokens, blank_id=33
+2026-11-05T20:03:37.588485Z  INFO gigastt_core::inference::engine::load: Models loaded (vocab_size=34, pool_size=1)
+2026-11-05T20:03:37.588493Z  INFO gigastt_core::inference::diarization: Speaker encoder present at /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/wespeaker_resnet34.onnx (lazy load on first diarization request)
+2026-11-05T20:03:37.588574Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-11-05T20:03:37.588611Z  INFO gigastt::boot: VmRSS:	  570160 kB
+2026-11-05T20:03:37.588677Z  INFO gigastt::server::listen: Model ready — starting full server
+2026-11-05T20:03:37.588759Z  INFO gigastt_core::inference::engine::words: Extracted 99 mel frames
+2026-11-05T20:03:37.636871Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=48
+2026-11-05T20:03:37.637597Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=0
+2026-11-05T20:03:37.637609Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=0 words=0 duration_ms=0
+2026-11-05T20:03:37.637615Z  INFO gigastt_core::inference::engine::transcribe: transcribe complete audio_s=1.00 wall_s=0.05 rtf=0.049 encoder=int8/cpu
+2026-11-05T20:03:37.637623Z  INFO gigastt::server::listen: Engine warmup complete elapsed_ms=48
+2026-11-05T20:03:37.637649Z  INFO gigastt::server::listen: Prometheus /metrics endpoint enabled
+2026-11-05T20:03:37.637662Z  INFO gigastt::server::listen: asynchronous /v1/jobs API enabled concurrency=1 max_retries=3
+2026-11-05T20:03:37.637671Z  INFO gigastt::server::listen: HTTP upload admission enabled (boot-time limits) upload_capacity=1 body_limit_bytes=52428800
+2026-11-05T20:03:37.637786Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:34369
+2026-11-05T20:03:37.637788Z  INFO gigastt::server::listen:   WebSocket: ws://127.0.0.1:34369/v1/ws
+2026-11-05T20:03:37.637789Z  INFO gigastt::server::listen:   REST API:  http://127.0.0.1:34369/health, /ready, /v1/transcribe, /v1/transcribe/stream, /v1/audio/transcriptions
+2026-11-05T20:03:37.637821Z  INFO gigastt::server::listen:   Metrics:   http://127.0.0.1:41631/metrics
+2026-11-05T20:03:37.639303Z  INFO request{request_id=01a1ad4f-4c26-76c6-b5ff-a94ad03a4474 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:37.798054Z  INFO request{request_id=01a1ad4f-4c26-76c6-b5ff-a94ad03a4474 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=158
+2026-11-05T20:03:37.802356Z  INFO request{request_id=01a1ad4f-4c26-76c6-b5ff-a94ad03a4474 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:37.802388Z  INFO request{request_id=01a1ad4f-4c26-76c6-b5ff-a94ad03a4474 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:37.802397Z  INFO request{request_id=01a1ad4f-4c26-76c6-b5ff-a94ad03a4474 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.041
+2026-11-05T20:03:37.805025Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:38.898290Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1088
+2026-11-05T20:03:38.921966Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:38.921991Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:39.943034Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1017
+2026-11-05T20:03:39.968923Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=25
+2026-11-05T20:03:39.968948Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=25
+2026-11-05T20:03:40.988618Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1015
+2026-11-05T20:03:41.011866Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:41.011892Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:42.033588Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1017
+2026-11-05T20:03:42.056777Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:42.056799Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:43.088520Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1027
+2026-11-05T20:03:43.112331Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:43.112366Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:44.129168Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1012
+2026-11-05T20:03:44.152381Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:44.152420Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:45.168831Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1012
+2026-11-05T20:03:45.192158Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:45.192183Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:46.448931Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1253
+2026-11-05T20:03:46.474476Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=25
+2026-11-05T20:03:46.474513Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=284 words=39 duration_ms=25
+2026-11-05T20:03:46.474532Z  INFO request{request_id=01a1ad4f-4ccb-72af-b8d7-6333cc33721f method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=180.00 wall_s=8.67 rtf=0.048
+2026-11-05T20:03:46.535167Z  INFO gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:47.558024Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1017
+2026-11-05T20:03:47.581464Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:47.581488Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:48.598800Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1013
+2026-11-05T20:03:48.621844Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:48.621867Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:49.644042Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1017
+2026-11-05T20:03:49.667637Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:49.667665Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:50.685803Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1014
+2026-11-05T20:03:50.709524Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:50.709552Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:51.727968Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1014
+2026-11-05T20:03:51.751707Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=23
+2026-11-05T20:03:51.751732Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=23
+2026-11-05T20:03:52.774926Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1019
+2026-11-05T20:03:52.799204Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=24
+2026-11-05T20:03:52.799237Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=24
+2026-11-05T20:03:53.835757Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1032
+2026-11-05T20:03:53.858676Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=22
+2026-11-05T20:03:53.858697Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=263 words=36 duration_ms=22
+2026-11-05T20:03:54.982803Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1120
+2026-11-05T20:03:55.008037Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=25
+2026-11-05T20:03:55.008057Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=284 words=39 duration_ms=25
+2026-11-05T20:03:55.008077Z  INFO gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=180.00 wall_s=8.47 rtf=0.047
+2026-11-05T20:03:55.074052Z  INFO request{request_id=01a1ad4f-9040-747f-a6e5-24f7b8bf39ce method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:56.113357Z  INFO request{request_id=01a1ad4f-9040-747f-a6e5-24f7b8bf39ce method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1034
+2026-11-05T20:03:56.113397Z  INFO request{request_id=01a1ad4f-9040-747f-a6e5-24f7b8bf39ce method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=0
+2026-11-05T20:03:56.113399Z  INFO request{request_id=01a1ad4f-9040-747f-a6e5-24f7b8bf39ce method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=0 words=0 duration_ms=0
+2026-11-05T20:03:56.122960Z  INFO request{request_id=01a1ad4f-945a-70c3-aec2-49efd4ee471e method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:56.287806Z  INFO request{request_id=01a1ad4f-945a-70c3-aec2-49efd4ee471e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=164
+2026-11-05T20:03:56.292072Z  INFO request{request_id=01a1ad4f-945a-70c3-aec2-49efd4ee471e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:56.292089Z  INFO request{request_id=01a1ad4f-945a-70c3-aec2-49efd4ee471e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:56.292097Z  INFO request{request_id=01a1ad4f-945a-70c3-aec2-49efd4ee471e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.17 rtf=0.042
+2026-11-05T20:03:56.294823Z  INFO request{request_id=01a1ad4f-9505-740b-a97a-569b11125da4 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.335184Z  INFO request{request_id=01a1ad4f-9505-740b-a97a-569b11125da4 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1033
+2026-11-05T20:03:57.335218Z  INFO request{request_id=01a1ad4f-9505-740b-a97a-569b11125da4 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=0
+2026-11-05T20:03:57.335220Z  INFO request{request_id=01a1ad4f-9505-740b-a97a-569b11125da4 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=0 words=0 duration_ms=0
+2026-11-05T20:03:57.346869Z  INFO request{request_id=01a1ad4f-9922-775c-aaf7-ff35873dc44b method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.503055Z  INFO request{request_id=01a1ad4f-9922-775c-aaf7-ff35873dc44b method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=155
+2026-11-05T20:03:57.507282Z  INFO request{request_id=01a1ad4f-9922-775c-aaf7-ff35873dc44b method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:57.507299Z  INFO request{request_id=01a1ad4f-9922-775c-aaf7-ff35873dc44b method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:57.507307Z  INFO request{request_id=01a1ad4f-9922-775c-aaf7-ff35873dc44b method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:57.509631Z  INFO request{request_id=01a1ad4f-99c4-77bc-99b1-dfa9a5cfd812 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.531087Z  INFO request{request_id=01a1ad4f-99da-759c-a26c-24f4595c0632 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.687597Z  INFO request{request_id=01a1ad4f-99da-759c-a26c-24f4595c0632 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=155
+2026-11-05T20:03:57.691973Z  INFO request{request_id=01a1ad4f-99da-759c-a26c-24f4595c0632 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:57.691991Z  INFO request{request_id=01a1ad4f-99da-759c-a26c-24f4595c0632 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:57.691998Z  INFO request{request_id=01a1ad4f-99da-759c-a26c-24f4595c0632 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:57.693430Z  INFO request{request_id=01a1ad4f-9a7c-71d5-8bc5-7c77586a1532 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.716362Z  INFO request{request_id=01a1ad4f-9a94-7188-8c9e-7845cfc56270 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.873982Z  INFO request{request_id=01a1ad4f-9a94-7188-8c9e-7845cfc56270 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=157
+2026-11-05T20:03:57.878259Z  INFO request{request_id=01a1ad4f-9a94-7188-8c9e-7845cfc56270 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:57.878280Z  INFO request{request_id=01a1ad4f-9a94-7188-8c9e-7845cfc56270 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:57.878288Z  INFO request{request_id=01a1ad4f-9a94-7188-8c9e-7845cfc56270 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:57.880003Z  INFO request{request_id=01a1ad4f-9b37-742f-87a8-b8d2975db736 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:57.880637Z  INFO request{request_id=01a1ad4f-9b38-702c-928a-ba27253622f6 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.049021Z  INFO request{request_id=01a1ad4f-9b38-702c-928a-ba27253622f6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=167
+2026-11-05T20:03:58.053318Z  INFO request{request_id=01a1ad4f-9b38-702c-928a-ba27253622f6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:58.053336Z  INFO request{request_id=01a1ad4f-9b38-702c-928a-ba27253622f6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:58.053344Z  INFO request{request_id=01a1ad4f-9b38-702c-928a-ba27253622f6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.17 rtf=0.043
+2026-11-05T20:03:58.055128Z  INFO request{request_id=01a1ad4f-9be6-739f-af46-e6d10cf85386 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.078849Z  INFO request{request_id=01a1ad4f-9bfe-7491-aae2-0b9f5d1ff3d3 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.233872Z  INFO request{request_id=01a1ad4f-9bfe-7491-aae2-0b9f5d1ff3d3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=154
+2026-11-05T20:03:58.238157Z  INFO request{request_id=01a1ad4f-9bfe-7491-aae2-0b9f5d1ff3d3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:58.238177Z  INFO request{request_id=01a1ad4f-9bfe-7491-aae2-0b9f5d1ff3d3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:58.238185Z  INFO request{request_id=01a1ad4f-9bfe-7491-aae2-0b9f5d1ff3d3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:58.239420Z  INFO request{request_id=01a1ad4f-9c9e-743f-9283-e26889c76b92 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.399528Z  INFO request{request_id=01a1ad4f-9c9e-743f-9283-e26889c76b92 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=159
+2026-11-05T20:03:58.403730Z  INFO request{request_id=01a1ad4f-9c9e-743f-9283-e26889c76b92 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:58.403748Z  INFO request{request_id=01a1ad4f-9c9e-743f-9283-e26889c76b92 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:58.403756Z  INFO request{request_id=01a1ad4f-9c9e-743f-9283-e26889c76b92 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.041
+2026-11-05T20:03:58.405235Z  INFO request{request_id=01a1ad4f-9d44-76a8-a39e-48a661bc1c2a method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.566542Z  INFO request{request_id=01a1ad4f-9d44-76a8-a39e-48a661bc1c2a method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=160
+2026-11-05T20:03:58.570470Z  INFO request{request_id=01a1ad4f-9d44-76a8-a39e-48a661bc1c2a method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=3
+2026-11-05T20:03:58.570483Z  INFO request{request_id=01a1ad4f-9d44-76a8-a39e-48a661bc1c2a method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=3
+2026-11-05T20:03:58.570491Z  INFO request{request_id=01a1ad4f-9d44-76a8-a39e-48a661bc1c2a method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.17 rtf=0.041
+2026-11-05T20:03:58.571624Z  INFO request{request_id=01a1ad4f-9deb-70c0-891d-70bbfc218dde method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.725930Z  INFO request{request_id=01a1ad4f-9deb-70c0-891d-70bbfc218dde method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=153
+2026-11-05T20:03:58.730203Z  INFO request{request_id=01a1ad4f-9deb-70c0-891d-70bbfc218dde method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:58.730221Z  INFO request{request_id=01a1ad4f-9deb-70c0-891d-70bbfc218dde method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:58.730228Z  INFO request{request_id=01a1ad4f-9deb-70c0-891d-70bbfc218dde method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:58.731530Z  INFO request{request_id=01a1ad4f-9e8b-714d-9c42-3617376aa912 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:58.886659Z  INFO request{request_id=01a1ad4f-9e8b-714d-9c42-3617376aa912 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=154
+2026-11-05T20:03:58.890952Z  INFO request{request_id=01a1ad4f-9e8b-714d-9c42-3617376aa912 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:58.890968Z  INFO request{request_id=01a1ad4f-9e8b-714d-9c42-3617376aa912 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:58.890975Z  INFO request{request_id=01a1ad4f-9e8b-714d-9c42-3617376aa912 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:58.892131Z  INFO request{request_id=01a1ad4f-9f2b-7131-867e-c7be207fb618 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.054076Z  INFO request{request_id=01a1ad4f-9f2b-7131-867e-c7be207fb618 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=161
+2026-11-05T20:03:59.058352Z  INFO request{request_id=01a1ad4f-9f2b-7131-867e-c7be207fb618 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:59.058369Z  INFO request{request_id=01a1ad4f-9f2b-7131-867e-c7be207fb618 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:59.058376Z  INFO request{request_id=01a1ad4f-9f2b-7131-867e-c7be207fb618 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.17 rtf=0.042
+2026-11-05T20:03:59.059977Z  INFO request{request_id=01a1ad4f-9fd3-735d-ad9c-ff6df5985bdd method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.228686Z  INFO request{request_id=01a1ad4f-9fd3-735d-ad9c-ff6df5985bdd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=167
+2026-11-05T20:03:59.233015Z  INFO request{request_id=01a1ad4f-9fd3-735d-ad9c-ff6df5985bdd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:59.233031Z  INFO request{request_id=01a1ad4f-9fd3-735d-ad9c-ff6df5985bdd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:59.233038Z  INFO request{request_id=01a1ad4f-9fd3-735d-ad9c-ff6df5985bdd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.17 rtf=0.043
+2026-11-05T20:03:59.234406Z  INFO request{request_id=01a1ad4f-a081-77ce-97ab-e708af1069b6 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.394127Z  INFO request{request_id=01a1ad4f-a081-77ce-97ab-e708af1069b6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=159
+2026-11-05T20:03:59.398350Z  INFO request{request_id=01a1ad4f-a081-77ce-97ab-e708af1069b6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:59.398365Z  INFO request{request_id=01a1ad4f-a081-77ce-97ab-e708af1069b6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:59.398383Z  INFO request{request_id=01a1ad4f-a081-77ce-97ab-e708af1069b6 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.041
+2026-11-05T20:03:59.399565Z  INFO request{request_id=01a1ad4f-a127-72a4-93dc-320dca7b7e23 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.559127Z  INFO request{request_id=01a1ad4f-a127-72a4-93dc-320dca7b7e23 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=159
+2026-11-05T20:03:59.563070Z  INFO request{request_id=01a1ad4f-a127-72a4-93dc-320dca7b7e23 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=3
+2026-11-05T20:03:59.563086Z  INFO request{request_id=01a1ad4f-a127-72a4-93dc-320dca7b7e23 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=3
+2026-11-05T20:03:59.563094Z  INFO request{request_id=01a1ad4f-a127-72a4-93dc-320dca7b7e23 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.041
+2026-11-05T20:03:59.564197Z  INFO request{request_id=01a1ad4f-a1cb-77ea-addd-a2039879d103 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.719457Z  INFO request{request_id=01a1ad4f-a1cb-77ea-addd-a2039879d103 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=154
+2026-11-05T20:03:59.723768Z  INFO request{request_id=01a1ad4f-a1cb-77ea-addd-a2039879d103 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:59.723788Z  INFO request{request_id=01a1ad4f-a1cb-77ea-addd-a2039879d103 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:59.723796Z  INFO request{request_id=01a1ad4f-a1cb-77ea-addd-a2039879d103 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:59.725112Z  INFO request{request_id=01a1ad4f-a26c-761e-9ab4-3668aea40827 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::aac: Audio (aac): 16000Hz, 1ch (streaming windows)
+2026-11-05T20:03:59.879852Z  INFO request{request_id=01a1ad4f-a26c-761e-9ab4-3668aea40827 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=154
+2026-11-05T20:03:59.884156Z  INFO request{request_id=01a1ad4f-a26c-761e-9ab4-3668aea40827 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T20:03:59.884175Z  INFO request{request_id=01a1ad4f-a26c-761e-9ab4-3668aea40827 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: Decoded tokens tokens=43 words=6 duration_ms=4
+2026-11-05T20:03:59.884183Z  INFO request{request_id=01a1ad4f-a26c-761e-9ab4-3668aea40827 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=4.00 wall_s=0.16 rtf=0.040
+2026-11-05T20:03:59.886600Z  INFO gigastt::server::listen: Shutting down server
+2026-11-05T20:03:59.996738Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

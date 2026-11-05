@@ -1,0 +1,442 @@
+{
+  "preregistered_utc": "2026-11-05T19:53:39.749431+00:00",
+  "purpose": "Primary confirmation core in same static performance class as CPU0; no decoder benchmark executed during selection. Original allclassidle selection CPU8 retained onlyforcrosstierconfirmation.",
+  "selected_logical_cpu": 1,
+  "selected_smt_siblings": [
+    13
+  ],
+  "selected_physical_core": {
+    "package": "0",
+    "physical_core_id": "1",
+    "logical_cpus": [
+      1,
+      13
+    ],
+    "pair_busy_percent_windows": [
+      8.255581878366975,
+      10.885515110867223
+    ],
+    "worst_pair_busy_percent": 10.885515110867223,
+    "mean_pair_busy_percent": 9.5705484946171,
+    "observer_core": false
+  },
+  "classification_rule": "Same initial cpuinfo_max_freq, cpu_capacity and amd_pstate_highest_perf asCPU0, then minimize max pairbusy across the alreadycaptured two5second windows; tie mean pairbusy then lowestlogicalCPU. No new activity windows orbenchmark timings used.",
+  "cpu0_static_reference": {
+    "package": "0",
+    "physical_core_id": "0",
+    "thread_siblings": "0,12",
+    "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+    "scaling_max_freq_khz_from_initial_capture": "5157895",
+    "extra_static_capacity": {
+      "cpu_capacity": "1024",
+      "acpi_cppc/highest_perf": "196",
+      "acpi_cppc/nominal_perf": "76",
+      "cpufreq/amd_pstate_highest_perf": "196",
+      "cpufreq/amd_pstate_max_freq": "5157895"
+    }
+  },
+  "all_static_capacity": {
+    "0": {
+      "package": "0",
+      "physical_core_id": "0",
+      "thread_siblings": "0,12",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "196",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "1": {
+      "package": "0",
+      "physical_core_id": "1",
+      "thread_siblings": "1,13",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "202",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "2": {
+      "package": "0",
+      "physical_core_id": "2",
+      "thread_siblings": "2,14",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "208",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "3": {
+      "package": "0",
+      "physical_core_id": "3",
+      "thread_siblings": "3,15",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "208",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "4": {
+      "package": "0",
+      "physical_core_id": "8",
+      "thread_siblings": "4,16",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "5": {
+      "package": "0",
+      "physical_core_id": "9",
+      "thread_siblings": "5,17",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "6": {
+      "package": "0",
+      "physical_core_id": "10",
+      "thread_siblings": "6,18",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "7": {
+      "package": "0",
+      "physical_core_id": "11",
+      "thread_siblings": "7,19",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "8": {
+      "package": "0",
+      "physical_core_id": "12",
+      "thread_siblings": "8,20",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "9": {
+      "package": "0",
+      "physical_core_id": "13",
+      "thread_siblings": "9,21",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "10": {
+      "package": "0",
+      "physical_core_id": "14",
+      "thread_siblings": "10,22",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "11": {
+      "package": "0",
+      "physical_core_id": "15",
+      "thread_siblings": "11,23",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "12": {
+      "package": "0",
+      "physical_core_id": "0",
+      "thread_siblings": "0,12",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "196",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "13": {
+      "package": "0",
+      "physical_core_id": "1",
+      "thread_siblings": "1,13",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "202",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "14": {
+      "package": "0",
+      "physical_core_id": "2",
+      "thread_siblings": "2,14",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "208",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "15": {
+      "package": "0",
+      "physical_core_id": "3",
+      "thread_siblings": "3,15",
+      "cpuinfo_max_freq_khz_from_initial_capture": "5157895",
+      "scaling_max_freq_khz_from_initial_capture": "5157895",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "208",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "196",
+        "cpufreq/amd_pstate_max_freq": "5157895"
+      }
+    },
+    "16": {
+      "package": "0",
+      "physical_core_id": "8",
+      "thread_siblings": "4,16",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "17": {
+      "package": "0",
+      "physical_core_id": "9",
+      "thread_siblings": "5,17",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "18": {
+      "package": "0",
+      "physical_core_id": "10",
+      "thread_siblings": "6,18",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "19": {
+      "package": "0",
+      "physical_core_id": "11",
+      "thread_siblings": "7,19",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "20": {
+      "package": "0",
+      "physical_core_id": "12",
+      "thread_siblings": "8,20",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "21": {
+      "package": "0",
+      "physical_core_id": "13",
+      "thread_siblings": "9,21",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "22": {
+      "package": "0",
+      "physical_core_id": "14",
+      "thread_siblings": "10,22",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    },
+    "23": {
+      "package": "0",
+      "physical_core_id": "15",
+      "thread_siblings": "11,23",
+      "cpuinfo_max_freq_khz_from_initial_capture": "3289474",
+      "scaling_max_freq_khz_from_initial_capture": "3289474",
+      "extra_static_capacity": {
+        "cpu_capacity": "1024",
+        "acpi_cppc/highest_perf": "125",
+        "acpi_cppc/nominal_perf": "76",
+        "cpufreq/amd_pstate_highest_perf": "125",
+        "cpufreq/amd_pstate_max_freq": "3289474"
+      }
+    }
+  },
+  "same_class_ranked": [
+    {
+      "package": "0",
+      "physical_core_id": "1",
+      "logical_cpus": [
+        1,
+        13
+      ],
+      "pair_busy_percent_windows": [
+        8.255581878366975,
+        10.885515110867223
+      ],
+      "worst_pair_busy_percent": 10.885515110867223,
+      "mean_pair_busy_percent": 9.5705484946171,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "0",
+      "logical_cpus": [
+        0,
+        12
+      ],
+      "pair_busy_percent_windows": [
+        11.304578038449005,
+        11.102150537634408
+      ],
+      "worst_pair_busy_percent": 11.304578038449005,
+      "mean_pair_busy_percent": 11.203364288041707,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "2",
+      "logical_cpus": [
+        2,
+        14
+      ],
+      "pair_busy_percent_windows": [
+        57.63282288541629,
+        32.818208748889106
+      ],
+      "worst_pair_busy_percent": 57.63282288541629,
+      "mean_pair_busy_percent": 45.2255158171527,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "3",
+      "logical_cpus": [
+        3,
+        15
+      ],
+      "pair_busy_percent_windows": [
+        68.33667334669339,
+        78.59051436205745
+      ],
+      "worst_pair_busy_percent": 78.59051436205745,
+      "mean_pair_busy_percent": 73.46359385437542,
+      "observer_core": false
+    }
+  ],
+  "activity_source": "observations.json/windows.json",
+  "initial_selection_preserved": "preregistered-selection.json",
+  "raw_observation_sha256": "c885cd79c2f9e254ac78686e7c5e0d017acb294ad081db896ad7d4673ca9f96e",
+  "limits": "10seconds passive snapshot cannot prove historical scanbimodality cause orfuture quietness. Do notreplaceoriginalCPU0failedrawsamples."
+}

@@ -1,0 +1,22 @@
+{
+  "source_guard_log": "target/task145/candidate3/guard-aac-tests.log",
+  "source_extended_log": "target/task145/candidate3/check-2.log",
+  "guard_count": 13,
+  "extended_covers_all_guard_names": true,
+  "names": [
+    "inference::audio::aac::buffered::tests::test_absolute_au_seeks_reuse_buffer_without_changing_bytes",
+    "inference::audio::aac::buffered::tests::test_current_end_and_eof_match_unbuffered_reader",
+    "inference::audio::aac::buffered::tests::test_force_rewind_invalidates_cache_after_shared_offset_moves",
+    "inference::audio::aac::buffered::tests::test_read_and_seek_failures_invalidate_relative_position",
+    "inference::audio::aac::mono_plane_tests::test_aac_mono_planes_preserve_add_then_divide_bits",
+    "inference::audio::aac::pull::tests::test_aac_m4a_pull_fallback_rewinds_shared_file_cursor",
+    "inference::audio::aac::pull::tests::test_aac_m4a_pull_preserves_worker_batches_and_native_bits",
+    "inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess",
+    "inference::audio::aac::pull::tests::test_aac_m4a_pull_restores_on_small_stack_without_worker",
+    "inference::audio::aac::worker_packet_tests::test_aac_worker_packet_queue_has_explicit_two_block_bound",
+    "inference::audio::aac::worker_packet_tests::test_aac_worker_packets_flush_completed_blocks_before_typed_error",
+    "inference::audio::aac::worker_packet_tests::test_aac_worker_packets_keep_first_block_immediate_and_drop_unblocks_sender",
+    "inference::audio::aac::worker_packet_tests::test_aac_worker_packets_preserve_odd_even_full_partial_eof"
+  ],
+  "state": "Prior13 verified in candidate3 extended workspace; candidate5 will explicitly verify all13 plus six classification and new ADTS pull tests"
+}

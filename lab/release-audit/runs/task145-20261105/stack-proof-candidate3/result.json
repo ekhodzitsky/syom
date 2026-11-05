@@ -1,0 +1,158 @@
+{
+  "root_commit": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "root_source_tree_matches_commit": true,
+  "checked_src_files": 427,
+  "kernel_sha256": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "consumer_source_manifest": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac.rs": "563adec64bc0485cd89301ddf59023b253d7d402ef0d10c8501188bde4657b0b",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/input.rs": "11772ceeef1425a6835aeb78eba8e892ee40c00c9bd5dd0007feb5da42071a8f",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/pull.rs": "d717217533d26e1f45eb3d4cc3ee0d34072e1e1244a54b62f41e8d9098486b04",
+    "/home/ekhodzitsky/Projects/syom/src/goldens/he48.m4a": "cdbff6fad512d33b0b9c8400fdfa1d9a2ba0fb5a7079c1fad47f4a5380be360e",
+    "/home/ekhodzitsky/Projects/syom/src/goldens/he48em.m4a": "e9e1d3dd4e877f11ef537a5daf4cdc4ec3a58dada10684c56cf66472ace8220a",
+    "/home/ekhodzitsky/Projects/syom/src/goldens/he2_48em.m4a": "39ffa8686e08f7b56e4980d9b5a4523d5c8890184cd87ae214cf16dc64b60463",
+    "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.m4a": "74e3e7fa97363b7fb70aae783da15d0623f9818f44458926f2b98cdab98f35cf"
+  },
+  "generator_sha256": "8aee749b0cf8b2b8d46bf62cf7a761824100ee11b32433abb9203f249efa150a",
+  "environment": {
+    "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target",
+    "CARGO_BUILD_JOBS": "2"
+  },
+  "commands": [
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "cargo",
+        "+stable",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "seconds": 22.277,
+      "log": "build.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he48.m4a",
+        "file"
+      ],
+      "exit_code": 0,
+      "seconds": 0.004,
+      "stdout": "he48.m4a-file.stdout",
+      "stderr": "he48.m4a-file.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he48.m4a",
+        "bytes"
+      ],
+      "exit_code": 0,
+      "seconds": 0.004,
+      "stdout": "he48.m4a-bytes.stdout",
+      "stderr": "he48.m4a-bytes.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he48em.m4a",
+        "file"
+      ],
+      "exit_code": 0,
+      "seconds": 0.005,
+      "stdout": "he48em.m4a-file.stdout",
+      "stderr": "he48em.m4a-file.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he48em.m4a",
+        "bytes"
+      ],
+      "exit_code": 0,
+      "seconds": 0.005,
+      "stdout": "he48em.m4a-bytes.stdout",
+      "stderr": "he48em.m4a-bytes.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he2_48em.m4a",
+        "file"
+      ],
+      "exit_code": 0,
+      "seconds": 0.008,
+      "stdout": "he2_48em.m4a-file.stdout",
+      "stderr": "he2_48em.m4a-file.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/he2_48em.m4a",
+        "bytes"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007,
+      "stdout": "he2_48em.m4a-bytes.stdout",
+      "stderr": "he2_48em.m4a-bytes.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.m4a",
+        "file"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007,
+      "stdout": "ps48.m4a-file.stdout",
+      "stderr": "ps48.m4a-file.stderr"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "8,9",
+        "/home/ekhodzitsky/Projects/syom/target/task145/stack-proof-candidate3-target/release/syom-pull-stack-proof",
+        "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.m4a",
+        "bytes"
+      ],
+      "exit_code": 0,
+      "seconds": 0.007,
+      "stdout": "ps48.m4a-bytes.stdout",
+      "stderr": "ps48.m4a-bytes.stderr"
+    }
+  ],
+  "build_pass": true,
+  "binary_sha256": "379c0dbfbf4f4ec45b9b14d8ac1bdd921969cf550a8240b74b81cf067d104a34",
+  "pass": true,
+  "consumer_and_fixture_hashes_unchanged": true
+}

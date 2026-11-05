@@ -1,0 +1,176 @@
+{
+  "campaign1": {
+    "exit_code": 1,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.003582119616609,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15752,
+          "candidate": 14564
+        },
+        "all_decodes_median_ms": {
+          "base": 5.381266,
+          "candidate": 5.3990100000000005
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.0213008829797654,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15816,
+          "candidate": 14488
+        },
+        "all_decodes_median_ms": {
+          "base": 4.401961,
+          "candidate": 4.454890000000001
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0285974661314892,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15548,
+          "candidate": 14764
+        },
+        "all_decodes_median_ms": {
+          "base": 4.309668,
+          "candidate": 4.430866
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0285678284059805,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 26244,
+          "candidate": 25240
+        },
+        "all_decodes_median_ms": {
+          "base": 61.54976,
+          "candidate": 68.391986
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 0.9822703988389114,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 36932,
+          "candidate": 54448
+        },
+        "all_decodes_median_ms": {
+          "base": 100.69821,
+          "candidate": 99.73232
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 1.0690809428790229,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 17616,
+          "candidate": 16184
+        },
+        "all_decodes_median_ms": {
+          "base": 104.815658,
+          "candidate": 115.624459
+        }
+      }
+    },
+    "loadavg_before": [
+      4.1328125,
+      4.48193359375,
+      4.3837890625
+    ],
+    "loadavg_after": [
+      4.037109375,
+      4.40576171875,
+      4.3603515625
+    ]
+  },
+  "campaign2": {
+    "exit_code": 0,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.0186526134021878,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15784,
+          "candidate": 14632
+        },
+        "all_decodes_median_ms": {
+          "base": 4.323865,
+          "candidate": 4.40129
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.0233712754472406,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15868,
+          "candidate": 14616
+        },
+        "all_decodes_median_ms": {
+          "base": 4.350765,
+          "candidate": 4.446535
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0245612302261673,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15492,
+          "candidate": 14788
+        },
+        "all_decodes_median_ms": {
+          "base": 4.350715,
+          "candidate": 4.446605
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0267197499207557,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 26308,
+          "candidate": 25256
+        },
+        "all_decodes_median_ms": {
+          "base": 62.433056,
+          "candidate": 64.52156000000001
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 0.9788451997980869,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 36912,
+          "candidate": 54348
+        },
+        "all_decodes_median_ms": {
+          "base": 100.320072,
+          "candidate": 99.31338500000001
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 0.9766280896019542,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 17576,
+          "candidate": 16276
+        },
+        "all_decodes_median_ms": {
+          "base": 103.156749,
+          "candidate": 100.700745
+        }
+      }
+    },
+    "loadavg_before": [
+      4.037109375,
+      4.40576171875,
+      4.3603515625
+    ],
+    "loadavg_after": [
+      3.7890625,
+      4.31103515625,
+      4.3310546875
+    ]
+  }
+}

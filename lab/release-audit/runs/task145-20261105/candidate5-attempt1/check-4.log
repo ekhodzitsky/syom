@@ -1,0 +1,15 @@
+    Checking gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)
+    Checking gigastt v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt)
+error: read amount is not handled
+   --> crates/gigastt-core/src/inference/audio/aac/input.rs:143:9
+    |
+143 |         reader.read(&mut prefix).unwrap();
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: use `Read::read_exact` instead, or handle partial reads
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#unused_io_amount
+    = note: `#[deny(clippy::unused_io_amount)]` on by default
+
+    Checking gigastt-uniffi v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-uniffi)
+error: could not compile `gigastt-core` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

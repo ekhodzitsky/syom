@@ -1,9 +1,25 @@
 # Current-model gigastt HTTP qualification
 
-Qualification is in progress. The current `adapter.patch` records the
-adapter-only syom 0.10.0 candidate whose two latency campaigns failed.
-The upstream 0.10.1 FFT candidate has passed local library/MSRV/fuzz checks;
-the combined consumer revision and handoff are still being qualified.
+The combined candidate completed local qualification: native PCM parity,
+consumer checks, two preregistered six-case timing confirmations on CPU 1,
+and the current-model HTTP/load/fault policy. The original CPU 0 scan failure
+and raw HTTP equality failure remain in the [audit](../../release-audit/TASK145.md).
+This is Linux x86_64 evidence for an unpublished syom 0.10.1 candidate.
+
+The 305 MiB model canary recognized all 32 inputs per backend. Baseline/candidate
+p95 was 135.08/152.87 ms, p99 171.27/174.60 ms, and peak HWM
+1159.82/1161.03 MiB. The separate presentation reference qualified; the raw
+equality canary remains false. Load testing completed 224 recognized requests
+per backend across seven bursts, exercised 76 admission retries per backend,
+and passed all 12 gates. Peak load RSS was 1022.86/1066.72 MiB; steady growth
+was 2.05/0.98 MiB. Queue timeout, cancellation/disconnect and watchdog recovery
+passed, and all six owned load/fault servers exited cleanly.
+
+The first reference attempt rejected two exact one-sample differences because
+of binary subtraction rounding. Its failure is retained. Exact rational
+comparison of recorded decimal durations now implements the same inclusive
+1/16000-second bound; 17 offline policy/parser controls include the actual
+boundaries and adjacent floats outside them. No numeric limit was increased.
 
 These offline tools use owned loopback processes and local source/model files.
 No model or recording is downloaded or committed. Run them after isolated decoder
@@ -48,6 +64,19 @@ and its [golos_04 evidence](https://github.com/ekhodzitsky/gigastt/blob/49faef13
 The present run still requires fresh WAV/FFmpeg recognition; the historical
 report supplies provenance, not a replacement for that check.
 
+Two separate, hash-pinned inputs have a movie-clock rounding difference:
+`golos_09-aac` contains 53,492 source samples but declares 3.344 seconds
+(53,504 samples); `golos_10-aac` contains 62,499 but declares 3.907 seconds
+(62,512 samples). The generator parses their actual MP4 boxes. Qualification
+requires `mdhd == stts == WAV frames + 1024`, unit-rate edit priming of 1024,
+and movie/track/edit durations equal to the exact ceiling of WAV duration in
+the 1000 Hz movie clock. It records the 12/13-sample surplus explicitly.
+These exceptions require the exact input/WAV hashes and recorded integer
+clocks; other cases retain the original source-duration relation. Candidate,
+container and bounded FFmpeg PCM still agree within one 16 kHz sample, and the
+full FFmpeg decode must cover that span without synthetic padding. This clock
+rounding evidence is separate from golos_04's diagnosed baseline priming/tail.
+
 `run_http_load.py` uses each backend's independently qualified response rather
 than forcing correct presentation to reproduce an incorrect baseline tail.
 It recomputes the policy from the hash-bound evidence: changing a boolean cannot
@@ -80,13 +109,17 @@ python3 -m unittest discover -s lab/consume/gigastt -p 'test_*.py'
 ## Consumer adapter handoff
 
 The complete [adapter.patch](adapter.patch) targets gigastt commit
-`49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf`, retaining registry syom **0.10.0**
-(checksum `864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce`).
-It includes all four adapter files: `aac.rs`, `aac/input.rs`, and the new
-`aac/pull.rs` and `aac/buffered.rs` modules. The
+`49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf`, pinning unpublished syom **0.10.1**
+to Git revision `3e540231c9d71e3534be1ef856a91cf419efaead`.
+It includes nine files: the consumer manifest/lockfile, `aac.rs`, `aac/input.rs`,
+`aac/probe.rs`, and the new `aac/pull.rs`, `aac/buffered.rs`, `aac/adts_pull.rs`
+and `aac/adts_pull_tests.rs` modules. The
 [adapter manifest](adapter-manifest.json) records the patch/file hashes,
 successful apply check and byte-identical applied files. See the
 [TASK-145 audit](../../release-audit/TASK145.md) for qualification and limits.
+The current nine-file patch SHA-256 is
+`82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968`;
+it was independently reapplied to the exact base and all nine files matched.
 
 Apply to a clean checkout at that exact consumer base:
 

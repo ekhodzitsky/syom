@@ -1,0 +1,832 @@
+[
+  {
+    "start": "2026-11-05T19:51:31.634400+00:00",
+    "end": "2026-11-05T19:51:36.639505+00:00",
+    "elapsed_seconds": 5.0051134239911335,
+    "cpus": {
+      "0": {
+        "delta_ticks": [
+          25,
+          0,
+          9,
+          460,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 495,
+        "busy_ticks": 35,
+        "busy_percent": 7.070707070707071
+      },
+      "1": {
+        "delta_ticks": [
+          21,
+          0,
+          5,
+          471,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 26,
+        "busy_percent": 5.231388329979879
+      },
+      "2": {
+        "delta_ticks": [
+          49,
+          0,
+          43,
+          405,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 92,
+        "busy_percent": 18.51106639839034
+      },
+      "3": {
+        "delta_ticks": [
+          110,
+          0,
+          102,
+          287,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 212,
+        "busy_percent": 42.48496993987976
+      },
+      "4": {
+        "delta_ticks": [
+          4,
+          0,
+          2,
+          491,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 6,
+        "busy_percent": 1.2072434607645874
+      },
+      "5": {
+        "delta_ticks": [
+          6,
+          0,
+          1,
+          493,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 7,
+        "busy_percent": 1.4
+      },
+      "6": {
+        "delta_ticks": [
+          6,
+          0,
+          3,
+          491,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 9,
+        "busy_percent": 1.8
+      },
+      "7": {
+        "delta_ticks": [
+          4,
+          0,
+          3,
+          491,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 7,
+        "busy_percent": 1.4056224899598393
+      },
+      "8": {
+        "delta_ticks": [
+          7,
+          0,
+          3,
+          489,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 10,
+        "busy_percent": 2.004008016032064
+      },
+      "9": {
+        "delta_ticks": [
+          11,
+          0,
+          2,
+          487,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 501,
+        "busy_ticks": 14,
+        "busy_percent": 2.7944111776447107
+      },
+      "10": {
+        "delta_ticks": [
+          7,
+          0,
+          1,
+          490,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 8,
+        "busy_percent": 1.606425702811245
+      },
+      "11": {
+        "delta_ticks": [
+          7,
+          0,
+          3,
+          489,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 10,
+        "busy_percent": 2.004008016032064
+      },
+      "12": {
+        "delta_ticks": [
+          18,
+          0,
+          3,
+          475,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 496,
+        "busy_ticks": 21,
+        "busy_percent": 4.233870967741935
+      },
+      "13": {
+        "delta_ticks": [
+          13,
+          0,
+          2,
+          480,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 496,
+        "busy_ticks": 15,
+        "busy_percent": 3.024193548387097
+      },
+      "14": {
+        "delta_ticks": [
+          101,
+          0,
+          95,
+          305,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 501,
+        "busy_ticks": 196,
+        "busy_percent": 39.12175648702595
+      },
+      "15": {
+        "delta_ticks": [
+          102,
+          0,
+          27,
+          370,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 129,
+        "busy_percent": 25.851703406813627
+      },
+      "16": {
+        "delta_ticks": [
+          6,
+          0,
+          2,
+          491,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 8,
+        "busy_percent": 1.6032064128256514
+      },
+      "17": {
+        "delta_ticks": [
+          7,
+          0,
+          5,
+          487,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 12,
+        "busy_percent": 2.404809619238477
+      },
+      "18": {
+        "delta_ticks": [
+          6,
+          0,
+          4,
+          484,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 495,
+        "busy_ticks": 11,
+        "busy_percent": 2.2222222222222223
+      },
+      "19": {
+        "delta_ticks": [
+          6,
+          0,
+          2,
+          490,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 8,
+        "busy_percent": 1.606425702811245
+      },
+      "20": {
+        "delta_ticks": [
+          6,
+          0,
+          4,
+          490,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 10,
+        "busy_percent": 2.0
+      },
+      "21": {
+        "delta_ticks": [
+          5,
+          0,
+          6,
+          488,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 11,
+        "busy_percent": 2.2044088176352705
+      },
+      "22": {
+        "delta_ticks": [
+          6,
+          0,
+          3,
+          489,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 9,
+        "busy_percent": 1.8036072144288577
+      },
+      "23": {
+        "delta_ticks": [
+          7,
+          0,
+          2,
+          491,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 9,
+        "busy_percent": 1.8
+      }
+    }
+  },
+  {
+    "start": "2026-11-05T19:51:36.639505+00:00",
+    "end": "2026-11-05T19:51:41.644423+00:00",
+    "elapsed_seconds": 5.0049216839979636,
+    "cpus": {
+      "0": {
+        "delta_ticks": [
+          21,
+          0,
+          9,
+          462,
+          0,
+          0,
+          3,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 495,
+        "busy_ticks": 33,
+        "busy_percent": 6.666666666666667
+      },
+      "1": {
+        "delta_ticks": [
+          18,
+          0,
+          7,
+          470,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 495,
+        "busy_ticks": 25,
+        "busy_percent": 5.05050505050505
+      },
+      "2": {
+        "delta_ticks": [
+          72,
+          0,
+          60,
+          361,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 494,
+        "busy_ticks": 132,
+        "busy_percent": 26.720647773279353
+      },
+      "3": {
+        "delta_ticks": [
+          40,
+          0,
+          43,
+          415,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 83,
+        "busy_percent": 16.666666666666668
+      },
+      "4": {
+        "delta_ticks": [
+          18,
+          0,
+          6,
+          476,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 24,
+        "busy_percent": 4.8
+      },
+      "5": {
+        "delta_ticks": [
+          16,
+          0,
+          6,
+          476,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 22,
+        "busy_percent": 4.417670682730924
+      },
+      "6": {
+        "delta_ticks": [
+          17,
+          0,
+          3,
+          476,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 496,
+        "busy_ticks": 20,
+        "busy_percent": 4.032258064516129
+      },
+      "7": {
+        "delta_ticks": [
+          12,
+          0,
+          4,
+          481,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 16,
+        "busy_percent": 3.2193158953722336
+      },
+      "8": {
+        "delta_ticks": [
+          8,
+          0,
+          3,
+          487,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 11,
+        "busy_percent": 2.208835341365462
+      },
+      "9": {
+        "delta_ticks": [
+          9,
+          0,
+          4,
+          485,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 13,
+        "busy_percent": 2.610441767068273
+      },
+      "10": {
+        "delta_ticks": [
+          15,
+          0,
+          9,
+          475,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 24,
+        "busy_percent": 4.809619238476954
+      },
+      "11": {
+        "delta_ticks": [
+          7,
+          0,
+          4,
+          487,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 11,
+        "busy_percent": 2.208835341365462
+      },
+      "12": {
+        "delta_ticks": [
+          16,
+          0,
+          6,
+          474,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 496,
+        "busy_ticks": 22,
+        "busy_percent": 4.435483870967742
+      },
+      "13": {
+        "delta_ticks": [
+          20,
+          0,
+          9,
+          468,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 29,
+        "busy_percent": 5.835010060362173
+      },
+      "14": {
+        "delta_ticks": [
+          21,
+          0,
+          9,
+          462,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 492,
+        "busy_ticks": 30,
+        "busy_percent": 6.097560975609756
+      },
+      "15": {
+        "delta_ticks": [
+          155,
+          0,
+          154,
+          190,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 309,
+        "busy_percent": 61.92384769539078
+      },
+      "16": {
+        "delta_ticks": [
+          10,
+          0,
+          2,
+          488,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 500,
+        "busy_ticks": 12,
+        "busy_percent": 2.4
+      },
+      "17": {
+        "delta_ticks": [
+          8,
+          0,
+          3,
+          488,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 11,
+        "busy_percent": 2.2044088176352705
+      },
+      "18": {
+        "delta_ticks": [
+          6,
+          0,
+          4,
+          485,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 495,
+        "busy_ticks": 10,
+        "busy_percent": 2.0202020202020203
+      },
+      "19": {
+        "delta_ticks": [
+          5,
+          0,
+          5,
+          489,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 10,
+        "busy_percent": 2.004008016032064
+      },
+      "20": {
+        "delta_ticks": [
+          8,
+          0,
+          5,
+          486,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 499,
+        "busy_ticks": 13,
+        "busy_percent": 2.6052104208416833
+      },
+      "21": {
+        "delta_ticks": [
+          13,
+          0,
+          6,
+          478,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 497,
+        "busy_ticks": 19,
+        "busy_percent": 3.8229376257545273
+      },
+      "22": {
+        "delta_ticks": [
+          22,
+          0,
+          4,
+          472,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 26,
+        "busy_percent": 5.220883534136546
+      },
+      "23": {
+        "delta_ticks": [
+          15,
+          0,
+          5,
+          478,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "total_ticks": 498,
+        "busy_ticks": 20,
+        "busy_percent": 4.016064257028113
+      }
+    }
+  }
+]

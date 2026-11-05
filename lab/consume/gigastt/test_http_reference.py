@@ -2,13 +2,15 @@
 """Offline acceptance-policy controls using synthetic observations only."""
 import copy
 import json
+import math
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 import unittest
 
-from http_reference import BASELINE_G04_SHA, CASE_IDS, HUMAN_SHA, MODEL_SHA, ORT_SHA, qualify, validate_binding, digest
+from http_reference import BASELINE_G04_SHA, CASE_IDS, HUMAN_SHA, MODEL_SHA, ORT_SHA, qualify, validate_binding, digest, close
+from mp4_clocks import CLOCK_CASES
 
 
 def fixture():
@@ -38,7 +40,39 @@ def fixture():
                   instances={name: dict(binary_sha256=name) for name in ['baseline', 'candidate']})
     canary['pass'] = canary.pop('pass_')
     for row in canary['negative']:row['pass'] = row.pop('pass_')
+    by_id = {row['id']: row for row in cases}
+    for cid, pin in copy.deepcopy(CLOCK_CASES).items():
+        frames = pin['source_wav_frames']; ticks = (frames * 1000 + 15999) // 16000
+        for kind in ['wav', 'aac']:
+            rid = cid.replace('-aac', '-' + kind); row = by_id[rid]
+            row['sha256'] = pin['source_wav_sha256'] if kind == 'wav' else pin['input_sha256']
+            samples = frames if kind == 'wav' else ticks * 16
+            for response in row['responses'].values():response['duration'] = samples / 16000
+            evidence['cases'][rid].update(input_sha256=row['sha256'], source_wav_sha256=pin['source_wav_sha256'],
+                source_wav_frames=frames, source_wav_rate=16000, source_wav_seconds=frames / 16000,
+                presentation_seconds=samples / 16000, ffmpeg_samples=samples, candidate_samples=samples,
+                baseline_samples=samples, ffmpeg_full_samples=samples, ffmpeg_applied_presentation_seconds=samples / 16000)
+        evidence['cases'][cid]['clock_rounding'] = dict(**pin, source_wav_rate=16000,
+            movie_timescale=1000, movie_duration=ticks, track_duration=ticks, track_id=1,
+            media_timescale=16000, media_duration=frames + 1024, edit_duration=ticks,
+            media_time=1024, media_rate_integer=1, media_rate_fraction=0, stts_duration=frames + 1024)
     return canary, evidence
+
+
+class DurationBoundaryTests(unittest.TestCase):
+    def test_actual_golos05_golos12_one_sample_boundary_is_inclusive_both_signs(self):
+        for low, high in [(3.2039375, 3.204), (5.9439375, 5.944)]:
+            self.assertTrue(close(high, low))
+            self.assertTrue(close(low, high))
+            self.assertTrue(close(math.nextafter(high, low), low))
+            self.assertTrue(close(math.nextafter(low, high), high))
+            self.assertFalse(close(math.nextafter(high, math.inf), low))
+            self.assertFalse(close(math.nextafter(low, -math.inf), high))
+
+    def test_invalid_types_and_nonfinite_durations_remain_rejected(self):
+        for value in [None, True, False, '3.204', [], {}, complex(1), math.nan, math.inf, -math.inf]:
+            self.assertFalse(close(value, 3.204))
+            self.assertFalse(close(3.204, value))
 
 
 class ReferencePolicyTests(unittest.TestCase):
@@ -96,6 +130,20 @@ class ReferencePolicyTests(unittest.TestCase):
                      ffmpeg_full_pcm_sha256='b' * 64)
         self.assertTrue(qualify(canary, evidence)['qualified_for_load'])
         self.assertEqual(proof['ffmpeg_samples'], 80000)
+
+    def test_pinned_clock_rounding_rejects_wrong_clock_stts_priming_edit_hash_or_case(self):
+        for mutation in ['clock', 'stts', 'priming', 'edit', 'hash', 'wav_hash', 'case', 'missing']:
+            canary, evidence = fixture(); cid = 'golos_09-aac'
+            proof = evidence['cases'][cid]['clock_rounding']
+            if mutation == 'clock':proof['movie_timescale'] = 1001
+            if mutation == 'stts':proof['stts_entries'][0][1] = 1023
+            if mutation == 'priming':proof['media_time'] = 1023
+            if mutation == 'edit':proof['edit_duration'] += 1
+            if mutation == 'hash':proof['input_sha256'] = 'other'
+            if mutation == 'wav_hash':proof['source_wav_sha256'] = 'other'
+            if mutation == 'case':evidence['cases']['golos_08-aac']['clock_rounding'] = proof
+            if mutation == 'missing':evidence['cases'][cid].pop('clock_rounding')
+            self.assertFalse(qualify(canary, evidence)['qualified_for_load'], mutation)
 
     def test_runtime_model_numeric_threshold_or_required_checks_cannot_be_bypassed(self):
         for mutation in ['model', 'ort', 'threshold', 'gate', 'negative', 'corpus']:

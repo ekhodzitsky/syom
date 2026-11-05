@@ -1,0 +1,82 @@
+{
+  "purpose": "Exact consumer classifier/native-worker mechanics only; no full SDK/resampler/ASR assertion",
+  "stubs": "Only ResampleTo16k constructor, audio budget resolver and GigasttError Display/Error shell; these six guards compare native frames/bits and actual I/O/fallback. Real cached syom encoder/decoder, File/Bytes/tempfile/tracing/anyhow.",
+  "source_sha256": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac.rs": "232c594be72b775ab11fd76ca299d03f7b4cbf080ada091b5e69c9ff8f6208d5",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/input.rs": "461df74c8a0d78d3cb16fc026f72bacdb855819f7759423940fdb1473e56466c",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/probe.rs": "09a68551e5c7d10dd9542d77626ad7395dd19418c4dfafd4144702c7dc709430",
+    "/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core/src/inference/audio/aac/pull.rs": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+  },
+  "extraction": "aac production prefix verbatim except module wiring/channels exports; input/probe/buffered modules exact via path; pull production and selected function bodies verbatim.",
+  "extracted_sha256": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/aac.rs": "30cdca7bfd63f4fa0584f2e274a983b07240aff5af27571b1d6d6c8b761ecce4",
+    "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/pull.rs": "42cd335e90bf581bdcdbb38fff466a6bff711afd0fdd05f800e5ec83e52729f3",
+    "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/guard.rs": "29160e4bba94cc935aa9af47706d97825339a99703405c67a8a9fbe6c7f6632b"
+  },
+  "selected_pull_test_sha256": {
+    "test_aac_transport_classification_preserves_public_raw_id3_file_bytes_batches": "83f8c8812bbde30c7b9e7c00d5f473868b664475be23dafeae05f795a33337bb",
+    "test_aac_transport_classification_keeps_non_aac_mp4_fallthrough": "a65c751474bcc7144f511d5516b69bf0b4a76cfa5608894e726f2aaecf75362f"
+  },
+  "commands": [
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "14-17",
+        "rustc",
+        "+stable",
+        "--edition=2024",
+        "--test",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "debuginfo=0",
+        "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/guard.rs",
+        "-L",
+        "dependency=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps",
+        "--extern",
+        "anyhow=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-7096a25d3dd2c373.rlib",
+        "--extern",
+        "bytes=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libbytes-9b610fc3e5ef146f.rlib",
+        "--extern",
+        "tempfile=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libtempfile-82df4fcd27d6bfd6.rlib",
+        "--extern",
+        "tracing=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libtracing-072b38caa336d1b4.rlib",
+        "--extern",
+        "syom=/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libsyom-b78a78999ab8640e.rlib",
+        "-o",
+        "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/guard-tests"
+      ],
+      "exit_code": 0,
+      "seconds": 2.555,
+      "log": "build.log"
+    },
+    {
+      "argv": [
+        "taskset",
+        "-c",
+        "14-17",
+        "/home/ekhodzitsky/Projects/syom/target/task145/classification-guard/guard-tests",
+        "--test-threads",
+        "2",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "seconds": 0.011,
+      "stdout": "tests.stdout",
+      "stderr": "tests.stderr"
+    }
+  ],
+  "toolchain": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "rlib_sha256": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libanyhow-7096a25d3dd2c373.rlib": "886e7a1d42eabeaa35ffaa16da4657d60df03da328f643431fbcaa82718e68c6",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libbytes-9b610fc3e5ef146f.rlib": "c9491ec81daa56bb7e25d9a586f2e8d3882efc254d3b885df70ac8198fce5a94",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libtempfile-82df4fcd27d6bfd6.rlib": "993b157511fc6c2d183a021a3654a520535cb2e478d437ab12a0a372f78c6f6f",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libtracing-072b38caa336d1b4.rlib": "05eee9c70e57ff65df96d37adeadc43aed025b79d30da14651b24415cd762dc8",
+    "/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/libsyom-b78a78999ab8640e.rlib": "45007a1fd1882505176d049dbdcf80d47060446ab32a8d1cfcbf8b4677f2b1c7"
+  },
+  "syom_git_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "binary_sha256": "55456becea77fd91beaf5ae0fbbb9c1576777bd17c51b5d91978181f9c993c41",
+  "pass": true
+}

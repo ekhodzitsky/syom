@@ -1,0 +1,6 @@
+speech0.m4a:file: 1.019x (PASS)
+speech0.m4a:bytes: 1.024x (PASS)
+lc.adts:file: 1.052x (FAIL)
+long-stereo.m4a:file: 1.024x (PASS)
+long-stereo.m4a:split: 0.982x (PASS)
+long-stereo.m4a:scan: 0.982x (PASS)

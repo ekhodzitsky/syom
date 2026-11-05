@@ -1,0 +1,43 @@
+{
+  "cpu": 0,
+  "counts_command_suffix": "strace -f -c -e trace=read,lseek,futex,clone,clone3 <owned probe> file <fixture> 20",
+  "counted_decodes_including_warmups": 22,
+  "detailed_command_suffix": "strace -f -yy -T -s 0 -e trace=read,lseek,openat,close,futex,clone,clone3 -o <log> <owned probe> file <fixture> 1",
+  "detailed_decodes_including_warmups": 3,
+  "hashes": {
+    "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts": "6d3e903bdfe47d9e1cf7502132bae8a9f6cdf2992493d99541acf94c6bc6b596",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate2-bin/aac_probe": "ca133f73190cd127ce26a66424ecd5d9676384104a2740d670f8e6b08e5c7f0d",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate3-bin/aac_probe": "d584ae00e7241922ef35a7b0d76bf8c6a0cf5f97a4ca2050c17881ae588f8eb7"
+  },
+  "resource_command_suffix": "/usr/bin/time -v <owned probe> file <fixture> 300",
+  "resource_decodes_including_warmups": 302,
+  "resource_round_order": [
+    [
+      "base",
+      "candidate3"
+    ],
+    [
+      "candidate3",
+      "base"
+    ]
+  ],
+  "scope": "Linuxx86_64 diagnostic attribution, not unchanged acceptance harness; no source edits or builds",
+  "raw_files": {
+    "base-full.stdout": "2e448ef3d4a5fd98b0bd528b6cdf07b1eb8020c39084bc1e93643ffac4ec92a0",
+    "base-full.strace": "30f2bf3865bdb6d00a1c38b017df3e4d61797b1525dd93456fc41fc29042ca31",
+    "base-resources-0.log": "9d41e8ae88d0470e17e23920aa74fac3dc3791c7a84bb721ad7cf76e66b6f130",
+    "base-resources-1.log": "f56e490be5397483c23c496b47339515a11598302c5bcae7044b6443029f2d17",
+    "base-strace-counts.log": "3256341e142d2205c9304257d4f198ca4f27e66009f50e78c13a1f99f6c582c3",
+    "candidate2-strace-counts.log": "a154ec4dd970a0e514b7fc31f9c0e0f58214406caf628f41ba0e52566fdfc85f",
+    "candidate3-full.stdout": "b99072d82d0a51e889d7d198f146bff2bd5060a4477292c86c149befc34bc09b",
+    "candidate3-full.strace": "cd9022df49536717e4b30a8dc743066d778658a30eafa96c84dd668e37a5feee",
+    "candidate3-resources-0.log": "19193897f0104a3fbd83d14ddcb2c36e5d4b9fce3f87577081629ee3641de67d",
+    "candidate3-resources-1.log": "16308a3f2417f444b73621d82f1da34bbfc22f53c8ee14811c8b7981518b6679",
+    "candidate3-strace-counts.log": "8a9941612e280da5f7c708f4ec8338614f8b9758f1ec7efde5655a8fa780c769",
+    "fixture-syscall-summary.json": "4186d00ef9ce16735b2da93563ac433bb1098164ecf9e777dc83900bba08783d",
+    "prefix-syscall-cost-pinned.json": "5d0595a62e5adb48c1f90feef29151c3c7d97380fadc8d2b8ed0fc97436524a6",
+    "prefix-syscall-cost.json": "40493ab37c864b4a99c3fff29231ed5e361c460e6aa8a3908221605ba6daa901",
+    "resources.json": "10a63bad7ab0da6bbf6adc61cc69850d3f727cfd7fa49cf0d439ada439d98a7a"
+  }
+}

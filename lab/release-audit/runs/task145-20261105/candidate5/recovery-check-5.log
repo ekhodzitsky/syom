@@ -1,0 +1,12 @@
+PASS CLI flags/envs (cli.md == CLI sources)
+PASS CLI flag scoping (cli.md sections == clap structs)
+PASS CLI defaults (cli.md [default: …] == clap)
+PASS WS error codes (asyncapi.yaml == api.md == ws/)
+PASS audio formats (api.md/cli.md == audio.rs marker)
+PASS relative links
+PASS OpenAPI paths + format claims
+PASS no unconditional duration caps (all contract docs)
+PASS .github/SECURITY.md supported versions
+PASS crate version pins (README/architecture)
+
+no docs drift detected

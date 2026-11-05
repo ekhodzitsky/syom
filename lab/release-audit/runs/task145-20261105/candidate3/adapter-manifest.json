@@ -1,0 +1,22 @@
+{
+  "consumer_base": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "syom": {
+    "version": "0.10.1",
+    "git": "https://github.com/ekhodzitsky/syom",
+    "rev": "3e540231c9d71e3534be1ef856a91cf419efaead",
+    "publication_status": "unpublished candidate"
+  },
+  "patch": "adapter.patch",
+  "sha256": "590d492a1307498b2adad362ce18fa0c58b21f65fdcacb02f6f8d697371ad2ec",
+  "bytes": 37851,
+  "apply_check": true,
+  "applied_files_identical": true,
+  "files": {
+    "Cargo.lock": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62",
+    "crates/gigastt-core/Cargo.toml": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53",
+    "crates/gigastt-core/src/inference/audio/aac.rs": "563adec64bc0485cd89301ddf59023b253d7d402ef0d10c8501188bde4657b0b",
+    "crates/gigastt-core/src/inference/audio/aac/input.rs": "11772ceeef1425a6835aeb78eba8e892ee40c00c9bd5dd0007feb5da42071a8f",
+    "crates/gigastt-core/src/inference/audio/aac/pull.rs": "d717217533d26e1f45eb3d4cc3ee0d34072e1e1244a54b62f41e8d9098486b04",
+    "crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Cargo.lock": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62",
+  "crates/gigastt-core/Cargo.toml": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53",
+  "crates/gigastt-core/src/inference/audio/aac.rs": "64c92de6599019c6a6caa30d3c5c2af7239e4baa297add41d623ea8176668c7b",
+  "crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+  "crates/gigastt-core/src/inference/audio/aac/channels.rs": "332f07e6fccbb3726c2dbeae97bdb88b6965a5b13b3b7706502353b0671761ce",
+  "crates/gigastt-core/src/inference/audio/aac/input.rs": "461df74c8a0d78d3cb16fc026f72bacdb855819f7759423940fdb1473e56466c",
+  "crates/gigastt-core/src/inference/audio/aac/probe.rs": "09a68551e5c7d10dd9542d77626ad7395dd19418c4dfafd4144702c7dc709430",
+  "crates/gigastt-core/src/inference/audio/aac/pull.rs": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+}

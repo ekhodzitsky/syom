@@ -10,12 +10,14 @@ import argparse
 import hashlib
 import json
 import math
+from fractions import Fraction
 from pathlib import Path
+from mp4_clocks import CLOCK_CASES, valid_clock_evidence
 
 MODEL_SHA = '1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f'
 ORT_SHA = '0bb8a9982b44df690195c2c34b75ca791c3b9f20070b8cecbd8f50c6264dd2e2'
 HUMAN_SHA = hashlib.sha256('ищи телеканал про бизнес на тиви'.encode()).hexdigest()
-TOLERANCE = 1 / 16000
+TOLERANCE = Fraction(1, 16000)
 BASELINE_G04_SHA = hashlib.sha256('ищи телеканал про бизнес на тв'.encode()).hexdigest()
 CASE_IDS = {f'golos_{i:02d}-{kind}' for i in range(15) for kind in ['wav', 'aac']} | {'golos_00-he1', 'golos_00-he2'}
 
@@ -29,8 +31,13 @@ def digest(path):
 
 
 def close(a, b):
-    return (type(a) in (float, int) and type(b) in (float, int)
-            and math.isfinite(a) and math.isfinite(b) and abs(a - b) <= TOLERANCE)
+    if type(a) not in (float, int) or type(b) not in (float, int):
+        return False
+    if any(type(value) is float and not math.isfinite(value) for value in [a, b]):
+        return False
+    # Compare the recorded decimal durations exactly. Binary subtraction can
+    # otherwise reject an exact one-sample difference at this inclusive bound.
+    return abs(Fraction(str(a)) - Fraction(str(b))) <= TOLERANCE
 
 
 def seconds(samples):
@@ -113,10 +120,24 @@ def qualify(canary, independent):
             if proof.get('input_sha256') != row['sha256']:
                 errors.append(f'{cid}: no input-bound independent duration evidence'); continue
             duration = proof.get('presentation_seconds')
+            clock = proof.get('clock_rounding')
+            if cid in CLOCK_CASES:
+                if not (valid_clock_evidence(cid, clock)
+                        and clock['input_sha256'] == row['sha256']
+                        and clock['source_wav_sha256'] == wav.get('sha256')
+                        and proof.get('source_wav_frames') == clock['source_wav_frames']
+                        and proof.get('source_wav_rate') == clock['source_wav_rate']
+                        and proof.get('source_wav_seconds') == clock['source_wav_frames'] / clock['source_wav_rate']
+                        and close(duration, clock['edit_duration'] / clock['movie_timescale'])):
+                    errors.append(f'{cid}: source WAV/movie clock rounding is not independently explained')
+                else:
+                    explained.append(dict(id=cid, kind='pinned source WAV/movie clock ceiling',
+                                          surplus_samples=clock['surplus_samples']))
+            elif clock is not None or not close(duration, proof.get('source_wav_seconds')):
+                errors.append(f'{cid}: unexplained source WAV/presentation duration difference')
             if not full_ffmpeg_covers_presentation(proof):
                 errors.append(f'{cid}: full FFmpeg decode does not prove coverage of bounded presentation')
-            if not all(close(duration, value) for value in [proof.get('source_wav_seconds'),
-                        seconds(proof.get('ffmpeg_samples')),
+            if not all(close(duration, value) for value in [seconds(proof.get('ffmpeg_samples')),
                         seconds(proof.get('candidate_samples')),
                         candidate.get('duration')]):
                 errors.append(f'{cid}: candidate disagrees with independent presentation')

@@ -1,0 +1,133 @@
+{
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "cases": [
+    {
+      "id": "golos_09-aac",
+      "input_sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac",
+      "applied_presentation_seconds": "3.344",
+      "commands": [
+        {
+          "kind": "full",
+          "argv": [
+            "taskset",
+            "-c",
+            "14,15",
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-f",
+            "f32le",
+            "pipe:1"
+          ],
+          "exit_code": 0,
+          "samples": 54272,
+          "pcm_sha256": "c10a886ab1048a440c8b9d77d5b801fe0904ff64fc64120d6a180d4dccf47e90",
+          "stderr": "golos_09-aac-full.stderr"
+        },
+        {
+          "kind": "bounded",
+          "argv": [
+            "taskset",
+            "-c",
+            "14,15",
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+            "-t",
+            "3.344",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-f",
+            "f32le",
+            "pipe:1"
+          ],
+          "exit_code": 0,
+          "samples": 53504,
+          "pcm_sha256": "e30f1fb03d9770711b6bca4b98328ce0be21917271452dfdf84cf57a70dac9e7",
+          "stderr": "golos_09-aac-bounded.stderr"
+        }
+      ],
+      "full_samples": 54272,
+      "bounded_samples": 53504,
+      "full_covers_declared_samples": true,
+      "bounded_is_full_prefix": true,
+      "surplus_samples": 768
+    },
+    {
+      "id": "golos_10-aac",
+      "input_sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3",
+      "applied_presentation_seconds": "3.907",
+      "commands": [
+        {
+          "kind": "full",
+          "argv": [
+            "taskset",
+            "-c",
+            "14,15",
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-f",
+            "f32le",
+            "pipe:1"
+          ],
+          "exit_code": 0,
+          "samples": 63488,
+          "pcm_sha256": "9014f3827f830f5bd694e3bfc5dfa341a91b1fed3a2a86de9bad769f1e032308",
+          "stderr": "golos_10-aac-full.stderr"
+        },
+        {
+          "kind": "bounded",
+          "argv": [
+            "taskset",
+            "-c",
+            "14,15",
+            "ffmpeg",
+            "-nostdin",
+            "-v",
+            "error",
+            "-i",
+            "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+            "-t",
+            "3.907",
+            "-ar",
+            "16000",
+            "-ac",
+            "1",
+            "-f",
+            "f32le",
+            "pipe:1"
+          ],
+          "exit_code": 0,
+          "samples": 62512,
+          "pcm_sha256": "75cf0d7700ed43aa51ddc7cc75226b57ceb5b658d7e66e068926f94de880a111",
+          "stderr": "golos_10-aac-bounded.stderr"
+        }
+      ],
+      "full_samples": 63488,
+      "bounded_samples": 62512,
+      "full_covers_declared_samples": true,
+      "bounded_is_full_prefix": true,
+      "surplus_samples": 976
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "1": {
+    "pooled_median_us": 4537.696,
+    "process_medians_us": [
+      4490.427,
+      4565.418,
+      4549.358,
+      4548.887,
+      4531.674,
+      4533.508000000001,
+      4577.16
+    ],
+    "paired_median_ratio_vs1": 1.0,
+    "paired_median_delta_us_vs1": 0.0,
+    "paired_delta_us_all": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_logical_blocks": 6,
+    "pcm_float_bytes_at24576_samples_per_block": 589824,
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-capacities 1 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.32\n\tSystem time (seconds): 0.05\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.38\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6184\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 57156\n\tVoluntary context switches: 2110\n\tInvoluntary context switches: 1825\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  },
+  "2": {
+    "pooled_median_us": 4552.554,
+    "process_medians_us": [
+      4505.045,
+      4530.352,
+      4566.3910000000005,
+      4678.26,
+      4585.766,
+      4513.8009999999995,
+      4553.346
+    ],
+    "paired_median_ratio_vs1": 1.0032553697009217,
+    "paired_median_delta_us_vs1": 14.618000000000393,
+    "paired_delta_us_all": [
+      14.618000000000393,
+      -35.0659999999998,
+      17.033000000000357,
+      129.3730000000005,
+      54.09199999999964,
+      -19.707000000001244,
+      -23.814000000000306
+    ],
+    "max_logical_blocks": 8,
+    "pcm_float_bytes_at24576_samples_per_block": 786432,
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-capacities 2 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.32\n\tSystem time (seconds): 0.03\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.36\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6392\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 56290\n\tVoluntary context switches: 1507\n\tInvoluntary context switches: 1214\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  },
+  "4": {
+    "pooled_median_us": 4568.023,
+    "process_medians_us": [
+      4571.399,
+      4536.6449999999995,
+      4533.038,
+      4632.675,
+      4598.139999999999,
+      4603.179,
+      4532.337
+    ],
+    "paired_median_ratio_vs1": 1.014666986195388,
+    "paired_median_delta_us_vs1": 66.46599999999944,
+    "paired_delta_us_all": [
+      80.97200000000066,
+      -28.77300000000014,
+      -16.32000000000062,
+      83.78800000000047,
+      66.46599999999944,
+      69.67099999999937,
+      -44.82299999999941
+    ],
+    "max_logical_blocks": 12,
+    "pcm_float_bytes_at24576_samples_per_block": 1179648,
+    "resources": "\tCommand being timed: \"/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-worker-capacities 4 /home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts 300\"\n\tUser time (seconds): 1.32\n\tSystem time (seconds): 0.04\n\tPercent of CPU this job got: 99%\n\tElapsed (wall clock) time (h:mm:ss or m:ss): 0:01.36\n\tAverage shared text size (kbytes): 0\n\tAverage unshared data size (kbytes): 0\n\tAverage stack size (kbytes): 0\n\tAverage total size (kbytes): 0\n\tMaximum resident set size (kbytes): 6400\n\tAverage resident set size (kbytes): 0\n\tMajor (requiring I/O) page faults: 0\n\tMinor (reclaiming a frame) page faults: 56290\n\tVoluntary context switches: 1205\n\tInvoluntary context switches: 918\n\tSwaps: 0\n\tFile system inputs: 0\n\tFile system outputs: 0\n\tSocket messages sent: 0\n\tSocket messages received: 0\n\tSignals delivered: 0\n\tPage size (bytes): 4096\n\tExit status: 0\n"
+  }
+}

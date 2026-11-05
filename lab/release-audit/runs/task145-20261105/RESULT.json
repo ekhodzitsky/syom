@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "task": "TASK-145",
+  "status": "qualified unpublished candidate",
+  "platform": "Linux x86_64 only; AMD Ryzen AI9 HX370",
+  "syom": {
+    "version": "0.10.1",
+    "git": "https://github.com/ekhodzitsky/syom",
+    "rev": "3e540231c9d71e3534be1ef856a91cf419efaead",
+    "publication_status": "unpublished candidate"
+  },
+  "consumer_base": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "required_adapter_patch_sha256": "82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968",
+  "adapter_files": 9,
+  "qualification_requires_both_library_and_adapter": true,
+  "decoder_threshold": 1.05,
+  "preregistered_cpu": 1,
+  "smt_sibling": 13,
+  "confirmation_ratios": {
+    "preregistered-cpu1-campaign1": {
+      "speech0.m4a:file": 1.0160468710268722,
+      "speech0.m4a:bytes": 1.0194163504321094,
+      "lc.adts:file": 1.0260137305438812,
+      "long-stereo.m4a:file": 1.020227886234562,
+      "long-stereo.m4a:split": 0.9813161236064215,
+      "long-stereo.m4a:scan": 0.978817705896722
+    },
+    "preregistered-cpu1-campaign2": {
+      "speech0.m4a:file": 1.019744021813425,
+      "speech0.m4a:bytes": 1.019809388269917,
+      "lc.adts:file": 1.0278220326934109,
+      "long-stereo.m4a:file": 1.0190746226774825,
+      "long-stereo.m4a:split": 0.9872932029581012,
+      "long-stereo.m4a:scan": 0.9674699479143266
+    }
+  },
+  "original_cpu0_scan_failure_retained": true,
+  "original_cpu0_failure_cause": "not established",
+  "pcm_cases_exact": 29,
+  "consumer_tests": {
+    "default_passed": 1269,
+    "extended_passed": 1305,
+    "existing_ignored_each": 49,
+    "required_aac_guards_passed": 27
+  },
+  "required_root_checks_passed": 7,
+  "offline_policy_tests_passed": 17,
+  "http": {
+    "raw_equality_canary_pass": false,
+    "reference_qualified": true,
+    "successful_inputs_each_backend": 32,
+    "load_fault_pass": true,
+    "load_fault_gates_passed": 12,
+    "original_canary_retained_sha256": "e22a8789daca50f17e72c372f5ca8931045e8f05dfa0fc0a4dc74ea848014726"
+  },
+  "package": {
+    "bytes": 469313,
+    "sha256": "0fe9b7db2ed4c614bb6ee90c3d69c20885da73c786d2939083fe6458e3df343d",
+    "published": false
+  },
+  "limitations": [
+    "No Windows/macOS/ARM parity established",
+    "Original CPU0 scan failure remains unexplained",
+    "Split probe RSS exceeds standard decoder",
+    "Raw HTTP equality canary remains false; independent presentation qualification applies"
+  ],
+  "hosted_ci_dispatched": false,
+  "crate_published": false,
+  "consumer_merged_or_deployed": false,
+  "completed_utc": "2026-11-05T20:12:11.559696+00:00",
+  "evidence_index": "evidence-index.json"
+}

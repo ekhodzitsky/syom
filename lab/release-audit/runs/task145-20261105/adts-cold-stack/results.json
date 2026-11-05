@@ -1,0 +1,130 @@
+[
+  {
+    "profile": "lc",
+    "reader": "file",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "lc",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts",
+      "file"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts\",\"geometry\":[[13312,48000,1]],\"metadata\":{\"core_rate\":48000,\"decoded_channels\":1,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":13312,\"profile\":\"lc\",\"reader\":\"file\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "lc",
+    "reader": "bytes",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "lc",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts",
+      "bytes"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/sine48.adts\",\"geometry\":[[13312,48000,1]],\"metadata\":{\"core_rate\":48000,\"decoded_channels\":1,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":13312,\"profile\":\"lc\",\"reader\":\"bytes\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "he1",
+    "reader": "file",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "he1",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts",
+      "file"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts\",\"geometry\":[[24576,48000,2],[8192,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":2,\"output_rate\":48000},\"native_samples\":32768,\"profile\":\"he1\",\"reader\":\"file\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "he1",
+    "reader": "bytes",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "he1",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts",
+      "bytes"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts\",\"geometry\":[[24576,48000,2],[8192,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":2,\"output_rate\":48000},\"native_samples\":32768,\"profile\":\"he1\",\"reader\":\"bytes\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "ps",
+    "reader": "file",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "ps",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts",
+      "file"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts\",\"geometry\":[[24576,48000,2],[24576,48000,2],[4096,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":53248,\"profile\":\"ps\",\"reader\":\"file\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "ps",
+    "reader": "bytes",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "ps",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts",
+      "bytes"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/ps48.adts\",\"geometry\":[[24576,48000,2],[24576,48000,2],[4096,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":53248,\"profile\":\"ps\",\"reader\":\"bytes\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "implicit-ps",
+    "reader": "file",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "implicit-ps",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/he48.adts",
+      "file"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/he48.adts\",\"geometry\":[[18432,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":18432,\"profile\":\"implicit-ps\",\"reader\":\"file\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  },
+  {
+    "profile": "implicit-ps",
+    "reader": "bytes",
+    "command": [
+      "taskset",
+      "-c",
+      "8",
+      "/home/ekhodzitsky/Projects/syom/target/task145/native-stages-target/release/syom-adts-cold-stack-proof",
+      "implicit-ps",
+      "/home/ekhodzitsky/Projects/syom/src/goldens/he48.adts",
+      "bytes"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"bit_differences\":0,\"fixture\":\"/home/ekhodzitsky/Projects/syom/src/goldens/he48.adts\",\"geometry\":[[18432,48000,2]],\"metadata\":{\"core_rate\":24000,\"decoded_channels\":2,\"header_channel_configuration\":1,\"output_rate\":48000},\"native_samples\":18432,\"profile\":\"implicit-ps\",\"reader\":\"bytes\",\"stack_bytes\":131072}\n",
+    "stderr": ""
+  }
+]

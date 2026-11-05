@@ -1,0 +1,14 @@
+{
+  "lc.cap1.f32": {
+    "bytes": 258044,
+    "sha256": "61b2981f6516cf8e6b17e0be8d4945efd0d3700f7ee3ff44c12e0723f5f7b02b"
+  },
+  "lc.cap2.f32": {
+    "bytes": 258044,
+    "sha256": "61b2981f6516cf8e6b17e0be8d4945efd0d3700f7ee3ff44c12e0723f5f7b02b"
+  },
+  "lc.cap4.f32": {
+    "bytes": 258044,
+    "sha256": "61b2981f6516cf8e6b17e0be8d4945efd0d3700f7ee3ff44c12e0723f5f7b02b"
+  }
+}

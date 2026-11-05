@@ -1,0 +1,13 @@
+{
+  "cpu": "Python loop inherits caller affinity (see note)",
+  "note": "Diagnostic approximation only. Python overhead included; warm file, two extra read64+rewind pairs; no worker scheduling/classification. Run pinned CPU0 below if affinity unrestricted.",
+  "ns_per_two_pairs": [
+    551.66516,
+    515.30279,
+    518.43505,
+    519.28435,
+    537.25865,
+    633.68693,
+    578.87467
+  ]
+}

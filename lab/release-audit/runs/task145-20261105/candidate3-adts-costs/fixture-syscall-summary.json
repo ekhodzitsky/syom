@@ -1,0 +1,41 @@
+{
+  "base": {
+    "openat": {
+      "calls": 7,
+      "traced_elapsed_seconds": 2.2e-05
+    },
+    "read": {
+      "calls": 59,
+      "traced_elapsed_seconds": 0.000153
+    },
+    "lseek": {
+      "calls": 15,
+      "traced_elapsed_seconds": 3.4e-05
+    },
+    "close": {
+      "calls": 7,
+      "traced_elapsed_seconds": 1.7e-05
+    },
+    "prefix64_reads": 0
+  },
+  "candidate3": {
+    "openat": {
+      "calls": 7,
+      "traced_elapsed_seconds": 2.7e-05
+    },
+    "read": {
+      "calls": 44,
+      "traced_elapsed_seconds": 0.0021420000000000002
+    },
+    "lseek": {
+      "calls": 12,
+      "traced_elapsed_seconds": 2.4999999999999998e-05
+    },
+    "close": {
+      "calls": 7,
+      "traced_elapsed_seconds": 1.8e-05
+    },
+    "prefix64_reads": 9
+  },
+  "note": "Counts are diagnostic traced calls including3decodes+probe file load. Elapsed sums include only completed traced lines, omit resumed lines, and are perturbed by tracing/scheduling; do not use as syscall latency evidence."
+}

@@ -1,0 +1,34 @@
+--- attempt1/http_reference.py
++++ exact-arithmetic/http_reference.py
+@@ -10,13 +10,14 @@
+ import hashlib
+ import json
+ import math
++from fractions import Fraction
+ from pathlib import Path
+ from mp4_clocks import CLOCK_CASES, valid_clock_evidence
+ 
+ MODEL_SHA = '1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f'
+ ORT_SHA = '0bb8a9982b44df690195c2c34b75ca791c3b9f20070b8cecbd8f50c6264dd2e2'
+ HUMAN_SHA = hashlib.sha256('ищи телеканал про бизнес на тиви'.encode()).hexdigest()
+-TOLERANCE = 1 / 16000
++TOLERANCE = Fraction(1, 16000)
+ BASELINE_G04_SHA = hashlib.sha256('ищи телеканал про бизнес на тв'.encode()).hexdigest()
+ CASE_IDS = {f'golos_{i:02d}-{kind}' for i in range(15) for kind in ['wav', 'aac']} | {'golos_00-he1', 'golos_00-he2'}
+ 
+@@ -30,8 +31,13 @@
+ 
+ 
+ def close(a, b):
+-    return (type(a) in (float, int) and type(b) in (float, int)
+-            and math.isfinite(a) and math.isfinite(b) and abs(a - b) <= TOLERANCE)
++    if type(a) not in (float, int) or type(b) not in (float, int):
++        return False
++    if any(type(value) is float and not math.isfinite(value) for value in [a, b]):
++        return False
++    # Compare the recorded decimal durations exactly. Binary subtraction can
++    # otherwise reject an exact one-sample difference at this inclusive bound.
++    return abs(Fraction(str(a)) - Fraction(str(b))) <= TOLERANCE
+ 
+ 
+ def seconds(samples):

@@ -1,0 +1,6 @@
+    Checking gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)
+    Checking gigastt v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt)
+    Checking gigastt-uniffi v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-uniffi)
+    Checking gigastt-ffi v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-ffi)
+    Checking gigastt-node v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-node)
+    Finished `release` profile [optimized] target(s) in 13.60s

@@ -20,6 +20,12 @@ x86 AVX-512 FFT optimization. Local qualification and consumer results are
 recorded in the [candidate evaluation](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/TASK145.md);
 the registry quick start below remains on published 0.10.0.
 
+To evaluate the source candidate, pin its qualified library revision:
+
+```toml
+syom = { git = "https://github.com/ekhodzitsky/syom", rev = "3e540231c9d71e3534be1ef856a91cf419efaead", version = "=0.10.1" }
+```
+
 ## Quick start
 
 Requires Rust **1.89+**. Cargo downloads the **0.10.0** crate (`syom = "0.10"`);

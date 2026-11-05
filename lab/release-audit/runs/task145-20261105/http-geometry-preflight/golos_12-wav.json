@@ -1,0 +1,23 @@
+{
+    "programs": [
+
+    ],
+    "stream_groups": [
+
+    ],
+    "streams": [
+        {
+            "index": 0,
+            "codec_name": "pcm_s16le",
+            "codec_type": "audio",
+            "sample_rate": "16000",
+            "channels": 1,
+            "time_base": "1/16000",
+            "duration_ts": 95103,
+            "duration": "5.943938"
+        }
+    ],
+    "format": {
+        "duration": "5.943938"
+    }
+}

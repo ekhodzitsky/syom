@@ -1,0 +1,67 @@
+{
+  "reviewed_utc": "2026-11-05T19:39:06.199735+00:00",
+  "mode": "Read-only source/policy audit; no build, test, model or HTTP execution",
+  "concrete_blockers": [],
+  "reviewed_tool_sha256": {
+    "lab/consume/gigastt/http_reference.py": "8955454cd020dd34f445a8e48aff31852d9251cd3432aa93771d7b69dd3a5027",
+    "lab/consume/gigastt/presentation_evidence.py": "6048525754ddd8795e9c57d27f7f68152143125fe8657cec26f37cf296cfc780",
+    "lab/consume/gigastt/mp4_clocks.py": "7de602c2fb9eaec50f09bbcc3c3196f35578c9ce8836c43b27ede174101ac0ce",
+    "lab/consume/gigastt/test_http_reference.py": "d5972d9918185601984027b0ad07ad59eb3b4acc152b7e4ab0abc1842dec5d03",
+    "lab/consume/gigastt/test_mp4_clocks.py": "33ac59a779b22fdbe0215ddf402f1b7f6e1e9d27f200fb424bd811fd1f7143ae",
+    "lab/consume/gigastt/run_http_canary.py": "3ea6ed22ee203075c1085419cfe55e3f054d8be1825e98df8b80a2b84e078b6f",
+    "lab/consume/gigastt/run_http_load.py": "5d3e608fa1b1c916dec60cfaf6a286e714bcf93e087ba022b1296f6552814102"
+  },
+  "thresholds_reviewed": {
+    "decoder_harness": "unchanged <=1.05 paired median (separate harness)",
+    "http_latency_ratio": 1.5,
+    "http_peak_rss_ratio": 1.25,
+    "http_rss_slack_mib": 32,
+    "steady_growth_mib": 64,
+    "cancel_recovery_seconds": 30,
+    "normal_duration_tolerance_seconds": 6.25e-05
+  },
+  "conclusions": [
+    "Generator runs unbounded FFmpeg and independently duration-bounded FFmpeg; compares every bounded PCM byte against full output prefix before recording real counts/hashes. Qualifier requires positive bounded count, full>=bounded, consistent surplus and prefix evidence. No Python padding/resizing invents samples.",
+    "Clock exception is restricted to golos_09-aac/golos_10-aac with exact AAC/WAV hashes, source frame counts, movie/media/edit/STTS fields, 1024-sample priming and 12/13-sample movie-clock ceiling. Other cases and WAV controls retain one-sample tolerance.",
+    "Known golos_04 transcript correction is tied to exact candidate/human/WAV/FFmpeg text hashes; actual local fixture manifest contains the pinned human text. Other text differences fail.",
+    "Reference binding rehashes exact current canary/independent JSON, both binaries, all four model files and each input, then recomputes policy. Numeric, negative-input and health prerequisites remain enforced.",
+    "Negative offline policy/parser controls cover changed clocks/hashes/priming/STTS, missing full decode, shorter full output, stale canary, altered expectations/models/thresholds, unsupported duplicate/truncated box structures. This audit inspected those tests but did not execute them."
+  ],
+  "candidate5_production_review": {
+    "aac.rs": {
+      "matches_cold_proof_full_source": true,
+      "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+    },
+    "aac/adts_pull.rs": {
+      "matches_cold_proof_full_source": true,
+      "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+    },
+    "aac/buffered.rs": {
+      "matches_cold_proof_full_source": true,
+      "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+    },
+    "aac/input.rs": {
+      "matches_cold_proof_production_prefix": true,
+      "production_prefix_sha256": "9f09f384953ee281770db4e59db540e18fa2c043788ba361fd8cec71ecf1d5ab",
+      "only_observed_change": "cfg(test) ignored read amount changed to assert_eq!(read_bytes,prefix.len()); strengthens assertion, no runtime change"
+    }
+  },
+  "candidate5_invariants": [
+    "Fully fed bytes before another Read; retained lookahead already fed and at most five unframed bytes.",
+    "Declared AU remainder forwards available prefix before another Read, preserving core header-before-IO error ordering; codec remains authority.",
+    "One ready block plus partial; one ADTS AU emits at most one native frame, <=8192 samples for four RDB/SBR.",
+    "Completed blocks precede deferred terminal errors; incomplete batch discarded; EOF invokes Decoder.finish; ISOBMFF classification priority preserved."
+  ],
+  "limitations": [
+    "No claim here that final canary, independent FFmpeg runs, load/fault campaign or final decoder campaigns have passed; their fresh evidence is separate.",
+    "Native cheap guard/cold stack proof is not actual public consumer budget/cancel/model qualification.",
+    "MP4 parser is intentionally restricted to the two pinned version-0 single-track clock shapes, not a general MP4/conformance parser.",
+    "Policy validates recorded local evidence fields; actual full-prefix comparison occurs in presentation_evidence.py. Preserve generator commands/tool hashes with the resulting evidence.",
+    "Linux x86_64 measurements do not establish Windows/macOS/ARM parity."
+  ],
+  "related_evidence": [
+    "target/task145/candidate5/clippy-test-recovery/proof.json",
+    "target/task145/adts-cold-stack/provenance.json",
+    "target/task145/consumer-checks/candidate5-aac-coverage-proof.json"
+  ]
+}

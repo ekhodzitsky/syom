@@ -1,0 +1,60 @@
+{
+  "sdk_git_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "sdk_version": "0.10.1 unpublished",
+  "consumer_manifest_pin": "canonical HTTPS Git + exact full revision + version0.10.1 + optional=true",
+  "lock_change": "Only syom package entry changed; all other bytes retained",
+  "started_utc": "2026-11-05T17:48:46.023990+00:00",
+  "commands": [
+    {
+      "command": [
+        "cargo",
+        "+stable",
+        "metadata",
+        "--format-version",
+        "1",
+        "--locked",
+        "--features",
+        "gigastt/extended-aac",
+        "--filter-platform",
+        "x86_64-unknown-linux-gnu",
+        "--offline"
+      ],
+      "exit_code": 101,
+      "offline": true,
+      "stdout": "initial-offline-metadata.json",
+      "stderr": "initial-offline-metadata.log",
+      "environment_override": {
+        "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
+        "CARGO_NET_OFFLINE": "true"
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "+stable",
+        "metadata",
+        "--format-version",
+        "1",
+        "--locked",
+        "--features",
+        "gigastt/extended-aac",
+        "--filter-platform",
+        "x86_64-unknown-linux-gnu"
+      ],
+      "exit_code": 0,
+      "offline": false,
+      "stdout": "initial-online-git-fetch.json",
+      "stderr": "initial-online-git-fetch.log",
+      "environment_override": {
+        "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
+        "CARGO_NET_OFFLINE": "false"
+      }
+    }
+  ],
+  "online_fetch_necessary": true,
+  "after_sha256": {
+    "crates/gigastt-core/Cargo.toml": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53",
+    "Cargo.lock": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+  },
+  "finished_utc": "2026-11-05T17:48:48.099928+00:00"
+}

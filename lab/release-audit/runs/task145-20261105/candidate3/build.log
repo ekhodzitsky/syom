@@ -1,0 +1,4 @@
+   Compiling syom v0.10.1 (https://github.com/ekhodzitsky/syom?rev=3e540231c9d71e3534be1ef856a91cf419efaead#3e540231)
+   Compiling gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)
+   Compiling gigastt v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt)
+    Finished `release` profile [optimized] target(s) in 4m 04s

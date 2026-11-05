@@ -6,8 +6,17 @@ decoder cost. The starting codec was published **syom 0.10.0**, source
 `864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce`.
 The measured FFT improvement is now an **unpublished syom 0.10.1 candidate**.
 The downstream PR remains draft; this work neither merges it, changes the
-default consumer backend nor publishes a crate. Combined consumer qualification
-is still pending; the failed adapter-only attempts remain below.
+default consumer backend nor publishes a crate.
+
+The final combined candidate passes two preregistered six-case latency
+campaigns on CPU 1, all 29 exact PCM cases, full consumer checks and the
+current-305-MiB-model HTTP recognition/admission/load/fault qualification.
+Every failed attempt remains below, including an unexplained CPU 0 scan
+failure. Qualification covers the pinned Linux x86_64 setup and requires the
+complete downstream adapter patch, not just a library version update.
+The [machine-readable result](runs/task145-20261105/RESULT.json) and
+[SHA-256 evidence index](runs/task145-20261105/evidence-index.json) identify
+the qualified artifacts and retained failures.
 
 ## Reproduced gap and attribution
 
@@ -114,16 +123,146 @@ scalar oracle at sizes 1/2/4/8/16/64/512, including signed zero and subnormals.
 Version/active path lockfiles are synchronized; historical measurements and
 archive lockfiles retain their measured 0.10.0 identity.
 
+The first combined consumer (**candidate 3**) passed all correctness checks
+and five latency cases, but ADTS still failed twice: **1.05160/1.05268**.
+Long mono now passed at **1.0242/1.0281**; split/scan ratios were below one.
+The unchanged 1.05 limit was not rounded or waived; see
+[both raw campaigns](runs/task145-20261105/candidate3/timing-summary.json).
+
+Controlled queue-capacity tests did not support increasing prefetch: two/four
+packets reduced context switches but paired latency ratios were 1.0033/1.0147
+against one packet. A 16 KiB input-read experiment saved about 22 microseconds
+in its median but regressed in two of seven pairs and added a new feeding-loop
+surface; 64 KiB was less consistent. Neither change was adopted. The original
+one-packet queue and 4 KiB read quantum remain, with
+[queue](runs/task145-20261105/worker-capacities/) and
+[input-quantum evidence](runs/task145-20261105/worker-quanta/) retained.
+
+The next targeted changes remove repeated transport detection and the
+single-plane normalization pass. ADTS was being classified three times before
+decoding; carrying its classification removes two reads and two rewinds while
+preserving tagged/push/unsupported-M4A fallback behavior. A single plane is
+already mono: copying it directly avoids a dynamic divide-by-one pass. The
+[helper experiment](runs/task145-20261105/mono-append/result.json) preserved
+all 193,536 finite sample bits, signed zero/subnormal edges and quiet NaN
+payloads. It measured roughly 22 microseconds of potential savings for this
+ADTS input, which is not itself an end-to-end gate result. Six real
+classification/I/O/fallback regressions and the repeated eight-cell native
+HE/PS cold-stack proof pass before the next full consumer campaign.
+
+Candidate 4 still failed its preliminary ADTS gate at **1.05589**, so expensive
+workspace checks were stopped; its other five cells and 29 PCM cases passed.
+That [preliminary failure](runs/task145-20261105/candidate4/early-diagnostic/decoder-timing.json)
+is retained. Helper-only microbench improvements were not treated as an
+end-to-end pass.
+
+Candidate 5 removes the worker for **bare ADTS**. A small framing layer feeds
+declared AUs through the existing public `Decoder::feed`, stopping between
+calls once the original logical block is ready. It forwards junk and partial
+headers too; the codec remains the sole syntax/CRC/payload validator. The
+separate framing/fed offsets retain at most five already-forwarded bytes across
+reads, avoiding replay and preserving header-error-before-I/O precedence.
+EOF always calls `finish`, retaining the old partial-tail behavior.
+
+One ADTS AU contains at most four raw data blocks and two-times SBR expansion:
+at most 8,192 native samples, below the 24,576-frame logical cut. The new path
+therefore needs one ready block and a partial batch, with defensive overflow
+refusal; its compressed stash is at most 4,101 bytes plus a 4 KiB read scratch.
+Tagged ADTS/LOAS and unsupported-M4A push retain their worker. Existing ISO-BMFF
+priority is retained even for an ambiguous ADTS/`ftyp` prefix.
+
+The native guard passes CRC, LC/HE/PS four-RDB, File/Bytes geometry/full-bit,
+junk, short-read, EOF and error-order cases. The additional fresh-process
+[ADTS cold-stack proof](runs/task145-20261105/adts-cold-stack/results.json)
+passes eight File/Bytes LC/HE1/PS/implicit-PS cells at 128 KiB, without encoder
+warming. Its preliminary unchanged six-case timing gate passes, including
+ADTS **1.03704**. Full workspace checks and two post-validation campaigns
+were still required after that preliminary result.
+
+The first full candidate-5 workspace run passed **1,305 tests** (49 existing
+ignores), including all 27 AAC guards and the public output-budget and
+cancellation cases. Extended Clippy then rejected an unchecked `read` byte
+count in the classification regression. The test now asserts all 64 prefix
+bytes were read; production source before `#[cfg(test)]` is byte-identical.
+The failed attempt, source snapshots and correction proof are retained. The
+corrected source also passes all 1,305 extended tests and both Clippy profiles;
+the default workspace passes 1,269 tests (49 existing ignores in each run).
+Both qualifying campaigns use the corrected test source and final binary hashes.
+
+The first post-validation campaign failed **scan at 1.06908**, while its other
+five cells passed. The separate campaign passed all six, including scan at
+**0.97663**. The candidate scan samples in the failed run are bimodal, around
+100/123 ms; this observation alone does not establish its cause or waive the
+failure. Both complete campaigns remain in the record. HTTP was held while
+host scheduling and CPU/SMT activity were investigated independently of timing
+results; these first two campaigns did not satisfy the two-pass criterion.
+
+Two passive five-second `/proc/stat` windows and static CPU capacity/frequency
+metadata were collected before any further decoder run. The primary repeat
+CPU was preregistered as **CPU 1, SMT sibling 13**, the least busy observed
+physical pair within CPU 0's hardware class (capacity 1,024, maximum frequency
+5,157,895 kHz, AMD highest-performance value 196). A quieter CPU 8 pair was
+excluded from primary qualification because its maximum frequency/performance
+class differs. This selection uses load evidence, not new decoder outcomes.
+These short observations cannot prove the cause of the earlier scan failure.
+Exactly two confirmation campaigns were registered on CPU 1; the original CPU 0
+failure and success are retained separately and are not averaged away.
+
+Both preregistered CPU 1 confirmations passed all six unchanged latency gates:
+
+| Consumer case | Confirmation 1 | Separate confirmation 2 |
+|---|---:|---:|
+| Short M4A, file | 1.01605 | 1.01974 |
+| Short M4A, bytes | 1.01942 | 1.01981 |
+| ADTS, file | 1.02601 | 1.02782 |
+| Long stereo M4A, mono | 1.02023 | 1.01907 |
+| Long stereo M4A, split | 0.98132 | 0.98729 |
+| Long stereo M4A, scan | 0.97882 | 0.96747 |
+
+The passive observer ran on another physical core, CPU 8, consuming
+0.164/0.172 CPU-seconds (0.455%/0.477% of one core). It recorded CPU 1/13
+occupation, reported frequency and owned probe scheduling without changing
+governors or unrelated processes. These passes qualify this pinned Linux
+setup; they do not erase the CPU 0 failure or establish its cause.
+
+The [paired results and observer summaries](
+runs/task145-20261105/candidate5/preregistered-confirmation-summary.json),
+[original CPU 0 scan audit](runs/task145-20261105/candidate5/scan-audit.json)
+and [preregistered hardware/load selection](
+runs/task145-20261105/quiet-core-selection/same-class-preregistered-selection.json)
+retain the scope. This is a latency qualification, not a universal memory win:
+the split probe peaks near **53.0/53.1 MiB**, versus **36.2/36.0 MiB** for
+the standard decoder in these confirmations. Its higher RSS is retained.
+
+The final probe is SHA-256
+`6fd6ca682a88d17b76725ecfe57f5ead7f7464b50ed44390051a959b67534894`;
+the final server is
+`66f32ffb098c368f212670aa36f801686773424bb0c5334a818a9260522107b6`.
+They are byte-identical to the initial candidate-5 production binaries that
+passed all **29 exact PCM cases** against the original syom 0.10.0 adapter.
+The test-only correction changed neither production artifact.
+
 ## Adapter behavior
 
 Seekable M4A uses synchronous bounded pull through the existing `M4aSeek`
 callback-pause contract. An explicit local flag distinguishes an intentional
 batch pause from a real error. Real errors terminate the source and discard
 the incomplete batch; reaching EOF still validates presentation completion.
-Raw ADTS/LOAS retains the bounded worker. Early drop of an M4A source releases
+Bare ADTS also uses bounded synchronous pull as described above. Tagged
+ADTS/LOAS retains the bounded worker. Early drop of a synchronous source releases
 its reader and decoder without leaving a worker running.
 The existing window consumer checks cancellation before and after receiving
 each bounded block; synchronous pull does not add producer prefetch.
+
+The combined worker candidate sends its first block immediately, then packs
+at most two existing blocks into each channel message. The receiver exposes
+them separately, preserving every resampler cut. Complete blocks precede a
+real error; an incomplete tail is discarded on error. The channel holds one
+packet and drop closes its receiver before joining. Including active, queued,
+held and pending blocks, the explicit bound rises from four to six logical
+blocks. This is a bounded memory tradeoff, not a claim of unchanged buffering.
+Four isolated mechanics tests cover EOF/parity, error ordering, early drop
+and the queue bound; full consumer qualification is recorded separately.
 
 File pull adds a 64 KiB buffer that preserves cached bytes across nearby
 absolute seeks. Read/seek failures invalidate its position. File clones share
@@ -159,11 +298,74 @@ latency/RSS thresholds and admission/fault definitions remain unchanged.
 The known golos_04 AAC transcript must agree with the human reference, original
 WAV and freshly recognized FFmpeg presentation: `ищи телеканал про бизнес на тиви`.
 The baseline AAC result says `…на тв`. Other duration differences are accepted
-only when source WAV, container presentation, explicitly bounded FFmpeg
-presentation, candidate PCM count and HTTP duration agree. Unbounded FFmpeg
+only when container presentation, explicitly bounded FFmpeg presentation,
+candidate PCM count and HTTP duration agree. Source WAV duration must agree
+within one sample or have the exact clock explanation below. Unbounded FFmpeg
 decode is recorded separately and must cover the complete presentation span;
 its padding is not silently relabeled as presented audio. A general duration difference does not
 establish a particular priming/padding mechanism.
+
+Two pinned inputs need an additional clock distinction. `golos_09` has 53,492
+source samples at 16 kHz, while its movie/edit duration is 3.344 seconds
+(53,504 samples); `golos_10` has 62,499 source samples and a 3.907-second
+movie/edit duration (62,512 samples). In both, the 1 kHz movie clock rounds
+up to the next tick. The media timescale and summed `stts` durations minus
+1,024 priming samples equal the source WAV exactly. Actual `mvhd`, `tkhd` and
+single `elst` durations equal that precise ceiling. The input/WAV hashes and
+all integer clock/table values are checked by
+[the narrow evidence parser](../consume/gigastt/mp4_clocks.py).
+
+The 12/13-sample movie-clock surplus is explicit, not an unexplained padding
+allowance. Candidate/container/bounded-FFmpeg comparisons still use the
+one-sample tolerance, and full FFmpeg decode must actually cover the declared
+presentation. Unknown inputs, shapes or clock relations are refused. The
+[preflight](runs/task145-20261105/http-geometry-preflight/result.json) retains
+all 30 WAV/M4A rows and the raw ffprobe evidence. The separate golos_04
+priming diagnosis is not generalized to these clock cases.
+
+The fresh current-model canary completed all **32 successful responses per
+backend**. Its numeric, health and invalid/truncated-input prerequisites pass:
+
+| HTTP measurement | Standard decoder | Final candidate |
+|---|---:|---:|
+| Median delay | 94.70 ms | 96.47 ms |
+| p95 delay | 135.08 ms | 152.87 ms |
+| p99 delay | 171.27 ms | 174.60 ms |
+| Peak process RSS | 1,159.82 MiB | 1,161.03 MiB |
+
+The original equality canary remains **false**. Fresh source-WAV/FFmpeg/model
+evidence explains the supported text and presentation differences independently.
+The first reference attempt also failed on golos_05/12: their source/container
+difference is exactly one sample, but binary floating-point subtraction was
+slightly larger than `1/16000`. This tooling error is retained with its source
+snapshot and failed result. The correction compares decimal representations as
+exact rational numbers at the same **one-sample** threshold, without epsilon.
+All 17 offline regressions pass, including both signs of the actual boundaries,
+the immediately adjacent representable floats outside/inside them and invalid
+or nonfinite inputs. A fresh reference qualifies the unchanged raw canary and
+independent evidence, retaining `original_canary_pass=false`; no response,
+boolean or numeric threshold was edited. Admission/load/fault qualification is
+recorded separately after this prerequisite succeeds.
+
+The admission-aware load/fault result passes **all 12 gates**. Each backend
+completed seven 32-input bursts at concurrency 1/2/4/8/8/8/8; real upload-busy
+rejections exercised the unchanged retry path. Maximum paired burst p95/p99
+ratios were **1.08078/1.14841**, below 1.5. Peak load-process RSS was
+**1,022.86/1,066.72 MiB** (standard/candidate), within the existing 1.25 ratio
+plus 32 MiB allowance; steady-growth checks pass their unchanged 64 MiB limit.
+This is threshold compliance, not a lower-memory claim.
+
+Both backends passed pool exhaustion, typed admission/queue timeouts, client
+disconnect/read-timeout cancellation, post-fault recognition and watchdog
+recovery. The candidate watchdog returned typed HTTP 504 and recovered in
+148.71 ms, versus 126.06 ms for standard decoding; the recovery limit remains
+30 seconds. All six owned load/fault servers shut down cleanly with exit zero.
+The [raw equality canary](runs/task145-20261105/http-candidate5/canary/result.json),
+[independent presentation](runs/task145-20261105/http-candidate5/independent/independent.json),
+[failed first reference](runs/task145-20261105/http-candidate5/reference.json),
+[qualified reference](runs/task145-20261105/http-candidate5/reference-attempt2/reference.json)
+and [load/fault result](runs/task145-20261105/http-candidate5/load/result.json)
+remain separate. Execution records retain every command, exit code and hash.
 
 ## Scope of verification
 
@@ -183,13 +385,51 @@ its source revision was handed to the combined gigastt build:
 | Rust 1.89.0 optimized IMDCT | seven pass, one existing manual probe ignored; exact IEEE-bit regression passes |
 | Packaged Rust 1.89.0 consumers | flows, consumers, exact seek, checkpoint and strict completion pass |
 | Parser/state/checkpoint fuzz | 1,216 / 37,870 / 418,980 iterations, zero panics; seeds 145/146/147, 30 seconds each |
-| HTTP reference policy | 12 offline tests pass |
+| HTTP reference policy | initial 12 offline tests pass; final expanded clock/boundary suite: 17 pass |
 
 [Repository checks](runs/task145-20261105/upstream-checks/checks.json),
 [MSRV summary](runs/task145-20261105/upstream-msrv/summary.json),
 [fuzz results](runs/task145-20261105/upstream-fuzz/result.json) and
 [packaged-consumer provenance](runs/task145-20261105/upstream-consumer/manifest.json)
-retain commands, hashes and logs. The locally packaged dirty-tree candidate is
+retain commands, hashes and logs. The earlier locally packaged dirty-tree candidate is
 469,226 bytes, SHA-256
 `4254f6c31f9ba3fc5ca34baf9de55df49641f27f506d337eb8cad2038277c0df`.
 It is not the published 0.10.0 archive and has not been uploaded.
+
+After the complete consumer/HTTP qualification, all seven required repository
+checks were repeated successfully, together with the 17-test offline policy
+suite. The [final commands and logs](
+runs/task145-20261105/final-root-checks/checks.json) record Rust 1.97.1, Linux
+affinity and offline Cargo settings. The final documentation-bearing local
+package is **469,313 bytes**, SHA-256
+`0fe9b7db2ed4c614bb6ee90c3d69c20885da73c786d2939083fe6458e3df343d`;
+it is also unpublished. The earlier archive hash remains historical evidence.
+
+The frozen consumer passes default/extended workspace tests (1,269/1,305,
+49 existing ignores each), all 27 AAC guards, both all-target Clippy profiles,
+documentation/publication checks and a dedicated Rust 1.94 all-target check.
+Release builds use Rust 1.98.1, fat LTO, one codegen unit and the same static
+ORT archive. [Validation and source guards](
+runs/task145-20261105/candidate5/validation.json) retain the initial failed
+Clippy attempt separately from its successful test-only recovery; the
+[reproduction snapshot](runs/task145-20261105/candidate5/reproduction/manifest.json)
+contains exact source and commands rather than binaries or model weights.
+
+## Downstream source handoff
+
+The combined adapter is pinned to library commit
+[`3e540231c9d71e3534be1ef856a91cf419efaead`](https://github.com/ekhodzitsky/syom/commit/3e540231c9d71e3534be1ef856a91cf419efaead),
+version **0.10.1, unpublished candidate**. The
+[nine-file patch](../consume/gigastt/adapter.patch) applies to consumer
+`49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf`. Its manifest and lockfile use the
+canonical Git URL and full revision; every other dependency is unchanged.
+The [handoff manifest](../consume/gigastt/adapter-manifest.json) records
+SHA-256 `82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968`,
+successful clean apply and byte identity for all nine resulting files.
+
+The earlier registry-0.10.0 adapter patch remains in
+[candidate 2 evidence](runs/task145-20261105/candidate2/adapter.patch).
+It is a failed historical candidate and does not include the FFT fix.
+Combined timing passes on the preregistered CPU 1 setup; the current-model HTTP
+reference and admission/load/fault campaign also pass. The unchanged equality
+canary remains false and is retained separately from independent qualification.

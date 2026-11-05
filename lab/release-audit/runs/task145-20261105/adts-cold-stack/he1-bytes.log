@@ -1,0 +1,1 @@
+{"bit_differences":0,"fixture":"/home/ekhodzitsky/Projects/syom/src/goldens/he48e.adts","geometry":[[24576,48000,2],[8192,48000,2]],"metadata":{"core_rate":24000,"decoded_channels":2,"header_channel_configuration":2,"output_rate":48000},"native_samples":32768,"profile":"he1","reader":"bytes","stack_bytes":131072}

@@ -1,29 +1,163 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index b35ff09..4592046 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -4344,9 +4344,8 @@ dependencies = [
+ 
+ [[package]]
+ name = "syom"
+-version = "0.10.0"
+-source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce"
++version = "0.10.1"
++source = "git+https://github.com/ekhodzitsky/syom?rev=3e540231c9d71e3534be1ef856a91cf419efaead#3e540231c9d71e3534be1ef856a91cf419efaead"
+ 
+ [[package]]
+ name = "sysctl"
+diff --git a/crates/gigastt-core/Cargo.toml b/crates/gigastt-core/Cargo.toml
+index e69a6d1..3248d9f 100644
+--- a/crates/gigastt-core/Cargo.toml
++++ b/crates/gigastt-core/Cargo.toml
+@@ -92,7 +92,7 @@ rubato = "5.0"
+ symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+ # AAC-LC, HE-AAC, and AAC-LD from ADTS, M4A, LATM/LOAS, and bounded fMP4.
+ # Zero runtime dependencies. rust-version 1.89, below the workspace MSRV.
+-syom = { version = "0.10.0", optional = true }
++syom = { version = "0.10.1", git = "https://github.com/ekhodzitsky/syom", rev = "3e540231c9d71e3534be1ef856a91cf419efaead", optional = true }
+ # WAVE family ingest (PCM/IEEE, G.711, G.722, GSM 06.10, MS/IMA ADPCM,
+ # RF64/RIFX/Wave64). Zero default-feature deps; default features are
+ # `adpcm` + `simd`.
 diff --git a/crates/gigastt-core/src/inference/audio/aac.rs b/crates/gigastt-core/src/inference/audio/aac.rs
-index 3458b54..ec7569f 100644
+index 3458b54..d12fbed 100644
 --- a/crates/gigastt-core/src/inference/audio/aac.rs
 +++ b/crates/gigastt-core/src/inference/audio/aac.rs
-@@ -14,9 +14,11 @@ use super::stream::ChannelSelect;
+@@ -2,7 +2,7 @@
+ //! Matroska and non-AAC MP4 tracks. The callback codec feeds windowed consumers
+ //! in bounded batches, while channel processing stays synchronous and incremental.
+ 
+-use std::sync::mpsc::{self, Receiver};
++use std::sync::mpsc::{self, Receiver, SyncSender};
+ use std::thread::{self, JoinHandle};
+ 
+ use anyhow::{Context, Result};
+@@ -14,17 +14,21 @@ use super::stream::ChannelSelect;
  use super::{MAX_SAMPLE_RATE, resolve_budget};
  use crate::error::GigasttError;
  
++mod adts_pull;
 +mod buffered;
  mod channels;
  mod input;
  mod probe;
 +mod pull;
  pub(super) use channels::{try_decode_planes_bytes, try_decode_planes_path, try_scan_bytes};
- use input::{Reader, decode_reader};
- use probe::sniff_slice;
-@@ -70,7 +72,7 @@ impl Worker {
+-use input::{Reader, decode_reader};
+-use probe::sniff_slice;
++use input::{Reader, decode_reader_with_mode};
+ pub(super) use probe::{ProbeHit, probe_bytes, probe_file, sniff_file};
++use probe::{Transport, classify_file, classify_slice};
+ 
+-// Amortize thread handoffs without retaining duration-sized PCM. Two queued
+-// batches plus the producer's current batch retain PCM independent of duration.
++// Logical cuts never change: the resampler observes each block individually.
+ const BATCH_FRAMES: usize = 24 * 1024;
++type WorkerPacket = (AacBlock, Option<AacBlock>);
++const WORKER_MESSAGE_CAPACITY: usize = 1;
+ 
+ pub(super) struct AacBlock {
+     pub(super) frames: usize,
+@@ -40,8 +44,9 @@ pub(super) enum AacRecv {
+ 
+ /// Own the worker even during initialization and error exits.
+ struct Worker {
+-    rx: Option<Receiver<Result<AacBlock>>>,
++    rx: Option<Receiver<Result<WorkerPacket>>>,
+     join: Option<JoinHandle<()>>,
++    pending: Option<AacBlock>,
  }
  
+ impl Drop for Worker {
+@@ -55,9 +60,16 @@ impl Drop for Worker {
+ 
+ impl Worker {
+     fn recv(&mut self) -> Result<Option<AacBlock>> {
++        if let Some(block) = self.pending.take() {
++            return Ok(Some(block));
++        }
+         let Some(rx) = &self.rx else { return Ok(None) };
+         match rx.recv() {
+-            Ok(result) => result.map(Some),
++            Ok(Ok((first, second))) => {
++                self.pending = second;
++                Ok(Some(first))
++            }
++            Ok(Err(error)) => Err(error),
+             Err(_) => {
+                 self.rx.take();
+                 if let Some(join) = self.join.take() {
+@@ -69,8 +81,60 @@ impl Worker {
+     }
+ }
+ 
++// One queued packet holds at most two blocks. The producer holds at most two
++// more (including a blocked send), and the receiver one pending second block.
++// Including the actively consumed block, the bound is six logical blocks,
++// versus four before packing: two extra blocks, still independent of duration.
++struct BlockSender {
++    tx: SyncSender<Result<WorkerPacket>>,
++    held: Option<AacBlock>,
++    first: bool,
++}
++impl BlockSender {
++    fn send(&mut self, block: AacBlock) -> syom::Result<()> {
++        if self.first {
++            self.first = false;
++            self.transmit((block, None))
++        } else if let Some(first) = self.held.take() {
++            self.transmit((first, Some(block)))
++        } else {
++            self.held = Some(block);
++            Ok(())
++        }
++    }
++    fn transmit(&self, packet: WorkerPacket) -> syom::Result<()> {
++        self.tx
++            .send(Ok(packet))
++            .map_err(|_| AacError::decode("AAC consumer closed"))
++    }
++    fn flush(&mut self) -> syom::Result<()> {
++        if let Some(block) = self.held.take() {
++            self.transmit((block, None))?;
++        }
++        Ok(())
++    }
++    fn finish(mut self, result: syom::Result<()>, tail: Option<AacBlock>) {
++        match result {
++            Ok(()) => {
++                if let Some(block) = tail
++                    && self.send(block).is_err()
++                {
++                    return;
++                }
++                let _ = self.flush();
++            }
++            Err(error) => {
++                // Completed logical blocks precede errors; incomplete PCM is discarded.
++                if self.flush().is_ok() {
++                    let _ = self.tx.send(Err(map_aac(error)));
++                }
++            }
++        }
++    }
++}
++
  pub(super) struct AacSource {
 -    worker: Worker,
 +    producer: Producer,
      pending: Option<AacBlock>,
      pub(super) source_frames: usize,
      pub(super) sample_rate: u32,
-@@ -83,7 +85,7 @@ impl AacSource {
+@@ -83,7 +147,7 @@ impl AacSource {
      pub(super) fn recv_block(&mut self) -> Result<AacRecv> {
          let next = match self.pending.take() {
              Some(block) => Some(block),
@@ -32,11 +166,86 @@ index 3458b54..ec7569f 100644
          };
          Ok(match next {
              Some(block) => AacRecv::Block(block),
-@@ -121,6 +123,66 @@ fn open_input(
+@@ -97,10 +161,10 @@ pub(super) fn try_open_bytes(
      channel: ChannelSelect,
      max_audio_secs: Option<f64>,
  ) -> Result<Option<AacSource>> {
-+    let pull = match pull::try_open(&mut input, channel, max_audio_secs) {
+-    if !sniff_slice(&data) {
++    let Some(transport) = classify_slice(&data) else {
+         return Ok(None);
+-    }
+-    open_input(Reader::bytes(data), channel, max_audio_secs)
++    };
++    open_input(Reader::bytes(data), transport, channel, max_audio_secs)
+ }
+ 
+ pub(super) fn try_open_path(
+@@ -110,61 +174,41 @@ pub(super) fn try_open_path(
+ ) -> Result<Option<AacSource>> {
+     let mut file =
+         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
+-    if !sniff_file(&mut file)? {
++    let Some(transport) = classify_file(&mut file)? else {
+         return Ok(None);
+-    }
+-    open_input(Reader::File(file), channel, max_audio_secs)
++    };
++    open_input(Reader::File(file), transport, channel, max_audio_secs)
+ }
+ 
+ fn open_input(
+     mut input: Reader,
++    transport: Transport,
+     channel: ChannelSelect,
+     max_audio_secs: Option<f64>,
+ ) -> Result<Option<AacSource>> {
+-    let (tx, rx) = mpsc::sync_channel(2);
+-    let join = thread::Builder::new()
+-        .name("gigastt-aac".into())
+-        .spawn(move || {
+-            let mut batch: Option<AacBlock> = None;
+-            let result = decode_reader(&mut input, stream_options(max_audio_secs), |frame| {
+-                if let Some(block) = &batch
+-                    && (block.rate, block.channels) != (frame.sample_rate, frame.planar.len())
+-                {
+-                    return Err(AacError::decode("AAC rate or channel count changed"));
+-                }
+-                let block = batch.get_or_insert_with(|| AacBlock {
+-                    frames: 0,
+-                    samples: Vec::with_capacity(BATCH_FRAMES),
+-                    rate: frame.sample_rate,
+-                    channels: frame.planar.len(),
+-                });
+-                block.frames += frame.samples;
+-                append_plane(&mut block.samples, &frame, channel);
+-                if block.frames >= BATCH_FRAMES
+-                    && let Some(block) = batch.take()
+-                {
+-                    tx.send(Ok(block))
+-                        .map_err(|_| AacError::decode("AAC consumer closed"))?;
+-                }
+-                Ok(())
+-            });
+-            match result {
+-                Ok(()) => {
+-                    if let Some(block) = batch {
+-                        let _ = tx.send(Ok(block));
+-                    }
+-                }
+-                Err(error) => {
+-                    let _ = tx.send(Err(map_aac(error)));
+-                }
+-            }
+-        })
+-        .context("Failed to start AAC decode thread")?;
+-    let mut worker = Worker {
+-        rx: Some(rx),
+-        join: Some(join),
++    let pull = match if transport == Transport::SeekableM4a {
++        pull::try_open(&mut input, channel, max_audio_secs)
++    } else {
++        Ok(None)
++    } {
 +        Err(error) if matches!(error.downcast_ref::<AacError>(), Some(AacError::NotAac)) => {
 +            return Ok(None);
 +        }
@@ -44,103 +253,115 @@ index 3458b54..ec7569f 100644
 +    };
 +    let mut producer = match pull {
 +        Some(source) => Producer::Pull(Box::new(source)),
-+        None => Producer::Worker(spawn_worker(input, channel, max_audio_secs)?),
-+    };
++        None if transport == Transport::BareAdts => Producer::Adts(Box::new(
++            adts_pull::AdtsPull::new(input, channel, max_audio_secs),
++        )),
++        None => Producer::Worker(spawn_worker_with_mode(
++            input,
++            channel,
++            max_audio_secs,
++            true,
++        )?),
+     };
+-    let first = match worker.recv() {
 +    let first = match producer.recv() {
-+        Ok(Some(block)) => block,
-+        Ok(None) => anyhow::bail!("No audio track found"),
-+        Err(error) if matches!(error.downcast_ref::<AacError>(), Some(AacError::NotAac)) => {
-+            return Ok(None);
-+        }
-+        Err(error) => return Err(error),
-+    };
-+    anyhow::ensure!(
-+        first.rate > 0 && first.rate <= MAX_SAMPLE_RATE,
-+        "Unsupported sample rate: {}Hz",
-+        first.rate
-+    );
-+    let (max_samples, limit_secs) = resolve_budget(max_audio_secs, first.rate);
-+    tracing::info!(
-+        "Audio (aac): {}Hz, {}ch (streaming windows)",
-+        first.rate,
-+        first.channels
-+    );
-+    Ok(Some(AacSource {
-+        sample_rate: first.rate,
-+        resampler: Box::new(ResampleTo16k::new(SampleRate(first.rate), None)),
-+        pending: Some(first),
+         Ok(Some(block)) => block,
+         Ok(None) => anyhow::bail!("No audio track found"),
+         Err(error) if matches!(error.downcast_ref::<AacError>(), Some(AacError::NotAac)) => {
+@@ -187,13 +231,91 @@ fn open_input(
+         sample_rate: first.rate,
+         resampler: Box::new(ResampleTo16k::new(SampleRate(first.rate), None)),
+         pending: Some(first),
+-        worker,
 +        producer,
-+        source_frames: 0,
-+        max_samples,
-+        limit_secs,
-+    }))
-+}
-+
+         source_frames: 0,
+         max_samples,
+         limit_secs,
+     }))
+ }
+ 
 +// M4A is naturally seekable, so its documented callback pause contract permits
 +// a synchronous bounded pull. Transports requiring push retain their worker.
 +enum Producer {
 +    Worker(Worker),
 +    Pull(Box<pull::Pull>),
++    Adts(Box<adts_pull::AdtsPull<Reader>>),
 +}
 +impl Producer {
 +    fn recv(&mut self) -> Result<Option<AacBlock>> {
 +        match self {
 +            Self::Worker(worker) => worker.recv(),
 +            Self::Pull(source) => source.recv(),
++            Self::Adts(source) => source.recv(),
 +        }
 +    }
 +}
 +
++#[cfg(test)]
 +fn spawn_worker(
-+    mut input: Reader,
++    input: Reader,
 +    channel: ChannelSelect,
 +    max_audio_secs: Option<f64>,
 +) -> Result<Worker> {
-     let (tx, rx) = mpsc::sync_channel(2);
-     let join = thread::Builder::new()
-         .name("gigastt-aac".into())
-@@ -160,38 +222,10 @@ fn open_input(
-             }
-         })
-         .context("Failed to start AAC decode thread")?;
--    let mut worker = Worker {
++    spawn_worker_with_mode(input, channel, max_audio_secs, false)
++}
++
++fn spawn_worker_with_mode(
++    mut input: Reader,
++    channel: ChannelSelect,
++    max_audio_secs: Option<f64>,
++    known_push: bool,
++) -> Result<Worker> {
++    let (tx, rx) = mpsc::sync_channel(WORKER_MESSAGE_CAPACITY);
++    let join = thread::Builder::new()
++        .name("gigastt-aac".into())
++        .spawn(move || {
++            let mut sender = BlockSender {
++                tx,
++                held: None,
++                first: true,
++            };
++            let mut batch: Option<AacBlock> = None;
++            let result = decode_reader_with_mode(
++                &mut input,
++                stream_options(max_audio_secs),
++                known_push,
++                |frame| {
++                    if let Some(block) = &batch
++                        && (block.rate, block.channels) != (frame.sample_rate, frame.planar.len())
++                    {
++                        return Err(AacError::decode("AAC rate or channel count changed"));
++                    }
++                    let block = batch.get_or_insert_with(|| AacBlock {
++                        frames: 0,
++                        samples: Vec::with_capacity(BATCH_FRAMES),
++                        rate: frame.sample_rate,
++                        channels: frame.planar.len(),
++                    });
++                    block.frames += frame.samples;
++                    append_plane(&mut block.samples, &frame, channel);
++                    if block.frames >= BATCH_FRAMES
++                        && let Some(block) = batch.take()
++                    {
++                        sender.send(block)?;
++                    }
++                    Ok(())
++                },
++            );
++            sender.finish(result, batch);
++        })
++        .context("Failed to start AAC decode thread")?;
 +    Ok(Worker {
-         rx: Some(rx),
-         join: Some(join),
--    };
--    let first = match worker.recv() {
--        Ok(Some(block)) => block,
--        Ok(None) => anyhow::bail!("No audio track found"),
--        Err(error) if matches!(error.downcast_ref::<AacError>(), Some(AacError::NotAac)) => {
--            return Ok(None);
--        }
--        Err(error) => return Err(error),
--    };
--    anyhow::ensure!(
--        first.rate > 0 && first.rate <= MAX_SAMPLE_RATE,
--        "Unsupported sample rate: {}Hz",
--        first.rate
--    );
--    let (max_samples, limit_secs) = resolve_budget(max_audio_secs, first.rate);
--    tracing::info!(
--        "Audio (aac): {}Hz, {}ch (streaming windows)",
--        first.rate,
--        first.channels
--    );
--    Ok(Some(AacSource {
--        sample_rate: first.rate,
--        resampler: Box::new(ResampleTo16k::new(SampleRate(first.rate), None)),
--        pending: Some(first),
--        worker,
--        source_frames: 0,
--        max_samples,
--        limit_secs,
--    }))
++        rx: Some(rx),
++        join: Some(join),
++        pending: None,
 +    })
- }
- 
++}
++
  fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
-@@ -201,22 +235,7 @@ fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
+     match channel {
+         ChannelSelect::One(index) => {
+@@ -201,22 +323,7 @@ fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
                  out.extend_from_slice(plane);
              }
          }
@@ -164,7 +385,7 @@ index 3458b54..ec7569f 100644
      }
  }
  
-@@ -241,3 +260,89 @@ fn map_aac(error: AacError) -> anyhow::Error {
+@@ -241,3 +348,204 @@ fn map_aac(error: AacError) -> anyhow::Error {
          other => other.into(),
      }
  }
@@ -172,6 +393,10 @@ index 3458b54..ec7569f 100644
 +// Preserve the existing add-then-divide order, with one output pass for stereo.
 +// Unequal planes retain the defensive historical zip behavior.
 +fn append_mono_planes(out: &mut Vec<f32>, planes: &[&[f32]]) {
++    if let [mono] = planes {
++        out.extend_from_slice(mono);
++        return;
++    }
 +    if let [left, right] = planes
 +        && left.len() == right.len()
 +    {
@@ -189,6 +414,113 @@ index 3458b54..ec7569f 100644
 +    let count = planes.len() as f32;
 +    for sample in &mut out[start..] {
 +        *sample /= count;
++    }
++}
++
++#[cfg(test)]
++mod worker_packet_tests {
++    use super::*;
++
++    fn block(id: usize, frames: usize) -> AacBlock {
++        AacBlock {
++            frames,
++            samples: vec![id as f32, -0.0],
++            rate: 48_000,
++            channels: 1,
++        }
++    }
++    fn worker(count: usize, tail: bool, fail: bool) -> Worker {
++        let (tx, rx) = mpsc::sync_channel(WORKER_MESSAGE_CAPACITY);
++        let join = thread::spawn(move || {
++            let mut sender = BlockSender {
++                tx,
++                held: None,
++                first: true,
++            };
++            for i in 0..count {
++                if sender.send(block(i, BATCH_FRAMES)).is_err() {
++                    return;
++                }
++            }
++            let result = if fail {
++                Err(AacError::decode("original decoder failure"))
++            } else {
++                Ok(())
++            };
++            sender.finish(result, tail.then(|| block(count, 137)));
++        });
++        Worker {
++            rx: Some(rx),
++            join: Some(join),
++            pending: None,
++        }
++    }
++
++    #[test]
++    fn test_aac_worker_packets_preserve_odd_even_full_partial_eof() {
++        for count in 0..6 {
++            for tail in [false, true] {
++                let mut worker = worker(count, tail, false);
++                for i in 0..count + usize::from(tail) {
++                    let actual = worker.recv().unwrap().unwrap();
++                    assert_eq!(actual.frames, if i < count { BATCH_FRAMES } else { 137 });
++                    assert_eq!(
++                        actual
++                            .samples
++                            .iter()
++                            .map(|s| s.to_bits())
++                            .collect::<Vec<_>>(),
++                        [i as f32, -0.0].map(f32::to_bits)
++                    );
++                }
++                assert!(worker.recv().unwrap().is_none());
++            }
++        }
++    }
++
++    #[test]
++    fn test_aac_worker_packets_flush_completed_blocks_before_typed_error() {
++        for count in 0..6 {
++            let mut worker = worker(count, true, true);
++            for i in 0..count {
++                assert_eq!(worker.recv().unwrap().unwrap().samples[0], i as f32);
++            }
++            let error = worker.recv().err().unwrap();
++            assert!(error.downcast_ref::<AacError>().is_some());
++            assert!(error.to_string().contains("original decoder failure"));
++            assert!(
++                worker.recv().unwrap().is_none(),
++                "partial tail must be discarded"
++            );
++        }
++    }
++
++    #[test]
++    fn test_aac_worker_packets_keep_first_block_immediate_and_drop_unblocks_sender() {
++        let mut worker = worker(1000, true, false);
++        assert_eq!(worker.recv().unwrap().unwrap().samples[0], 0.0);
++        assert!(worker.pending.is_none(), "the first block is sent alone");
++        let (done, completion) = mpsc::channel();
++        thread::spawn(move || {
++            drop(worker);
++            done.send(()).unwrap();
++        });
++        completion
++            .recv_timeout(std::time::Duration::from_secs(5))
++            .unwrap();
++    }
++
++    #[test]
++    fn test_aac_worker_packet_queue_has_explicit_two_block_bound() {
++        let (tx, _rx) = mpsc::sync_channel::<Result<WorkerPacket>>(WORKER_MESSAGE_CAPACITY);
++        assert!(
++            tx.try_send(Ok((block(0, BATCH_FRAMES), Some(block(1, BATCH_FRAMES)))))
++                .is_ok()
++        );
++        assert!(matches!(
++            tx.try_send(Ok((block(2, BATCH_FRAMES), None))),
++            Err(mpsc::TrySendError::Full(_))
++        ));
 +    }
 +}
 +
@@ -223,6 +555,8 @@ index 3458b54..ec7569f 100644
 +            f32::INFINITY,
 +            f32::NEG_INFINITY,
 +            f32::NAN,
++            f32::from_bits(0x7fc0_0001),
++            f32::from_bits(0xffc1_2345),
 +        ];
 +        let right = [
 +            -0.0,
@@ -235,6 +569,8 @@ index 3458b54..ec7569f 100644
 +            f32::NEG_INFINITY,
 +            f32::INFINITY,
 +            1.0,
++            f32::from_bits(0x7fc0_0001),
++            f32::from_bits(0xffc1_2345),
 +        ];
 +        for planes in [
 +            vec![],
@@ -255,7 +591,7 @@ index 3458b54..ec7569f 100644
 +    }
 +}
 diff --git a/crates/gigastt-core/src/inference/audio/aac/input.rs b/crates/gigastt-core/src/inference/audio/aac/input.rs
-index bdcd8e4..c8d6525 100644
+index bdcd8e4..d03a7d0 100644
 --- a/crates/gigastt-core/src/inference/audio/aac/input.rs
 +++ b/crates/gigastt-core/src/inference/audio/aac/input.rs
 @@ -3,19 +3,42 @@ use bytes::Bytes;
@@ -301,7 +637,7 @@ index bdcd8e4..c8d6525 100644
              Self::Mem(cursor) => cursor.read(buf),
          }
      }
-@@ -24,6 +47,7 @@ impl Seek for Reader {
+@@ -24,28 +47,191 @@ impl Seek for Reader {
      fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
          match self {
              Self::File(file) => file.seek(pos),
@@ -309,15 +645,384 @@ index bdcd8e4..c8d6525 100644
              Self::Mem(cursor) => cursor.seek(pos),
          }
      }
+ }
+ 
+-pub(super) fn decode_reader(
+-    reader: &mut Reader,
++pub(super) fn decode_reader<R: Read + Seek>(
++    reader: &mut R,
+     opts: DecodeOptions,
++    emit: impl FnMut(Frame<'_>) -> syom::Result<()>,
++) -> syom::Result<()> {
++    decode_reader_with_mode(reader, opts, false, emit)
++}
++
++pub(super) fn decode_reader_with_mode<R: Read + Seek>(
++    reader: &mut R,
++    opts: DecodeOptions,
++    known_push: bool,
+     mut emit: impl FnMut(Frame<'_>) -> syom::Result<()>,
+ ) -> syom::Result<()> {
+-    let mut prefix = [0; 64];
+-    let n = reader.read(&mut prefix)?;
+-    reader.seek(SeekFrom::Start(0))?;
+-    if syom::sniff_is_isobmff(&prefix[..n]) {
+-        match M4aSeek::open(&mut *reader, opts.clone()) {
+-            Ok(mut seek) => return seek.decode(&mut emit).map(|_| ()),
+-            Err(AacError::Unsupported(_)) => {} // Bounded fragmented MP4 uses the push decoder.
+-            Err(error) => return Err(error),
+-        }
++    if !known_push {
++        let mut prefix = [0; 64];
++        let n = reader.read(&mut prefix)?;
+         reader.seek(SeekFrom::Start(0))?;
++        if syom::sniff_is_isobmff(&prefix[..n]) {
++            match M4aSeek::open(&mut *reader, opts.clone()) {
++                Ok(mut seek) => return seek.decode(&mut emit).map(|_| ()),
++                Err(AacError::Unsupported(_)) => {} // Bounded fragmented MP4 uses the push decoder.
++                Err(error) => return Err(error),
++            }
++            reader.seek(SeekFrom::Start(0))?;
++        }
+     }
+     let mut decoder = Decoder::new(opts);
+     decoder.feed_read(reader, &mut emit)?;
+     decoder.finish(emit).map(|_| ())
+ }
++
++#[cfg(test)]
++mod transport_tests {
++    use super::super::probe::{Transport, classify_file, classify_slice};
++    use super::*;
++    use std::io::Write;
++
++    struct Counted<R> {
++        inner: R,
++        reads: usize,
++        seeks: usize,
++    }
++    impl<R: Read> Read for Counted<R> {
++        fn read(&mut self, data: &mut [u8]) -> std::io::Result<usize> {
++            self.reads += 1;
++            self.inner.read(data)
++        }
++    }
++    impl<R: Seek> Seek for Counted<R> {
++        fn seek(&mut self, at: SeekFrom) -> std::io::Result<u64> {
++            self.seeks += 1;
++            self.inner.seek(at)
++        }
++    }
++    fn fixture() -> Vec<u8> {
++        let pcm: Vec<_> = (0..96_013).map(|i| (i as f32 * 0.03).sin() * 0.1).collect();
++        syom::encode(&[&pcm], 48_000).unwrap()
++    }
++    fn compare_count<R: Read + Seek>(inner: R, bytes: &[u8], file: bool) -> (usize, usize) {
++        let mut reader = Counted {
++            inner,
++            reads: 0,
++            seeks: 0,
++        };
++        let transport = if file {
++            classify_file(&mut reader).unwrap()
++        } else {
++            classify_slice(bytes)
++        };
++        assert!(matches!(
++            transport,
++            Some(Transport::Streaming | Transport::BareAdts)
++        ));
++        let initial = (reader.reads, reader.seeks);
++        let mut fast = Vec::new();
++        decode_reader_with_mode(&mut reader, DecodeOptions::unbounded(), true, |frame| {
++            fast.extend(frame.planar[0].iter().map(|v| v.to_bits()));
++            Ok(())
++        })
++        .unwrap();
++        let fast_calls = (reader.reads - initial.0, reader.seeks - initial.1);
++        reader.seek(SeekFrom::Start(0)).unwrap();
++        reader.reads = 0;
++        reader.seeks = 0;
++        // Frozen adapter did this M4A pull probe before its worker's own probe.
++        let mut prefix = [0; 64];
++        assert_eq!(reader.read(&mut prefix).unwrap(), prefix.len());
++        reader.seek(SeekFrom::Start(0)).unwrap();
++        let mut old = Vec::new();
++        decode_reader(&mut reader, DecodeOptions::unbounded(), |frame| {
++            old.extend(frame.planar[0].iter().map(|v| v.to_bits()));
++            Ok(())
++        })
++        .unwrap();
++        assert_eq!(fast, old);
++        assert_eq!(
++            (reader.reads - fast_calls.0, reader.seeks - fast_calls.1),
++            (2, 2)
++        );
++        fast_calls
++    }
++
++    #[test]
++    fn test_aac_known_streaming_file_bytes_id3_remove_duplicate_reads_seeks() {
++        let tagged = fixture();
++        let raw_at = if tagged.starts_with(b"ID3") {
++            10 + tagged[6..10]
++                .iter()
++                .fold(0usize, |n, b| (n << 7) | usize::from(*b))
++        } else {
++            0
++        };
++        let raw = tagged[raw_at..].to_vec();
++        let mut long_tag = vec![b'I', b'D', b'3', 4, 0, 0, 0, 0, 2, 44];
++        long_tag.resize(310, 0);
++        long_tag.extend_from_slice(&raw);
++        for bytes in [tagged, raw, long_tag] {
++            compare_count(Cursor::new(bytes.clone()), &bytes, false);
++            let mut file = tempfile::NamedTempFile::new().unwrap();
++            file.write_all(&bytes).unwrap();
++            compare_count(std::fs::File::open(file.path()).unwrap(), &bytes, true);
++        }
++    }
++
++    #[test]
++    fn test_aac_classified_unsupported_m4a_rewinds_then_push_preserves_typed_error() {
++        let pcm = vec![0.0; 4096];
++        let mut bytes = syom::encode_with(&[&pcm], 48_000, &syom::EncodeOptions::m4a()).unwrap();
++        let moov = bytes.windows(4).position(|w| w == b"moov").unwrap() - 4;
++        let size = u32::from_be_bytes(bytes[moov..moov + 4].try_into().unwrap()) as usize;
++        let stsd = moov
++            + bytes[moov..moov + size]
++                .windows(4)
++                .position(|w| w == b"stsd")
++                .unwrap();
++        bytes[stsd + 8..stsd + 12].copy_from_slice(&2u32.to_be_bytes());
++        // Fragmented init with an unsupported sample-description switch.
++        // Opening rejects the typed feature before reading any coded payload.
++        bytes.splice(
++            moov + size..moov + size,
++            [0, 0, 0, 8, b'm', b'v', b'e', b'x'],
++        );
++        bytes[moov..moov + 4].copy_from_slice(&((size + 8) as u32).to_be_bytes());
++        bytes.extend_from_slice(&[0, 0, 0, 8, b'm', b'o', b'o', b'f']);
++        assert_eq!(classify_slice(&bytes), Some(Transport::SeekableM4a));
++        let mut file = tempfile::NamedTempFile::new().unwrap();
++        file.write_all(&bytes).unwrap();
++        for mut input in [
++            Reader::bytes(Bytes::from(bytes)),
++            Reader::File(std::fs::File::open(file.path()).unwrap()),
++        ] {
++            assert!(
++                super::super::pull::try_open(
++                    &mut input,
++                    super::super::super::stream::ChannelSelect::Mono,
++                    None
++                )
++                .unwrap()
++                .is_none()
++            );
++            assert_eq!(input.stream_position().unwrap(), 0);
++            let mut reader = Counted {
++                inner: input,
++                reads: 0,
++                seeks: 0,
++            };
++            let fast =
++                decode_reader_with_mode(&mut reader, DecodeOptions::unbounded(), true, |_| Ok(()))
++                    .unwrap_err();
++            let fast_calls = (reader.reads, reader.seeks);
++            reader.seek(SeekFrom::Start(0)).unwrap();
++            reader.reads = 0;
++            reader.seeks = 0;
++            let old =
++                decode_reader(&mut reader, DecodeOptions::unbounded(), |_| Ok(())).unwrap_err();
++            assert!(matches!(fast, AacError::Unsupported(_)));
++            assert_eq!(fast.to_string(), old.to_string());
++            assert!(reader.reads > fast_calls.0 && reader.seeks > fast_calls.1);
++        }
++    }
++}
+diff --git a/crates/gigastt-core/src/inference/audio/aac/probe.rs b/crates/gigastt-core/src/inference/audio/aac/probe.rs
+index 99345b5..e621929 100644
+--- a/crates/gigastt-core/src/inference/audio/aac/probe.rs
++++ b/crates/gigastt-core/src/inference/audio/aac/probe.rs
+@@ -7,6 +7,12 @@ pub(crate) enum ProbeHit {
+     FallThrough,
+     Duration(Option<f64>),
+ }
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub(super) enum Transport {
++    BareAdts,
++    Streaming,
++    SeekableM4a,
++}
+ /// Header duration for a buffer already in memory. Does not decode PCM.
+ pub(crate) fn probe_bytes(data: &[u8]) -> Result<ProbeHit> {
+     if !sniff_slice(data) {
+@@ -93,28 +99,50 @@ fn duration_of(rate: u32, duration: syom::ProbeDuration) -> Option<f64> {
+ /// not look past it. The tag stays in the buffer: syom peels it while decoding
+ /// so the priming edit is not lost.
+ pub(super) fn sniff_slice(data: &[u8]) -> bool {
++    classify_slice(data).is_some()
++}
++
++fn classify_prefix(data: &[u8]) -> Option<Transport> {
+     if syom::sniff_aac(data) {
+-        return true;
++        Some(if syom::sniff_is_isobmff(data) {
++            Transport::SeekableM4a
++        } else if syom::sniff_is_adts(data) {
++            Transport::BareAdts
++        } else {
++            Transport::Streaming
++        })
++    } else {
++        None
++    }
++}
++
++pub(super) fn classify_slice(data: &[u8]) -> Option<Transport> {
++    if let Some(transport) = classify_prefix(data) {
++        return Some(transport);
+     }
+     match id3v2_payload_at(data) {
+-        Some(at) if at < data.len() => syom::sniff_aac(&data[at..]),
+-        _ => false,
++        Some(at) if at < data.len() && syom::sniff_aac(&data[at..]) => Some(Transport::Streaming),
++        _ => None,
+     }
+ }
+ 
+ /// File twin of [`sniff_slice`]. Rewinds to offset 0 either way. A tag that
+ /// runs past the first 64 bytes is seeked to, not read in full.
+ pub(crate) fn sniff_file(file: &mut std::fs::File) -> std::io::Result<bool> {
++    classify_file(file).map(|kind| kind.is_some())
++}
++
++pub(super) fn classify_file<R: Read + Seek>(file: &mut R) -> std::io::Result<Option<Transport>> {
+     file.seek(SeekFrom::Start(0))?;
+     let mut prefix = [0u8; 64];
+     let n = file.read(&mut prefix)?;
+-    if syom::sniff_aac(&prefix[..n]) {
++    if let Some(transport) = classify_prefix(&prefix[..n]) {
+         file.seek(SeekFrom::Start(0))?;
+-        return Ok(true);
++        return Ok(Some(transport));
+     }
+     let Some(at) = id3v2_payload_at(&prefix[..n]) else {
+         file.seek(SeekFrom::Start(0))?;
+-        return Ok(false);
++        return Ok(None);
+     };
+     let hit = if at < n {
+         syom::sniff_aac(&prefix[at..n])
+@@ -125,7 +153,7 @@ pub(crate) fn sniff_file(file: &mut std::fs::File) -> std::io::Result<bool> {
+         syom::sniff_aac(&audio[..m])
+     };
+     file.seek(SeekFrom::Start(0))?;
+-    Ok(hit)
++    Ok(hit.then_some(Transport::Streaming))
+ }
+ 
+ /// Offset of the bytes after one ID3v2.3/2.4 header. `None` when those
+@@ -153,3 +181,92 @@ fn id3v2_payload_at(data: &[u8]) -> Option<usize> {
+     }
+     Some(total)
+ }
++
++#[cfg(test)]
++mod transport_tests {
++    use super::*;
++    use std::io::{Cursor, Error, ErrorKind};
++
++    #[test]
++    fn test_aac_transport_classification_preserves_bare_id3_m4a_and_rewind() {
++        let pcm = vec![0.0; 4096];
++        let tagged = syom::encode(&[&pcm], 48_000).unwrap();
++        let raw = &tagged[id3v2_payload_at(&tagged).unwrap_or(0)..];
++        let m4a = syom::encode_with(&[&pcm], 48_000, &syom::EncodeOptions::m4a()).unwrap();
++        for (bytes, expected) in [
++            (raw, Some(Transport::BareAdts)),
++            (&m4a, Some(Transport::SeekableM4a)),
++            (&b"garbage"[..], None),
++        ] {
++            assert_eq!(classify_slice(bytes), expected);
++            let mut cursor = Cursor::new(bytes);
++            assert_eq!(classify_file(&mut cursor).unwrap(), expected);
++            assert_eq!(cursor.position(), 0);
++            if expected.is_some() {
++                let mut wrapped = vec![b'I', b'D', b'3', 4, 0, 0, 0, 0, 2, 44];
++                wrapped.resize(310, 0);
++                wrapped.extend_from_slice(bytes);
++                assert_eq!(classify_slice(&wrapped), Some(Transport::Streaming));
++                let mut cursor = Cursor::new(wrapped);
++                assert_eq!(
++                    classify_file(&mut cursor).unwrap(),
++                    Some(Transport::Streaming)
++                );
++                assert_eq!(cursor.position(), 0);
++            }
++        }
++    }
++
++    #[test]
++    fn test_aac_transport_classification_keeps_isobmff_priority_for_ambiguous_prefix() {
++        let bytes = [
++            0xff, 0xf1, 0x4c, 0, b'f', b't', b'y', b'p', b'M', b'4', b'A', b' ',
++        ];
++        assert!(syom::sniff_is_adts(&bytes));
++        assert!(syom::sniff_is_isobmff(&bytes));
++        assert_eq!(classify_slice(&bytes), Some(Transport::SeekableM4a));
++        assert_eq!(
++            classify_file(&mut Cursor::new(bytes)).unwrap(),
++            Some(Transport::SeekableM4a)
++        );
++    }
++
++    struct Failing {
++        cursor: Cursor<Vec<u8>>,
++        fail_read: bool,
++        fail_seek: usize,
++        seeks: usize,
++    }
++    impl Read for Failing {
++        fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
++            if self.fail_read {
++                return Err(Error::from(ErrorKind::PermissionDenied));
++            }
++            self.cursor.read(bytes)
++        }
++    }
++    impl Seek for Failing {
++        fn seek(&mut self, at: SeekFrom) -> std::io::Result<u64> {
++            self.seeks += 1;
++            if self.seeks == self.fail_seek {
++                return Err(Error::from(ErrorKind::PermissionDenied));
++            }
++            self.cursor.seek(at)
++        }
++    }
++    #[test]
++    fn test_aac_transport_classification_propagates_initial_read_seek_rewind_errors() {
++        for (fail_read, fail_seek) in [(true, 0), (false, 1), (false, 2)] {
++            let mut reader = Failing {
++                cursor: Cursor::new(b"garbage".to_vec()),
++                fail_read,
++                fail_seek,
++                seeks: 0,
++            };
++            assert_eq!(
++                classify_file(&mut reader).unwrap_err().kind(),
++                ErrorKind::PermissionDenied
++            );
++        }
++    }
++}
 diff --git a/crates/gigastt-core/src/inference/audio/aac/pull.rs b/crates/gigastt-core/src/inference/audio/aac/pull.rs
 new file mode 100644
-index 0000000..99f9ab4
+index 0000000..d5ee27a
 --- /dev/null
 +++ b/crates/gigastt-core/src/inference/audio/aac/pull.rs
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,317 @@
 +//! Bounded synchronous M4A pull, preserving the existing logical batch cadence.
-+use std::io::{Read, Seek, SeekFrom};
-+
 +use anyhow::Result;
 +use syom::{AacError, M4aSeek};
 +
@@ -330,17 +1035,12 @@ index 0000000..99f9ab4
 +    finished: bool,
 +}
 +
++/// The caller has already classified a bare, seekable M4A prefix.
 +pub(super) fn try_open(
 +    input: &mut Reader,
 +    channel: ChannelSelect,
 +    max_audio_secs: Option<f64>,
 +) -> Result<Option<Pull>> {
-+    let mut prefix = [0; 64];
-+    let n = input.read(&mut prefix)?;
-+    input.seek(SeekFrom::Start(0))?;
-+    if !syom::sniff_is_isobmff(&prefix[..n]) {
-+        return Ok(None);
-+    }
 +    let candidate = input.clone_for_pull()?;
 +    match M4aSeek::open(candidate, stream_options(max_audio_secs)) {
 +        Ok(source) => Ok(Some(Pull {
@@ -404,7 +1104,7 @@ index 0000000..99f9ab4
 +mod tests {
 +    use super::*;
 +    use bytes::Bytes;
-+    use std::io::Write;
++    use std::io::{Read, Seek, SeekFrom, Write};
 +
 +    fn fixture(rate: u32, channels: usize, he: bool) -> Vec<u8> {
 +        let n = rate as usize * 2 + 13;
@@ -478,6 +1178,70 @@ index 0000000..99f9ab4
 +        partial[at + 16..at + 20].copy_from_slice(&(skip + 17).to_be_bytes());
 +        partial[at + 12..at + 16].copy_from_slice(&(play - 17).to_be_bytes());
 +        compare(partial);
++    }
++
++    #[test]
++    fn test_aac_transport_classification_preserves_public_raw_id3_file_bytes_batches() {
++        let pcm: Vec<_> = (0..96_013).map(|i| (i as f32 * 0.03).sin() * 0.1).collect();
++        let tagged = syom::encode(&[&pcm], 48_000).unwrap();
++        let at = if tagged.starts_with(b"ID3") {
++            10 + tagged[6..10]
++                .iter()
++                .fold(0usize, |n, b| (n << 7) | usize::from(*b))
++        } else {
++            0
++        };
++        for bytes in [tagged[at..].to_vec(), tagged] {
++            let mut worker = super::super::spawn_worker(
++                Reader::bytes(Bytes::from(bytes.clone())),
++                ChannelSelect::Mono,
++                None,
++            )
++            .unwrap();
++            let expected = collect(|| worker.recv());
++            let mut file = tempfile::NamedTempFile::new().unwrap();
++            file.write_all(&bytes).unwrap();
++            let sources = [
++                super::super::try_open_bytes(Bytes::from(bytes), ChannelSelect::Mono, None)
++                    .unwrap()
++                    .unwrap(),
++                super::super::try_open_path(
++                    file.path().to_str().unwrap(),
++                    ChannelSelect::Mono,
++                    None,
++                )
++                .unwrap()
++                .unwrap(),
++            ];
++            for mut source in sources {
++                let actual = collect(|| {
++                    source.recv_block().map(|b| match b {
++                        super::super::AacRecv::Block(block) => Some(block),
++                        super::super::AacRecv::Eof => None,
++                    })
++                });
++                assert_eq!(actual, expected);
++            }
++        }
++    }
++
++    #[test]
++    fn test_aac_transport_classification_keeps_non_aac_mp4_fallthrough() {
++        let mut bytes = fixture(48_000, 1, false);
++        let at = bytes.windows(4).position(|w| w == b"mp4a").unwrap();
++        bytes[at..at + 4].copy_from_slice(b"avc1");
++        let mut file = tempfile::NamedTempFile::new().unwrap();
++        file.write_all(&bytes).unwrap();
++        assert!(
++            super::super::try_open_bytes(Bytes::from(bytes), ChannelSelect::Mono, None)
++                .unwrap()
++                .is_none()
++        );
++        assert!(
++            super::super::try_open_path(file.path().to_str().unwrap(), ChannelSelect::Mono, None)
++                .unwrap()
++                .is_none()
++        );
 +    }
 +
 +    #[test]
@@ -795,5 +1559,661 @@ index 0000000..ddd2866
 +        reader.read_exact(&mut bytes).expect("reset bytes");
 +        assert_eq!(bytes, [0, 1, 2, 3]);
 +        assert_eq!(reader.stream_position().expect("reset position"), 4);
++    }
++}
+diff --git a/crates/gigastt-core/src/inference/audio/aac/adts_pull.rs b/crates/gigastt-core/src/inference/audio/aac/adts_pull.rs
+new file mode 100644
+index 0000000..549ee8d
+--- /dev/null
++++ b/crates/gigastt-core/src/inference/audio/aac/adts_pull.rs
+@@ -0,0 +1,219 @@
++//! Bounded ADTS pull. Framing only partitions bytes; the codec validates them.
++use std::io::{ErrorKind, Read};
++
++use anyhow::Result;
++use syom::{AacError, Decoder, Frame};
++
++use super::super::stream::ChannelSelect;
++use super::{AacBlock, BATCH_FRAMES, append_plane, map_aac, stream_options};
++
++const READ_BYTES: usize = 4096;
++const LOOKAHEAD: usize = 5;
++const STASH_BYTES: usize = READ_BYTES + LOOKAHEAD;
++
++pub(super) struct AdtsPull<R> {
++    reader: R,
++    decoder: Decoder,
++    channel: ChannelSelect,
++    stash: Vec<u8>,
++    scratch: Vec<u8>,
++    scan: usize,
++    fed: usize,
++    remaining: usize,
++    input_eof: bool,
++    finished: bool,
++    batch: Option<AacBlock>,
++    ready: Option<AacBlock>,
++    error: Option<anyhow::Error>,
++    #[cfg(test)]
++    forwarded: Option<Vec<u8>>,
++}
++
++impl<R: Read> AdtsPull<R> {
++    pub(super) fn new(reader: R, channel: ChannelSelect, max_audio_secs: Option<f64>) -> Self {
++        Self {
++            reader,
++            decoder: Decoder::new(stream_options(max_audio_secs)),
++            channel,
++            stash: Vec::with_capacity(STASH_BYTES),
++            scratch: vec![0; READ_BYTES],
++            scan: 0,
++            fed: 0,
++            remaining: 0,
++            input_eof: false,
++            finished: false,
++            batch: None,
++            ready: None,
++            error: None,
++            #[cfg(test)]
++            forwarded: None,
++        }
++    }
++
++    pub(super) fn recv(&mut self) -> Result<Option<AacBlock>> {
++        loop {
++            if let Some(block) = self.ready.take() {
++                return Ok(Some(block));
++            }
++            if let Some(error) = self.error.take() {
++                return Err(error);
++            }
++            if self.finished {
++                return Ok(self.batch.take());
++            }
++            let piece = match self.next_piece() {
++                Ok(piece) => piece,
++                Err(error) => {
++                    self.fail(error);
++                    continue;
++                }
++            };
++            let result = match piece {
++                Some((start, end)) => {
++                    self.fed = end;
++                    #[cfg(test)]
++                    if let Some(bytes) = &mut self.forwarded {
++                        bytes.extend_from_slice(&self.stash[start..end]);
++                    }
++                    let (batch, ready, channel) = (&mut self.batch, &mut self.ready, self.channel);
++                    self.decoder
++                        .feed(&self.stash[start..end], |frame| {
++                            accept(batch, ready, channel, frame)
++                        })
++                        .map(|_| ())
++                }
++                None => {
++                    self.finished = true;
++                    let (batch, ready, channel) = (&mut self.batch, &mut self.ready, self.channel);
++                    self.decoder
++                        .finish(|frame| accept(batch, ready, channel, frame))
++                        .map(|_| ())
++                }
++            };
++            if let Err(error) = result {
++                self.fail(map_aac(error));
++            }
++        }
++    }
++
++    fn fail(&mut self, error: anyhow::Error) {
++        self.finished = true;
++        self.batch = None; // Only complete logical blocks precede real errors.
++        self.error = Some(error);
++    }
++
++    /// All bytes are forwarded exactly once. Already-fed lookahead can frame
++    /// a header crossing a read without withholding errors from the codec.
++    fn next_piece(&mut self) -> Result<Option<(usize, usize)>> {
++        loop {
++            let len = self.stash.len();
++            if self.remaining > 0 {
++                let count = self.remaining.min(len - self.fed);
++                if count > 0 {
++                    self.remaining -= count;
++                    self.scan = self.fed + count;
++                    return Ok(Some((self.fed, self.scan)));
++                }
++                if self.input_eof {
++                    return Ok(None);
++                }
++                self.scan = len;
++                self.refill()?;
++                continue;
++            }
++            if self.input_eof && self.fed == len {
++                return Ok(None);
++            }
++            if len - self.scan >= 6 {
++                let header =
++                    (self.scan..=len - 6).find(|&at| syom::sniff_is_adts(&self.stash[at..]));
++                if let Some(at) = header {
++                    if at > self.fed {
++                        self.scan = at;
++                        return Ok(Some((self.fed, at)));
++                    }
++                    // Public 13-bit framing length only; no AAC/header validation here.
++                    let h = &self.stash[at..];
++                    let size = (usize::from(h[3] & 3) << 11)
++                        | (usize::from(h[4]) << 3)
++                        | (usize::from(h[5]) >> 5);
++                    let end = at + size;
++                    let available_end = end.min(len);
++                    anyhow::ensure!(available_end > self.fed, "ADTS framing made no progress");
++                    self.remaining = end - available_end;
++                    self.scan = available_end;
++                    return Ok(Some((self.fed, available_end)));
++                }
++            }
++            // Do not cross back into a previously framed AU when retaining
++            // the last five unframed bytes. They have already reached feed().
++            self.scan = self.scan.max(len.saturating_sub(LOOKAHEAD));
++            if self.fed < len {
++                return Ok(Some((self.fed, len)));
++            }
++            if self.input_eof {
++                return Ok(None);
++            }
++            self.refill()?;
++        }
++    }
++
++    fn refill(&mut self) -> Result<()> {
++        anyhow::ensure!(
++            self.fed == self.stash.len(),
++            "ADTS read would withhold unfed bytes"
++        );
++        anyhow::ensure!(
++            self.stash.len() - self.scan <= LOOKAHEAD,
++            "ADTS compressed lookahead exceeded"
++        );
++        self.stash.drain(..self.scan);
++        self.fed -= self.scan;
++        self.scan = 0;
++        let count = loop {
++            match self.reader.read(&mut self.scratch) {
++                Err(error) if error.kind() == ErrorKind::Interrupted => continue,
++                other => break other.map_err(AacError::from).map_err(map_aac)?,
++            }
++        };
++        self.input_eof = count == 0;
++        anyhow::ensure!(
++            self.stash.len() + count <= STASH_BYTES,
++            "ADTS compressed stash exceeded"
++        );
++        self.stash.extend_from_slice(&self.scratch[..count]);
++        Ok(())
++    }
++}
++
++fn accept(
++    batch: &mut Option<AacBlock>,
++    ready: &mut Option<AacBlock>,
++    channel: ChannelSelect,
++    frame: Frame<'_>,
++) -> syom::Result<()> {
++    if let Some(block) = batch
++        && (block.rate, block.channels) != (frame.sample_rate, frame.planar.len())
++    {
++        return Err(AacError::decode("AAC rate or channel count changed"));
++    }
++    let block = batch.get_or_insert_with(|| AacBlock {
++        frames: 0,
++        samples: Vec::with_capacity(BATCH_FRAMES),
++        rate: frame.sample_rate,
++        channels: frame.planar.len(),
++    });
++    block.frames += frame.samples;
++    append_plane(&mut block.samples, &frame, channel);
++    if block.frames >= BATCH_FRAMES {
++        if ready.is_some() {
++            return Err(AacError::decode("ADTS feed exceeded one ready block"));
++        }
++        *ready = batch.take();
++    }
++    Ok(())
++}
++
++#[cfg(test)]
++#[path = "adts_pull_tests.rs"]
++mod tests;
+diff --git a/crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs b/crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs
+new file mode 100644
+index 0000000..874ebaf
+--- /dev/null
++++ b/crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs
+@@ -0,0 +1,425 @@
++#![allow(clippy::unwrap_used, clippy::expect_used)]
++use super::*;
++use bytes::Bytes;
++use std::io::{Cursor, Error, Write};
++use std::sync::{
++    Arc,
++    atomic::{AtomicBool, AtomicUsize, Ordering},
++};
++
++type Block = (usize, u32, usize, Vec<u32>);
++type Outcome = (Vec<Block>, Option<String>);
++fn block(block: AacBlock) -> Block {
++    (
++        block.frames,
++        block.rate,
++        block.channels,
++        block.samples.into_iter().map(f32::to_bits).collect(),
++    )
++}
++fn error_tag(error: anyhow::Error) -> String {
++    error
++        .downcast_ref::<AacError>()
++        .map_or_else(|| format!("{error:?}"), |e| format!("{e:?}"))
++}
++fn collect(mut next: impl FnMut() -> Result<Option<AacBlock>>) -> Outcome {
++    let mut blocks = Vec::new();
++    loop {
++        match next() {
++            Ok(Some(value)) => blocks.push(block(value)),
++            Ok(None) => return (blocks, None),
++            Err(error) => return (blocks, Some(error_tag(error))),
++        }
++    }
++}
++fn bare(bytes: Vec<u8>) -> Vec<u8> {
++    let at = if bytes.starts_with(b"ID3") {
++        10 + bytes[6..10]
++            .iter()
++            .fold(0usize, |n, b| (n << 7) | usize::from(*b))
++            + if bytes[5] & 0x10 != 0 { 10 } else { 0 }
++    } else {
++        0
++    };
++    let bytes = bytes[at..].to_vec();
++    assert!(syom::sniff_is_adts(&bytes));
++    bytes
++}
++fn fixture(rate: u32, channels: usize, profile: u8) -> Vec<u8> {
++    let pcm: Vec<Vec<f32>> = (0..channels)
++        .map(|ch| {
++            (0..rate * 2 + 13)
++                .map(|i| (i as f32 * (0.03 + ch as f32 * 0.01)).sin() * 0.1)
++                .collect()
++        })
++        .collect();
++    let options =
++        syom::EncodeOptions::adts().with_bitrate_bps(48_000.min(rate * channels as u32 * 4));
++    let options = match profile {
++        1 => options.with_he(true),
++        2 => options.with_he_v2(true).with_bitrate_bps(32_000),
++        _ => options,
++    };
++    let bytes = bare(syom::encode_with(&pcm, rate, &options).unwrap());
++    if profile != 0 {
++        assert_eq!((bytes[2] >> 2) & 15, 6, "HE core must be24kHz");
++    }
++    bytes
++}
++fn boundaries(bytes: &[u8]) -> Vec<usize> {
++    let mut result = vec![0];
++    let mut at = 0;
++    while at < bytes.len() {
++        assert!(syom::sniff_is_adts(&bytes[at..]));
++        at += (usize::from(bytes[at + 3] & 3) << 11)
++            | (usize::from(bytes[at + 4]) << 3)
++            | (usize::from(bytes[at + 5]) >> 5);
++        assert!(at <= bytes.len());
++        result.push(at);
++    }
++    result
++}
++fn old(bytes: Vec<u8>) -> Outcome {
++    let mut worker = super::super::spawn_worker(
++        super::super::input::Reader::bytes(Bytes::from(bytes)),
++        ChannelSelect::Mono,
++        None,
++    )
++    .unwrap();
++    collect(|| worker.recv())
++}
++fn pull<R: Read>(reader: R) -> (Outcome, AdtsPull<R>) {
++    let mut source = AdtsPull::new(reader, ChannelSelect::Mono, None);
++    source.forwarded = Some(Vec::new());
++    let result = collect(|| source.recv());
++    assert!(source.recv().unwrap().is_none());
++    assert!(source.stash.len() <= STASH_BYTES);
++    (result, source)
++}
++
++#[test]
++fn test_aac_bare_adts_pull_native_batches_bits_file_bytes_profiles() {
++    let cases = [
++        (8_000, 1, 0),
++        (8_000, 2, 0),
++        (22_050, 1, 0),
++        (22_050, 2, 0),
++        (48_000, 1, 0),
++        (48_000, 2, 0),
++        (48_000, 2, 1),
++        (48_000, 2, 2),
++    ];
++    for (rate, channels, profile) in cases {
++        let bytes = fixture(rate, channels, profile);
++        let expected = old(bytes.clone());
++        assert!(expected.1.is_none(), "{expected:?}");
++        assert_eq!((expected.0[0].1, expected.0[0].2), (rate, channels));
++        let mut file = tempfile::NamedTempFile::new().unwrap();
++        file.write_all(&bytes).unwrap();
++        let (actual, memory) = pull(Cursor::new(bytes.clone()));
++        assert_eq!(actual, expected);
++        assert_eq!(memory.forwarded.unwrap(), bytes);
++        let (actual, disk) = pull(std::fs::File::open(file.path()).unwrap());
++        assert_eq!(actual, expected);
++        assert_eq!(disk.forwarded.unwrap(), bytes);
++    }
++}
++
++struct Chunked {
++    bytes: Cursor<Vec<u8>>,
++    chunk: usize,
++    fail: bool,
++    interrupt: bool,
++    dropped: Arc<AtomicBool>,
++    reads: Arc<AtomicUsize>,
++}
++impl Chunked {
++    fn new(bytes: Vec<u8>, chunk: usize, fail: bool) -> Self {
++        Self {
++            bytes: Cursor::new(bytes),
++            chunk,
++            fail,
++            interrupt: false,
++            dropped: Arc::new(AtomicBool::new(false)),
++            reads: Arc::new(AtomicUsize::new(0)),
++        }
++    }
++}
++impl Read for Chunked {
++    fn read(&mut self, out: &mut [u8]) -> std::io::Result<usize> {
++        self.reads.fetch_add(1, Ordering::Relaxed);
++        if self.interrupt {
++            self.interrupt = false;
++            return Err(Error::from(ErrorKind::Interrupted));
++        }
++        if self.fail && self.bytes.position() as usize == self.bytes.get_ref().len() {
++            return Err(Error::from(ErrorKind::PermissionDenied));
++        }
++        let n = out.len().min(self.chunk);
++        self.bytes.read(&mut out[..n])
++    }
++}
++impl Drop for Chunked {
++    fn drop(&mut self) {
++        self.dropped.store(true, Ordering::Relaxed);
++    }
++}
++
++// The old raw worker's actual feed_read/finish driver, with its same full-block
++// emission and incomplete-tail-on-error discard; faults need a generic reader.
++fn reference<R: Read>(mut reader: R) -> Outcome {
++    let mut decoder = Decoder::new(stream_options(None));
++    let mut batch: Option<AacBlock> = None;
++    let mut blocks = Vec::new();
++    let mut emit = |frame: Frame<'_>| {
++        let b = batch.get_or_insert_with(|| AacBlock {
++            frames: 0,
++            samples: Vec::new(),
++            rate: frame.sample_rate,
++            channels: frame.planar.len(),
++        });
++        b.frames += frame.samples;
++        append_plane(&mut b.samples, &frame, ChannelSelect::Mono);
++        if b.frames >= BATCH_FRAMES {
++            blocks.push(block(batch.take().unwrap()));
++        }
++        Ok(())
++    };
++    let result = decoder
++        .feed_read(&mut reader, &mut emit)
++        .and_then(|_| decoder.finish(&mut emit).map(|_| ()));
++    match result {
++        Ok(()) => {
++            if let Some(b) = batch {
++                blocks.push(block(b));
++            }
++            (blocks, None)
++        }
++        Err(error) => (blocks, Some(error_tag(map_aac(error)))),
++    }
++}
++
++#[test]
++fn test_aac_bare_adts_pull_forwards_junk_and_split_headers_exactly_once() {
++    let raw = fixture(48_000, 1, 0);
++    let edges = boundaries(&raw);
++    let mut bytes = Vec::new();
++    let mut seed = 145u32;
++    for (i, pair) in edges[..9].windows(2).enumerate() {
++        bytes.extend_from_slice(&raw[pair[0]..pair[1]]);
++        for _ in 0..i + 1 {
++            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
++            bytes.push((seed >> 24) as u8 & 0x7f);
++        }
++    }
++    bytes.extend_from_slice(&raw[edges[8]..]);
++    for chunk in [1, 2, 5, 6, 7, 13, 4096] {
++        let expected = reference(Chunked::new(bytes.clone(), chunk, false));
++        assert!(
++            expected.1.is_none(),
++            "valid resync fixture must decode: {expected:?}"
++        );
++        let (actual, source) = pull(Chunked::new(bytes.clone(), chunk, false));
++        assert_eq!(actual, expected, "chunk={chunk}");
++        let forwarded = source.forwarded.unwrap();
++        assert_eq!(forwarded, bytes[..forwarded.len()]);
++        if actual.1.is_none() {
++            assert_eq!(forwarded, bytes);
++        }
++    }
++}
++
++fn header_size(header: &mut [u8], len: usize) {
++    header[3] = (header[3] & !3) | ((len >> 11) as u8 & 3);
++    header[4] = (len >> 3) as u8;
++    header[5] = (header[5] & 31) | (((len & 7) as u8) << 5);
++}
++fn crc_frame(raw: &[u8]) -> Vec<u8> {
++    let end = boundaries(raw)[1];
++    let payload = &raw[7..end];
++    assert_eq!(payload[0] >> 5, 0);
++    assert!(payload.len() * 8 >= 195);
++    let mut header = raw[..7].to_vec();
++    header[1] &= !1;
++    header_size(&mut header, end + 2);
++    // This authored mono encoder fixture starts with an SCE exceeding192bodybits.
++    // ADTS protects the56headerbits and192SCEbodybits afterthe3-bit elementID.
++    let bits = (0..56)
++        .map(|i| (header[i / 8] >> (7 - i % 8)) & 1)
++        .chain((3..195).map(|i| (payload[i / 8] >> (7 - i % 8)) & 1));
++    let mut crc = 0xffffu16;
++    for bit in bits {
++        let feedback = (crc >> 15) ^ u16::from(bit);
++        crc <<= 1;
++        if feedback != 0 {
++            crc ^= 0x8005;
++        }
++    }
++    header.extend_from_slice(&crc.to_be_bytes());
++    header.extend_from_slice(payload);
++    header
++}
++
++#[test]
++fn test_aac_bare_adts_pull_partial_crc_multirdb_and_completed_before_error() {
++    let raw = fixture(48_000, 1, 0);
++    let edges = boundaries(&raw);
++    for n in [1, 5, 6, 7, raw.len() - 1] {
++        let bytes = raw[..n].to_vec();
++        assert_eq!(pull(Cursor::new(bytes.clone())).0, old(bytes));
++    }
++    let protected = crc_frame(&raw);
++    let expected = old(protected.clone());
++    assert!(expected.1.is_none(), "{expected:?}");
++    assert_eq!(pull(Cursor::new(protected.clone())).0, expected);
++    let mut corrupt = protected;
++    corrupt[8] ^= 1;
++    assert_eq!(pull(Cursor::new(corrupt.clone())).0, old(corrupt));
++    let mut multi = raw[..7].to_vec();
++    multi[6] = (multi[6] & !3) | 3;
++    let payload = &raw[7..edges[1]];
++    header_size(&mut multi, 7 + payload.len() * 4);
++    for _ in 0..4 {
++        multi.extend_from_slice(payload);
++    }
++    let expected = old(multi.clone());
++    assert!(expected.1.is_none(), "{expected:?}");
++    assert_eq!(expected.0[0].0, 4096);
++    assert_eq!(pull(Cursor::new(multi)).0, expected);
++    for profile in [1, 2] {
++        let he = fixture(48_000, 2, profile);
++        let first_end = boundaries(&he)[1];
++        let payload = &he[7..first_end];
++        let mut multi = he[..7].to_vec();
++        multi[6] = (multi[6] & !3) | 3;
++        header_size(&mut multi, 7 + payload.len() * 4);
++        for _ in 0..4 {
++            multi.extend_from_slice(payload);
++        }
++        let expected = old(multi.clone());
++        assert!(expected.1.is_none(), "{expected:?}");
++        assert_eq!(expected.0[0].0, 8192);
++        assert_eq!(pull(Cursor::new(multi)).0, expected);
++    }
++    let mut broken = raw[..edges[24]].to_vec();
++    let mut header = raw[..8].to_vec();
++    header[2] = (header[2] & 0xc3) | (13 << 2);
++    header_size(&mut header, 8191);
++    broken.extend(header);
++    let expected = old(broken.clone());
++    assert_eq!(expected.0.len(), 1);
++    assert!(expected.1.is_some());
++    assert_eq!(pull(Cursor::new(broken)).0, expected);
++}
++
++#[test]
++fn test_aac_bare_adts_pull_preserves_header_io_precedence_and_interrupted_reads() {
++    let raw = fixture(48_000, 1, 0);
++    let edges = boundaries(&raw);
++    for mutation in 0..7 {
++        let mut header = raw[..8].to_vec();
++        header_size(&mut header, 8191);
++        match mutation {
++            0 | 1 => header[2] = (header[2] & 0xc3) | ((13 + mutation as u8) << 2),
++            2 | 3 => {
++                header[1] &= !1;
++                header_size(&mut header, 7 + mutation - 2);
++            }
++            4 => header[1] |= 2,
++            5 => header[2] = (header[2] & 0xc3) | (15 << 2),
++            _ => header_size(&mut header, 6),
++        }
++        for padding in [0, 1, 4, 5, 6, 7] {
++            let mut bytes = raw[..edges[1]].to_vec();
++            bytes.extend(vec![0; padding]);
++            bytes.extend_from_slice(&header);
++            for chunk in [7, 13, 4096] {
++                let expected = reference(Chunked::new(bytes.clone(), chunk, true));
++                assert_eq!(
++                    pull(Chunked::new(bytes.clone(), chunk, true)).0,
++                    expected,
++                    "mutation={mutation}padding={padding}chunk={chunk}"
++                );
++            }
++        }
++    }
++    let mut reader = Chunked::new(raw.clone(), 17, false);
++    reader.interrupt = true;
++    assert_eq!(pull(reader).0, old(raw.clone()));
++    let bytes = raw[..edges[25] - 1].to_vec();
++    let expected = reference(Chunked::new(bytes.clone(), 4096, true));
++    assert_eq!(expected.0.len(), 1);
++    assert!(expected.1.is_some());
++    assert_eq!(pull(Chunked::new(bytes, 4096, true)).0, expected);
++}
++
++#[test]
++fn test_aac_bare_adts_pull_public_budget_and_cancel() {
++    let raw = fixture(48_000, 1, 0);
++    let mut file = tempfile::NamedTempFile::new().unwrap();
++    file.write_all(&raw).unwrap();
++    for result in [
++        crate::inference::audio::decode_audio_bytes_shared_bounded(
++            Bytes::from(raw.clone()),
++            Some(0.1),
++        ),
++        crate::inference::audio::decode::decode_audio_file_bounded(
++            file.path().to_str().unwrap(),
++            Some(0.1),
++        ),
++    ] {
++        assert!(matches!(
++            result
++                .unwrap_err()
++                .downcast_ref::<crate::error::GigasttError>(),
++            Some(crate::error::GigasttError::AudioTooLong { .. })
++        ));
++    }
++    let calls = AtomicUsize::new(0);
++    let abort = || calls.fetch_add(1, Ordering::Relaxed) >= 3;
++    let error = crate::inference::audio::decode::decode_audio_bytes_with_abort(
++        Bytes::from(raw.clone()),
++        None,
++        Some(&abort),
++    )
++    .unwrap_err();
++    assert!(matches!(
++        error.downcast_ref::<crate::error::GigasttError>(),
++        Some(crate::error::GigasttError::Cancelled)
++    ));
++}
++
++#[test]
++fn test_aac_bare_adts_pull_send_and_drop() {
++    fn is_send<T: Send>() {}
++    is_send::<super::super::Producer>();
++    let reader = Chunked::new(fixture(48_000, 1, 0), 4096, false);
++    let dropped = reader.dropped.clone();
++    let reads = reader.reads.clone();
++    let mut source = AdtsPull::new(reader, ChannelSelect::Mono, None);
++    assert!(source.recv().unwrap().is_some());
++    let before = reads.load(Ordering::Relaxed);
++    drop(source);
++    assert!(dropped.load(Ordering::Relaxed));
++    assert_eq!(reads.load(Ordering::Relaxed), before);
++}
++
++#[test]
++fn test_aac_bare_adts_pull_he_ps_small_stack() {
++    for profile in [0, 1, 2] {
++        let raw = fixture(48_000, if profile == 0 { 1 } else { 2 }, profile);
++        let check = raw.clone();
++        let stack = if cfg!(debug_assertions) {
++            512 * 1024
++        } else {
++            128 * 1024
++        };
++        let actual = std::thread::Builder::new()
++            .stack_size(stack)
++            .spawn(move || pull(Cursor::new(raw)).0)
++            .unwrap()
++            .join()
++            .unwrap();
++        assert_eq!(actual, old(check));
 +    }
 +}

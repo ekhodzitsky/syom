@@ -1,0 +1,18 @@
+2026-11-05T19:58:41.897321Z  INFO gigastt_core::model::download: Using existing Rnnt model at /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt
+2026-11-05T19:58:42.049088Z  INFO gigastt_core::inference::engine::load: Detected model variant: Rnnt
+2026-11-05T19:58:42.049098Z  INFO gigastt_core::inference::engine::load: Using INT8 quantized encoder
+2026-11-05T19:58:42.049100Z  INFO gigastt_core::inference::engine::load: Loading ONNX models from /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt (pool_size=1)...
+2026-11-05T19:58:42.049102Z  INFO gigastt_core::inference::engine::load: Using CPU execution provider
+2026-11-05T19:58:42.049265Z  INFO gigastt_core::inference::load_files: Loading session triplet 1/1 (shared runtime)
+2026-11-05T19:58:42.290629Z  INFO gigastt_core::runtime::ort::session: encoder: loaded fresh optimized graph cache, skipped source model path=/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/optimized_cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort
+2026-11-05T19:58:42.295449Z  INFO gigastt_core::inference::tokenizer: Loaded vocabulary: 34 tokens, blank_id=33
+2026-11-05T19:58:42.295459Z  INFO gigastt_core::inference::engine::load: Models loaded (vocab_size=34, pool_size=1)
+2026-11-05T19:58:42.295464Z  INFO gigastt_core::inference::diarization: Speaker encoder present at /home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/wespeaker_resnet34.onnx (lazy load on first diarization request)
+2026-11-05T19:58:42.295535Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-11-05T19:58:42.295577Z  INFO gigastt::boot: VmRSS:	   64604 kB
+2026-11-05T19:58:42.295644Z  INFO gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-11-05T19:58:44.002313Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1706
+2026-11-05T19:58:44.006491Z  INFO gigastt_core::inference::engine::infer: greedy_decode elapsed_ms=4
+2026-11-05T19:58:44.006512Z  INFO gigastt_core::inference::engine::infer: Decoded tokens tokens=32 words=6 duration_ms=4
+2026-11-05T19:58:44.006519Z  INFO gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=5.22 wall_s=1.71 rtf=0.328
+2026-11-05T19:58:44.006612Z  INFO gigastt::transcribe_cmd: Wrote json export to /home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/independent/golos04-ffmpeg-asr.json

@@ -1,0 +1,31 @@
+{"detail":null,"mode":"file","peak_rss_kib":14776,"planes":[{"energy":19.77899683759549,"finite":true,"samples":64511}],"seconds":[0.004983052,0.005201883,0.005071879,0.004975548,0.00504622,0.00510994,0.005997124,0.00513155,0.005183889,0.005020292,0.005068142,0.005265552,0.005005123,0.005042594,0.005174761,0.005041793,0.005031303,0.005450388,0.005279518,0.005042343]}
+strace: Process 3180044 attached
+strace: Process 3180045 attached
+strace: Process 3180046 attached
+strace: Process 3180047 attached
+strace: Process 3180048 attached
+strace: Process 3180049 attached
+strace: Process 3180050 attached
+strace: Process 3180051 attached
+strace: Process 3180052 attached
+strace: Process 3180053 attached
+strace: Process 3180054 attached
+strace: Process 3180055 attached
+strace: Process 3180056 attached
+strace: Process 3180057 attached
+strace: Process 3180058 attached
+strace: Process 3180059 attached
+strace: Process 3180060 attached
+strace: Process 3180061 attached
+strace: Process 3180062 attached
+strace: Process 3180063 attached
+strace: Process 3180064 attached
+strace: Process 3180065 attached
+% time     seconds  usecs/call     calls    errors syscall
+------ ----------- ----------- --------- --------- ----------------
+ 62.89    0.002556           7       327           read
+ 35.56    0.001445           2       524        28 futex
+  1.23    0.000050           2        22           clone3
+  0.32    0.000013           0        90           lseek
+------ ----------- ----------- --------- --------- ----------------
+100.00    0.004064           4       963        28 total

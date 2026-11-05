@@ -1,0 +1,192 @@
+{
+  "campaign1": {
+    "exit_code": 1,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.0185835720119167,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15824,
+          "candidate": 14424
+        },
+        "all_decodes_median_ms": {
+          "base": 4.326,
+          "candidate": 4.4233
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.0237507236302241,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15996,
+          "candidate": 14288
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3323,
+          "candidate": 4.4266
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0515991325636516,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 15500,
+          "candidate": 14884
+        },
+        "all_decodes_median_ms": {
+          "base": 4.3402,
+          "candidate": 4.5504
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0242045910007012,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 26280,
+          "candidate": 25016
+        },
+        "all_decodes_median_ms": {
+          "base": 61.2613,
+          "candidate": 62.7841
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 0.9818428065808156,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 37080,
+          "candidate": 54288
+        },
+        "all_decodes_median_ms": {
+          "base": 101.2233,
+          "candidate": 99.6101
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 0.9815759686221004,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 17516,
+          "candidate": 16156
+        },
+        "all_decodes_median_ms": {
+          "base": 103.0643,
+          "candidate": 101.2006
+        }
+      }
+    },
+    "loadavg_before": [
+      11.16357421875,
+      7.76708984375,
+      6.1728515625
+    ],
+    "loadavg_after": [
+      7.728515625,
+      7.28515625,
+      6.06982421875
+    ],
+    "top_processes_before": [
+      "    PID    PPID PSR %CPU COMMAND         COMMAND",
+      "3172209  651874  22 92.3 python3         python3 target/task145/run-candidate3-campaigns.py",
+      " 778166   10184  14 64.0 python3         /usr/bin/python3 -B /home/ekhodzitsky/Projects/job-search/tools/semantic_index.py --root /home/ekhodzitsky/Projects/job",
+      "  15100   14488  21 35.1 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=renderer --crashpad-handler-pid=14704 --enable-crash-reporter=19dd1ef5-a086-4c",
+      "2578159   15780  11  4.7 Isolated Web Co /snap/firefox/8995/usr/lib/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:50741 -prefMapHandle 1:296899 -jsI",
+      "  14470   10745  23  4.5 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --no-sandbox"
+    ]
+  },
+  "campaign2": {
+    "exit_code": 1,
+    "results": {
+      "speech0.m4a:file": {
+        "median_paired_time_ratio": 1.0235641961241666,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15788,
+          "candidate": 14320
+        },
+        "all_decodes_median_ms": {
+          "base": 4.2711,
+          "candidate": 4.3838
+        }
+      },
+      "speech0.m4a:bytes": {
+        "median_paired_time_ratio": 1.028643240291652,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 15868,
+          "candidate": 14272
+        },
+        "all_decodes_median_ms": {
+          "base": 4.2559,
+          "candidate": 4.3812
+        }
+      },
+      "lc.adts:file": {
+        "median_paired_time_ratio": 1.0526820711273766,
+        "latency_pass": false,
+        "median_peak_rss_kib": {
+          "base": 15572,
+          "candidate": 14804
+        },
+        "all_decodes_median_ms": {
+          "base": 4.2745,
+          "candidate": 4.4791
+        }
+      },
+      "long-stereo.m4a:file": {
+        "median_paired_time_ratio": 1.0281193814664928,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 26276,
+          "candidate": 25032
+        },
+        "all_decodes_median_ms": {
+          "base": 61.1254,
+          "candidate": 63.1657
+        }
+      },
+      "long-stereo.m4a:split": {
+        "median_paired_time_ratio": 0.9778075268822026,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 36932,
+          "candidate": 54220
+        },
+        "all_decodes_median_ms": {
+          "base": 102.8211,
+          "candidate": 99.8821
+        }
+      },
+      "long-stereo.m4a:scan": {
+        "median_paired_time_ratio": 0.9685780724128229,
+        "latency_pass": true,
+        "median_peak_rss_kib": {
+          "base": 17656,
+          "candidate": 16132
+        },
+        "all_decodes_median_ms": {
+          "base": 104.667,
+          "candidate": 101.1881
+        }
+      }
+    },
+    "loadavg_before": [
+      7.728515625,
+      7.28515625,
+      6.06982421875
+    ],
+    "loadavg_after": [
+      5.95361328125,
+      6.88916015625,
+      5.98095703125
+    ],
+    "top_processes_before": [
+      "    PID    PPID PSR %CPU COMMAND         COMMAND",
+      " 778166   10184   4 64.0 python3         /usr/bin/python3 -B /home/ekhodzitsky/Projects/job-search/tools/semantic_index.py --root /home/ekhodzitsky/Projects/job",
+      "  15100   14488  14 35.1 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=renderer --crashpad-handler-pid=14704 --enable-crash-reporter=19dd1ef5-a086-4c",
+      "2578159   15780  16  4.7 Isolated Web Co /snap/firefox/8995/usr/lib/firefox/firefox -contentproc -isForBrowser -prefsHandle 0:50741 -prefMapHandle 1:296899 -jsI",
+      "  14470   10745   5  4.5 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --no-sandbox",
+      "  14836   14470   4  4.3 orca-ide        /tmp/.mount_orca-lFKfEDk/orca-ide --type=gpu-process --disable-gpu-sandbox --no-sandbox --ozone-platform=wayland --rend"
+    ]
+  }
+}

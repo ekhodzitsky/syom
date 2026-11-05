@@ -1,0 +1,495 @@
+{
+  "state": "All local consumer checks and both preregistered same-class CPU1 confirmations passed; original CPU0 fail/pass preserved, variability cause unproven",
+  "sdk": {
+    "version": "0.10.1",
+    "published": false,
+    "source": "Git",
+    "revision": "3e540231c9d71e3534be1ef856a91cf419efaead"
+  },
+  "compiler": "rustc1.98.1 release fatLTO codegen-units1",
+  "consumer_msrv": "Rust1.94 extended workspace/all-targets check in dedicated consumer-msrv-target passed",
+  "platform_tested": "Linux x86_64 host with AVX512; no Windows/macOS/ARM parity claim",
+  "checks": {
+    "default": {
+      "passed": 1269,
+      "failed": 0,
+      "ignored": 49
+    },
+    "extended-aac": {
+      "passed": 1305,
+      "failed": 0,
+      "ignored": 49
+    }
+  },
+  "aac_guard_functions": 27,
+  "all_27_aac_guards_passed": true,
+  "exact_original_syom010_pcm_cases": 29,
+  "pcm_proof": "target/task145/candidate5/pcm-parity.json",
+  "final_binaries_match_initial_pcm_passed_binaries": true,
+  "binaries": {
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt": {
+      "path": "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+      "resolved_path": "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+      "bytes": 52765944,
+      "sha256": "66f32ffb098c368f212670aa36f801686773424bb0c5334a818a9260522107b6"
+    },
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe": {
+      "path": "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe",
+      "resolved_path": "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe",
+      "bytes": 40789240,
+      "sha256": "6fd6ca682a88d17b76725ecfe57f5ead7f7464b50ed44390051a959b67534894"
+    }
+  },
+  "preliminary_diagnostic": "target/task145/candidate5/early-diagnostic (does not count as final acceptance)",
+  "first_attempt": "target/task145/candidate5-attempt1",
+  "recovery_proof": "target/task145/candidate5/clippy-test-recovery/proof.json",
+  "initial_source_snapshot": "target/task145/candidate5/source-manifest-before.json",
+  "final_source_snapshots": [
+    "target/task145/candidate5/source-manifest-recovery-before.json",
+    "target/task145/candidate5/source-manifest-recovery-after.json"
+  ],
+  "validation_manifest": "target/task145/candidate5/validation.json",
+  "validation_manifest_sha256": "2190dee2239cfb2861c7bf137d4be8df2581e19d57ffcd01505a5bd661e8f755",
+  "stages_completed": [
+    "Exact SDK Git pin/source hashes and ORT/model/fixture/harness reference hashes",
+    "Stable production probe/server build, CLI smoke,29exactPCM cases",
+    "Preliminary unchanged six-case diagnostic",
+    "Final-source default and extended full workspace lib/bin tests, all27AAC guards",
+    "Both all-targets Clippy profiles with -Dwarnings",
+    "fmt,docs drift/tests,publication and actual working-tree audit",
+    "Rust1.94 extended workspace/all-targets check in dedicated target",
+    "Final stable binary hash freeze and CLI smoke",
+    "Original two unchanged CPU0 campaigns retained (one scanFAIL), then passive same-class CPU selection preregistered before exactly two CPU1 confirmation campaigns, both6/6PASS"
+  ],
+  "http_and_models": "Parent issued HTTP GO after confirmation release; this agent ran no HTTP/model inference",
+  "crate_publish_or_consumer_commit_merge_default_flip": false,
+  "original_cpu0_campaigns": {
+    "campaign1": {
+      "exit_code": 1,
+      "results": {
+        "speech0.m4a:file": {
+          "median_paired_time_ratio": 1.003582119616609,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15752,
+            "candidate": 14564
+          },
+          "all_decodes_median_ms": {
+            "base": 5.381266,
+            "candidate": 5.3990100000000005
+          }
+        },
+        "speech0.m4a:bytes": {
+          "median_paired_time_ratio": 1.0213008829797654,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15816,
+            "candidate": 14488
+          },
+          "all_decodes_median_ms": {
+            "base": 4.401961,
+            "candidate": 4.454890000000001
+          }
+        },
+        "lc.adts:file": {
+          "median_paired_time_ratio": 1.0285974661314892,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15548,
+            "candidate": 14764
+          },
+          "all_decodes_median_ms": {
+            "base": 4.309668,
+            "candidate": 4.430866
+          }
+        },
+        "long-stereo.m4a:file": {
+          "median_paired_time_ratio": 1.0285678284059805,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 26244,
+            "candidate": 25240
+          },
+          "all_decodes_median_ms": {
+            "base": 61.54976,
+            "candidate": 68.391986
+          }
+        },
+        "long-stereo.m4a:split": {
+          "median_paired_time_ratio": 0.9822703988389114,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 36932,
+            "candidate": 54448
+          },
+          "all_decodes_median_ms": {
+            "base": 100.69821,
+            "candidate": 99.73232
+          }
+        },
+        "long-stereo.m4a:scan": {
+          "median_paired_time_ratio": 1.0690809428790229,
+          "latency_pass": false,
+          "median_peak_rss_kib": {
+            "base": 17616,
+            "candidate": 16184
+          },
+          "all_decodes_median_ms": {
+            "base": 104.815658,
+            "candidate": 115.624459
+          }
+        }
+      },
+      "loadavg_before": [
+        4.1328125,
+        4.48193359375,
+        4.3837890625
+      ],
+      "loadavg_after": [
+        4.037109375,
+        4.40576171875,
+        4.3603515625
+      ]
+    },
+    "campaign2": {
+      "exit_code": 0,
+      "results": {
+        "speech0.m4a:file": {
+          "median_paired_time_ratio": 1.0186526134021878,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15784,
+            "candidate": 14632
+          },
+          "all_decodes_median_ms": {
+            "base": 4.323865,
+            "candidate": 4.40129
+          }
+        },
+        "speech0.m4a:bytes": {
+          "median_paired_time_ratio": 1.0233712754472406,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15868,
+            "candidate": 14616
+          },
+          "all_decodes_median_ms": {
+            "base": 4.350765,
+            "candidate": 4.446535
+          }
+        },
+        "lc.adts:file": {
+          "median_paired_time_ratio": 1.0245612302261673,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15492,
+            "candidate": 14788
+          },
+          "all_decodes_median_ms": {
+            "base": 4.350715,
+            "candidate": 4.446605
+          }
+        },
+        "long-stereo.m4a:file": {
+          "median_paired_time_ratio": 1.0267197499207557,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 26308,
+            "candidate": 25256
+          },
+          "all_decodes_median_ms": {
+            "base": 62.433056,
+            "candidate": 64.52156000000001
+          }
+        },
+        "long-stereo.m4a:split": {
+          "median_paired_time_ratio": 0.9788451997980869,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 36912,
+            "candidate": 54348
+          },
+          "all_decodes_median_ms": {
+            "base": 100.320072,
+            "candidate": 99.31338500000001
+          }
+        },
+        "long-stereo.m4a:scan": {
+          "median_paired_time_ratio": 0.9766280896019542,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 17576,
+            "candidate": 16276
+          },
+          "all_decodes_median_ms": {
+            "base": 103.156749,
+            "candidate": 100.700745
+          }
+        }
+      },
+      "loadavg_before": [
+        4.037109375,
+        4.40576171875,
+        4.3603515625
+      ],
+      "loadavg_after": [
+        3.7890625,
+        4.31103515625,
+        4.3310546875
+      ]
+    }
+  },
+  "preregistered_cpu1_confirmation_campaigns": {
+    "preregistered-cpu1-campaign1": {
+      "exit_code": 0,
+      "cpu": 1,
+      "smt_sibling": 13,
+      "results": {
+        "speech0.m4a:file": {
+          "median_paired_time_ratio": 1.0160468710268722,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15864,
+            "candidate": 14452
+          },
+          "all_decodes_median_ms": {
+            "base": 4.408523,
+            "candidate": 4.446394000000001
+          }
+        },
+        "speech0.m4a:bytes": {
+          "median_paired_time_ratio": 1.0194163504321094,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15836,
+            "candidate": 14472
+          },
+          "all_decodes_median_ms": {
+            "base": 4.320779,
+            "candidate": 4.409586
+          }
+        },
+        "lc.adts:file": {
+          "median_paired_time_ratio": 1.0260137305438812,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15488,
+            "candidate": 14584
+          },
+          "all_decodes_median_ms": {
+            "base": 4.3763630000000004,
+            "candidate": 4.516095
+          }
+        },
+        "long-stereo.m4a:file": {
+          "median_paired_time_ratio": 1.020227886234562,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 26200,
+            "candidate": 25212
+          },
+          "all_decodes_median_ms": {
+            "base": 61.859251,
+            "candidate": 62.849367
+          }
+        },
+        "long-stereo.m4a:split": {
+          "median_paired_time_ratio": 0.9813161236064215,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 37032,
+            "candidate": 54320
+          },
+          "all_decodes_median_ms": {
+            "base": 100.49356800000001,
+            "candidate": 98.773985
+          }
+        },
+        "long-stereo.m4a:scan": {
+          "median_paired_time_ratio": 0.978817705896722,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 17440,
+            "candidate": 16252
+          },
+          "all_decodes_median_ms": {
+            "base": 104.793468,
+            "candidate": 102.11767200000001
+          }
+        }
+      },
+      "observer": {
+        "cpu": 8,
+        "cpu_seconds": 0.16365154899999998,
+        "one_core_percent": 0.4547345985145593,
+        "samples": 358,
+        "utilization": {
+          "cpu1": {
+            "mean_interval_busy_percent": 100.0,
+            "median_interval_busy_percent": 100.0,
+            "max_interval_busy_percent": 100.0
+          },
+          "cpu13": {
+            "mean_interval_busy_percent": 6.125116713352008,
+            "median_interval_busy_percent": 0.0,
+            "max_interval_busy_percent": 100.0
+          }
+        },
+        "reported_frequency": {
+          "1": {
+            "min_reported_khz": 4883300,
+            "median_reported_khz": 5084364.0,
+            "max_reported_khz": 5149844
+          },
+          "13": {
+            "min_reported_khz": 4889802,
+            "median_reported_khz": 5084045.5,
+            "max_reported_khz": 5151731
+          }
+        },
+        "owned_probe_observations": 356,
+        "observed_last_cpus": [
+          1
+        ],
+        "observed_affinities": [
+          [
+            1
+          ]
+        ],
+        "scope": "Passive reads only; no governor or process changes; reported frequency is not effective APERF/MPERF, cannot establish historical CPU0 cause"
+      },
+      "preregistration": {
+        "path": "/home/ekhodzitsky/Projects/syom/target/task145/quiet-core-selection/same-class-preregistered-selection.json",
+        "sha256": "293cbaa19150faff34d255124a694b40455237d5521608c289198d3625da9bc8",
+        "registered_utc": "2026-11-05T19:53:39.749431+00:00"
+      }
+    },
+    "preregistered-cpu1-campaign2": {
+      "exit_code": 0,
+      "cpu": 1,
+      "smt_sibling": 13,
+      "results": {
+        "speech0.m4a:file": {
+          "median_paired_time_ratio": 1.019744021813425,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15772,
+            "candidate": 14456
+          },
+          "all_decodes_median_ms": {
+            "base": 4.3628670000000005,
+            "candidate": 4.45465
+          }
+        },
+        "speech0.m4a:bytes": {
+          "median_paired_time_ratio": 1.019809388269917,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15980,
+            "candidate": 14520
+          },
+          "all_decodes_median_ms": {
+            "base": 4.359201,
+            "candidate": 4.439261
+          }
+        },
+        "lc.adts:file": {
+          "median_paired_time_ratio": 1.0278220326934109,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 15368,
+            "candidate": 14652
+          },
+          "all_decodes_median_ms": {
+            "base": 4.3498529999999995,
+            "candidate": 4.467424
+          }
+        },
+        "long-stereo.m4a:file": {
+          "median_paired_time_ratio": 1.0190746226774825,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 26172,
+            "candidate": 25196
+          },
+          "all_decodes_median_ms": {
+            "base": 62.336175,
+            "candidate": 63.358911000000006
+          }
+        },
+        "long-stereo.m4a:split": {
+          "median_paired_time_ratio": 0.9872932029581012,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 36912,
+            "candidate": 54368
+          },
+          "all_decodes_median_ms": {
+            "base": 100.599757,
+            "candidate": 100.069254
+          }
+        },
+        "long-stereo.m4a:scan": {
+          "median_paired_time_ratio": 0.9674699479143266,
+          "latency_pass": true,
+          "median_peak_rss_kib": {
+            "base": 17528,
+            "candidate": 16152
+          },
+          "all_decodes_median_ms": {
+            "base": 104.467397,
+            "candidate": 101.143567
+          }
+        }
+      },
+      "observer": {
+        "cpu": 8,
+        "cpu_seconds": 0.17230759299999998,
+        "one_core_percent": 0.4773486256230017,
+        "samples": 359,
+        "utilization": {
+          "cpu1": {
+            "mean_interval_busy_percent": 100.0,
+            "median_interval_busy_percent": 100.0,
+            "max_interval_busy_percent": 100.0
+          },
+          "cpu13": {
+            "mean_interval_busy_percent": 9.613452965408273,
+            "median_interval_busy_percent": 9.090909090909092,
+            "max_interval_busy_percent": 100.0
+          }
+        },
+        "reported_frequency": {
+          "1": {
+            "min_reported_khz": 2627612,
+            "median_reported_khz": 5098694,
+            "max_reported_khz": 5145451
+          },
+          "13": {
+            "min_reported_khz": 3254303,
+            "median_reported_khz": 5098055,
+            "max_reported_khz": 5148116
+          }
+        },
+        "owned_probe_observations": 357,
+        "observed_last_cpus": [
+          1
+        ],
+        "observed_affinities": [
+          [
+            1
+          ]
+        ],
+        "scope": "Passive reads only; no governor or process changes; reported frequency is not effective APERF/MPERF, cannot establish historical CPU0 cause"
+      },
+      "preregistration": {
+        "path": "/home/ekhodzitsky/Projects/syom/target/task145/quiet-core-selection/same-class-preregistered-selection.json",
+        "sha256": "293cbaa19150faff34d255124a694b40455237d5521608c289198d3625da9bc8",
+        "registered_utc": "2026-11-05T19:53:39.749431+00:00"
+      }
+    }
+  },
+  "original_cpu0_assessment": "Scan1.06908 FAIL in original campaign1 and0.97663 PASS in campaign2; exact same binaries/harness/source. Coarse original snapshots cannot prove load/frequency cause. Original raw files unchanged.",
+  "confirmation_selection_evidence": "target/task145/quiet-core-selection/same-class-preregistered-selection.json",
+  "scan_identity_and_raw_pair_audit": "target/task145/candidate5/scan-audit.json"
+}

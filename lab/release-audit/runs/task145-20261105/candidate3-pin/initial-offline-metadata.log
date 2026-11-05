@@ -1,0 +1,10 @@
+error: failed to get `syom` as a dependency of package `gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)`
+
+Caused by:
+  failed to load source for dependency `syom`
+
+Caused by:
+  unable to update https://github.com/ekhodzitsky/syom?rev=3e540231c9d71e3534be1ef856a91cf419efaead#3e540231
+
+Caused by:
+  can't checkout from 'https://github.com/ekhodzitsky/syom': you are in the offline mode (--offline)

@@ -1,0 +1,55 @@
+#![allow(dead_code)]
+use anyhow::Result;
+mod audio {
+ pub mod stream{#[derive(Clone,Copy)]pub enum ChannelSelect{Mono,One(usize)}}
+ pub mod aac{
+ use syom::{AacError,DecodeOptions,Frame};
+ use super::stream::ChannelSelect;
+ const MAX_SAMPLE_RATE:u32=192_000;
+ const BATCH_FRAMES:usize=24*1024;
+ pub struct AacBlock{frames:usize,samples:Vec<f32>,rate:u32,channels:usize}
+ #[derive(Debug)]enum GigasttError{AudioTooLong{observed_secs:f64,limit_secs:f64}}
+ impl std::fmt::Display for GigasttError{fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result{write!(f,"{self:?}")}}
+ impl std::error::Error for GigasttError{}
+ #[path=@@ADTS_PULL@@]mod adts_pull;
+ #[path=@@INPUT@@]mod input;
+ #[path=@@BUFFERED@@]mod buffered;
+@@HELPERS@@
+ pub fn collect(path:&str,bytes:bytes::Bytes,kind:&str)->anyhow::Result<Vec<(usize,u32,usize,Vec<u32>)>>{
+  let reader=match kind{"file"=>input::Reader::File(std::fs::File::open(path)?),"bytes"=>input::Reader::bytes(bytes),_=>anyhow::bail!("kind")};
+  let mut source=Box::new(adts_pull::AdtsPull::new(reader,ChannelSelect::Mono,None));
+  let mut out=Vec::new();while let Some(block)=source.recv()?{
+   anyhow::ensure!(block.samples.iter().all(|v|v.is_finite()),"nonfinite");
+   out.push((block.frames,block.rate,block.channels,block.samples.into_iter().map(f32::to_bits).collect()));
+  }
+  anyhow::ensure!(!out.is_empty(),"empty");anyhow::ensure!(source.recv()?.is_none(),"nonterminal EOF");Ok(out)
+ }
+ }
+}
+fn strip_id3(bytes:Vec<u8>)->Vec<u8>{
+ if !bytes.starts_with(b"ID3"){return bytes;}
+ assert!(bytes.len()>=10);
+ let length=bytes[6..10].iter().fold(0usize,|n,b|{assert!(b&0x80==0);(n<<7)|usize::from(*b)});
+ let at=10+length+if bytes[5]&0x10!=0{10}else{0};assert!(at<=bytes.len());bytes[at..].to_vec()
+}
+fn main()->Result<()>{
+ let args:Vec<String>=std::env::args().collect();anyhow::ensure!(args.len()==4,"usage: profile fixture file|bytes");
+ let profile=&args[1];let file=&args[2];let kind=&args[3];
+ // Reading/byte-only stripping cannot initialize codec state before coldthread.
+ let original=std::fs::read(file)?;let raw=strip_id3(original.clone());
+ let path=if original==raw{file.clone()}else{let p=format!("{file}.bare-owned");std::fs::write(&p,&raw)?;p};
+ anyhow::ensure!(raw.len()>=7,"shortfixture");let header_cfg=((raw[2]&1)<<2)|(raw[3]>>6);
+ let bytes=bytes::Bytes::from(raw);
+ let (threadpath,threadbytes,threadkind)=(path.clone(),bytes.clone(),kind.clone());
+ let cold=std::thread::Builder::new().name("cold-adts-pull".into()).stack_size(128*1024)
+  .spawn(move||audio::aac::collect(&threadpath,threadbytes,&threadkind))?.join().map_err(|_|anyhow::anyhow!("cold threadpanicked"))??;
+ let warm=audio::aac::collect(&path,bytes.clone(),kind)?;anyhow::ensure!(cold==warm,"cold/warm native geometry/bits");
+ // Profile verification is deliberately AFTER firstcold decode andwarm comparison.
+ let mut metadata=None;
+ syom::decode_streaming(&bytes,&syom::DecodeOptions::unbounded(),|frame|{metadata=Some((frame.meta.core_rate,frame.meta.output_rate,frame.planar.len()));Ok(())})?;
+ let meta=metadata.ok_or_else(||anyhow::anyhow!("missingmetadata"))?;
+ let expected=match profile.as_str(){"lc"=>(48000,48000,1),"he1"=>(24000,48000,2),"ps"|"implicit-ps"=>(24000,48000,2),_=>anyhow::bail!("profile")};
+ anyhow::ensure!(meta==expected,"profilemetadata {meta:?} != {expected:?}");
+ anyhow::ensure!(header_cfg==if profile=="he1"{2}else{1},"headerchannelconfig");
+ println!("{}",serde_json::json!({"profile":profile,"fixture":file,"reader":kind,"stack_bytes":131072,"geometry":cold.iter().map(|b|(b.0,b.1,b.2)).collect::<Vec<_>>(),"native_samples":cold.iter().map(|b|b.3.len()).sum::<usize>(),"bit_differences":0,"metadata":{"core_rate":meta.0,"output_rate":meta.1,"decoded_channels":meta.2,"header_channel_configuration":header_cfg}}));Ok(())
+}

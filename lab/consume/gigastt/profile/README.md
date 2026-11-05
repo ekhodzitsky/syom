@@ -380,3 +380,72 @@ ELF-offset histogram and disassembly remain under `target/task145/sigprof`.
 The ignored `.so` and binary RIP stream are local evidence, never package or Git
 artifacts. If this fallback is unsupported, retain the failure and use an owned
 child debugger sampling session; do not relax host security policy.
+
+## Fresh cold ADTS producer stack proof
+
+`prepare_adts_cold_stack.py` prepares the additional **C5 / SDK 0.10.1** proof,
+using exact Git revision `3e540231c9d71e3534be1ef856a91cf419efaead`. Apply the
+matching [consumer handoff](../README.md#consumer-adapter-handoff) first. The
+generator snapshots that supplied checkout's `adts_pull.rs`, `input.rs` and
+`buffered.rs`, and extracts its parent append/options/error-mapping helpers.
+Source hashes identify what was copied; a later checkout requires new evidence.
+The Rust template, manifest template and lock preserve the tested standalone
+harness and pinned SDK. The copied consumer code uses [gigastt's MIT license](LICENSE.gigastt).
+
+Each of four existing goldens runs through both File and Bytes in a **fresh
+process**, with the first Decoder construction and full producer decode inside
+a **128 KiB thread**. Before that thread, the harness only reads bytes, allocates
+input storage and performs byte-only optional ID3 stripping. It never calls an
+encoder, probe or decoder to warm codec tables. Afterwards, a warm producer run
+must match every native float bit and each batch's frames/rate/channels. Profile
+metadata is decoded and checked only after both runs: LC at 48 kHz mono, HE1
+with 24 kHz core/48 kHz stereo output, and PS/implicit PS with mono wire headers
+and stereo output. These assertions prevent an accidentally LC-encoded fixture
+from being labeled HE.
+
+Preparation records original and stripped fixture hashes without invoking the
+codec. The four selected goldens are all untagged, so their original/bare hashes
+are identical and no stripped file is written. The test-only optional tagged
+input branch writes a `.bare-owned` sibling; use an owned fixture copy when
+trying other tagged inputs. The minimal parent `AudioTooLong` error type is a
+normal-path stub. This native caller-stack proof does not establish public
+consumer budget/cancellation/error contracts, resampler behavior or HTTP/model
+qualification; those require the actual consumer workspace and separate checks.
+
+```sh
+python3 lab/consume/gigastt/profile/prepare_adts_cold_stack.py \
+  --consumer target/task145/gigastt --output target/task145/adts-cold-stack-repro
+cold_dir="$PWD/target/task145/adts-cold-stack-repro"
+cold_target="$PWD/target/task145/adts-cold-stack-repro-target"
+# Historical compiler was stable=1.98.1; use the same installed version.
+taskset -c 8-11 env CARGO_BUILD_JOBS=2 CARGO_TARGET_DIR="$cold_target" \
+  cargo +1.98.1 build --release --locked --offline --manifest-path "$cold_dir/Cargo.toml" \
+  > "$cold_dir/build.log" 2>&1
+cold_bin="$cold_target/release/syom-adts-cold-stack-proof"
+proof_status=0
+for profile in lc he1 ps implicit-ps; do
+  case "$profile" in
+    lc) fixture=sine48.adts ;;
+    he1) fixture=he48e.adts ;;
+    ps) fixture=ps48.adts ;;
+    implicit-ps) fixture=he48.adts ;;
+  esac
+  for reader in file bytes; do
+    taskset -c 8 "$cold_bin" "$profile" "$PWD/src/goldens/$fixture" "$reader" \
+      > "$cold_dir/$profile-$reader.log" 2>&1 || proof_status=1
+  done
+done
+sha256sum "$cold_bin" "$cold_dir/src/main.rs" "$cold_dir/Cargo.lock"
+rustc +1.98.1 -Vv > "$cold_dir/compiler.txt"
+test "$proof_status" -eq 0
+```
+
+The original Linux x86_64 Rust 1.98.1 run passed **8/8** fresh processes. Per-reader
+native counts were LC 13,312; HE1 32,768; PS 53,248; implicit PS 18,432, all with
+zero cold/warm bit or geometry differences. HE1 and PS also cross logical batch
+boundaries. Raw per-cell logs, exact commands, original/bare fixture hashes,
+compiler/binary/source hashes and freeze comparison are in
+`target/task145/adts-cold-stack/{results.json,provenance.json,source-manifest.json}`.
+The generator output was verified identical to the tested harness except its
+snapshot paths; generated Cargo files and all source/fixture hash maps matched.
+Preparation and this promotion ran no additional builds or decodes.

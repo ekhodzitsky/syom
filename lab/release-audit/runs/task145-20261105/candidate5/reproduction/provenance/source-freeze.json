@@ -1,0 +1,27 @@
+{
+  "files": {
+    "Cargo.lock": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62",
+    "crates/gigastt-core/Cargo.toml": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53",
+    "crates/gigastt-core/src/inference/audio/aac.rs": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9",
+    "crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5",
+    "crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5",
+    "crates/gigastt-core/src/inference/audio/aac/buffered.rs": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452",
+    "crates/gigastt-core/src/inference/audio/aac/channels.rs": "332f07e6fccbb3726c2dbeae97bdb88b6965a5b13b3b7706502353b0671761ce",
+    "crates/gigastt-core/src/inference/audio/aac/input.rs": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce",
+    "crates/gigastt-core/src/inference/audio/aac/probe.rs": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290",
+    "crates/gigastt-core/src/inference/audio/aac/pull.rs": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+  },
+  "new_adts_test_names": [
+    "test_aac_bare_adts_pull_native_batches_bits_file_bytes_profiles",
+    "test_aac_bare_adts_pull_forwards_junk_and_split_headers_exactly_once",
+    "test_aac_bare_adts_pull_partial_crc_multirdb_and_completed_before_error",
+    "test_aac_bare_adts_pull_preserves_header_io_precedence_and_interrupted_reads",
+    "test_aac_bare_adts_pull_public_budget_and_cancel",
+    "test_aac_bare_adts_pull_send_and_drop",
+    "test_aac_bare_adts_pull_he_ps_small_stack"
+  ],
+  "additional_probe_test": "test_aac_transport_classification_keeps_isobmff_priority_for_ambiguous_prefix",
+  "cheap_proof": "target/task145/adts-pull-guard/result.json",
+  "public_budget_cancel_integration_qualified": false,
+  "clippy_test_recovery": "target/task145/candidate5/clippy-test-recovery/proof.json"
+}

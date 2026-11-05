@@ -1,0 +1,21 @@
+   Compiling gigastt-core v2.22.0 (/home/ekhodzitsky/Projects/syom/target/task145/gigastt/crates/gigastt-core)
+    Finished `release` profile [optimized] target(s) in 3m 56s
+     Running unittests src/lib.rs (/home/ekhodzitsky/Projects/syom/target/task145/consumer-target/release/deps/gigastt_core-9733ab8f3c7f49ad)
+
+running 13 tests
+test inference::audio::aac::buffered::tests::test_absolute_au_seeks_reuse_buffer_without_changing_bytes ... ok
+test inference::audio::aac::buffered::tests::test_force_rewind_invalidates_cache_after_shared_offset_moves ... ok
+test inference::audio::aac::buffered::tests::test_read_and_seek_failures_invalidate_relative_position ... ok
+test inference::audio::aac::buffered::tests::test_current_end_and_eof_match_unbuffered_reader ... ok
+test inference::audio::aac::mono_plane_tests::test_aac_mono_planes_preserve_add_then_divide_bits ... ok
+test inference::audio::aac::worker_packet_tests::test_aac_worker_packet_queue_has_explicit_two_block_bound ... ok
+test inference::audio::aac::worker_packet_tests::test_aac_worker_packets_flush_completed_blocks_before_typed_error ... ok
+test inference::audio::aac::worker_packet_tests::test_aac_worker_packets_keep_first_block_immediate_and_drop_unblocks_sender ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_fallback_rewinds_shared_file_cursor ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_refuses_real_completion_errors_and_budget_excess ... ok
+test inference::audio::aac::worker_packet_tests::test_aac_worker_packets_preserve_odd_even_full_partial_eof ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_restores_on_small_stack_without_worker ... ok
+test inference::audio::aac::pull::tests::test_aac_m4a_pull_preserves_worker_batches_and_native_bits ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 856 filtered out; finished in 0.04s
+

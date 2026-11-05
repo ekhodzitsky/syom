@@ -1,0 +1,343 @@
+{
+  "status": "exact-rational inclusive1sample recovery:17offline testsPASS; priorfailedreference preserved; retry reference thenload against unchanged rawcanary/independent",
+  "cwd": "/home/ekhodzitsky/Projects/syom",
+  "output_root": "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5",
+  "stages": [
+    {
+      "stage": "canary",
+      "command": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_canary.py",
+        "--baseline",
+        "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+        "--candidate",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+        "--ort",
+        "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+        "--manifest",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-manifest.json",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/canary"
+      ],
+      "allowed_exit_codes": [
+        0,
+        1
+      ]
+    },
+    {
+      "stage": "independent",
+      "command": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/presentation_evidence.py",
+        "--baseline-probe",
+        "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe",
+        "--candidate-probe",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe",
+        "--candidate-server",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+        "--ort",
+        "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+        "--canary",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/canary/result.json",
+        "--manifest",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-manifest.json",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/independent"
+      ],
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "stage": "reference",
+      "command": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/http_reference.py",
+        "--canary",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/canary/result.json",
+        "--independent",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/independent/independent.json",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/reference-attempt2/reference.json"
+      ],
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "stage": "load",
+      "command": [
+        "python3",
+        "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_load.py",
+        "--baseline",
+        "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt",
+        "--candidate",
+        "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+        "--ort",
+        "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+        "--manifest",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-manifest.json",
+        "--reference",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/reference-attempt2/reference.json",
+        "--long-input",
+        "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/load-180s.m4a",
+        "--out",
+        "/home/ekhodzitsky/Projects/syom/target/task145/http-candidate5/load",
+        "--upload-admission"
+      ],
+      "allowed_exit_codes": [
+        0
+      ]
+    }
+  ],
+  "sha256": {
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/http_reference.py": "5e9f2f1c39b3cf44173e863c2e6986f55aa27986545d2676c0b3d30ed37034f8",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/presentation_evidence.py": "6048525754ddd8795e9c57d27f7f68152143125fe8657cec26f37cf296cfc780",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_canary.py": "3ea6ed22ee203075c1085419cfe55e3f054d8be1825e98df8b80a2b84e078b6f",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_load.py": "5d3e608fa1b1c916dec60cfaf6a286e714bcf93e087ba022b1296f6552814102",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/test_http_reference.py": "04054448570b00cdfc2cf469261106522384ffca2b6b72a7c5ed59283989a537",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/README.md": "759c9581f540df523c1c4108787c986b2f22724920fd2c2758bccec388f5945f",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/gigastt": "bd18dd2dfb4fbace0f147762ca966d8fad33f3a22ecc84b98d3ae05779b64057",
+    "/home/ekhodzitsky/Projects/syom/target/task145/base-bin/aac_probe": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "/home/ekhodzitsky/Projects/syom/target/task145/http-manifest.json": "1ebd866441c97b8f4c32995b8aee4744b22ad5767084c49039fc0d18b203170d",
+    "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a": "0bb8a9982b44df690195c2c34b75ca791c3b9f20070b8cecbd8f50c6264dd2e2",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/.download.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+    "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt/wespeaker_resnet34.onnx": "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/mp4_clocks.py": "7de602c2fb9eaec50f09bbcc3c3196f35578c9ce8836c43b27ede174101ac0ce",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/test_mp4_clocks.py": "33ac59a779b22fdbe0215ddf402f1b7f6e1e9d27f200fb424bd811fd1f7143ae",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/adapter-manifest.json": "b2d6ed487efab987c16a38758ede3b4a3970eafa58c9a7847403b9d51ae6251e",
+    "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/adapter.patch": "82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/gigastt": "66f32ffb098c368f212670aa36f801686773424bb0c5334a818a9260522107b6",
+    "/home/ekhodzitsky/Projects/syom/target/task145/candidate5-bin/aac_probe": "6fd6ca682a88d17b76725ecfe57f5ead7f7464b50ed44390051a959b67534894"
+  },
+  "rules": [
+    "retain raw canary failure; do not edit pass or thresholds",
+    "stop load if reference qualification fails",
+    "retain all stdout/stderr, commands, exit codes and original attempts",
+    "owned offline loopback servers only; no CI/publication/deployment"
+  ],
+  "corpus": [
+    {
+      "id": "golos_00-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+      "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0"
+    },
+    {
+      "id": "golos_00-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a",
+      "sha256": "a662b21e9eb8e5987a2c4e6fc87ed953e3d72e1b0a4e94a12fe93aff5126e870"
+    },
+    {
+      "id": "golos_01-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+      "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c"
+    },
+    {
+      "id": "golos_01-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a",
+      "sha256": "87bf8aa989a2e35661649af67e9729980301aeb0e9b72868637d73e48e355758"
+    },
+    {
+      "id": "golos_02-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+      "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f"
+    },
+    {
+      "id": "golos_02-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a",
+      "sha256": "bbae30dd1eafd2899db2fb9faa5c650a444693d7a0ec343df4d07dfeb236244a"
+    },
+    {
+      "id": "golos_03-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+      "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240"
+    },
+    {
+      "id": "golos_03-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a",
+      "sha256": "041043a8beddbce68a5b357b68e46920010a58a047b232f65f19a8e071cb75eb"
+    },
+    {
+      "id": "golos_04-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+      "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758"
+    },
+    {
+      "id": "golos_04-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a",
+      "sha256": "d681d1c01582c90765ccf186c2faed4daeb9ecc0aa020736539adb0c61189a6f"
+    },
+    {
+      "id": "golos_05-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+      "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04"
+    },
+    {
+      "id": "golos_05-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a",
+      "sha256": "c353c6b45afb5093d4303562cd671e99233456b573ad3d7b8a129f9eb95c2134"
+    },
+    {
+      "id": "golos_06-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+      "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8"
+    },
+    {
+      "id": "golos_06-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a",
+      "sha256": "d248805919d4dc8965d00195edb59bfd534824f68dcfad4e48dcbcece165cbe3"
+    },
+    {
+      "id": "golos_07-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+      "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867"
+    },
+    {
+      "id": "golos_07-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a",
+      "sha256": "f55166821815750878af9052af29fb4f70368521f6615e79f02fddf7dcfeface"
+    },
+    {
+      "id": "golos_08-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+      "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7"
+    },
+    {
+      "id": "golos_08-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a",
+      "sha256": "671e862060e8febec6f76e9c2aa5213685879c42057898b9070737bdd7c88735"
+    },
+    {
+      "id": "golos_09-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+      "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68"
+    },
+    {
+      "id": "golos_09-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+      "sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac"
+    },
+    {
+      "id": "golos_10-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+      "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81"
+    },
+    {
+      "id": "golos_10-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+      "sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3"
+    },
+    {
+      "id": "golos_11-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+      "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72"
+    },
+    {
+      "id": "golos_11-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a",
+      "sha256": "948602e6ce2fa9bd193d118204481d0ce72c2bcd1660cedf9393f24458bd7488"
+    },
+    {
+      "id": "golos_12-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+      "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b"
+    },
+    {
+      "id": "golos_12-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a",
+      "sha256": "f88e12f972469a03a13a2364058668fb1ecf9334842dc485a81d2601b6405dca"
+    },
+    {
+      "id": "golos_13-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+      "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0"
+    },
+    {
+      "id": "golos_13-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a",
+      "sha256": "d08ec4308ec3e217b9bc387c4681296407caed9c6c48eb14be080ff29a30314d"
+    },
+    {
+      "id": "golos_14-wav",
+      "kind": "wav",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+      "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8"
+    },
+    {
+      "id": "golos_14-aac",
+      "kind": "m4a",
+      "path": "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a",
+      "sha256": "a064c203afd9aa8abc0a6d565ea92b76f1e94fbba88e7b9f10b37e26bf36bd0e"
+    },
+    {
+      "id": "golos_00-he1",
+      "kind": "adts",
+      "path": "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/golos_00-he1.adts",
+      "sha256": "0ad243e2a85435b51de75e81567490fca460caca6e424691972b4241eded9fb8"
+    },
+    {
+      "id": "golos_00-he2",
+      "kind": "adts",
+      "path": "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/golos_00-he2.adts",
+      "sha256": "f6a368393b086b38192590d854c5b260c46a775cc46433bc4a70ea6f5cc4fe1d"
+    }
+  ],
+  "long_input": {
+    "path": "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/load-180s.m4a",
+    "sha256": "63255246e9c0aa29a57eb30ae6fd23f7013f7a0c51c8e64403813406db778f96"
+  },
+  "library_commit": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "library_version": "0.10.1 unpublished candidate",
+  "pending_binary_sha256": [],
+  "cold_stack_evidence": {
+    "m4a": "target/task145/stack-proof-candidate4/result.json",
+    "adts": "target/task145/adts-cold-stack/results.json"
+  },
+  "consumer_source_freeze": "target/task145/candidate5/source-freeze.json",
+  "native_mechanics_evidence": "target/task145/adts-pull-guard/result.json",
+  "consumer_source_freeze_sha256": "1f054d1f5adf9251afc1f348802f254aae0841eaa2abf73590e985cf822a7850",
+  "handoff_patch_sha256": "82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968",
+  "handoff_apply_evidence": "target/task145/candidate5/adapter-regeneration.json",
+  "preflight": "target/task145/http-preflight-candidate5.json",
+  "test_only_recovery": "target/task145/candidate5/clippy-test-recovery/proof.json",
+  "execution_affinity": "Inherited default allowed host CPUs, unchanged HTTP runner scheduling",
+  "reference_recovery": "target/task145/http-candidate5/reference-attempt2/recovery.json"
+}

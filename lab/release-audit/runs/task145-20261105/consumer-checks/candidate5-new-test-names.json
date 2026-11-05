@@ -1,0 +1,28 @@
+{
+  "source_frozen": true,
+  "names": [
+    "test_aac_known_streaming_file_bytes_id3_remove_duplicate_reads_seeks",
+    "test_aac_classified_unsupported_m4a_rewinds_then_push_preserves_typed_error",
+    "test_aac_transport_classification_preserves_bare_id3_m4a_and_rewind",
+    "test_aac_transport_classification_propagates_initial_read_seek_rewind_errors",
+    "test_aac_transport_classification_preserves_public_raw_id3_file_bytes_batches",
+    "test_aac_transport_classification_keeps_non_aac_mp4_fallthrough",
+    "test_aac_bare_adts_pull_native_batches_bits_file_bytes_profiles",
+    "test_aac_bare_adts_pull_forwards_junk_and_split_headers_exactly_once",
+    "test_aac_bare_adts_pull_partial_crc_multirdb_and_completed_before_error",
+    "test_aac_bare_adts_pull_preserves_header_io_precedence_and_interrupted_reads",
+    "test_aac_bare_adts_pull_public_budget_and_cancel",
+    "test_aac_bare_adts_pull_send_and_drop",
+    "test_aac_bare_adts_pull_he_ps_small_stack",
+    "test_aac_transport_classification_keeps_isobmff_priority_for_ambiguous_prefix"
+  ],
+  "adts_pull_names": [
+    "test_aac_bare_adts_pull_native_batches_bits_file_bytes_profiles",
+    "test_aac_bare_adts_pull_forwards_junk_and_split_headers_exactly_once",
+    "test_aac_bare_adts_pull_partial_crc_multirdb_and_completed_before_error",
+    "test_aac_bare_adts_pull_preserves_header_io_precedence_and_interrupted_reads",
+    "test_aac_bare_adts_pull_public_budget_and_cancel",
+    "test_aac_bare_adts_pull_send_and_drop",
+    "test_aac_bare_adts_pull_he_ps_small_stack"
+  ]
+}

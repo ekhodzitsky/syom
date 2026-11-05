@@ -1,0 +1,276 @@
+{
+  "selected_before_any_new_benchmark_utc": "2026-11-05T19:51:41.645699+00:00",
+  "selected_logical_cpu": 8,
+  "selected_smt_siblings": [
+    20
+  ],
+  "selection_basis": "Predeclared idle/topology rule only; no decoder timings used.",
+  "selected_physical_core": {
+    "package": "0",
+    "physical_core_id": "12",
+    "logical_cpus": [
+      8,
+      20
+    ],
+    "pair_busy_percent_windows": [
+      4.0040080160320635,
+      4.8140457622071455
+    ],
+    "worst_pair_busy_percent": 4.8140457622071455,
+    "mean_pair_busy_percent": 4.4090268891196045,
+    "observer_core": false
+  },
+  "ranked_physical_cores": [
+    {
+      "package": "0",
+      "physical_core_id": "12",
+      "logical_cpus": [
+        8,
+        20
+      ],
+      "pair_busy_percent_windows": [
+        4.0040080160320635,
+        4.8140457622071455
+      ],
+      "worst_pair_busy_percent": 4.8140457622071455,
+      "mean_pair_busy_percent": 4.4090268891196045,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "11",
+      "logical_cpus": [
+        7,
+        19
+      ],
+      "pair_busy_percent_windows": [
+        3.0120481927710845,
+        5.2233239114042975
+      ],
+      "worst_pair_busy_percent": 5.2233239114042975,
+      "mean_pair_busy_percent": 4.1176860520876915,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "10",
+      "logical_cpus": [
+        6,
+        18
+      ],
+      "pair_busy_percent_windows": [
+        4.022222222222222,
+        6.052460084718149
+      ],
+      "worst_pair_busy_percent": 6.052460084718149,
+      "mean_pair_busy_percent": 5.0373411534701855,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "13",
+      "logical_cpus": [
+        9,
+        21
+      ],
+      "pair_busy_percent_windows": [
+        4.998819995279981,
+        6.4333793928228005
+      ],
+      "worst_pair_busy_percent": 6.4333793928228005,
+      "mean_pair_busy_percent": 5.71609969405139,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "9",
+      "logical_cpus": [
+        5,
+        17
+      ],
+      "pair_busy_percent_windows": [
+        3.804809619238477,
+        6.622079500366194
+      ],
+      "worst_pair_busy_percent": 6.622079500366194,
+      "mean_pair_busy_percent": 5.213444559802335,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "8",
+      "logical_cpus": [
+        4,
+        16
+      ],
+      "pair_busy_percent_windows": [
+        2.8104498735902386,
+        7.199999999999999
+      ],
+      "worst_pair_busy_percent": 7.199999999999999,
+      "mean_pair_busy_percent": 5.005224936795119,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "14",
+      "logical_cpus": [
+        10,
+        22
+      ],
+      "pair_busy_percent_windows": [
+        3.4100329172401027,
+        10.0305027726135
+      ],
+      "worst_pair_busy_percent": 10.0305027726135,
+      "mean_pair_busy_percent": 6.720267844926802,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "1",
+      "logical_cpus": [
+        1,
+        13
+      ],
+      "pair_busy_percent_windows": [
+        8.255581878366975,
+        10.885515110867223
+      ],
+      "worst_pair_busy_percent": 10.885515110867223,
+      "mean_pair_busy_percent": 9.5705484946171,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "0",
+      "logical_cpus": [
+        0,
+        12
+      ],
+      "pair_busy_percent_windows": [
+        11.304578038449005,
+        11.102150537634408
+      ],
+      "worst_pair_busy_percent": 11.304578038449005,
+      "mean_pair_busy_percent": 11.203364288041707,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "2",
+      "logical_cpus": [
+        2,
+        14
+      ],
+      "pair_busy_percent_windows": [
+        57.63282288541629,
+        32.818208748889106
+      ],
+      "worst_pair_busy_percent": 57.63282288541629,
+      "mean_pair_busy_percent": 45.2255158171527,
+      "observer_core": false
+    },
+    {
+      "package": "0",
+      "physical_core_id": "3",
+      "logical_cpus": [
+        3,
+        15
+      ],
+      "pair_busy_percent_windows": [
+        68.33667334669339,
+        78.59051436205745
+      ],
+      "worst_pair_busy_percent": 78.59051436205745,
+      "mean_pair_busy_percent": 73.46359385437542,
+      "observer_core": false
+    }
+  ],
+  "excluded_observer_core": [
+    {
+      "package": "0",
+      "physical_core_id": "15",
+      "logical_cpus": [
+        11,
+        23
+      ],
+      "pair_busy_percent_windows": [
+        3.804008016032064,
+        6.224899598393574
+      ],
+      "worst_pair_busy_percent": 6.224899598393574,
+      "mean_pair_busy_percent": 5.014453807212819,
+      "observer_core": true
+    }
+  ],
+  "core0_comparison": {
+    "package": "0",
+    "physical_core_id": "0",
+    "logical_cpus": [
+      0,
+      12
+    ],
+    "pair_busy_percent_windows": [
+      11.304578038449005,
+      11.102150537634408
+    ],
+    "worst_pair_busy_percent": 11.304578038449005,
+    "mean_pair_busy_percent": 11.203364288041707,
+    "observer_core": false
+  },
+  "frequency_observations_khz": {
+    "0": [
+      "5096662",
+      "5149285",
+      "5152590",
+      "5142578",
+      "5144437",
+      "5094777",
+      "3812687",
+      "5146118",
+      "5148936",
+      "5143543",
+      "5159924"
+    ],
+    "8": [
+      "605264",
+      "3327432",
+      "2492979",
+      "3328835",
+      "2073909",
+      "605264",
+      "605264",
+      "3324078",
+      "605264",
+      "2165194",
+      "2003914"
+    ],
+    "12": [
+      "5092423",
+      "5149103",
+      "5149283",
+      "5148858",
+      "5144394",
+      "4974551",
+      "5147102",
+      "5147081",
+      "5147489",
+      "5146126",
+      "5152240"
+    ],
+    "20": [
+      "3322482",
+      "3324851",
+      "605264",
+      "3329441",
+      "2665388",
+      "3173045",
+      "2000139",
+      "1980735",
+      "605264",
+      "3197819",
+      "605264"
+    ]
+  }
+}
