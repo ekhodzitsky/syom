@@ -12,19 +12,15 @@ directly to your application at the native sample rate.
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
-Version **0.10.1** optimizes the first two AVX-512 FFT stages while preserving
-the existing floating-point operation order and decoded PCM bits. API,
-dependencies and Rust minimum are unchanged. See the
-[release verification](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/RELEASE-0.10.1.md)
-and [consumer evaluation](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/TASK145.md).
-Persistent LC state and strict M4A completion, introduced in 0.10.0, retain
-their [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
+[Documentation](https://github.com/ekhodzitsky/syom/blob/main/docs/README.md) ·
+[API guide](https://docs.rs/syom/0.10.1/syom/guide/) ·
+[Release verification](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/RELEASE-0.10.1.md)
 
 ## Quick start
 
-Requires Rust **1.89+**. The example pins **0.10.1** (`syom = "0.10"` also accepts it);
-the example generates its own audio and needs no media files or native
-codec installation.
+Requires Rust **1.89+**. This example uses published **0.10.1**
+(`syom = "0.10"`) and generates its own audio; no media file or native codec
+installation is needed.
 
 ```sh
 cargo new syom-demo --bin
@@ -49,19 +45,18 @@ fn main() -> syom::Result<()> {
 
 Run `cargo run --release`. Expected output: `1 channel at 48000 Hz`.
 
-`DecodeOptions::audio()` preserves channels; `decode()` defaults to a mono
-speech mix with duration and memory limits. Output is not resampled.
-For files use `read`; for incremental input/output use `Decoder::feed`
-and `Encoder::feed`. LC encoding defaults to 128 kbps ABR with per-band
-M/S. HE and LD encoding are opt-in.
-
-[API guide](https://docs.rs/syom/latest/syom/guide/) ·
-[Usage, formats and validation](https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md) ·
-[Changelog](CHANGELOG.md)
+`DecodeOptions::audio()` preserves coded channels; `decode()` defaults to a
+bounded speech mono mix. Both return the stream's native sample rate.
+Use `read_with` for files, `Decoder::feed` for incremental decoding and
+`Encoder::feed` for incremental encoding. LC encoding defaults to 128 kbps ABR
+with per-band M/S; HE v1/v2 and LD are opt-in.
+[Formats and API choices](https://github.com/ekhodzitsky/syom/blob/main/docs/usage-and-validation.md).
 
 ## Choosing a library
 
-Published-package snapshots for applications handling AAC:
+Pinned integration snapshot: alternative-library facts were checked on
+2026-11-02; the syom row retains 0.10.0. These are specific versions, not a
+comparison of the latest releases:
 
 | Library | Integration boundary | HE-AAC v1/v2 decode |
 |---|---|---|
@@ -95,12 +90,12 @@ preserve unfavorable cases. [BENCH.md](BENCH.md) retains older results.
 
 ## Status and limits
 
-Version **0.10.1** changes the AVX-512 FFT implementation. Persistent AAC-LC
-state for qualified mono-output restart and strict M4A presentation completion
-remain available since 0.10.0. Callers authenticate the saved
-state and bind it to the source and exact build. Budgeted exact seeking keeps
-its prefix-replay contract. The [API guide](https://docs.rs/syom/0.10.1/syom/guide/)
-explains eligibility, migration and replay limits.
+Published **0.10.1** optimizes the AVX-512 FFT path without changing the API,
+runtime dependencies or Rust minimum. Persistent LC checkpoints and strict
+M4A completion remain available since 0.10.0. Checkpoints bind to their codec
+version: recreate cached 0.10.0 blobs when upgrading and authenticate saved
+state against the source and exact build. Exact seeking can replay the coded
+prefix. [Checkpoint and migration contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
 
 Version, downloads and docs badges describe the registry; CI shows the
 last hosted `main` run. Hosted checks are paused. Release validation is

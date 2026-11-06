@@ -1,0 +1,125 @@
+{
+  "scope": "Local documentation checks and failed/successful suite logs; UTF8 text only",
+  "files": [
+    {
+      "path": "RESULT.json",
+      "bytes": 605,
+      "sha256": "2165cbec4437a7a733ed753ad694bd2e88956d6199446a7d78ed34680bb7df48"
+    },
+    {
+      "path": "check-links.py",
+      "bytes": 2384,
+      "sha256": "2712cb7146686856c683025de5ed09ff72972c4efd5f5f6af38abd316193b5c0"
+    },
+    {
+      "path": "checks/check-0.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "checks/check-1.log",
+      "bytes": 38,
+      "sha256": "eb18adef3d8591cb290b1efa970919e9bc7e187c5e581673b2c553e3ad6cf368"
+    },
+    {
+      "path": "checks/check-2.log",
+      "bytes": 48,
+      "sha256": "c3ea34da6b7c95e93d609727e3b997014fbe525f6f227b791ec6fdda1af55be2"
+    },
+    {
+      "path": "checks/check-3.log",
+      "bytes": 133,
+      "sha256": "b6a86a0798691e7309577d33716ecf36b4f7f18e451e336bd68dce35dc06f5f1"
+    },
+    {
+      "path": "checks/check-4.log",
+      "bytes": 91065,
+      "sha256": "4891cbcc0962e3f1833a7dd43ff6181ae9e67bf214793ab9aedb51ec22be48ea"
+    },
+    {
+      "path": "checks/check-5.log",
+      "bytes": 2047,
+      "sha256": "c09c5609f8b3016ca8f429094ac7fe311af4ca3397294438d5c807460f06910e"
+    },
+    {
+      "path": "checks/check-6.log",
+      "bytes": 108,
+      "sha256": "34d5257dff411d569c0bf00eba6dfe2a68597ce21e6a3a1e6c6ef6d4ec7f4cb7"
+    },
+    {
+      "path": "checks/check-7.log",
+      "bytes": 135,
+      "sha256": "b7fbdc5f13837f818b8e6431609e712412b47c1d372e17c93901f4e9b1ae90aa"
+    },
+    {
+      "path": "checks/check-8.log",
+      "bytes": 185,
+      "sha256": "5a29eeded5434c539817119110371d111ee8275bada15d3a9c49ef59b72e35c5"
+    },
+    {
+      "path": "checks/check-9.log",
+      "bytes": 184,
+      "sha256": "a4c1be1cb0141125a347ad4484ffb63dd05996b18b029ca8fe46a7dadfd1b39b"
+    },
+    {
+      "path": "checks/checks.json",
+      "bytes": 3084,
+      "sha256": "410a69654cbf0303341c058eb09e50eb3b8844b643d4d918ec5227b0489d8736"
+    },
+    {
+      "path": "checks-attempt1/check-0.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "checks-attempt1/check-1.log",
+      "bytes": 38,
+      "sha256": "eb18adef3d8591cb290b1efa970919e9bc7e187c5e581673b2c553e3ad6cf368"
+    },
+    {
+      "path": "checks-attempt1/check-2.log",
+      "bytes": 48,
+      "sha256": "c3ea34da6b7c95e93d609727e3b997014fbe525f6f227b791ec6fdda1af55be2"
+    },
+    {
+      "path": "checks-attempt1/check-3.log",
+      "bytes": 133,
+      "sha256": "49c3fb73339b2c30fa514df3fe83b57606fe3e151f18f3e5cdd40e122476f965"
+    },
+    {
+      "path": "checks-attempt1/check-4.log",
+      "bytes": 90568,
+      "sha256": "49a871ab8dc2fc9c9147e0992868cd2dd4b21a999990de072f035346d868fb01"
+    },
+    {
+      "path": "checks-attempt1/checks.json",
+      "bytes": 1620,
+      "sha256": "1ead6d0a582f7a4c9b91adbc70095780b682ba7730cfb82626abd50385b75050"
+    },
+    {
+      "path": "links.json",
+      "bytes": 180,
+      "sha256": "02dfd9dfa878944763cd4b4c2f4cff2fbec2533d3a3734042daa3e689805c98b"
+    },
+    {
+      "path": "local-path-metadata.log",
+      "bytes": 64,
+      "sha256": "439eb43402f0f9f96a299c0ac29f07af17e910444dbd3a74d56123b9677247af"
+    },
+    {
+      "path": "local-path.json",
+      "bytes": 498,
+      "sha256": "53cbd76702056f09cb55c72625c2fb05cb5eb1867c8a5785bf27dedf10f77b7f"
+    },
+    {
+      "path": "run-checks.py",
+      "bytes": 2164,
+      "sha256": "199087a296a9946fb516c39114adba23ad0cd9b6a2c3aadf6fb2aee52ad58267"
+    },
+    {
+      "path": "scope-guard.json",
+      "bytes": 365,
+      "sha256": "04b3d48ae5626266c91bcb3517050037e1c8a19c27927c73d9c988c29181666b"
+    }
+  ]
+}

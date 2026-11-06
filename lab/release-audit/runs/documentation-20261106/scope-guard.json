@@ -1,0 +1,10 @@
+{
+  "pass": true,
+  "runtime_and_cargo_unchanged": true,
+  "historical_artifacts_unchanged": true,
+  "comparison_evidence_body_unchanged": true,
+  "root_historical_timing_section_unchanged": true,
+  "root_example_rust_unchanged": true,
+  "example_sha256": "02571acff44065acb4bdf5e243909354794381f481acbc37cfcc4d18980b1700",
+  "approximate_prose_table_words": 556
+}

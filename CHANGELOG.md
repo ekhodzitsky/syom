@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Reorganize the README and documentation index around a working example,
+  integration choices and current release evidence. Correct the stale 0.9
+  dependency constraints in the exact-seek guide; preserve dated comparisons
+  and historical measurements without assigning them to newer releases.
+
 ## [0.10.1] - 2026-11-06
 
 ### Changed

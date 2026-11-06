@@ -1,5 +1,7 @@
 # Persistent LC decoder state (since 0.10.0)
 
+[Documentation index](README.md) · [Usage and validation](usage-and-validation.md)
+
 This API is available in syom 0.10.0 and later. Version 0.9.0 does not expose
 it. It supports native AAC-LC continuation after process restart; it does not
 restore application jobs or resamplers.

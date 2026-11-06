@@ -1,67 +1,56 @@
 # Offline native comparison lab
 
-The [0.10.1 release verification](release-audit/RELEASE-0.10.1.md) is the current
-release entry point. Its [consumer qualification](release-audit/TASK145.md) and
-[subsequent audit](release-audit/TASK145-REVIEW.md) preserve successful and failed
-measurements, including CPU 0 variability and the raw HTTP equality failure.
-The downstream adapter patch is a separate handoff, not a consumer deployment.
+[Documentation index](../docs/README.md) · [Development workflow](../CONTRIBUTING.md)
 
-[Published 0.10.0](release-audit/REPORT.md#release-0100) adds persistent LC state
-and strict M4A completion. The older publications and measurements below keep
-their original versions and qualification scope.
+These optional labs are outside the published crate and root Cargo workspace.
+Ordinary Cargo checks do not download media or build/run the native, Java and
+browser lab drivers. Rust peer crates used in tests and benchmarks are
+development dependencies; the published library has no runtime dependencies.
+Each experiment has its own prerequisites, source pins, output paths and scope.
 
-[syom 0.9.0 is published](release-audit/REPORT.md#release-090), with verified
-registry/archive checksum and release source/tag. Its
-[cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix),
-including fresh-process stack checks and decoded/encoded output comparisons.
-Its exact-seek work has separate
-[native equality and observed-read evidence](release-audit/runs/exact-seek-0.9.0/report.json).
-All qualified intervals replay the coded prefix; no arbitrary cold bounded
-window is advertised. Linux x86_64 only; no new cross-platform claim.
+## Current evidence
 
-The [earlier 0.8.1 publication](release-audit/PUBLISHED-0.8.1.md) records its
-registry checksum and downstream manifest/lockfile upgrade patch.
-The [maintained consumer PR qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)
-separately covers the refactored, opt-in adapter and current upload admission.
+| Question | Record |
+|---|---|
+| What was published? | [0.10.1 source, tag, checksum and registry checks](release-audit/RELEASE-0.10.1.md) |
+| How did the real consumer behave? | [TASK-145 decoder/HTTP/load qualification](release-audit/TASK145.md) and [audit](release-audit/TASK145-REVIEW.md) |
+| What is the checkpoint contract? | [User contract](../docs/persistent-checkpoints.md) and [0.10.0 qualification](release-audit/TASK144.md) |
+| Which corpus and provenance are available? | [Committed inventory](../corpus/README.md) |
+| Which platforms were actually exercised? | [Platform records](baseline/PLATFORM.md) and [mobile limits](mobile/REPORT.md) |
 
-The [0.8.1 qualification](release-audit/CANDIDATE-0.8.1.md) covers real
-recordings and the actual consumer adapter. Its
-[paired HTTP ASR canary](release-audit/HTTP-CANARY-0.8.1.md) passes 32
-speech-format cases with readiness, latency/RSS and stop gates.
-The [paired load/fault qualification](release-audit/HTTP-LOAD-0.8.1.md)
-adds concurrent REST requests, queue/watchdog timeouts and client cancellation.
-The [0.8.0 audit](release-audit/REPORT.md) and
-[fill fix](release-audit/FILL-FIX.md) preserve the earlier findings.
+The current crate is published; the optional consumer patch is a separately
+qualified handoff, not a deployment. Linux checks do not establish other-platform
+parity. CPU 0 variability, the raw HTTP equality failure and higher split-mode
+RSS remain in the consumer report. The accepted presentation differences use
+independent references, not a waived equality result.
 
-Isolated from the `syom` package. Not a Cargo workspace member. Product
-`[dependencies]` stay empty; ordinary tests never download, link, or spawn
-ffmpeg / FDK / FAAD2 / fdk-aac-rust / FAAC / glint.
+## Experiments and reproduction
 
-| Adapter | Pin | Status |
+| Adapter | Pin / purpose | Evidence |
 |---|---|---|
-| [libavcodec](libavcodec/) | FFmpeg 9.0.1 native `aac` | TASK-6 |
-| [fdk](fdk/) | fdk-aac v2.0.3 | TASK-7 |
-| [faad2](faad2/) | FAAD2 2.11.3 (`FAAD_FMT_FLOAT`) | TASK-8 |
-| [fdk-aac-rust](fdk-aac-rust/) | fdk-aac-rust 0.2.3 (Rust FDK port) | TASK-5 |
-| [faac](faac/) | FAAC 1.31.1 (`libfaac` ADTS LC) | TASK-9 |
-| [glint](glint/) | glint-audio 0.11.0 (C++17 AAC-LC) | TASK-11 |
-| [score](score/) | alignment / SNR diagnostics (not PEAQ) | TASK-13 |
-| [baseline](baseline/) | matched-output LC/HE/PS timings (TASK-15) | TASK-15 |
-| [prime](prime/) | encoder priming / omitted tail (TASK-40) | TASK-40 |
-| [quality](quality/) | LC SNR/rate; [0.9.0 HE development recheck](quality/HE-REQUALIFY-2026-11-02.md), with full-reference scoring and explicit rate limits | TASK-16 / TASK-112.1 |
-| [footprint](footprint/) | minimal decode / encode consumers, size budgets, MSRV and package policy ([REPORT](footprint/REPORT.md)) | TASK-99 |
-| [wasm](wasm/) | `wasm32-unknown-unknown` smoke run under Node, native reference ([REPORT](wasm/REPORT.md)) | TASK-100 |
-| [consume](consume/) | consumer flows and kover/sluh call-pattern reproductions against the packaged crate ([REPORT](consume/REPORT.md)) | TASK-102 |
-| [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | TASK-14 |
-| [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | TASK-48/49 |
-| [apple](apple/) | Apple AudioToolbox/CoreAudio (no authorized host; cell pending) | TASK-10 |
-| [aacjs](aacjs/) | AAC.js 0.1.3 / Aurora.js 0.4.9 browser-JS LC peer ([PIN](aacjs/PIN.md), [REPORT](aacjs/REPORT.md)) | TASK-20 |
-| [profiles](profiles/) | LD/ELD/USAC feasibility: FDK v2.0.3, libxaac v0.1.13, exhale v1.2.2 ([PIN](profiles/PIN.md), [REPORT](profiles/REPORT.md)) | TASK-97 |
-| [oxideav](oxideav/) | oxideav-aac 0.1.7 (pure-Rust LC + HE v1 encoder peer) ([PIN](oxideav/PIN.md), [REPORT](oxideav/REPORT.md)) | TASK-95 |
-| [fmp4](fmp4/) | fragmented-MP4 fixtures, timeline oracles and bounded-input contract ([PIN](fmp4/PIN.md), [REPORT](fmp4/REPORT.md)) | TASK-64 spike; follow-ups recorded in report |
-| [frame960](frame960/) | 960/120-frame feasibility and offline oracle probes ([PIN](frame960/PIN.md), [REPORT](frame960/REPORT.md)) | Original TASK-63 study; later decode regressions are in [frame_grid_tests](../src/frame_grid_tests.rs) |
-| [mobile](mobile/) | Android/iOS compile checks and integration evidence ([PIN](mobile/PIN.md), [REPORT](mobile/REPORT.md), [INTEGRATION](mobile/INTEGRATION.md)) | TASK-101; no device runtime qualification |
-| [jcodec](jcodec/) | JCodec 0.2.5 / JAAD AAC peer ([PIN](jcodec/PIN.md), [REPORT](jcodec/REPORT.md)) | TASK-19; Linux JVM runtime evidence |
+| [libavcodec](libavcodec/) | FFmpeg 9.0.1 native `aac` | [Global pins](PIN.md) |
+| [fdk](fdk/) | fdk-aac v2.0.3 | [Pin](fdk/PIN.md) · [Report](fdk/REPORT.md) |
+| [faad2](faad2/) | FAAD2 2.11.3 (`FAAD_FMT_FLOAT`) | [Pin](faad2/PIN.md) |
+| [fdk-aac-rust](fdk-aac-rust/) | fdk-aac-rust 0.2.3 (Rust FDK port) | [Pin](fdk-aac-rust/PIN.md) · [Report](fdk-aac-rust/REPORT.md) |
+| [faac](faac/) | FAAC 1.31.1 (`libfaac` ADTS LC) | [Pin](faac/PIN.md) · [Report](faac/REPORT.md) |
+| [glint](glint/) | glint-audio 0.11.0 (C++17 AAC-LC) | [Pin](glint/PIN.md) · [Report](glint/REPORT.md) |
+| [score](score/) | alignment / SNR diagnostics (not PEAQ) | [Pin](score/PIN.md) · [Report](score/REPORT.md) |
+| [baseline](baseline/) | matched-output LC/HE/PS timings | [Pin](baseline/PIN.md) · [Report](baseline/REPORT.md) |
+| [prime](prime/) | encoder priming / omitted tail | [Report](prime/REPORT.md) |
+| [quality](quality/) | LC SNR/rate; [0.9.0 HE development recheck](quality/HE-REQUALIFY-2026-11-02.md), with full-reference scoring and explicit rate limits | [Pin](quality/PIN.md) · [Report](quality/REPORT.md) |
+| [footprint](footprint/) | minimal decode/encode consumers, size budgets, MSRV and package policy | [Report](footprint/REPORT.md) |
+| [wasm](wasm/) | wasm32-unknown-unknown smoke under Node, native reference | [Report](wasm/REPORT.md) |
+| [consume](consume/) | consumer flows and kover/sluh call patterns against the packaged crate | [Report](consume/REPORT.md) |
+| [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | [Pin](listen/PIN.md) · [Report](listen/REPORT.md) |
+| [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | [Pin](fuzz/PIN.md) · [Report](fuzz/REPORT.md) |
+| [apple](apple/) | Apple AudioToolbox/CoreAudio (no authorized host; cell pending) | [Pin](apple/PIN.md) · [Report](apple/REPORT.md) |
+| [aacjs](aacjs/) | AAC.js 0.1.3 / Aurora.js 0.4.9 browser-JS LC peer | [Pin](aacjs/PIN.md) · [Report](aacjs/REPORT.md) |
+| [profiles](profiles/) | LD/ELD/USAC feasibility: FDK v2.0.3, libxaac v0.1.13, exhale v1.2.2 | [Pin](profiles/PIN.md) · [Report](profiles/REPORT.md) |
+| [oxideav](oxideav/) | oxideav-aac 0.1.7, pure-Rust LC + HE v1 encoder peer | [Pin](oxideav/PIN.md) · [Report](oxideav/REPORT.md) |
+| [fmp4](fmp4/) | fragmented-MP4 fixtures, timeline oracles and bounded-input contract | [Pin](fmp4/PIN.md) · [Report](fmp4/REPORT.md) |
+| [frame960](frame960/) | 960/120-frame feasibility and offline oracle probes | [Pin](frame960/PIN.md) · [Report](frame960/REPORT.md) |
+| [mobile](mobile/) | Android/iOS compile checks and integration evidence; no device runtime qualification | [Pin](mobile/PIN.md) · [Report](mobile/REPORT.md) · [Integration](mobile/INTEGRATION.md) |
+| [jcodec](jcodec/) | JCodec 0.2.5 / JAAD AAC peer | [Pin](jcodec/PIN.md) · [Report](jcodec/REPORT.md) |
 
 See [PIN.md](PIN.md) for checksums, configure flags, ISA and lanes.
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for local prerequisites, command
@@ -73,3 +62,18 @@ make -C lab/libavcodec FFMPEG_PREFIX=/path/to/prefix
 python3 lab/smoke.py --driver lab/libavcodec/avc_driver
 python3 lab/faad2/smoke.py lab/faad2/faad_driver
 ```
+
+## Historical qualification
+
+| Version | Original evidence |
+|---|---|
+| 0.10.0 | [Publication and archive receipt](release-audit/REPORT.md#release-0100), persistent LC state and strict completion |
+| 0.9.0 | [Publication](release-audit/REPORT.md#release-090), [cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix) and [exact-seek read/equality records](release-audit/runs/exact-seek-0.9.0/report.json) |
+| 0.8.1 | [Publication](release-audit/PUBLISHED-0.8.1.md), [recording qualification](release-audit/CANDIDATE-0.8.1.md), [HTTP canary](release-audit/HTTP-CANARY-0.8.1.md) and [load/fault campaign](release-audit/HTTP-LOAD-0.8.1.md) |
+| 0.8.0 | [Original readiness audit](release-audit/REPORT.md#historical-080-audit) and [fill fix](release-audit/FILL-FIX.md) |
+
+These reports retain their original source, version, protocol and limitations.
+The older [consumer PR snapshot](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md)
+is historical adapter evidence; use TASK-145 for the later qualified patch.
+Running a path-dependent lab against today's checkout produces new evidence,
+not a reproduction of an older binary without its recorded sources and flags.

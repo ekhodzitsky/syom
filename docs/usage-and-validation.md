@@ -1,7 +1,8 @@
 # Usage and validation
 
-This page keeps integration detail separate from the root quick start.
-The 0.10.1 quick start uses `syom = "0.10"`; this patch optimizes AVX-512 FFT
+[Documentation index](README.md) · [First example](../README.md#quick-start)
+
+The published 0.10.1 crate uses `syom = "0.10"`; this patch optimizes AVX-512 FFT
 stages without changing the API, dependencies or Rust minimum. Its
 [release verification](../lab/release-audit/RELEASE-0.10.1.md) records publication
 separately from local qualification.
@@ -58,14 +59,14 @@ For the registry release:
 
 ```toml
 [dependencies]
-syom = "0.9"
+syom = "0.10"
 ```
 
 To develop against a local checkout at `../syom`:
 
 ```toml
 [dependencies]
-syom = { version = "0.9", path = "../syom" }
+syom = { version = "0.10", path = "../syom" }
 ```
 
 `exact_seek_plan` and budgeted `seek_exact` cover LC/LD mono/stereo
@@ -78,10 +79,24 @@ The old `seek` API remains available.
 
 ## Validation and integration
 
-[Release 0.9.0 publication verification](../lab/release-audit/REPORT.md#release-090)
-records the registry checksum, clean source commit/tag and actual
-registry quick-start checks on current Rust and MSRV 1.89. Historical
-prepublication qualifications retain their original status below.
+[Release 0.10.1 verification](../lab/release-audit/RELEASE-0.10.1.md) records
+the published archive checksum, clean source commit/tag and actual registry
+quick-start checks on Rust 1.97.1 and MSRV 1.89. It also records the required
+local tests, package/consumer checks, cold-stack regressions and fuzz results.
+
+The [0.10.1 consumer qualification](../lab/release-audit/TASK145.md) covers the
+exact Git-pinned library plus its separate gigastt adapter patch. Two CPU 1
+confirmations pass the six-case timing gate and 29 PCM cases retain exact bits.
+A CPU 0 scan failure remains unexplained. The raw HTTP equality canary remains
+false; independent presentation references explain the accepted differences,
+and admission/load/fault gates pass. Split-mode RSS remains higher than the
+standard decoder. The [subsequent audit](../lab/release-audit/TASK145-REVIEW.md)
+strengthens verification without rewriting those measurements.
+
+This is not a deployed consumer or a general speed/accuracy ranking. Historical
+prepublication qualifications retain their original versions and status below.
+
+### Historical consumer checks
 
 The historical [0.8.1 qualification](../lab/release-audit/CANDIDATE-0.8.1.md)
 passed 19 cases from 16 recordings against FFmpeg and the actual gigastt

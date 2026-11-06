@@ -1,0 +1,18 @@
+{
+  "pass": true,
+  "scope": "Documentation only; no runtime or registry release changes",
+  "required_local_checks_passed": 7,
+  "library_tests_passed": 1186,
+  "integration_tests_passed": 5,
+  "doctests_passed": 29,
+  "python_tests_passed": 36,
+  "readme_registry_version": "0.10.1",
+  "readme_current_rust_pass": true,
+  "readme_msrv_1_89_pass": true,
+  "local_path_resolves_version": "0.10.1",
+  "approximate_readme_prose_table_words": 556,
+  "first_attempt_preserved": "checks-attempt1",
+  "historical_artifacts_and_runtime_unchanged": true,
+  "github_ci_dispatched": false,
+  "checked_links": 172
+}

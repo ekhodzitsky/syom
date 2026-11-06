@@ -1,5 +1,7 @@
 # Contributing to syom
 
+[User documentation](docs/README.md) · [Release verification](lab/release-audit/RELEASE-0.10.1.md)
+
 Start with [AGENTS.md](AGENTS.md), the canonical development and validation
 policy. Hosted GitHub checks are paused; validate locally and use `[skip ci]`
 in pushed commit messages until the maintainer lifts that restriction.

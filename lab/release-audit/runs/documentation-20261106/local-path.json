@@ -1,0 +1,16 @@
+{
+  "pass": true,
+  "command": [
+    "cargo",
+    "metadata",
+    "--offline",
+    "--format-version",
+    "1",
+    "--manifest-path",
+    "/home/ekhodzitsky/Projects/syom/target/documentation-audit-20261106/layout/consumer/Cargo.toml"
+  ],
+  "example_manifest": "[dependencies]\nsyom = { version = \"0.10\", path = \"../syom\" }\n",
+  "resolved_version": "0.10.1",
+  "source": null,
+  "manifest_path": "/home/ekhodzitsky/Projects/syom/target/documentation-audit-20261106/layout/syom/Cargo.toml"
+}
