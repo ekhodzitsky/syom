@@ -1,0 +1,37 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+   Doc-tests syom
+
+running 29 tests
+test src/encode_mux.rs - encode::mux::encode_write (line 22) ... ok
+test src/encode_mux.rs - encode::mux::encode_write_m4a (line 167) ... ok
+test src/encode_mux.rs - encode::mux::wrap_loas_au (line 259) ... ok
+test src/enc_stream.rs - enc_stream (line 23) ... ok
+test src/../README.md - (line 43) ... ok
+test src/encode_mux.rs - encode::mux::wrap_adts_au (line 70) ... ok
+test src/error.rs - error::AacError (line 100) ... ok
+test src/guide.rs - guide (line 159) ... ok
+test src/guide.rs - guide (line 131) ... ok
+test src/guide.rs - guide (line 110) ... ok
+test src/guide.rs - guide (line 267) ... ok
+test src/guide.rs - guide (line 31) ... ok
+test src/guide.rs - guide (line 61) ... ok
+test src/guide.rs - guide (line 7) ... ok
+test src/options.rs - options::DecodeOptions::audio (line 82) ... ok
+test src/guide.rs - guide (line 76) ... ok
+test src/guide.rs - guide (line 245) ... ok
+test src/options.rs - options::EncodeOptions::with_lookahead (line 315) ... ok
+test src/options.rs - options::EncodeOptions::with_quality (line 274) ... ok
+test src/options_cbr.rs - options::cbr_opt::super::EncodeOptions::with_cbr (line 13) ... ok
+test src/options_ld.rs - options::ld::super::EncodeOptions::with_ld (line 9) ... ok
+test src/probe.rs - probe::probe (line 71) ... ok
+test src/options_he.rs - options::he_v2::super::EncodeOptions::with_he_v2 (line 37) ... ok
+test src/stream.rs - stream (line 13) ... ok
+test src/stream/au.rs - stream::au::Decoder::from_asc (line 19) ... ok
+test src/options_he.rs - options::he_v2::super::EncodeOptions::with_he (line 7) ... ok
+test src/stream/m4a_seek.rs - stream::m4a_seek (line 4) ... ok
+test src/stream/read.rs - stream::read::decode_read_streaming (line 85) ... ok
+test src/stream/m4a_pos.rs - stream::m4a_pos::M4aSeek (line 55) ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.14s
+
+all doctests ran in 1.24s; merged doctests compilation took 0.11s

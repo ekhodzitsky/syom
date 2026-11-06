@@ -1,0 +1,52 @@
+[
+  {
+    "label": "default",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.97.1",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "imdct",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target"
+    },
+    "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "exit_code": 0,
+    "seconds": 7.758661250991281,
+    "log": "default.log"
+  },
+  {
+    "label": "msrv",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--lib",
+      "imdct",
+      "--",
+      "--test-threads=1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/upstream-msrv-target"
+    },
+    "compiler": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7\n",
+    "exit_code": 0,
+    "seconds": 20.806133856996894,
+    "log": "msrv.log"
+  }
+]

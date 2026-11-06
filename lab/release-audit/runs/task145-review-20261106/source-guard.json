@@ -1,0 +1,38 @@
+{
+  "pass": true,
+  "before_revision": "2d4c491a3cc336b8be5c47e95f461a5390ae5732",
+  "files": [
+    {
+      "path": "src/engine/imdct_avx512.rs",
+      "sha256": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+      "identical_to_before": true
+    },
+    {
+      "path": "src/engine/imdct.rs",
+      "sha256": "4e6f10582c3c3484d99cbf24f1c4fc455b0201bf4fd8089e1ffcf1d5227df61b",
+      "identical_to_before": true
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "dcdf9f49f89f86488a04bd09a0b306989f1dc77370e3d0d2e5d05340f2eb004b",
+      "identical_to_before": true
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "c69abb01c2f0c902b6872c25bfb881bc32a090c92113a21d6f14a733e3130e8c",
+      "identical_to_before": true
+    },
+    {
+      "path": "lab/consume/gigastt/adapter.patch",
+      "sha256": "82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968",
+      "identical_to_before": true
+    },
+    {
+      "path": "lab/consume/gigastt/adapter-manifest.json",
+      "sha256": "b2d6ed487efab987c16a38758ede3b4a3970eafa58c9a7847403b9d51ae6251e",
+      "identical_to_before": true
+    }
+  ],
+  "prior_measurement_archive_unchanged": true,
+  "scope": "Production runtime and handoff unchanged; FFT tests and qualification tools improved"
+}

@@ -1,0 +1,2094 @@
+{
+  "pass": true,
+  "cells_passed": 48,
+  "cells": [
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          1,
+          22285
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "76843716f0a10133eb5bb1bb5a048540f1da7ac7ae7d83e0898926c7cd301465",
+      "actual_sha256": "76843716f0a10133eb5bb1bb5a048540f1da7ac7ae7d83e0898926c7cd301465"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          22285,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460",
+      "actual_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          22285,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460",
+      "actual_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          1,
+          22285
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "76843716f0a10133eb5bb1bb5a048540f1da7ac7ae7d83e0898926c7cd301465",
+      "actual_sha256": "76843716f0a10133eb5bb1bb5a048540f1da7ac7ae7d83e0898926c7cd301465"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          22285,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460",
+      "actual_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          22285,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "b9165db4992a1c30a0a2cfe74669a95b32434c3aa15f3f44781ba047f684d4cd",
+      "oracle_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460",
+      "actual_sha256": "7dec0c41daad29a6a4d5da935b1fe8891b45a65756ce4ca8e7449e90257b3460"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          1,
+          23552
+        ]
+      ],
+      "index": 0,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "cb21bc02084366e2f8e401fa73327973f385c06e7e20582ba821c439a98c2047",
+      "actual_sha256": "cb21bc02084366e2f8e401fa73327973f385c06e7e20582ba821c439a98c2047"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          23552,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 1,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02",
+      "actual_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          23552,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02",
+      "actual_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          1,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          1,
+          23552
+        ]
+      ],
+      "index": 0,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "cb21bc02084366e2f8e401fa73327973f385c06e7e20582ba821c439a98c2047",
+      "actual_sha256": "cb21bc02084366e2f8e401fa73327973f385c06e7e20582ba821c439a98c2047"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          23552,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 1,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02",
+      "actual_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          24576,
+          48000,
+          1,
+          0
+        ],
+        [
+          23552,
+          48000,
+          1,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-mono",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 0,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "ce4a1ea2e24cd826863340a551325890459199e83f820c75a5b5e6dc967bdd12",
+      "oracle_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02",
+      "actual_sha256": "402d4b084f156fad29a2dafd7b53af3b854e732d2df4fc13341cefe44e3f7b02"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          2,
+          22285
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "274581652eff839b8d518f45524e13066651878dbed587a7f494e9c063dfeea8",
+      "actual_sha256": "274581652eff839b8d518f45524e13066651878dbed587a7f494e9c063dfeea8"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          2,
+          22285
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "750b793358b947abda9d365daae4e5f1506c1382f6464e633b44514fb58fae9c",
+      "actual_sha256": "750b793358b947abda9d365daae4e5f1506c1382f6464e633b44514fb58fae9c"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          22285,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "9cc141eb8cc7a0ffec188ac94e7a3f1025162e89c931a6b624b0562ca9becdbb",
+      "actual_sha256": "9cc141eb8cc7a0ffec188ac94e7a3f1025162e89c931a6b624b0562ca9becdbb"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          2,
+          22285
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "274581652eff839b8d518f45524e13066651878dbed587a7f494e9c063dfeea8",
+      "actual_sha256": "274581652eff839b8d518f45524e13066651878dbed587a7f494e9c063dfeea8"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          22285,
+          48000,
+          2,
+          22285
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "750b793358b947abda9d365daae4e5f1506c1382f6464e633b44514fb58fae9c",
+      "actual_sha256": "750b793358b947abda9d365daae4e5f1506c1382f6464e633b44514fb58fae9c"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          22285,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "71677302dc3ddf82fad28cc066232c47fd287c6d09adaecd89717de2b569b4c6",
+      "oracle_sha256": "9cc141eb8cc7a0ffec188ac94e7a3f1025162e89c931a6b624b0562ca9becdbb",
+      "actual_sha256": "9cc141eb8cc7a0ffec188ac94e7a3f1025162e89c931a6b624b0562ca9becdbb"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          2,
+          23552
+        ]
+      ],
+      "index": 0,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "1e1f8a42727b1cb2574eed4ba7bd8e8573ad42d99796af973179c91a305a1a0b",
+      "actual_sha256": "1e1f8a42727b1cb2574eed4ba7bd8e8573ad42d99796af973179c91a305a1a0b"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          2,
+          23552
+        ]
+      ],
+      "index": 1,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "e87b95af163a188d4550f591fc1f923863245f3b75c75a81a2dc0e48cebda480",
+      "actual_sha256": "e87b95af163a188d4550f591fc1f923863245f3b75c75a81a2dc0e48cebda480"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          23552,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "d2a3e2c54598079d524f37df4d6986e0a8d14c6ac197187a93d78b0ec9e9ba10",
+      "actual_sha256": "d2a3e2c54598079d524f37df4d6986e0a8d14c6ac197187a93d78b0ec9e9ba10"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          2,
+          23552
+        ]
+      ],
+      "index": 0,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "1e1f8a42727b1cb2574eed4ba7bd8e8573ad42d99796af973179c91a305a1a0b",
+      "actual_sha256": "1e1f8a42727b1cb2574eed4ba7bd8e8573ad42d99796af973179c91a305a1a0b"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          23552,
+          48000,
+          2,
+          23552
+        ]
+      ],
+      "index": 1,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 97280,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "e87b95af163a188d4550f591fc1f923863245f3b75c75a81a2dc0e48cebda480",
+      "actual_sha256": "e87b95af163a188d4550f591fc1f923863245f3b75c75a81a2dc0e48cebda480"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          23552,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 97280,
+      "pass": true,
+      "profile": "lc-stereo",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 97280,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "084265409593d1067f9c4fec458ec947199ba4e7515415b7806c573fdec90969",
+      "oracle_sha256": "d2a3e2c54598079d524f37df4d6986e0a8d14c6ac197187a93d78b0ec9e9ba10",
+      "actual_sha256": "d2a3e2c54598079d524f37df4d6986e0a8d14c6ac197187a93d78b0ec9e9ba10"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "69362179bee3fac470998fb60a642afbf6799a286e7fafe82b90d1f2f192f984",
+      "actual_sha256": "69362179bee3fac470998fb60a642afbf6799a286e7fafe82b90d1f2f192f984"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "8df4b84ea29f7cbf0beaa5301376608f43f9bfb0d6765632114ea6cbbcbd547e",
+      "actual_sha256": "8df4b84ea29f7cbf0beaa5301376608f43f9bfb0d6765632114ea6cbbcbd547e"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          21207,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65",
+      "actual_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "69362179bee3fac470998fb60a642afbf6799a286e7fafe82b90d1f2f192f984",
+      "actual_sha256": "69362179bee3fac470998fb60a642afbf6799a286e7fafe82b90d1f2f192f984"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "8df4b84ea29f7cbf0beaa5301376608f43f9bfb0d6765632114ea6cbbcbd547e",
+      "actual_sha256": "8df4b84ea29f7cbf0beaa5301376608f43f9bfb0d6765632114ea6cbbcbd547e"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          21207,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "de3039f24097c76b11a891aa97aeebbc81f69d3f708f008baccf9235bcc6132e",
+      "oracle_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65",
+      "actual_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 0,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "69274f68584644a5cc3370413a7cb35b3b6dc4958f8fd0a47edae568df22cff1",
+      "actual_sha256": "69274f68584644a5cc3370413a7cb35b3b6dc4958f8fd0a47edae568df22cff1"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 1,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "304c975a1584853f9c6c32d0a5c9258837bb601738b6da070be1351d8163f15a",
+      "actual_sha256": "304c975a1584853f9c6c32d0a5c9258837bb601738b6da070be1351d8163f15a"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          2048,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b",
+      "actual_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 0,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "69274f68584644a5cc3370413a7cb35b3b6dc4958f8fd0a47edae568df22cff1",
+      "actual_sha256": "69274f68584644a5cc3370413a7cb35b3b6dc4958f8fd0a47edae568df22cff1"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 1,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "304c975a1584853f9c6c32d0a5c9258837bb601738b6da070be1351d8163f15a",
+      "actual_sha256": "304c975a1584853f9c6c32d0a5c9258837bb601738b6da070be1351d8163f15a"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          2048,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "he",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "655f6ef0689ebfb95196cf51b1426e7be506126b5de927daa64465c7c01a26d6",
+      "oracle_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b",
+      "actual_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "94b0a2976b9fb03b07823707419b4bb4a1e1ca5b05e536a92d020e6b0b6682e2",
+      "actual_sha256": "94b0a2976b9fb03b07823707419b4bb4a1e1ca5b05e536a92d020e6b0b6682e2"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "7ccfb13871e48c80e71617096c7b35172b7b9364696310d796d8466ce8a127cb",
+      "actual_sha256": "7ccfb13871e48c80e71617096c7b35172b7b9364696310d796d8466ce8a127cb"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          21207,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65",
+      "actual_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 0,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "94b0a2976b9fb03b07823707419b4bb4a1e1ca5b05e536a92d020e6b0b6682e2",
+      "actual_sha256": "94b0a2976b9fb03b07823707419b4bb4a1e1ca5b05e536a92d020e6b0b6682e2"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          25654
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          21207,
+          48000,
+          2,
+          21207
+        ]
+      ],
+      "index": 1,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 96013,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "7ccfb13871e48c80e71617096c7b35172b7b9364696310d796d8466ce8a127cb",
+      "actual_sha256": "7ccfb13871e48c80e71617096c7b35172b7b9364696310d796d8466ce8a127cb"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          25654,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          21207,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 96013,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 96013,
+      "terminal_eof_polls": 3,
+      "transport": "m4a",
+      "fixture_sha256": "9809f3ede4ee9cdc8ef951b2dd0c7ea703a340ab7274b839147286a8757faf85",
+      "oracle_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65",
+      "actual_sha256": "428f3cb9f5ee3ca0f76565c60930eb7ddfb4b1704a627b42e2c8f4050ac54a65"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 0,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "06f7cffe04ea9448358524ebad4c9a5353e83e3b15b77ab9929d0fbd19ca71d9",
+      "actual_sha256": "06f7cffe04ea9448358524ebad4c9a5353e83e3b15b77ab9929d0fbd19ca71d9"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 1,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "21893fd77699a10c36c3176eb210964cf792717821262d6b1e3603f629216ac7",
+      "actual_sha256": "21893fd77699a10c36c3176eb210964cf792717821262d6b1e3603f629216ac7"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          2048,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "file",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b",
+      "actual_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 0,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "06f7cffe04ea9448358524ebad4c9a5353e83e3b15b77ab9929d0fbd19ca71d9",
+      "actual_sha256": "06f7cffe04ea9448358524ebad4c9a5353e83e3b15b77ab9929d0fbd19ca71d9"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          24576,
+          48000,
+          2,
+          24576
+        ],
+        [
+          2048,
+          48000,
+          2,
+          2048
+        ]
+      ],
+      "index": 1,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": true,
+      "selected_samples": 100352,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "21893fd77699a10c36c3176eb210964cf792717821262d6b1e3603f629216ac7",
+      "actual_sha256": "21893fd77699a10c36c3176eb210964cf792717821262d6b1e3603f629216ac7"
+    },
+    {
+      "different_bits": 0,
+      "geometry": [
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          24576,
+          48000,
+          2,
+          0
+        ],
+        [
+          2048,
+          48000,
+          2,
+          0
+        ]
+      ],
+      "index": 8,
+      "native_frames": 100352,
+      "pass": true,
+      "profile": "ps",
+      "reader": "bytes",
+      "selected_channel_present": false,
+      "selected_samples": 0,
+      "stereo_samples_proven_different": 100351,
+      "terminal_eof_polls": 3,
+      "transport": "adts",
+      "fixture_sha256": "02f90d8158f37eac108aa6300f84acf4a0f0e4afbc03997e53b15a641e08f5a3",
+      "oracle_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b",
+      "actual_sha256": "5c20e90740ac8180f79183863a1c6f1b198f4ff9845e36596e857298351acf1b"
+    }
+  ]
+}

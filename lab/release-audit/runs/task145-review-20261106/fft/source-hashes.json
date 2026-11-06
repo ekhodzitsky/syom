@@ -1,0 +1,8 @@
+{
+  "test_file_before_sha256": "c05df2ca0f697faa860eeeb6c73eb1eadca57b6fd4677fe63646dbba7a20d17f",
+  "runtime_kernel_sha256": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+  "runtime_dispatch_sha256": "4e6f10582c3c3484d99cbf24f1c4fc455b0201bf4fd8089e1ffcf1d5227df61b",
+  "test_file_after_sha256": "74ef723bd6d23275464db3f496798b90efc85c5b05fcdd77992f9c5caf1f621d",
+  "runtime_kernel_unchanged": true,
+  "runtime_dispatch_unchanged": true
+}

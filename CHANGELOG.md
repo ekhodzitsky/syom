@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Post-qualification audit tools for verifying the complete gigastt adapter
+  handoff and replaying archived HTTP observations. Model/corpus identities and
+  numeric prerequisites are checked independently of recorded gate flags;
+  reference and load comparisons share the exact one-sample bound. Native
+  selected-channel differentials and exact FFT-bit checks cover additional
+  proof gaps without changing the measured runtime implementation.
 - Reproducible gigastt adapter profiling and independently validated HTTP
   presentation references for local decoder and load qualification, plus a
   downstream bounded M4A/ADTS pull/buffering patch and HE/PS cold-stack regressions.

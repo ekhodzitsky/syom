@@ -1,0 +1,1 @@
+{"different_bits":0,"geometry":[[24576,48000,2,24576],[24576,48000,2,24576],[24576,48000,2,24576],[23552,48000,2,23552]],"index":0,"native_frames":97280,"pass":true,"profile":"lc-stereo","reader":"file","selected_channel_present":true,"selected_samples":97280,"stereo_samples_proven_different":97280,"terminal_eof_polls":3,"transport":"adts"}

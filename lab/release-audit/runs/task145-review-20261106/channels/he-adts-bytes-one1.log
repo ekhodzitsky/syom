@@ -1,0 +1,1 @@
+{"different_bits":0,"geometry":[[24576,48000,2,24576],[24576,48000,2,24576],[24576,48000,2,24576],[24576,48000,2,24576],[2048,48000,2,2048]],"index":1,"native_frames":100352,"pass":true,"profile":"he","reader":"bytes","selected_channel_present":true,"selected_samples":100352,"stereo_samples_proven_different":100351,"terminal_eof_polls":3,"transport":"adts"}

@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "review_base": "2d4c491a3cc336b8be5c47e95f461a5390ae5732",
+  "status": "audit and tooling/test refactor complete",
+  "completed_utc": "2026-11-06T10:34:21.222371+00:00",
+  "production_runtime_and_adapter_unchanged": true,
+  "candidate_version": "0.10.1 unpublished",
+  "required_local_checks_passed": 7,
+  "python_tests_passed": 36,
+  "fft_focused_default_passed": 7,
+  "fft_focused_msrv_1_89_passed": 7,
+  "unique_native_channel_cells_passed": 48,
+  "native_portable_repeat_cells_passed": 48,
+  "portable_python_optimization_level": 1,
+  "historical_policy_fields_identical": true,
+  "historical_load_verdicts_identical": 448,
+  "original_evidence_file_hashes_verified": 842,
+  "actual_handoff_files_verified": 9,
+  "synthetic_before_after_controls": 6,
+  "remaining_tasks": [
+    "TASK-146",
+    "TASK-147"
+  ],
+  "no_new_latency_or_asr_campaign": true,
+  "scope": "Linux x86_64; native selection is not public ASR/resampler/budget proof",
+  "package": {
+    "bytes": 469453,
+    "sha256": "eeb7c53f50b067714d282a78ed1ef29a7ae8cbd14fdf354587c04507e6cd12bc",
+    "published": false
+  },
+  "hosted_ci_dispatched": false,
+  "crate_published": false,
+  "excluded_artifact_counts": {
+    ".adts": 8,
+    ".m4a": 8,
+    ".actual": 96,
+    ".oracle": 96
+  },
+  "implementation_source_manifest": "tool-source-manifest.json",
+  "final_independent_read_only_review": "No concrete blocker or report contradiction found; no extra measurements"
+}

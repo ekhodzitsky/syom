@@ -20,6 +20,7 @@ import time
 
 from run_http_canary import digest, normalized, percentile, request, rss
 from http_reference import validate_binding
+from http_contract import close
 
 
 def post(port, payload, timeout=90):
@@ -51,8 +52,7 @@ def memory_kib(memory, key="VmRSS"):
 def matches(response, expected):
     return (response["status"] == 200 and response.get("word_count", 0) > 0
             and response.get("text_sha256") == expected["text_sha256"]
-            and isinstance(response.get("duration"), (int, float))
-            and abs(response["duration"] - expected["duration"]) <= 1 / 16000)
+            and close(response.get("duration"), expected["duration"]))
 
 
 def upload_busy(response):
@@ -319,9 +319,6 @@ def main():
         parser.error(str(error))
     expected = reference["expected"]
     inputs = [{**c, "sha256": digest(Path(c["path"]))} for c in cases]
-    ref_hashes = {r["id"]: r["sha256"] for r in reference["inputs"]}
-    if any(c["sha256"] != ref_hashes.get(c["id"]) for c in inputs):
-        parser.error("manifest inputs differ from the paired reference")
     short_case = next(c for c in cases if c["kind"] == "m4a")
     short = Path(short_case["path"]).read_bytes()
     long = args.long_input.read_bytes()

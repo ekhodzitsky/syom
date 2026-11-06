@@ -1,0 +1,55 @@
+{
+  "pass": true,
+  "cells": 48,
+  "nonempty_selected_channel_cells": 28,
+  "empty_missing_channel_cells": 20,
+  "terminal_eof_checks": 144,
+  "direct_oracle_hash_match_cells": 48,
+  "fixtures": {
+    "lc-mono.m4a": {
+      "native_frames": 96013,
+      "stereo_differing_samples": 0,
+      "left_right_hashes_differ": null
+    },
+    "lc-mono.adts": {
+      "native_frames": 97280,
+      "stereo_differing_samples": 0,
+      "left_right_hashes_differ": null
+    },
+    "lc-stereo.m4a": {
+      "native_frames": 96013,
+      "stereo_differing_samples": 96013,
+      "left_right_hashes_differ": true
+    },
+    "lc-stereo.adts": {
+      "native_frames": 97280,
+      "stereo_differing_samples": 97280,
+      "left_right_hashes_differ": true
+    },
+    "he.m4a": {
+      "native_frames": 96013,
+      "stereo_differing_samples": 96013,
+      "left_right_hashes_differ": true
+    },
+    "he.adts": {
+      "native_frames": 100352,
+      "stereo_differing_samples": 100351,
+      "left_right_hashes_differ": true
+    },
+    "ps.m4a": {
+      "native_frames": 96013,
+      "stereo_differing_samples": 96013,
+      "left_right_hashes_differ": true
+    },
+    "ps.adts": {
+      "native_frames": 100352,
+      "stereo_differing_samples": 100351,
+      "left_right_hashes_differ": true
+    }
+  },
+  "source_stable": true,
+  "sdk_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "sdk_source_files_hashed": 322,
+  "build_seconds": 9.353439180005807,
+  "scope": "Native selected plane only; exact copied producers/helpers, direct SDK plane[index] oracle, 24*1024 cuts; no public ASR/resampler/budget claims"
+}

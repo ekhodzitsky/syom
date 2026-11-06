@@ -1,0 +1,24 @@
+{
+  "pass": true,
+  "all_policy_fields_identical": true,
+  "policy_fields_compared": [
+    "version",
+    "policy",
+    "qualified_for_load",
+    "errors",
+    "expected",
+    "inputs",
+    "binary_sha256",
+    "model_encoder_sha256",
+    "model_files",
+    "static_ort_archive_sha256",
+    "explained_differences",
+    "original_canary_pass"
+  ],
+  "load_verdicts_identical": 448,
+  "raw_canary_pass": false,
+  "qualified_reference": true,
+  "explained_differences": 18,
+  "old_evidence_files_verified": 842,
+  "scope": "Offline replay only; no new timing or recognition campaign"
+}

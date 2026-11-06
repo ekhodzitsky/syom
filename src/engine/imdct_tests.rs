@@ -62,10 +62,35 @@ fn declared_x86_minimum_is_sse2() {
     );
 }
 
-/// SSE2/NEON 4-wide butterflies match scalar IEEE bits (no FMA).
+fn assert_fft_bits(
+    actual: (&[f32], &[f32]),
+    expected: (&[f32], &[f32]),
+    mode: &str,
+    n: usize,
+    case: &str,
+) {
+    for (plane, actual, expected) in [("re", actual.0, expected.0), ("im", actual.1, expected.1)] {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "{mode} {plane} length n={n} case={case}"
+        );
+        for (index, (&actual, &expected)) in actual.iter().zip(expected).enumerate() {
+            assert_eq!(
+                actual.to_bits(),
+                expected.to_bits(),
+                "{mode} {plane}[{index}] n={n} case={case}: actual={actual:?} ({:#010x}), expected={expected:?} ({:#010x})",
+                actual.to_bits(),
+                expected.to_bits(),
+            );
+        }
+    }
+}
+
+/// Dispatched SIMD matches scalar bits for these finite inputs (no FMA).
 #[test]
 fn simd_fft_matches_scalar_bits() {
-    for n in [8usize, 16, 64, 512] {
+    for n in [8usize, 16, 64, 256, 512] {
         let bitrev = bitrev_table(n);
         let (tw_re, tw_im) = twiddle_table(n);
         for seed in [1u32, 0x9e3779b9, 7] {
@@ -74,11 +99,16 @@ fn simd_fft_matches_scalar_bits() {
             let mut im_v = im_s.clone();
             ifft_soa_scalar(&mut re_s, &mut im_s, &bitrev, &tw_re, &tw_im);
             ifft_soa(&mut re_v, &mut im_v, &bitrev, &tw_re, &tw_im);
-            assert_eq!(re_s, re_v, "re n={n} seed={seed}");
-            assert_eq!(im_s, im_v, "im n={n} seed={seed}");
+            assert_fft_bits(
+                (&re_v, &im_v),
+                (&re_s, &im_s),
+                "dispatched SIMD",
+                n,
+                &format!("seed={seed}"),
+            );
         }
         // Impulse / silence / Nyquist-ish boundary.
-        for (re0, im0) in [
+        for (case, (re0, im0)) in [
             (
                 vec![1.0f32]
                     .into_iter()
@@ -91,15 +121,23 @@ fn simd_fft_matches_scalar_bits() {
                 (0..n).map(|i| if i + 1 == n { 1.0 } else { 0.0 }).collect(),
                 vec![0.0f32; n],
             ),
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let mut re_s = re0.clone();
             let mut im_s = im0.clone();
             let mut re_v = re0;
             let mut im_v = im0;
             ifft_soa_scalar(&mut re_s, &mut im_s, &bitrev, &tw_re, &tw_im);
             ifft_soa(&mut re_v, &mut im_v, &bitrev, &tw_re, &tw_im);
-            assert_eq!(re_s, re_v);
-            assert_eq!(im_s, im_v);
+            assert_fft_bits(
+                (&re_v, &im_v),
+                (&re_s, &im_s),
+                "dispatched SIMD",
+                n,
+                ["impulse", "silence", "last-bin impulse"][case],
+            );
         }
     }
 }
@@ -121,29 +159,32 @@ fn avx512_small_stages_preserve_ieee_bits() {
         1.0,
         -1.0,
     ];
-    for n in [1, 2, 4, 8, 16, 64, 512] {
+    for n in [1, 2, 4, 8, 16, 64, 256, 512] {
         let bitrev = bitrev_table(n);
         let (tw_re, tw_im) = twiddle_table(n);
-        for (mut re, mut im) in [
+        for (case, (mut re, mut im)) in [
             fill_soa(n, 7),
             (
                 (0..n).map(|i| edges[i % edges.len()]).collect(),
                 (0..n).map(|i| edges[(i + 3) % edges.len()]).collect(),
             ),
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let (mut expected_re, mut expected_im) = (re.clone(), im.clone());
             ifft_soa_scalar(&mut expected_re, &mut expected_im, &bitrev, &tw_re, &tw_im);
             super::kernels::bitrev_swap(&mut re, &mut im, &bitrev);
             // SAFETY: both features are detected above; every n is a power of
             // two, the planes match, and the tables cover all n - 1 twiddles.
             unsafe { super::avx512k::ifft_stages_avx512(&mut re, &mut im, &tw_re, &tw_im) };
-            for (actual, expected) in [(&re, &expected_re), (&im, &expected_im)] {
-                assert_eq!(
-                    actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
-                    expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
-                    "FFT bits n={n}"
-                );
-            }
+            assert_fft_bits(
+                (&re, &im),
+                (&expected_re, &expected_im),
+                "direct AVX-512",
+                n,
+                ["seed=7", "signed zero/subnormal edges"][case],
+            );
         }
     }
 }

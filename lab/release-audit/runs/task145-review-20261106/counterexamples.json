@@ -1,0 +1,38 @@
+{
+  "before_revision": "2d4c491a3cc336b8be5c47e95f461a5390ae5732",
+  "before_policy_sha256": "5e9f2f1c39b3cf44173e863c2e6986f55aa27986545d2676c0b3d30ed37034f8",
+  "before_load_sha256": "5d3e608fa1b1c916dec60cfaf6a286e714bcf93e087ba022b1296f6552814102",
+  "counterexamples": [
+    {
+      "name": "numeric-flags",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "name": "corpus-bytes",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "name": "decoder-model",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "name": "negative-adts-duration",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "name": "duplicate-load-input",
+      "before_accepted": true,
+      "after_accepted": false
+    },
+    {
+      "name": "inclusive-one-sample-load-boundary",
+      "before_accepted": false,
+      "after_accepted": true
+    }
+  ],
+  "scope": "Synthetic offline observations; no model, server, media or timing campaign"
+}

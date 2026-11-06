@@ -1,0 +1,32 @@
+{
+  "reviewed_utc": "2026-11-06T08:18:22.741212+00:00",
+  "scope": "Upstream numerical/CPU compatibility review; no confirmed runtime bug; test-file-only improvement",
+  "findings": [
+    {
+      "priority": "P2",
+      "status": "fixed",
+      "path": "src/engine/imdct_tests.rs",
+      "finding": "Float equality in a bits test conflated signed zero; per-lane to_bits diagnostics now used."
+    },
+    {
+      "priority": "P2",
+      "status": "fixed",
+      "path": "src/engine/imdct_tests.rs",
+      "finding": "Missing production FFT256 added to both matrices; sizes64/256/512 now all covered."
+    },
+    {
+      "priority": "P2",
+      "status": "deferred pre-existing, not TASK145 regression",
+      "path": "src/engine/imdct.rs:9;src/platform_tests.rs:55,99",
+      "finding": "Process-global forced-mode flags can contaminate unguarded auto-dispatch tests. Direct AVX512 test bypasses flags."
+    },
+    {
+      "priority": "P3",
+      "status": "deferred runtime frozen",
+      "path": "src/engine/imdct_avx512.rs:174",
+      "finding": "Scalar tail unreachable for legal power-of-two inputs after early-stage specialization; possible cleanup, no measured speed claim."
+    }
+  ],
+  "test_domain": "Existing finite inputs, signed zero, subnormals. No added general NaN-payload/platform-parity claim.",
+  "required_remaining_before_commit": "Root-owned applicable mandatory local checks per AGENTS.md"
+}

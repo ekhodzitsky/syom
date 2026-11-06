@@ -1,0 +1,16 @@
+   Compiling syom v0.10.1 (/home/ekhodzitsky/Projects/syom)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.65s
+     Running unittests src/lib.rs (target/task145/upstream-msrv-target/debug/deps/syom-8eef53883a4a0a67)
+
+running 8 tests
+test engine::golden_tests::sine_lc_matches_naive_imdct_within_1lsb ... ok
+test engine::imdct::imdct_tests::avx512_small_stages_preserve_ieee_bits ... ok
+test engine::imdct::imdct_tests::declared_x86_minimum_is_sse2 ... ok
+test engine::imdct::imdct_tests::fast_matches_naive_long_impulse ... ok
+test engine::imdct::imdct_tests::fast_matches_naive_short ... ok
+test engine::imdct::imdct_tests::fft_cpu_probe ... ignored, manual TASK-82 transform CPU probe
+test engine::imdct::imdct_tests::naive_zero_is_silence ... ok
+test engine::imdct::imdct_tests::simd_fft_matches_scalar_bits ... ok
+
+test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 1185 filtered out; finished in 0.12s
+

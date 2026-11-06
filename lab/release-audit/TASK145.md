@@ -1,5 +1,8 @@
 # TASK-145: gigastt AAC adapter performance
 
+The subsequent [detailed review and tooling refactor](TASK145-REVIEW.md) leaves
+these historical measurements, their source pins and evidence index unchanged.
+
 This investigation targets the optional gigastt AAC adapter and its native
 decoder cost. The starting codec was published **syom 0.10.0**, source
 `eef30caa6b1596ee4ba15db81492bd087747426e`, registry SHA-256

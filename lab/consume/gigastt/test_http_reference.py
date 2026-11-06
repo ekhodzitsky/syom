@@ -11,21 +11,21 @@ import unittest
 
 from http_reference import BASELINE_G04_SHA, CASE_IDS, HUMAN_SHA, MODEL_SHA, ORT_SHA, qualify, validate_binding, digest, close
 from mp4_clocks import CLOCK_CASES
+from http_contract import CORPUS_SHA256, MODEL_FILES
 
 
 def fixture():
     cases = []
     evidence = dict(model_encoder_sha256=MODEL_SHA, static_ort_archive_sha256=ORT_SHA,
-                    model_files={'v3_rnnt_encoder_int8.onnx':MODEL_SHA, 'v3_rnnt_decoder.onnx':'decoder',
-                                 'v3_rnnt_joint.onnx':'joint', 'v3_vocab.txt':'vocab'},
+                    model_files=copy.deepcopy(MODEL_FILES),
                     cases={}, transcript_references={})
     for cid in sorted(CASE_IDS):
         kind = 'wav' if cid.endswith('-wav') else 'm4a' if cid.endswith('-aac') else 'adts'
-        response = dict(status=200, word_count=8, text_sha256=HUMAN_SHA, duration=5.0)
-        cases.append(dict(id=cid, kind=kind, sha256=cid,
+        response = dict(status=200, word_count=8, text_sha256=HUMAN_SHA, duration=5.0, wall_ms=100.0)
+        cases.append(dict(id=cid, kind=kind, sha256=CORPUS_SHA256[cid],
                           responses=dict(baseline=copy.deepcopy(response), candidate=copy.deepcopy(response))))
         if kind != 'adts':
-            evidence['cases'][cid] = dict(input_sha256=cid, source_wav_sha256=cid.replace('-aac', '-wav'),
+            evidence['cases'][cid] = dict(input_sha256=CORPUS_SHA256[cid], source_wav_sha256=CORPUS_SHA256[cid.replace('-aac', '-wav')],
                                          presentation_seconds=5.0, source_wav_seconds=5.0,
                                          ffmpeg_applied_presentation_seconds=5.0,
                                          ffmpeg_presentation_pcm_sha256='a' * 64,
@@ -39,7 +39,13 @@ def fixture():
                   gates={name: True for name in ['health_after', 'p95', 'p99', 'peak_rss']},
                   instances={name: dict(binary_sha256=name) for name in ['baseline', 'candidate']})
     canary['pass'] = canary.pop('pass_')
-    for row in canary['negative']:row['pass'] = row.pop('pass_')
+    for row in canary['negative']:
+        row['pass'] = row.pop('pass_')
+        row['responses'] = {name: dict(status=422) for name in ('baseline', 'candidate')}
+    for instance in canary['instances'].values():
+        instance.update(timing_ms=dict(count=32, median=100.0, p95=100.0, p99=100.0),
+                        final_memory=dict(VmHWM='1024 kB'), healthy_after=True,
+                        health_after=dict(status='ok', model='gigaam-v3-rnnt'))
     by_id = {row['id']: row for row in cases}
     for cid, pin in copy.deepcopy(CLOCK_CASES).items():
         frames = pin['source_wav_frames']; ticks = (frames * 1000 + 15999) // 16000
@@ -87,7 +93,7 @@ class ReferencePolicyTests(unittest.TestCase):
         row = next(row for row in canary['cases'] if row['id'] == cid)
         row['responses']['baseline'].update(text_sha256=BASELINE_G04_SHA, duration=5.092)
         evidence['cases'][cid]['baseline_samples'] = 81472
-        evidence['transcript_references'][cid] = dict(input_sha256=cid, source_wav_sha256='golos_04-wav',
+        evidence['transcript_references'][cid] = dict(input_sha256=CORPUS_SHA256[cid], source_wav_sha256=CORPUS_SHA256['golos_04-wav'],
                                                     human_text_sha256=HUMAN_SHA, wav_text_sha256=HUMAN_SHA,
                                                     ffmpeg_text_sha256=HUMAN_SHA)
         result = qualify(canary, evidence)
@@ -156,6 +162,35 @@ class ReferencePolicyTests(unittest.TestCase):
             if mutation == 'corpus':canary['cases'].pop()
             self.assertFalse(qualify(canary, evidence)['qualified_for_load'], mutation)
 
+    def test_true_flags_cannot_hide_bad_raw_numeric_health_or_negative_observations(self):
+        for mutation in ('latency', 'summary', 'memory', 'nonfinite', 'health', 'negative', 'model'):
+            canary, evidence = fixture()
+            if mutation == 'latency':
+                for row in canary['cases']:
+                    row['responses']['candidate']['wall_ms'] = 1000.0
+                canary['instances']['candidate']['timing_ms'].update(median=1000.0, p95=1000.0, p99=1000.0)
+            if mutation == 'summary':canary['instances']['candidate']['timing_ms']['p95'] = 99.0
+            if mutation == 'memory':canary['instances']['candidate']['final_memory']['VmHWM'] = '999999 kB'
+            if mutation == 'nonfinite':canary['cases'][0]['responses']['candidate']['wall_ms'] = math.nan
+            if mutation == 'health':canary['instances']['candidate']['health_after']['status'] = 'loading'
+            if mutation == 'negative':canary['negative'][0]['responses']['candidate']['status'] = 200
+            if mutation == 'model':evidence['model_files']['v3_rnnt_decoder.onnx'] = '0' * 64
+            self.assertFalse(qualify(canary, evidence)['qualified_for_load'], mutation)
+
+    def test_matching_labels_do_not_allow_replacing_pinned_input_bytes(self):
+        canary, evidence = fixture()
+        row = next(row for row in canary['cases'] if row['id'] == 'golos_00-aac')
+        row['sha256'] = evidence['cases'][row['id']]['input_sha256'] = '0' * 64
+        self.assertFalse(qualify(canary, evidence)['qualified_for_load'])
+
+    def test_equal_adts_responses_still_require_real_duration_count_and_text_hash(self):
+        for key, value in [('duration', -1.0), ('duration', 0.0), ('word_count', True),
+                           ('text_sha256', None), ('text_sha256', 'not-a-hash')]:
+            canary, evidence = fixture()
+            row = next(row for row in canary['cases'] if row['id'] == 'golos_00-he1')
+            for response in row['responses'].values():response[key] = value
+            self.assertFalse(qualify(canary, evidence)['qualified_for_load'], (key, value))
+
 
 class ReferenceBindingTests(unittest.TestCase):
     def setUp(self):
@@ -213,6 +248,11 @@ class ReferenceBindingTests(unittest.TestCase):
     def test_changed_decoder_model_or_input_bytes_fail(self):
         self.hashes[str(self.args.model_dir/'v3_rnnt_decoder.onnx')] = 'different'
         with self.assertRaisesRegex(ValueError, 'model files differ'):
+            validate_binding(self.reference, self.args, self.cases)
+
+    def test_duplicate_load_input_cannot_replace_a_required_case(self):
+        self.cases[-1] = copy.deepcopy(self.cases[0])
+        with self.assertRaisesRegex(ValueError, 'distinct pinned corpus'):
             validate_binding(self.reference, self.args, self.cases)
 
 

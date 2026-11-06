@@ -1,0 +1,75 @@
+{
+  "scope": "Final active sources at review completion; historical measurements remain separate",
+  "files": [
+    {
+      "path": "src/engine/imdct_tests.rs",
+      "bytes": 7293,
+      "sha256": "74ef723bd6d23275464db3f496798b90efc85c5b05fcdd77992f9c5caf1f621d"
+    },
+    {
+      "path": "lab/consume/gigastt/http_contract.py",
+      "bytes": 5508,
+      "sha256": "f7fd5c321bc091176e3c7698f4e9d423d671004a9ea34053a9feef5f8d771c45"
+    },
+    {
+      "path": "lab/consume/gigastt/http_prerequisites.py",
+      "bytes": 4031,
+      "sha256": "fa28137feb1abebd7d5164c118e26ecb360601b3512013933cf679659af64ca8"
+    },
+    {
+      "path": "lab/consume/gigastt/http_reference.py",
+      "bytes": 11306,
+      "sha256": "306db52f926fb26d6b80978281d08c2346015256d9b6d5c3ed8e97470e79a37a"
+    },
+    {
+      "path": "lab/consume/gigastt/presentation_evidence.py",
+      "bytes": 8420,
+      "sha256": "83666a7a7cb7bbb20ec959195d6398550825496a0192ff2f8e494dd7c7789ed3"
+    },
+    {
+      "path": "lab/consume/gigastt/run_http_canary.py",
+      "bytes": 10318,
+      "sha256": "3ea6ed22ee203075c1085419cfe55e3f054d8be1825e98df8b80a2b84e078b6f"
+    },
+    {
+      "path": "lab/consume/gigastt/run_http_load.py",
+      "bytes": 20019,
+      "sha256": "155f6af4d56f8a8e332d940a15fa398b8aea0f9ce19084d660a44d73da8f7a6a"
+    },
+    {
+      "path": "lab/consume/gigastt/check_handoff.py",
+      "bytes": 7516,
+      "sha256": "d29ac74b9a682235c01589dcf9461b0e6cc16f4e5f3eecc80a1ab7abbc88a732"
+    },
+    {
+      "path": "lab/consume/gigastt/test_check_handoff.py",
+      "bytes": 8117,
+      "sha256": "2f8010566bcb446ca4f9040adc9e4b2263a761e482b0b671ee267f3a646c715d"
+    },
+    {
+      "path": "lab/consume/gigastt/test_http_reference.py",
+      "bytes": 16507,
+      "sha256": "2c6a09c4c60615059e137fba9ef7df11f45b28bf5a89938c531cbb15199a556c"
+    },
+    {
+      "path": "lab/consume/gigastt/test_http_replay.py",
+      "bytes": 2052,
+      "sha256": "de76493fc1c608d8b78daa955a176464f7ff64da8eb6478e5a3993389b8640dd"
+    },
+    {
+      "path": "lab/consume/gigastt/test_channel_preparation.py",
+      "bytes": 2138,
+      "sha256": "f78a53bfa41571d0701daa271894b1a58372b4f67a82d2c0ffc5fef060253115"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/prepare_channel_selection.py",
+      "bytes": 8281,
+      "sha256": "78e8e2448215941bcaf72168a34d831861bf9edba015608dcd90d50d535ee0a3"
+    },
+    {
+      "path": "lab/consume/gigastt/profile/channel_selection.rs.in",
+      "bytes": 8916,
+      "sha256": "a40442d23dfe929cd7978d0f68a5d555ba7995a9fd2e6274f8ea813642120e39"
+    }
+  ]
+}

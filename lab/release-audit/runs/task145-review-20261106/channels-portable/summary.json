@@ -1,0 +1,19 @@
+{
+  "pass": true,
+  "cells_passed": 48,
+  "consumer": "/home/ekhodzitsky/Projects/syom/lab/release-audit/runs/task145-20261105/candidate5/reproduction/consumer",
+  "python_optimization_level": 1,
+  "preparer_sha256": "78e8e2448215941bcaf72168a34d831861bf9edba015608dcd90d50d535ee0a3",
+  "current_preparer_matches_recorded": true,
+  "template_sha256": "a40442d23dfe929cd7978d0f68a5d555ba7995a9fd2e6274f8ea813642120e39",
+  "generated_oracle_driver_sha256": "461de20f25ee15687ebff6dfdcc42d3480c718709bdac8b2eb24b8bb2619fdda",
+  "sdk_git_revision": "3e540231c9d71e3534be1ef856a91cf419efaead",
+  "source_stable": true,
+  "nonempty_cells": 28,
+  "empty_missing_channel_cells": 20,
+  "terminal_eof_checks": 144,
+  "same_native_hashes_vs_initial_cells": 48,
+  "same_fixture_hashes_vs_initial": 8,
+  "build_seconds": 10.465441834006924,
+  "scope": "Native selected plane only; exact copied producers/helpers, direct SDK plane[index] oracle, 24*1024 cuts; no public ASR/resampler/budget claims"
+}

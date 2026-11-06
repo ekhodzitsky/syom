@@ -6,6 +6,16 @@ and the current-model HTTP/load/fault policy. The original CPU 0 scan failure
 and raw HTTP equality failure remain in the [audit](../../release-audit/TASK145.md).
 This is Linux x86_64 evidence for an unpublished syom 0.10.1 candidate.
 
+The [post-qualification review](../../release-audit/TASK145-REVIEW.md) records
+the subsequent tooling refactor. `http_contract.py` holds exact duration
+comparisons and all four model/32 input identities. `http_prerequisites.py`
+recomputes timing summaries from individual requests and checks recorded RSS,
+health and negative responses. Gate flags alone cannot qualify a run. The
+maintained load matcher uses the same exact one-sample comparison as reference
+qualification. The measured decoder, adapter patch and archived runs are
+unchanged; offline replay reproduces every saved policy field and all 448 load
+response verdicts.
+
 The 305 MiB model canary recognized all 32 inputs per backend. Baseline/candidate
 p95 was 135.08/152.87 ms, p99 171.27/174.60 ms, and peak HWM
 1159.82/1161.03 MiB. The separate presentation reference qualified; the raw
@@ -18,7 +28,7 @@ passed, and all six owned load/fault servers exited cleanly.
 The first reference attempt rejected two exact one-sample differences because
 of binary subtraction rounding. Its failure is retained. Exact rational
 comparison of recorded decimal durations now implements the same inclusive
-1/16000-second bound; 17 offline policy/parser controls include the actual
+1/16000-second bound; the original 17 offline policy/parser controls include the actual
 boundaries and adjacent floats outside them. No numeric limit was increased.
 
 These offline tools use owned loopback processes and local source/model files.
@@ -106,6 +116,17 @@ failure. Offline policy regressions require no model or external programs:
 python3 -m unittest discover -s lab/consume/gigastt -p 'test_*.py'
 ```
 
+Replay the committed raw canary and independent evidence without models,
+servers or recordings. Use a fresh output file; the new reference binds paths
+in the current checkout rather than the original machine's absolute paths:
+
+```sh
+python3 lab/consume/gigastt/http_reference.py \
+  --canary lab/release-audit/runs/task145-20261105/http-candidate5/canary/result.json \
+  --independent lab/release-audit/runs/task145-20261105/http-candidate5/independent/independent.json \
+  --out target/task145-review/replayed-reference.json
+```
+
 ## Consumer adapter handoff
 
 The complete [adapter.patch](adapter.patch) targets gigastt commit
@@ -121,13 +142,18 @@ The current nine-file patch SHA-256 is
 `82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968`;
 it was independently reapplied to the exact base and all nine files matched.
 
-Apply to a clean checkout at that exact consumer base:
+Verify the complete patch against that exact consumer base. The default command
+reads immutable base blobs and applies the patch in a temporary directory;
+the consumer's working files are untouched. It checks patch SHA/size, the full
+changed-file set and all resulting file hashes, rather than trusting historical
+`apply_check` flags in the manifest:
 
 ```sh
-cd /path/to/gigastt-at-49faef1
-git apply --check /path/to/syom/lab/consume/gigastt/adapter.patch
-git apply /path/to/syom/lab/consume/gigastt/adapter.patch
+python3 lab/consume/gigastt/check_handoff.py --consumer /path/to/gigastt-at-49faef1
 ```
+
+Add `--apply` to apply the verified bytes to the consumer. That mode also
+requires a clean tracked and untracked working tree and rechecks its base.
 
 This handoff does not publish a crate, switch the default backend, or merge the
 downstream PR. Those actions remain separate from local qualification.

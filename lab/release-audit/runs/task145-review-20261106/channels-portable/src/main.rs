@@ -1,0 +1,226 @@
+//! Native-only selected-plane proof. No ASR, resampler, or public engine shim.
+#![allow(dead_code)]
+use anyhow::{Context, Result};
+use std::io::{Cursor, Write};
+
+#[derive(Debug, PartialEq)]
+struct Block {
+    frames: usize,
+    rate: u32,
+    channels: usize,
+    bits: Vec<u32>,
+}
+
+mod audio {
+    pub mod stream {
+        #[derive(Clone, Copy)]
+        pub enum ChannelSelect { Mono, One(usize) }
+    }
+    pub mod aac {
+        use super::stream::ChannelSelect;
+        use syom::{AacError, DecodeOptions, Frame};
+        const MAX_SAMPLE_RATE: u32 = 192_000;
+        const BATCH_FRAMES: usize = 24 * 1024;
+        pub struct AacBlock { frames: usize, samples: Vec<f32>, rate: u32, channels: usize }
+        #[derive(Debug)]
+        enum GigasttError { AudioTooLong { observed_secs: f64, limit_secs: f64 } }
+        impl std::fmt::Display for GigasttError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{self:?}") }
+        }
+        impl std::error::Error for GigasttError {}
+        #[path = "/home/ekhodzitsky/Projects/syom/target/task145-review/channels-portable/src/snapshot/aac/buffered.rs"] mod buffered;
+        #[path = "/home/ekhodzitsky/Projects/syom/target/task145-review/channels-portable/src/snapshot/aac/input.rs"] mod input;
+        #[path = "/home/ekhodzitsky/Projects/syom/target/task145-review/channels-portable/src/snapshot/aac/pull.rs"] mod pull;
+        #[path = "/home/ekhodzitsky/Projects/syom/target/task145-review/channels-portable/src/snapshot/aac/adts_pull.rs"] mod adts_pull;
+fn append_plane(out: &mut Vec<f32>, frame: &Frame<'_>, channel: ChannelSelect) {
+    match channel {
+        ChannelSelect::One(index) => {
+            if let Some(plane) = frame.planar.get(index) {
+                out.extend_from_slice(plane);
+            }
+        }
+        ChannelSelect::Mono => append_mono_planes(out, frame.planar),
+    }
+}
+
+fn stream_options(max_audio_secs: Option<f64>) -> DecodeOptions {
+    let mut opts = DecodeOptions::unbounded().with_max_sample_rate(MAX_SAMPLE_RATE);
+    if let Some(secs) = max_audio_secs.filter(|secs| secs.is_finite() && *secs > 0.0) {
+        opts = opts.with_max_duration_secs(secs);
+    }
+    opts
+}
+
+fn map_aac(error: AacError) -> anyhow::Error {
+    match error {
+        AacError::TooLong {
+            observed_secs,
+            max_secs,
+        } => GigasttError::AudioTooLong {
+            observed_secs,
+            limit_secs: max_secs,
+        }
+        .into(),
+        other => other.into(),
+    }
+}
+
+// Preserve the existing add-then-divide order, with one output pass for stereo.
+// Unequal planes retain the defensive historical zip behavior.
+fn append_mono_planes(out: &mut Vec<f32>, planes: &[&[f32]]) {
+    if let [mono] = planes {
+        out.extend_from_slice(mono);
+        return;
+    }
+    if let [left, right] = planes
+        && left.len() == right.len()
+    {
+        out.extend(left.iter().zip(*right).map(|(a, b)| (*a + *b) / 2.0));
+        return;
+    }
+    let Some(first) = planes.first() else { return };
+    let start = out.len();
+    out.extend_from_slice(first);
+    for plane in planes.iter().skip(1) {
+        for (sample, value) in out[start..].iter_mut().zip(plane.iter()) {
+            *sample += value;
+        }
+    }
+    let count = planes.len() as f32;
+    for sample in &mut out[start..] {
+        *sample /= count;
+    }
+}
+
+        pub fn collect(path: &str, transport: &str, kind: &str, index: usize) -> anyhow::Result<Vec<crate::Block>> {
+            let mut reader = match kind {
+                "file" => input::Reader::File(std::fs::File::open(path)?),
+                "bytes" => input::Reader::bytes(bytes::Bytes::from(std::fs::read(path)?)),
+                _ => anyhow::bail!("unknown reader"),
+            };
+            enum Source { M4a(pull::Pull), Adts(adts_pull::AdtsPull<input::Reader>) }
+            let mut source = match transport {
+                "m4a" => Source::M4a(pull::try_open(&mut reader, ChannelSelect::One(index), None)?
+                    .ok_or_else(|| anyhow::anyhow!("M4A unexpectedly fell through"))?),
+                "adts" => Source::Adts(adts_pull::AdtsPull::new(reader, ChannelSelect::One(index), None)),
+                _ => anyhow::bail!("unknown transport"),
+            };
+            let mut next = || match &mut source { Source::M4a(s) => s.recv(), Source::Adts(s) => s.recv() };
+            let mut out = Vec::new();
+            while let Some(block) = next()? {
+                anyhow::ensure!(block.samples.iter().all(|x| x.is_finite()), "nonfinite selected PCM");
+                out.push(crate::Block { frames: block.frames, rate: block.rate, channels: block.channels,
+                    bits: block.samples.into_iter().map(f32::to_bits).collect() });
+            }
+            for _ in 0..3 { anyhow::ensure!(next()?.is_none(), "EOF was not terminal"); }
+            anyhow::ensure!(!out.is_empty(), "source must retain native geometry even for a missing plane");
+            Ok(out)
+        }
+    }
+}
+
+fn bare(bytes: Vec<u8>) -> Result<Vec<u8>> {
+    if !bytes.starts_with(b"ID3") { return Ok(bytes); }
+    anyhow::ensure!(bytes.len() >= 10 && bytes[6..10].iter().all(|b| b & 128 == 0), "ID3 header");
+    let size = bytes[6..10].iter().fold(0usize, |n, b| (n << 7) | usize::from(*b));
+    let at = 10 + size + if bytes[5] & 16 != 0 { 10 } else { 0 };
+    anyhow::ensure!(at <= bytes.len(), "ID3 extent");
+    Ok(bytes[at..].to_vec())
+}
+
+fn generate(directory: &str) -> Result<()> {
+    std::fs::create_dir_all(directory)?;
+    let mut fixtures = Vec::new();
+    for (profile, channels) in [("lc-mono", 1), ("lc-stereo", 2), ("he", 2), ("ps", 2)] {
+        let planes: Vec<Vec<f32>> = (0..channels).map(|channel| (0..96_013).map(|i| {
+            let t = i as f32 / 48_000.0;
+            let frequency = if channel == 0 { 211.0 } else { 713.0 };
+            0.2 * (t * frequency * std::f32::consts::TAU).sin()
+                + 0.04 * (t * (43.0 + 54.0 * channel as f32) * std::f32::consts::TAU).sin()
+        }).collect()).collect();
+        for transport in ["m4a", "adts"] {
+            let options = if transport == "m4a" { syom::EncodeOptions::m4a() } else { syom::EncodeOptions::adts() };
+            let options = match profile {
+                "he" => options.with_he(true).with_bitrate_bps(64_000),
+                "ps" => options.with_he_v2(true).with_bitrate_bps(32_000),
+                _ => options.with_bitrate_bps(if channels == 1 { 64_000 } else { 96_000 }),
+            };
+            let encoded = syom::encode_with(&planes, 48_000, &options)?;
+            let encoded = if transport == "adts" { bare(encoded)? } else { encoded };
+            let path = std::path::Path::new(directory).join(format!("{profile}.{transport}"));
+            std::fs::write(&path, &encoded)?;
+            fixtures.push(serde_json::json!({"profile":profile,"transport":transport,"path":path,
+                "generated_input_samples":96_013,"generated_input_channels":channels}));
+        }
+    }
+    println!("{}", serde_json::to_string(&fixtures)?);
+    Ok(())
+}
+
+fn oracle(data: &[u8], transport: &str, index: usize, profile: &str) -> Result<(Vec<Block>, usize)> {
+    let mut out = Vec::new();
+    let mut pending: Option<Block> = None;
+    let mut differences = 0usize;
+    let expected_channels = if profile == "lc-mono" { 1 } else { 2 };
+    let expected_core_rate = if profile == "he" || profile == "ps" { 24_000 } else { 48_000 };
+    let mut callback = |frame: syom::Frame<'_>| -> syom::Result<()> {
+        assert_eq!((frame.sample_rate, frame.planar.len()), (48_000, expected_channels));
+        assert_eq!((frame.meta.core_rate, frame.meta.output_rate), (expected_core_rate, 48_000));
+        assert!(frame.planar.iter().all(|plane| plane.iter().all(|sample| sample.is_finite())));
+        if let [left, right] = frame.planar {
+            differences += left.iter().zip(*right).filter(|(a,b)| a.to_bits() != b.to_bits()).count();
+        }
+        let block = pending.get_or_insert_with(|| Block { frames: 0, rate: frame.sample_rate,
+            channels: frame.planar.len(), bits: Vec::new() });
+        block.frames += frame.samples;
+        // Independent oracle: no production append_plane, downmix, or selector helper.
+        if let Some(plane) = frame.planar.get(index) { block.bits.extend(plane.iter().map(|x| x.to_bits())); }
+        if block.frames >= 24 * 1024 { out.push(pending.take().unwrap()); }
+        Ok(())
+    };
+    let options = syom::DecodeOptions::unbounded().with_max_sample_rate(192_000);
+    match transport {
+        "m4a" => { syom::M4aSeek::open(Cursor::new(data), options)?.decode(&mut callback)?; }
+        "adts" => { let mut decoder = syom::Decoder::new(options); decoder.feed(data, &mut callback)?; decoder.finish(&mut callback)?; }
+        _ => anyhow::bail!("unknown transport"),
+    }
+    if let Some(block) = pending { out.push(block); }
+    anyhow::ensure!(!out.is_empty(), "empty oracle");
+    anyhow::ensure!(expected_channels == 1 || differences > 0, "stereo fixture is accidentally dual mono");
+    Ok((out, differences))
+}
+
+fn dump(path: &str, blocks: &[Block]) -> Result<()> {
+    let mut file = std::io::BufWriter::new(std::fs::File::create(path)?);
+    for block in blocks {
+        file.write_all(&(block.frames as u64).to_le_bytes())?;
+        file.write_all(&block.rate.to_le_bytes())?;
+        file.write_all(&(block.channels as u64).to_le_bytes())?;
+        file.write_all(&(block.bits.len() as u64).to_le_bytes())?;
+        for bits in &block.bits { file.write_all(&bits.to_le_bytes())?; }
+    }
+    file.flush()?;
+    Ok(())
+}
+
+fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("generate") { return generate(args.get(2).context("fixture directory")?); }
+    anyhow::ensure!(args.len() == 8 && args[1] == "check", "check fixture profile transport file|bytes index output-prefix");
+    let index: usize = args[6].parse()?;
+    let data = std::fs::read(&args[2])?;
+    let (expected, differences) = oracle(&data, &args[4], index, &args[3])?;
+    let actual = audio::aac::collect(&args[2], &args[4], &args[5], index)?;
+    anyhow::ensure!(actual == expected, "native block geometry or selected-plane bits differ");
+    let present = index < actual[0].channels;
+    anyhow::ensure!(actual.iter().all(|b| if present { b.bits.len() == b.frames } else { b.bits.is_empty() }), "missing-plane semantics");
+    dump(&format!("{}.oracle", args[7]), &expected)?;
+    dump(&format!("{}.actual", args[7]), &actual)?;
+    println!("{}", serde_json::json!({"pass":true,"profile":args[3],"transport":args[4],"reader":args[5],
+        "index":index,"selected_channel_present":present,"terminal_eof_polls":3,"different_bits":0,
+        "stereo_samples_proven_different":differences,
+        "native_frames":actual.iter().map(|b|b.frames).sum::<usize>(),
+        "selected_samples":actual.iter().map(|b|b.bits.len()).sum::<usize>(),
+        "geometry":actual.iter().map(|b|(b.frames,b.rate,b.channels,b.bits.len())).collect::<Vec<_>>() }));
+    Ok(())
+}

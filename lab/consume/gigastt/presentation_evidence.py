@@ -9,11 +9,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import subprocess
 import wave
 
-from http_reference import MODEL_SHA, ORT_SHA, HUMAN_SHA, CASE_IDS, digest
+from http_contract import CORPUS_SHA256, MODEL_FILES, MODEL_SHA, ORT_SHA, HUMAN_SHA, digest, index_cases
 from run_http_canary import normalized
 from mp4_clocks import CLOCK_CASES, clock_evidence
 
@@ -24,21 +23,23 @@ def main():
                  'ort', 'canary', 'manifest', 'out']:
         parser.add_argument('--' + flag, type=Path, required=True)
     args = parser.parse_args()
-    args.out.mkdir(parents=True, exist_ok=True)
+    if args.out.exists():
+        parser.error('choose a fresh output directory; prior attempts are retained')
+    args.out.mkdir(parents=True)
     dest = args.out / 'independent.json'
-    if dest.exists():parser.error('choose a new output directory; existing evidence is retained')
-    model_files = {name: digest(args.model_dir / name) for name in [
-        'v3_rnnt_encoder_int8.onnx', 'v3_rnnt_decoder.onnx', 'v3_rnnt_joint.onnx', 'v3_vocab.txt']}
-    if model_files['v3_rnnt_encoder_int8.onnx'] != MODEL_SHA or digest(args.ort) != ORT_SHA:
+    model_files = {name: digest(args.model_dir / name) for name in MODEL_FILES}
+    if model_files != MODEL_FILES or digest(args.ort) != ORT_SHA:
         parser.error('model/runtime differs from the pinned current 305 MiB campaign')
     canary = json.loads(args.canary.read_text())
     cases = json.loads(args.manifest.read_text())
-    by_id = {c['id']: c for c in cases}
-    observed = {c['id']: c for c in canary['cases']}
-    if set(observed) != CASE_IDS or set(by_id) != CASE_IDS or len(cases) != 32:
-        parser.error('canary and manifest differ from the pinned 32-case corpus')
+    try:
+        by_id = index_cases(cases, 'manifest')
+        observed = index_cases(canary['cases'], 'canary')
+    except ValueError as error:
+        parser.error(str(error))
     for row in cases:
-        if digest(row['path']) != observed[row['id']]['sha256']:
+        if (digest(row['path']) != CORPUS_SHA256[row['id']]
+                or observed[row['id']]['sha256'] != CORPUS_SHA256[row['id']]):
             parser.error('input changed after canary')
     for name in ['baseline', 'candidate']:
         command = canary['instances'][name]['command']

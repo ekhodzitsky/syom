@@ -449,3 +449,29 @@ compiler/binary/source hashes and freeze comparison are in
 The generator output was verified identical to the tested harness except its
 snapshot paths; generated Cargo files and all source/fixture hash maps matched.
 Preparation and this promotion ran no additional builds or decodes.
+
+## Native selected-channel differential
+
+The post-qualification proof adds `One(0)`, `One(1)` and missing-channel
+coverage for the frozen synchronous M4A and bare-ADTS producers. Eight generated
+LC mono/stereo, HE and PS fixtures run from File and Bytes, for 48 cells. The
+oracle indexes real SDK planar frames directly, without `append_plane`, and
+compares original 24,576-frame block geometry and full sample-bit hashes.
+Stereo inputs are required to produce different channel data. Missing channels
+retain the historical empty-selected-plane behavior and terminal EOF remains
+stable. This is native producer coverage, not public ASR/resampler/budget proof.
+
+Preparation defaults to the committed consumer snapshot, verifies its hashes
+and needs no ignored consumer checkout or build. Output must be fresh:
+
+```sh
+python3 lab/consume/gigastt/profile/prepare_channel_selection.py \
+  --output target/task145-review/selected-channel-repro
+```
+
+Add `--execute` for the isolated native build and 48-cell run. Execution uses
+the qualified Rust 1.98.1 compiler, locked offline dependencies and SDK Git
+revision `3e540231c9d71e3534be1ef856a91cf419efaead`; its dependencies must
+already be cached. The runner uses CPUs 14–17/jobs 2 and records commands,
+source/fixture hashes and result logs. Generated media and native dumps stay
+in ignored output, outside Git. This proof runs after timing campaigns.
