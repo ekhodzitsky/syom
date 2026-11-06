@@ -4,7 +4,8 @@ The combined candidate completed local qualification: native PCM parity,
 consumer checks, two preregistered six-case timing confirmations on CPU 1,
 and the current-model HTTP/load/fault policy. The original CPU 0 scan failure
 and raw HTTP equality failure remain in the [audit](../../release-audit/TASK145.md).
-This is Linux x86_64 evidence for an unpublished syom 0.10.1 candidate.
+These Linux x86_64 measurements used an unpublished syom 0.10.1 candidate;
+[registry publication](../../release-audit/RELEASE-0.10.1.md) is recorded separately.
 
 The [post-qualification review](../../release-audit/TASK145-REVIEW.md) records
 the subsequent tooling refactor. `http_contract.py` holds exact duration

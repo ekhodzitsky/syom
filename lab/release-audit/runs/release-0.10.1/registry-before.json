@@ -1,0 +1,12 @@
+{
+  "checked_utc": "2026-11-06T10:43:46.029241+00:00",
+  "url": "https://crates.io/api/v1/crates/syom/0.10.1",
+  "status": 404,
+  "response": {
+    "errors": [
+      {
+        "detail": "crate `syom` does not have a version `0.10.1`"
+      }
+    ]
+  }
+}

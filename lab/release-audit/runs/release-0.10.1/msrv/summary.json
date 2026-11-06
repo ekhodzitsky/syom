@@ -1,0 +1,58 @@
+{
+  "completed_utc": "2026-11-06T10:51:04.915292+00:00",
+  "pass": true,
+  "checks": {
+    "workspace": {
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 1186 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 76.15s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 20.00s"
+      ],
+      "log_sha256": "e73197689efcfa862ffa0032d27ffb296977ae73ccdec3999be24b1b450b360b"
+    },
+    "doc": {
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.39s"
+      ],
+      "log_sha256": "5feabc3f2f10da1b7c2a3ad615b8bbdbc14267472f9c0935d015f850cef68652"
+    },
+    "release-cold-stack": {
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+      ],
+      "log_sha256": "e0debf04e2cf4f77d00aea47869d9a2501b32da95da2bb6a62b0b856d0f22a7d"
+    },
+    "release-imdct": {
+      "exit_code": 0,
+      "test_results": [
+        "test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 1184 filtered out; finished in 0.08s"
+      ],
+      "log_sha256": "9dabdca5e10357cc446920e9aa709f1b7d50aec23fb207f2ac71d1f713d6056e"
+    }
+  },
+  "cold_stack_profiles": [
+    "lc",
+    "he1",
+    "he2",
+    "implicit-ps",
+    "mc",
+    "ld"
+  ],
+  "cold_stack_optimized_bytes": 131072,
+  "scope": "FreshLinuxx86_64 Rust1.89 releasepreparation qualification; no package/registry/fuzz/model/consumer actions",
+  "source_guard": {
+    "checked_files": 327,
+    "changed": [],
+    "runtime_unchanged": true
+  },
+  "host_isa": {
+    "sse2": true,
+    "avx": true,
+    "avx512f": true
+  },
+  "release_bit_regression_pass": true
+}

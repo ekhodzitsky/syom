@@ -7,14 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.10.1] - Unreleased
+## [0.10.1] - 2026-11-06
 
 ### Changed
 
 - Vectorize the first two radix-2 FFT stages on x86 AVX-512 while preserving
   the existing scalar multiplication, addition and subtraction order. Local
-  native-decoder comparisons retain identical PCM bits and presentation geometry;
-  this candidate has not been published.
+  native-decoder comparisons retain identical PCM bits and presentation geometry.
+- Persistent checkpoints retain their existing codec-version binding. Recreate
+  cached checkpoint blobs when upgrading from 0.10.0 to 0.10.1; cross-version
+  restoration remains unsupported by the documented contract.
 
 ### Added
 
@@ -1182,7 +1184,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/syom/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/ekhodzitsky/syom/compare/v0.10.0...v0.10.1
+[0.10.0]: https://github.com/ekhodzitsky/syom/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/ekhodzitsky/syom/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/ekhodzitsky/syom/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/ekhodzitsky/syom/compare/v0.7.1...v0.8.0

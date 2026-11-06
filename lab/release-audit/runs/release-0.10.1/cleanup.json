@@ -1,0 +1,108 @@
+{
+  "started_utc": "2026-11-06T10:49:18.008516+00:00",
+  "protected": [
+    "all Git worktrees",
+    "raw successful/failed measurements",
+    "recordings and original models",
+    "consumer and current MSRV targets",
+    "current package"
+  ],
+  "entries": [
+    {
+      "path": "target/debug/incremental",
+      "kind": "rebuildable Cargo cache",
+      "allocated_bytes": 3519926272,
+      "logical_bytes": 3809459782,
+      "files": 5778
+    },
+    {
+      "path": "target/llvm-cov-target",
+      "kind": "rebuildable Cargo cache",
+      "allocated_bytes": 521474048,
+      "logical_bytes": 587789982,
+      "files": 703
+    },
+    {
+      "path": "target/package/syom-0.9.0/target",
+      "kind": "rebuildable Cargo cache",
+      "allocated_bytes": 534745088,
+      "logical_bytes": 604021720,
+      "files": 962
+    },
+    {
+      "path": "target/package/syom-0.10.0/target",
+      "kind": "rebuildable Cargo cache",
+      "allocated_bytes": 535838720,
+      "logical_bytes": 605178025,
+      "files": 962
+    },
+    {
+      "path": "target/task145/http-candidate5/load/watchdog-baseline/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-79452cd3edd4c27818e6078a6c4df6f096e1101c3637412896a8db62d20464f5_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320114688,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/load/queue-cancel-baseline/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-79452cd3edd4c27818e6078a6c4df6f096e1101c3637412896a8db62d20464f5_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/load/load-candidate/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/load/queue-cancel-candidate/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-79452cd3edd4c27818e6078a6c4df6f096e1101c3637412896a8db62d20464f5_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/load/watchdog-candidate/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-79452cd3edd4c27818e6078a6c4df6f096e1101c3637412896a8db62d20464f5_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/load/load-baseline/cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/canary/cache/candidate/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320118784,
+      "logical_bytes": 320112408,
+      "files": 1
+    },
+    {
+      "path": "target/task145/http-candidate5/canary/cache/baseline/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort",
+      "kind": "generated ORT cache",
+      "allocated_bytes": 320114688,
+      "logical_bytes": 320112408,
+      "files": 1
+    }
+  ],
+  "free_bytes_before": 114927943680,
+  "status": "complete",
+  "finished_utc": "2026-11-06T10:49:18.172624+00:00",
+  "free_bytes_after": 122569437184,
+  "removed_allocated_bytes": 7672926208,
+  "observed_free_delta_bytes": 7641493504,
+  "pruned_missing_worktree_metadata": "Removing worktrees/syom-short-cache-work: gitdir file points to non-existent location\nRemoving worktrees/syom-short-sf: gitdir file points to non-existent location\nRemoving worktrees/syom-tns-ablation: gitdir file points to non-existent location\nRemoving worktrees/syom-guard-candidate: gitdir file points to non-existent location\nRemoving worktrees/syom-startup-math: gitdir file points to non-existent location\nRemoving worktrees/syom-lc-base-worktree: gitdir file points to non-existent location\nRemoving worktrees/syom-guard-baseline: gitdir file points to non-existent location\nRemoving worktrees/syom-dense-psy: gitdir file points to non-existent location\n",
+  "pruned_commits_remain_reachable_from_main": [
+    "4d44195cc7c5b13ea0b39eacb0ac58606f8d4ca1",
+    "e8ceb7eb4ed31220ae7b2f3995d4ef52e5983920"
+  ],
+  "all_four_existing_worktrees_retained": true
+}

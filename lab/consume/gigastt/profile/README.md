@@ -6,7 +6,7 @@ median paired limit, PCM qualification, or model-backed HTTP/load checks. They
 never load an ASR model. Nothing in this directory is linked into the syom
 product crate or its ordinary tests.
 
-Current path dependencies and generator lock templates follow the unpublished
+Current path dependencies and generator lock templates follow the
 0.10.1 checkout. The historical attribution and cold-stack results below used
 0.10.0 sources; rerunning against this checkout produces new evidence and must
 retain its own source manifest. Published 0.10.0 remains the registry baseline.
@@ -376,7 +376,9 @@ objdump -d -C --no-show-raw-insn --start-address=0xd90c0 --stop-address=0xd96d7 
 ```
 
 Original commands, source/binary hashes, captured maps, region counts, numeric
-ELF-offset histogram and disassembly remain under `target/task145/sigprof`.
+ELF-offset histogram and disassembly are retained in the
+[committed sampling archive](../../../release-audit/runs/task145-20261105/sigprof/).
+New local sampling output belongs under `target/task145/sigprof`.
 The ignored `.so` and binary RIP stream are local evidence, never package or Git
 artifacts. If this fallback is unsupported, retain the failure and use an owned
 child debugger sampling session; do not relax host security policy.
@@ -444,8 +446,9 @@ The original Linux x86_64 Rust 1.98.1 run passed **8/8** fresh processes. Per-re
 native counts were LC 13,312; HE1 32,768; PS 53,248; implicit PS 18,432, all with
 zero cold/warm bit or geometry differences. HE1 and PS also cross logical batch
 boundaries. Raw per-cell logs, exact commands, original/bare fixture hashes,
-compiler/binary/source hashes and freeze comparison are in
-`target/task145/adts-cold-stack/{results.json,provenance.json,source-manifest.json}`.
+compiler/binary/source hashes and freeze comparison are in the
+[committed cold-stack archive](../../../release-audit/runs/task145-20261105/adts-cold-stack/).
+Local reruns use a fresh directory under `target/`.
 The generator output was verified identical to the tested harness except its
 snapshot paths; generated Cargo files and all source/fixture hash maps matched.
 Preparation and this promotion ran no additional builds or decodes.

@@ -12,30 +12,24 @@ directly to your application at the native sample rate.
 [![MIT license](https://img.shields.io/badge/license-MIT-blue?style=flat)](LICENSE)
 [![Published API documentation](https://img.shields.io/docsrs/syom?style=flat)](https://docs.rs/syom)
 
-Published **0.10.0** adds qualified persistent LC state and strict M4A
-completion; see the [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
-
-This checkout is **0.10.1, an unpublished performance candidate** with an
-x86 AVX-512 FFT optimization. Local qualification and consumer results are
-recorded in the [candidate evaluation](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/TASK145.md);
-the registry quick start below remains on published 0.10.0.
-
-To evaluate the source candidate, pin its qualified library revision:
-
-```toml
-syom = { git = "https://github.com/ekhodzitsky/syom", rev = "3e540231c9d71e3534be1ef856a91cf419efaead", version = "=0.10.1" }
-```
+Version **0.10.1** optimizes the first two AVX-512 FFT stages while preserving
+the existing floating-point operation order and decoded PCM bits. API,
+dependencies and Rust minimum are unchanged. See the
+[release verification](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/RELEASE-0.10.1.md)
+and [consumer evaluation](https://github.com/ekhodzitsky/syom/blob/main/lab/release-audit/TASK145.md).
+Persistent LC state and strict M4A completion, introduced in 0.10.0, retain
+their [checkpoint contract](https://github.com/ekhodzitsky/syom/blob/main/docs/persistent-checkpoints.md).
 
 ## Quick start
 
-Requires Rust **1.89+**. Cargo downloads the **0.10.0** crate (`syom = "0.10"`);
+Requires Rust **1.89+**. The example pins **0.10.1** (`syom = "0.10"` also accepts it);
 the example generates its own audio and needs no media files or native
 codec installation.
 
 ```sh
 cargo new syom-demo --bin
 cd syom-demo
-cargo add syom@0.10.0
+cargo add syom@0.10.1
 ```
 
 Replace `src/main.rs` with:
@@ -101,10 +95,11 @@ preserve unfavorable cases. [BENCH.md](BENCH.md) retains older results.
 
 ## Status and limits
 
-Release **0.10.0** adds persistent AAC-LC state for qualified mono-output
-restart and strict M4A presentation completion. Callers authenticate the saved
+Version **0.10.1** changes the AVX-512 FFT implementation. Persistent AAC-LC
+state for qualified mono-output restart and strict M4A presentation completion
+remain available since 0.10.0. Callers authenticate the saved
 state and bind it to the source and exact build. Budgeted exact seeking keeps
-its prefix-replay contract. The [API guide](https://docs.rs/syom/0.10.0/syom/guide/)
+its prefix-replay contract. The [API guide](https://docs.rs/syom/0.10.1/syom/guide/)
 explains eligibility, migration and replay limits.
 
 Version, downloads and docs badges describe the registry; CI shows the

@@ -1,0 +1,9 @@
+   Compiling syom v0.10.1 (/home/ekhodzitsky/Projects/syom)
+    Finished `release` profile [optimized] target(s) in 12.22s
+     Running tests/cold_stack.rs (target/task145/upstream-msrv-target/release/deps/cold_stack-0162676e86403b73)
+
+running 1 test
+test cold_decode_on_small_stack ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

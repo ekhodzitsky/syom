@@ -1,0 +1,78 @@
+[
+  {
+    "label": "workspace",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--workspace",
+      "--lib",
+      "--tests"
+    ],
+    "exit_code": 0,
+    "seconds": 131.13678779399993,
+    "log": "workspace.log"
+  },
+  {
+    "label": "doc",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--doc"
+    ],
+    "exit_code": 0,
+    "seconds": 4.207416537999961,
+    "log": "doc.log"
+  },
+  {
+    "label": "release-cold-stack",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--test",
+      "cold_stack"
+    ],
+    "exit_code": 0,
+    "seconds": 12.265294198999982,
+    "log": "release-cold-stack.log"
+  },
+  {
+    "label": "release-imdct",
+    "command": [
+      "taskset",
+      "-c",
+      "8-11",
+      "cargo",
+      "+1.89.0",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--lib",
+      "imdct",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "seconds": 71.00571043500008,
+    "log": "release-imdct.log"
+  }
+]

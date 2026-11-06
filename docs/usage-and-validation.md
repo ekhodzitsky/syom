@@ -1,7 +1,10 @@
 # Usage and validation
 
 This page keeps integration detail separate from the root quick start.
-The recommended registry dependency is syom 0.10.0 (`syom = "0.10"`).
+The 0.10.1 quick start uses `syom = "0.10"`; this patch optimizes AVX-512 FFT
+stages without changing the API, dependencies or Rust minimum. Its
+[release verification](../lab/release-audit/RELEASE-0.10.1.md) records publication
+separately from local qualification.
 Exact interval planning and logical seek positions were introduced in
 0.9.0; the existing `seek` API remains available. Version 0.10.0 adds
 [persistent LC state and strict completion](persistent-checkpoints.md).

@@ -1,5 +1,8 @@
 # syom 0.8 production readiness audit
 
+The current [0.10.1 release verification](RELEASE-0.10.1.md) is recorded
+separately from this historical audit and the earlier release receipts below.
+
 Version [0.10.0 / TASK-144](TASK144.md) has local persistent-state and strict
 completion qualification. [Release preparation and registry verification](#release-0100)
 are recorded separately; historical candidate reports retain their original status.
@@ -8,6 +11,7 @@ are recorded separately; historical candidate reports retain their original stat
 
 | Status | Evidence |
 |---|---|
+| 0.10.1 release preparation; publication recorded separately | [Release checks and receipt](RELEASE-0.10.1.md) |
 | 0.10.0 published release, qualified on Linux x86_64 | [Release preflight and registry receipt](#release-0100) |
 | 0.9.0 published release, qualified on Linux x86_64 | [Publication and archive verification](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |

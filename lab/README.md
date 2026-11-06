@@ -1,5 +1,15 @@
 # Offline native comparison lab
 
+The [0.10.1 release verification](release-audit/RELEASE-0.10.1.md) is the current
+release entry point. Its [consumer qualification](release-audit/TASK145.md) and
+[subsequent audit](release-audit/TASK145-REVIEW.md) preserve successful and failed
+measurements, including CPU 0 variability and the raw HTTP equality failure.
+The downstream adapter patch is a separate handoff, not a consumer deployment.
+
+[Published 0.10.0](release-audit/REPORT.md#release-0100) adds persistent LC state
+and strict M4A completion. The older publications and measurements below keep
+their original versions and qualification scope.
+
 [syom 0.9.0 is published](release-audit/REPORT.md#release-090), with verified
 registry/archive checksum and release source/tag. Its
 [cold-start qualification](release-audit/REPORT.md#candidate-090--cold-start-fix),

@@ -1,0 +1,7 @@
+syom persistent checkpoint mutation TASK-144
+seed 1012
+iters 317016
+accepted 175774
+rejected 141242
+wall_ms 30000
+panics 0

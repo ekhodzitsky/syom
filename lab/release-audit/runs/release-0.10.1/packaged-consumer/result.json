@@ -1,0 +1,24 @@
+{
+  "command": [
+    "taskset",
+    "-c",
+    "2-7",
+    "python3",
+    "lab/consume/run.py"
+  ],
+  "started_utc": "2026-11-06T10:53:17.053341+00:00",
+  "seconds": 17.72845312100003,
+  "exit_code": 0,
+  "compiler": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7\n",
+  "environment": {
+    "RUSTUP_TOOLCHAIN": "1.89.0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "CARGO_TARGET_DIR": "unset for packaged-consumer runner",
+  "package_sha256": "d14604b79b58b48544c71b7350f4d50f7569c06fb933272435e0c00fac0495ac",
+  "package_bytes": 469498,
+  "package_status": "dirty release-preparation package, not upload artifact",
+  "log": "consumer.log"
+}

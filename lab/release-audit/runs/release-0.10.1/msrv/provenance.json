@@ -1,0 +1,14 @@
+{
+  "started_utc": "2026-11-06T10:47:01.069033+00:00",
+  "compiler": "rustc 1.89.0 (29483883e 2025-08-04)\nbinary: rustc\ncommit-hash: 29483883eed69d5fb4db01964cdf2af4d86e9cb2\ncommit-date: 2025-08-04\nhost: x86_64-unknown-linux-gnu\nrelease: 1.89.0\nLLVM version: 20.1.7\n",
+  "source_commit": "989b3d4635e1b7e020d0b539182e450384f9ed1f",
+  "cpu_affinity": "8-11",
+  "jobs": 2,
+  "CARGO_TARGET_DIR": "/home/ekhodzitsky/Projects/syom/target/task145/upstream-msrv-target",
+  "runtime_identical_to_qualified_3e": true,
+  "runtime_sha256": {
+    "src/engine/imdct_avx512.rs": "677ae5d9140353e6d027086442d87bd6fb101880e24bfcdc723ec1d170eda188",
+    "src/engine/imdct.rs": "4e6f10582c3c3484d99cbf24f1c4fc455b0201bf4fd8089e1ffcf1d5227df61b"
+  },
+  "platform_scope": "Linuxx86_64only; nootherplatform qualification"
+}

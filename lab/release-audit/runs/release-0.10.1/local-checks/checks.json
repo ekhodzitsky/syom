@@ -1,0 +1,163 @@
+{
+  "started_utc": "2026-11-06T10:49:58.716267+00:00",
+  "source_commit": "989b3d4635e1b7e020d0b539182e450384f9ed1f",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Final release0.10.1 local checks after cache cleanup; runtime unchanged from qualified3e. No hosted CI.",
+  "environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.61,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.034,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.022,
+      "log": "check-2.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 6.814,
+      "log": "check-3.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 62.65,
+      "log": "check-4.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 1.415,
+      "log": "check-5.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.319,
+      "log": "check-6.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "lab/consume/gigastt",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.449,
+      "log": "check-7.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "lab/consume/gigastt/check_handoff.py",
+        "--consumer",
+        "target/task145/gigastt"
+      ],
+      "exit_code": 0,
+      "seconds": 0.137,
+      "log": "check-8.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "lab/consume/gigastt/http_reference.py",
+        "--canary",
+        "lab/release-audit/runs/task145-20261105/http-candidate5/canary/result.json",
+        "--independent",
+        "lab/release-audit/runs/task145-20261105/http-candidate5/independent/independent.json",
+        "--out",
+        "target/release-0.10.1/replayed-reference.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.05,
+      "log": "check-9.log"
+    }
+  ],
+  "package": {
+    "bytes": 469494,
+    "sha256": "c68cd91622ed64faf9de13205397bc2129908e90a39331a8d87046131b45bfeb",
+    "published": false
+  },
+  "finished_utc": "2026-11-06T10:51:19.242678+00:00",
+  "passed": true
+}
