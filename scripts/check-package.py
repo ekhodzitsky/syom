@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""TASK-99: audit the packaged crate (not the workspace manifest).
+"""TASK-99: audit the original product manifest and packaged library boundary.
 
-Checks, from `cargo package --list` and the normalized manifest cargo
-writes into the package:
+Checks the original manifest, `cargo package --list` and the normalized
+manifest cargo writes into the package:
 - only library sources, README, CHANGELOG, LICENSE and cargo's own files
   ship; no tests, goldens, benches, lab, corpus, backlog or tooling;
 - `[dependencies]` and `[build-dependencies]` are empty, there is no
@@ -30,8 +30,48 @@ def run(*args: str) -> str:
     return subprocess.run(args, cwd=ROOT, check=True, capture_output=True, text=True).stdout
 
 
+def manifest_errors(text: str, *, build_rs_present: bool = False,
+                    label: str = "manifest") -> list[str]:
+    """Check the product boundary semantically, including the original manifest."""
+    try:
+        manifest = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
+        return [f"{label}: invalid TOML: {error}"]
+    errors = []
+    package = manifest.get("package")
+    if not isinstance(package, dict):
+        errors.append(f"{label}: missing package table")
+        package = {}
+    for table in ("dependencies", "build-dependencies", "build_dependencies"):
+        dependencies = manifest.get(table, {})
+        if not isinstance(dependencies, dict):
+            errors.append(f"{label}: [{table}] must be a table")
+        elif dependencies:
+            errors.append(f"{label} has [{table}]: {sorted(dependencies)}")
+    if "links" in package:
+        errors.append(f"{label} sets package.links")
+    if "build" in package and package["build"] is not False:
+        errors.append(f"{label} sets package.build")
+    if "target" in manifest:
+        errors.append(f"{label} has target-specific tables")
+    if build_rs_present:
+        errors.append(f"{label} contains build.rs: native build step")
+    return errors
+
+
+def audit_failure(errors: list[str]) -> int:
+    print("FAIL: package audit")
+    for error in errors:
+        print(f"  - {error}")
+    return 1
+
+
 def main() -> int:
-    errors: list[str] = []
+    original = (ROOT / "Cargo.toml").read_text()
+    errors = manifest_errors(original, build_rs_present=(ROOT / "build.rs").exists(),
+                             label="root manifest")
+    if errors:
+        return audit_failure(errors)
     files = run("cargo", "package", "--list", "--allow-dirty").split()
     for f in files:
         if f in ALLOWED_TOP:
@@ -44,20 +84,15 @@ def main() -> int:
         errors.append("build.rs ships: native build step")
     subprocess.run(["cargo", "package", "--allow-dirty", "--no-verify"], cwd=ROOT,
                    check=True, capture_output=True)
-    meta = tomllib.loads((ROOT / "Cargo.toml").read_text())
+    meta = tomllib.loads(original)
     version = meta["package"]["version"]
     crate = ROOT / "target" / "package" / f"syom-{version}.crate"
     unpacked = ROOT / "target" / "package" / f"syom-{version}" / "Cargo.toml"
     subprocess.run(["tar", "-xzf", str(crate), "-C", str(crate.parent)], check=True)
     packed = tomllib.loads(unpacked.read_text())
-    for table in ("dependencies", "build-dependencies"):
-        if packed.get(table):
-            errors.append(f"packaged manifest has [{table}]: {sorted(packed[table])}")
-    for key in ("links", "build"):
-        if packed["package"].get(key):
-            errors.append(f"packaged manifest sets package.{key}")
-    if re.search(r"^\[target\.", unpacked.read_text(), re.M):
-        errors.append("packaged manifest has target-specific tables")
+    errors.extend(manifest_errors(unpacked.read_text(),
+                                  build_rs_present=(unpacked.parent / "build.rs").exists(),
+                                  label="packaged manifest"))
     # TASK-104: every shipped file is UTF-8 text (no binaries, fixtures or
     # comparator objects) and the MIT notice ships with it.
     for f in files:
@@ -85,10 +120,7 @@ def main() -> int:
     if size > CRATE_BUDGET_BYTES:
         errors.append(f"crate is {size} bytes (budget {CRATE_BUDGET_BYTES})")
     if errors:
-        print("FAIL: package audit")
-        for e in errors:
-            print(f"  - {e}")
-        return 1
+        return audit_failure(errors)
     print(f"OK: {len(files)} files, {size} bytes compressed (budget {CRATE_BUDGET_BYTES}), "
           f"rust-version {packed['package'].get('rust-version')}, no dependencies, no build script")
     return 0

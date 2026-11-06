@@ -10,6 +10,7 @@ Before committing code, run the applicable local checks:
 
 ```sh
 cargo fmt --check
+python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check-file-size.py
 python3 scripts/check-changelog.py
 cargo clippy --all-targets -- -D warnings
@@ -28,3 +29,8 @@ versioning, preserve historical measurements, and distinguish a validated
 candidate from a published release. Commit completed changes and push them
 as requested; publishing crates or deploying a consumer is a separate action.
 Do not commit recordings, model weights, binaries or ignored build output.
+
+Keep Git worktrees outside `target/` and other disposable build/cache directories.
+Move them with `git worktree move`, preserving uncommitted files; never clean a
+build directory that still contains a live worktree. See
+[repository layout](docs/repository-layout.md) for tracking and cleanup boundaries.

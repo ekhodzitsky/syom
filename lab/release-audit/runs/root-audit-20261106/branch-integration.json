@@ -1,0 +1,12 @@
+{
+  "branch": "cargo-update",
+  "branch_commit": "e520a0cc00214754bcb6aea301f0d1c0611c6390",
+  "integrated_commit": "cbfd5ddfe58198d31d7473d3fa5b4276dadcacb2",
+  "patch_id": "66455337ee9b9f1e7954ff8228469f59d795f70b",
+  "git_cherry_before": "- e520a0cc00214754bcb6aea301f0d1c0611c6390 Refresh compatible crate versions in Cargo.lock.\n",
+  "main_before": "569966c00ee513d8bd8a02a185dbd03414eab193",
+  "merge_record": "21c37a187df726947b0c1440179b37b037d92e91",
+  "tree_unchanged": true,
+  "all_working_changes_preserved": true,
+  "rationale": "Content was already squash-integrated; record original commit ancestry without replaying or downgrading files. Retire duplicate branch only after main push."
+}

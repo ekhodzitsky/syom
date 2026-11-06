@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Freeze oversized Rust modules behind exact, documented line ceilings instead
+  of filename-prefix exemptions. Validate the source and packaged Cargo
+  manifests semantically, replacing a comment-based dependency check; add
+  offline policy regressions and clarify repository tracking/worktree rules.
+- Ignore common local credential files and model weights while preserving
+  intentional codec fixtures and reproducibility evidence.
+
 - Reorganize the README and documentation index around a working example,
   integration choices and current release evidence. Correct the stale 0.9
   dependency constraints in the exact-seek guide; preserve dated comparisons

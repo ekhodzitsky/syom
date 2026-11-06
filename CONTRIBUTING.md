@@ -20,7 +20,10 @@ in pushed commit messages until the maintainer lifts that restriction.
   mobile labs have their own prerequisites and pins in [lab/](lab/README.md).
 
 Run commands from the repository root. Ordinary Cargo commands share the
-ignored root `target/`; reuse it across routine checks. Isolated lab
+ignored root `target/`; reuse it across routine checks. Keep live Git worktrees
+outside build/cache directories, for example in a sibling `.worktrees/`
+directory. Follow the [repository layout](docs/repository-layout.md) before
+cleaning or adding files. Isolated lab
 manifests may have their own target directory. Follow the lab's recorded
 `CARGO_TARGET_DIR`, toolchain and flags when reproducing a result. Do not
 run competing timing jobs together. When comparing different revisions
@@ -49,6 +52,7 @@ Linux results do not establish Windows, macOS or ARM parity.
 | Required local checks | [AGENTS.md](AGENTS.md#development-workflow) | Cargo writes build/test artifacts under `target/`; `cargo fmt --check` checks formatting without rewriting sources. |
 | Published README example | `python3 scripts/check-readme-example.py` and `--msrv` | Pins the stated registry version, builds a disposable app under `target/`, and checks actual stdout; optional `--offline` uses cached dependencies. Does not rewrite tracked files. |
 | Library-line coverage | `cargo llvm-cov --lib` with the [recorded exclusions](lab/baseline/COVERAGE.md#local-measurement-2026-11-02) | Requires cargo-llvm-cov and llvm-tools; creates instrumented output under `target/`. Keep source revision, metric and exclusions with retained reports. Not a hosted-CI run. |
+| Offline tooling tests | `python3 -m unittest discover -s scripts -p 'test_*.py'` | Exercises package, size, ignore and corpus/acquisition policies using synthetic local inputs. |
 | Package audit | `python3 scripts/check-package.py` | Builds and extracts `target/package/syom-<version>.crate`, runs packaged guide doctests; may update Cargo's index/cache. It does not publish. |
 | Verify corpus and provenance | `python3 scripts/verify_corpus.py`, `python3 scripts/verify_oracle_provenance.py` | Check committed inventories and fixture hashes; no regenerated manifest. See [corpus/README.md](corpus/README.md). |
 | Verify syntax inventory | `python3 scripts/verify_conformance_inventory.py` | Checks the committed conformance inventory; no ISO conformance certificate is produced. |

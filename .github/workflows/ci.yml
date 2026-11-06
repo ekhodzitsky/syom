@@ -53,6 +53,8 @@ jobs:
           path: host.txt
       - name: fmt
         run: cargo fmt --check
+      - name: offline Python policy tests
+        run: python -m unittest discover -s scripts -p 'test_*.py'
       - name: file size
         run: python scripts/check-file-size.py
       - name: changelog

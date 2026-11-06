@@ -18,6 +18,27 @@ __pycache__/
 *.swp
 coverage/
 lcov.info
+# Machine-local credentials. Templates must contain placeholders only.
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+credentials.json
+credentials.toml
+.credentials.json
+.credentials.toml
+*private*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+# Generated model/runtime weights belong in local caches, not this codec repo.
+*.onnx
+*.ort
+*.safetensors
+*.gguf
 *.wav
 *.flac
 *.mp3

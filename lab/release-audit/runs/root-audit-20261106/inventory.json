@@ -1,0 +1,142 @@
+{
+  "scope": "Tracked inventory before audit additions; no raw private file content recorded",
+  "tracked_files": 2378,
+  "tracked_bytes": 40584514,
+  "by_directory": {
+    "[root]": {
+      "files": 13,
+      "bytes": 125574
+    },
+    ".github": {
+      "files": 1,
+      "bytes": 2110
+    },
+    "benches": {
+      "files": 5,
+      "bytes": 48249
+    },
+    "corpus": {
+      "files": 47,
+      "bytes": 338078
+    },
+    "docs": {
+      "files": 8,
+      "bytes": 66785
+    },
+    "lab": {
+      "files": 1856,
+      "bytes": 30279393
+    },
+    "scripts": {
+      "files": 18,
+      "bytes": 143713
+    },
+    "src": {
+      "files": 427,
+      "bytes": 9563238
+    },
+    "tests": {
+      "files": 3,
+      "bytes": 17374
+    }
+  },
+  "root_files": [
+    ".gitattributes",
+    ".gitignore",
+    "AGENTS.md",
+    "BENCH.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "Cargo.lock",
+    "Cargo.toml",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "rust-toolchain.toml",
+    "rustfmt.toml"
+  ],
+  "largest_files": [
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate3-pin/initial-online-git-fetch.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate3/cargo-metadata.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate4/cargo-metadata.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate5-attempt1/cargo-metadata.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate5-initial-evidence/cargo-metadata.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate5/cargo-metadata.json",
+      "bytes": 1978049
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/http-candidate5/load/result.json",
+      "bytes": 981930
+    },
+    {
+      "path": "lab/release-audit/runs/http-load-0.8.1/result.json",
+      "bytes": 689678
+    },
+    {
+      "path": "lab/release-audit/runs/candidate-0.8.1/natural/kover-lc-adts/syom.json",
+      "bytes": 404788
+    },
+    {
+      "path": "lab/release-audit/runs/candidate-0.8.1/adts-rerun.json",
+      "bytes": 404173
+    },
+    {
+      "path": "lab/release-audit/runs/candidate-0.8.1/natural/kover-source/syom.json",
+      "bytes": 403804
+    },
+    {
+      "path": "lab/release-audit/runs/candidate-0.8.1/real-seek-before.json",
+      "bytes": 402176
+    },
+    {
+      "path": "src/goldens/ld64mus.fdk.s16",
+      "bytes": 387072
+    },
+    {
+      "path": "src/goldens/enc_mc71l.lavc.s16",
+      "bytes": 344064
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate5/preregistered-cpu1-campaign2/passive-observer.json",
+      "bytes": 293075
+    },
+    {
+      "path": "lab/release-audit/runs/task145-20261105/candidate5/preregistered-cpu1-campaign1/passive-observer.json",
+      "bytes": 292221
+    },
+    {
+      "path": "src/goldens/enc_mc71.lavc.s16",
+      "bytes": 262144
+    },
+    {
+      "path": "src/goldens/he2_48e.lavc.s16",
+      "bytes": 262144
+    },
+    {
+      "path": "src/goldens/mc71.s16",
+      "bytes": 262144
+    },
+    {
+      "path": "src/goldens/mc71p.s16",
+      "bytes": 262144
+    }
+  ],
+  "duplicate_payload_bytes": 11942065,
+  "duplicate_note": "Content duplicates are not necessarily waste; retain historical reports, Git deduplicates identical blobs."
+}

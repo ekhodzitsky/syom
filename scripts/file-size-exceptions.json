@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "exceptions": [
+    {
+      "path": "src/engine/crc.rs",
+      "max_lines": 521,
+      "reason": "Existing CRC polynomial arithmetic and error-protection parsing; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/extension_payload.rs",
+      "max_lines": 792,
+      "reason": "Existing Extension payload parser and encoder primitives; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/ps_data.rs",
+      "max_lines": 703,
+      "reason": "Existing Parametric Stereo bitstream parser and state; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/ps_decorr.rs",
+      "max_lines": 532,
+      "reason": "Existing Parametric Stereo decorrelation filters; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/ps_huffman.rs",
+      "max_lines": 474,
+      "reason": "Existing Parametric Stereo Huffman codebooks and decoder; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/ps_hybrid.rs",
+      "max_lines": 553,
+      "reason": "Existing Parametric Stereo hybrid filterbank; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/ps_stereo.rs",
+      "max_lines": 699,
+      "reason": "Existing Parametric Stereo mixing and parameter interpolation; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_decoder.rs",
+      "max_lines": 884,
+      "reason": "Existing SBR frame orchestration and cross-frame state; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_element.rs",
+      "max_lines": 588,
+      "reason": "Existing SBR element framing and channel syntax; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_env_adjust.rs",
+      "max_lines": 985,
+      "reason": "Existing SBR envelope adjustment and state; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_envelope.rs",
+      "max_lines": 438,
+      "reason": "Existing SBR envelope and noise syntax decoding; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_extension.rs",
+      "max_lines": 430,
+      "reason": "Existing SBR extension data traversal; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_freq_bands.rs",
+      "max_lines": 758,
+      "reason": "Existing SBR frequency-band table derivation; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_grid.rs",
+      "max_lines": 502,
+      "reason": "Existing SBR grid and inverse-filter syntax; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_hf_gen.rs",
+      "max_lines": 833,
+      "reason": "Existing SBR high-frequency generation and patch construction; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_huffman.rs",
+      "max_lines": 1013,
+      "reason": "Existing SBR Huffman codebooks and decoder; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_noise_table.rs",
+      "max_lines": 566,
+      "reason": "Existing ISO SBR 512-entry complex noise table; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_qmf.rs",
+      "max_lines": 1270,
+      "reason": "Existing SBR analysis and synthesis QMF filterbanks; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_qmf_dct.rs",
+      "max_lines": 2245,
+      "reason": "Existing QMF scalar and SIMD DFT modulation kernels; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/engine/sbr_reconstruct.rs",
+      "max_lines": 468,
+      "reason": "Existing SBR envelope and noise-floor DPCM reconstruction; freeze the reviewed line count pending a separately validated refactor."
+    },
+    {
+      "path": "src/isomp4.rs",
+      "max_lines": 1279,
+      "reason": "Existing ISO-BMFF track, box and edit-list parsing; freeze the reviewed line count pending a separately validated refactor."
+    }
+  ]
+}

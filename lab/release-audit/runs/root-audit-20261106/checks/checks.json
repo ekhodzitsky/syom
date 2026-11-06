@@ -1,0 +1,149 @@
+{
+  "started_utc": "2026-11-06T11:48:33.888844+00:00",
+  "source_commit": "21c37a187df726947b0c1440179b37b037d92e91",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Repository policy refactor, Rust test replacement and documentation only. Runtime unchanged; no release or hosted CI.",
+  "environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.961,
+      "log": "check-0.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.033,
+      "log": "check-1.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.02,
+      "log": "check-2.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 6.486,
+      "log": "check-3.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 70.617,
+      "log": "check-4.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 1.787,
+      "log": "check-5.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.264,
+      "log": "check-6.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "lab/consume/gigastt",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.231,
+      "log": "check-7.log"
+    },
+    {
+      "command": [
+        "taskset",
+        "-c",
+        "2-7",
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.791,
+      "log": "check-8.log"
+    }
+  ],
+  "package": {
+    "bytes": 469672,
+    "sha256": "42c7c1c7bc375fb6f578c28fb5b552114036e2339d15794266dc3ec33fa3ab19",
+    "published": false
+  },
+  "finished_utc": "2026-11-06T11:50:03.104861+00:00",
+  "passed": true
+}

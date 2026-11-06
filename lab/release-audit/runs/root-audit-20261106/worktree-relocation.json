@@ -1,0 +1,399 @@
+{
+  "started_utc": "2026-11-06T11:49:49.626148+00:00",
+  "scope": "Exactly four authorized dirty worktree moves, no force; old aliases retained as compatibility symlinks; no ref/working-source edits",
+  "state": "complete",
+  "initial_process_users": [],
+  "moves": [
+    {
+      "old_path": "/home/ekhodzitsky/Projects/syom/target/task145/syom-fft",
+      "new_path": "/home/ekhodzitsky/Projects/.worktrees/syom-task145-fft",
+      "owner": "/home/ekhodzitsky/Projects/syom",
+      "before": {
+        "head": "bdf4bbfbe8c1b0f0b83121a428f4621657ce36f2",
+        "common_git_dir": "/home/ekhodzitsky/Projects/syom/.git",
+        "status_porcelain": " M src/engine/imdct_avx512.rs\n",
+        "dirty_untracked_files": {
+          "src/engine/imdct_avx512.rs": {
+            "type": "file",
+            "bytes": 6845,
+            "mode": "0o664",
+            "sha256": "2238294efba4cf4c8d62485b6591acc5ab0ccb7063d75c40c8983ce37bd0c88c"
+          }
+        }
+      },
+      "state": "moved and verified",
+      "process_users_before_move": [],
+      "command": [
+        "git",
+        "-C",
+        "/home/ekhodzitsky/Projects/syom",
+        "worktree",
+        "move",
+        "/home/ekhodzitsky/Projects/syom/target/task145/syom-fft",
+        "/home/ekhodzitsky/Projects/.worktrees/syom-task145-fft"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "compatibility_symlink_target": "/home/ekhodzitsky/Projects/.worktrees/syom-task145-fft",
+      "after": {
+        "head": "bdf4bbfbe8c1b0f0b83121a428f4621657ce36f2",
+        "common_git_dir": "/home/ekhodzitsky/Projects/syom/.git",
+        "status_porcelain": " M src/engine/imdct_avx512.rs\n",
+        "dirty_untracked_files": {
+          "src/engine/imdct_avx512.rs": {
+            "type": "file",
+            "bytes": 6845,
+            "mode": "0o664",
+            "sha256": "2238294efba4cf4c8d62485b6591acc5ab0ccb7063d75c40c8983ce37bd0c88c"
+          }
+        }
+      },
+      "head_status_hashes_identical": true,
+      "alias_snapshot_identical": true,
+      "alias_resolves_to_new": true
+    },
+    {
+      "old_path": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt-main",
+      "new_path": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-main",
+      "owner": "/home/ekhodzitsky/Projects/gigastt",
+      "before": {
+        "head": "adf4db0d7b06a150534734b69b925e3136f0a631",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": "?? crates/gigastt-core/examples/aac_probe.rs\n",
+        "dirty_untracked_files": {
+          "crates/gigastt-core/examples/aac_probe.rs": {
+            "type": "file",
+            "bytes": 2971,
+            "mode": "0o664",
+            "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1"
+          }
+        }
+      },
+      "state": "moved and verified",
+      "process_users_before_move": [],
+      "command": [
+        "git",
+        "-C",
+        "/home/ekhodzitsky/Projects/gigastt",
+        "worktree",
+        "move",
+        "/home/ekhodzitsky/Projects/syom/target/task145/gigastt-main",
+        "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-main"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "compatibility_symlink_target": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-main",
+      "after": {
+        "head": "adf4db0d7b06a150534734b69b925e3136f0a631",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": "?? crates/gigastt-core/examples/aac_probe.rs\n",
+        "dirty_untracked_files": {
+          "crates/gigastt-core/examples/aac_probe.rs": {
+            "type": "file",
+            "bytes": 2971,
+            "mode": "0o664",
+            "sha256": "1d6aafc24a32ce50e5e752b617dc50781c6739c616ae07e0a5b50f2050f09ba1"
+          }
+        }
+      },
+      "head_status_hashes_identical": true,
+      "alias_snapshot_identical": true,
+      "alias_resolves_to_new": true
+    },
+    {
+      "old_path": "/home/ekhodzitsky/Projects/syom/target/task145/gigastt",
+      "new_path": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-candidate",
+      "owner": "/home/ekhodzitsky/Projects/gigastt",
+      "before": {
+        "head": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": " M Cargo.lock\n M crates/gigastt-core/Cargo.toml\n M crates/gigastt-core/src/inference/audio/aac.rs\n M crates/gigastt-core/src/inference/audio/aac/input.rs\n M crates/gigastt-core/src/inference/audio/aac/probe.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs\n?? crates/gigastt-core/src/inference/audio/aac/buffered.rs\n?? crates/gigastt-core/src/inference/audio/aac/pull.rs\n",
+        "dirty_untracked_files": {
+          "Cargo.lock": {
+            "type": "file",
+            "bytes": 146978,
+            "mode": "0o664",
+            "sha256": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+          },
+          "crates/gigastt-core/Cargo.toml": {
+            "type": "file",
+            "bytes": 8822,
+            "mode": "0o664",
+            "sha256": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53"
+          },
+          "crates/gigastt-core/src/inference/audio/aac.rs": {
+            "type": "file",
+            "bytes": 17302,
+            "mode": "0o664",
+            "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": {
+            "type": "file",
+            "bytes": 7518,
+            "mode": "0o664",
+            "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": {
+            "type": "file",
+            "bytes": 14492,
+            "mode": "0o664",
+            "sha256": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/buffered.rs": {
+            "type": "file",
+            "bytes": 7438,
+            "mode": "0o664",
+            "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/input.rs": {
+            "type": "file",
+            "bytes": 8722,
+            "mode": "0o664",
+            "sha256": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/probe.rs": {
+            "type": "file",
+            "bytes": 9619,
+            "mode": "0o664",
+            "sha256": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/pull.rs": {
+            "type": "file",
+            "bytes": 11535,
+            "mode": "0o664",
+            "sha256": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+          }
+        }
+      },
+      "state": "moved and verified",
+      "process_users_before_move": [],
+      "command": [
+        "git",
+        "-C",
+        "/home/ekhodzitsky/Projects/gigastt",
+        "worktree",
+        "move",
+        "/home/ekhodzitsky/Projects/syom/target/task145/gigastt",
+        "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-candidate"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "compatibility_symlink_target": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-candidate",
+      "after": {
+        "head": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": " M Cargo.lock\n M crates/gigastt-core/Cargo.toml\n M crates/gigastt-core/src/inference/audio/aac.rs\n M crates/gigastt-core/src/inference/audio/aac/input.rs\n M crates/gigastt-core/src/inference/audio/aac/probe.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs\n?? crates/gigastt-core/src/inference/audio/aac/buffered.rs\n?? crates/gigastt-core/src/inference/audio/aac/pull.rs\n",
+        "dirty_untracked_files": {
+          "Cargo.lock": {
+            "type": "file",
+            "bytes": 146978,
+            "mode": "0o664",
+            "sha256": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+          },
+          "crates/gigastt-core/Cargo.toml": {
+            "type": "file",
+            "bytes": 8822,
+            "mode": "0o664",
+            "sha256": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53"
+          },
+          "crates/gigastt-core/src/inference/audio/aac.rs": {
+            "type": "file",
+            "bytes": 17302,
+            "mode": "0o664",
+            "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": {
+            "type": "file",
+            "bytes": 7518,
+            "mode": "0o664",
+            "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": {
+            "type": "file",
+            "bytes": 14492,
+            "mode": "0o664",
+            "sha256": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/buffered.rs": {
+            "type": "file",
+            "bytes": 7438,
+            "mode": "0o664",
+            "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/input.rs": {
+            "type": "file",
+            "bytes": 8722,
+            "mode": "0o664",
+            "sha256": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/probe.rs": {
+            "type": "file",
+            "bytes": 9619,
+            "mode": "0o664",
+            "sha256": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/pull.rs": {
+            "type": "file",
+            "bytes": 11535,
+            "mode": "0o664",
+            "sha256": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+          }
+        }
+      },
+      "head_status_hashes_identical": true,
+      "alias_snapshot_identical": true,
+      "alias_resolves_to_new": true
+    },
+    {
+      "old_path": "/home/ekhodzitsky/Projects/syom/target/task145/adapter-handoff-c5-final",
+      "new_path": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-handoff",
+      "owner": "/home/ekhodzitsky/Projects/gigastt",
+      "before": {
+        "head": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": " M Cargo.lock\n M crates/gigastt-core/Cargo.toml\n M crates/gigastt-core/src/inference/audio/aac.rs\n M crates/gigastt-core/src/inference/audio/aac/input.rs\n M crates/gigastt-core/src/inference/audio/aac/probe.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs\n?? crates/gigastt-core/src/inference/audio/aac/buffered.rs\n?? crates/gigastt-core/src/inference/audio/aac/pull.rs\n",
+        "dirty_untracked_files": {
+          "Cargo.lock": {
+            "type": "file",
+            "bytes": 146978,
+            "mode": "0o664",
+            "sha256": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+          },
+          "crates/gigastt-core/Cargo.toml": {
+            "type": "file",
+            "bytes": 8822,
+            "mode": "0o664",
+            "sha256": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53"
+          },
+          "crates/gigastt-core/src/inference/audio/aac.rs": {
+            "type": "file",
+            "bytes": 17302,
+            "mode": "0o664",
+            "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": {
+            "type": "file",
+            "bytes": 7518,
+            "mode": "0o664",
+            "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": {
+            "type": "file",
+            "bytes": 14492,
+            "mode": "0o664",
+            "sha256": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/buffered.rs": {
+            "type": "file",
+            "bytes": 7438,
+            "mode": "0o664",
+            "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/input.rs": {
+            "type": "file",
+            "bytes": 8722,
+            "mode": "0o664",
+            "sha256": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/probe.rs": {
+            "type": "file",
+            "bytes": 9619,
+            "mode": "0o664",
+            "sha256": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/pull.rs": {
+            "type": "file",
+            "bytes": 11535,
+            "mode": "0o664",
+            "sha256": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+          }
+        }
+      },
+      "state": "moved and verified",
+      "process_users_before_move": [],
+      "command": [
+        "git",
+        "-C",
+        "/home/ekhodzitsky/Projects/gigastt",
+        "worktree",
+        "move",
+        "/home/ekhodzitsky/Projects/syom/target/task145/adapter-handoff-c5-final",
+        "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-handoff"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "",
+      "compatibility_symlink_target": "/home/ekhodzitsky/Projects/.worktrees/gigastt-task145-handoff",
+      "after": {
+        "head": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+        "common_git_dir": "/home/ekhodzitsky/Projects/gigastt/.git",
+        "status_porcelain": " M Cargo.lock\n M crates/gigastt-core/Cargo.toml\n M crates/gigastt-core/src/inference/audio/aac.rs\n M crates/gigastt-core/src/inference/audio/aac/input.rs\n M crates/gigastt-core/src/inference/audio/aac/probe.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull.rs\n?? crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs\n?? crates/gigastt-core/src/inference/audio/aac/buffered.rs\n?? crates/gigastt-core/src/inference/audio/aac/pull.rs\n",
+        "dirty_untracked_files": {
+          "Cargo.lock": {
+            "type": "file",
+            "bytes": 146978,
+            "mode": "0o664",
+            "sha256": "883653f58193079c8423923b47ce1b961d348ea693076ee0f3f70a133efdfa62"
+          },
+          "crates/gigastt-core/Cargo.toml": {
+            "type": "file",
+            "bytes": 8822,
+            "mode": "0o664",
+            "sha256": "9d86a449ae97fa5b99d9c862a56abb73ddc3fd023f338a8f2967a1127b964c53"
+          },
+          "crates/gigastt-core/src/inference/audio/aac.rs": {
+            "type": "file",
+            "bytes": 17302,
+            "mode": "0o664",
+            "sha256": "92cec04e49d038169d7e8d623b5f007e65e464c2b08accfa9a1d97f7a8676cd9"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull.rs": {
+            "type": "file",
+            "bytes": 7518,
+            "mode": "0o664",
+            "sha256": "e34637cf0b1c03742d6a64089135692b66d4d1c08a81597c38d93a6c680958e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/adts_pull_tests.rs": {
+            "type": "file",
+            "bytes": 14492,
+            "mode": "0o664",
+            "sha256": "3b90524109db00a4ad6ea1d96f61c758c746409330e75b570adaaf74d42c90e5"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/buffered.rs": {
+            "type": "file",
+            "bytes": 7438,
+            "mode": "0o664",
+            "sha256": "e4ae26b260b6aa305f56a935e6da4e471067c7cf0cae10392151d43a01ebc452"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/input.rs": {
+            "type": "file",
+            "bytes": 8722,
+            "mode": "0o664",
+            "sha256": "cb6c47c772b600fe8850e9035d94c0e00c35bf727e7627be3ce3e5313e93b9ce"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/probe.rs": {
+            "type": "file",
+            "bytes": 9619,
+            "mode": "0o664",
+            "sha256": "6fc2179510ea24e06321e8da0f347161fde5814140f2d4057d3cdebeaff28290"
+          },
+          "crates/gigastt-core/src/inference/audio/aac/pull.rs": {
+            "type": "file",
+            "bytes": 11535,
+            "mode": "0o664",
+            "sha256": "9d082595dc2b17e8cbad0cb7c3f735ea12cb639c8a6fa57ffc61c487db101256"
+          }
+        }
+      },
+      "head_status_hashes_identical": true,
+      "alias_snapshot_identical": true,
+      "alias_resolves_to_new": true
+    }
+  ],
+  "owner_main_refs_other_worktrees_unchanged": true,
+  "finished_utc": "2026-11-06T11:49:50.649752+00:00",
+  "receipt_scope": "Only the four authorized moves; unrelated foreign worktree/ref inventories omitted."
+}

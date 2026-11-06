@@ -7,21 +7,6 @@ fn root() -> std::path::PathBuf {
 }
 
 #[test]
-fn product_cargo_does_not_link_ffmpeg_lab() {
-    let cargo = std::fs::read_to_string(root().join("Cargo.toml")).unwrap();
-    assert!(
-        !cargo.contains("lab/"),
-        "lab must not be a workspace/path dep"
-    );
-    assert!(
-        cargo.contains("# Intentionally empty"),
-        "product [dependencies] stays empty"
-    );
-    assert!(!cargo.contains("libavcodec"));
-    assert!(!cargo.contains("ffmpeg-sys"));
-}
-
-#[test]
 fn src_does_not_spawn_ffmpeg_or_fdk() {
     let mut hits = Vec::new();
     for ent in walk(root().join("src")) {

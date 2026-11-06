@@ -1,0 +1,11 @@
+{
+  "release_source": "a286ada0165b4e889eff2fb862cfdc97c94b2f36",
+  "runtime_rs_files_checked": 179,
+  "changed_runtime_files": [],
+  "cargo_manifest_and_lock_unchanged": true,
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "machine": "x86_64",
+  "python": "3.14.4",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "scope": "All released non-test Rust source byte-identical; only lab_isolation_tests.rs assertion replaced by Python policy tests."
+}

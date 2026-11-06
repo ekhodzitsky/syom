@@ -28,6 +28,7 @@ state and exact-seek logical positions are different contracts.
 | Verify the published version, source/tag and archive | [0.10.1 registry receipt](../lab/release-audit/RELEASE-0.10.1.md) |
 | Understand current validation and platform limits | [Validation map](usage-and-validation.md#validation-and-integration) |
 | Interpret version, CI, coverage and MSRV badges | [Badge sources and scope](usage-and-validation.md#badges-and-measurement-gaps) |
+| Decide what belongs in Git and where files live | [Repository layout](repository-layout.md) |
 | Set up local development and run checks | [Contributing](../CONTRIBUTING.md) and [shared workflow](../AGENTS.md) |
 | Reproduce consumer, performance, quality or fuzz experiments | [Lab index](../lab/README.md) |
 | Verify fixtures and acquisition provenance | [Corpus inventory](../corpus/README.md) |
@@ -48,6 +49,7 @@ does not become a new benchmark when a version is published.
 | [TASK-145 qualification](../lab/release-audit/TASK145.md) and [review](../lab/release-audit/TASK145-REVIEW.md) | 0.10.1 candidate, exact downstream adapter, decoder/HTTP/load/fault checks |
 | [TASK-144](../lab/release-audit/TASK144.md) | Persistent LC state and strict completion before 0.10.0 publication |
 | [Earlier release receipts](../lab/release-audit/REPORT.md#release-evidence-index) | 0.10.0, 0.9.0, 0.8.1 and the original 0.8.0 audit |
+| [Repository audit, 2026-11-06](repository-audit-2026-11-06.md) | Root inventory, branch/worktree reconciliation and focused policy refactoring |
 | [Documentation review, 2026-11-06](documentation-audit-2026-11-06.md) | Example-first README, task index, current release routes and corrected dependency examples |
 | [Documentation audit, 2026-11-02](documentation-audit-2026-11-02.md) | Earlier structure, wording and evidence corrections |
 
