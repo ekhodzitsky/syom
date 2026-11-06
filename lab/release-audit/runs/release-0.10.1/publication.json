@@ -1,0 +1,17 @@
+{
+  "source_commit": "a286ada0165b4e889eff2fb862cfdc97c94b2f36",
+  "started_utc": "2026-11-06T10:57:57.881355+00:00",
+  "command": [
+    "cargo",
+    "publish",
+    "--locked",
+    "--registry",
+    "crates-io"
+  ],
+  "expected_archive_sha256": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+  "expected_archive_bytes": 469482,
+  "all_release_gates_passed": true,
+  "exit_code": 0,
+  "finished_utc": "2026-11-06T10:58:02.900311+00:00",
+  "seconds": 5.01885267900002
+}

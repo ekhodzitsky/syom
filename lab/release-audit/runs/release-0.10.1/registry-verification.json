@@ -1,0 +1,15 @@
+{
+  "pass": true,
+  "verified_utc": "2026-11-06T10:58:31.933517+00:00",
+  "version": "0.10.1",
+  "registry_created_at": "2026-11-06T10:58:01.577068Z",
+  "source_commit": "a286ada0165b4e889eff2fb862cfdc97c94b2f36",
+  "api_url": "https://crates.io/api/v1/crates/syom/0.10.1",
+  "download_url": "https://static.crates.io/crates/syom/syom-0.10.1.crate",
+  "registry_checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+  "download_sha256": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+  "clean_package_sha256": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+  "archive_bytes": 469482,
+  "all_three_checksums_match": true,
+  "registry_yanked": false
+}

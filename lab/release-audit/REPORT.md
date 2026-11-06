@@ -11,7 +11,7 @@ are recorded separately; historical candidate reports retain their original stat
 
 | Status | Evidence |
 |---|---|
-| 0.10.1 release preparation; publication recorded separately | [Release checks and receipt](RELEASE-0.10.1.md) |
+| 0.10.1 published release, qualified on Linux x86_64 | [Release checks and registry receipt](RELEASE-0.10.1.md) |
 | 0.10.0 published release, qualified on Linux x86_64 | [Release preflight and registry receipt](#release-0100) |
 | 0.9.0 published release, qualified on Linux x86_64 | [Publication and archive verification](#release-090) and [original cold-start qualification](#candidate-090--cold-start-fix) |
 | 0.8.1 published release | [Publication verification](PUBLISHED-0.8.1.md) and [recording qualification](CANDIDATE-0.8.1.md) |

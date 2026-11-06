@@ -1,8 +1,10 @@
 # syom 0.10.1 release verification
 
-Release preparation dated 2026-11-06. Publication is authorized after the
-repository audit and final local checks pass; registry upload and verification
-are recorded separately below. No crate has been uploaded by this preparation.
+[syom 0.10.1](https://crates.io/crates/syom/0.10.1) was published on
+**2026-11-06 at 10:58:01 UTC** (13:58:01 Moscow), after the repository audit
+and final local checks passed. Annotated tag `v0.10.1` points to clean source
+commit `a286ada0165b4e889eff2fb862cfdc97c94b2f36`. The registry receipt below
+distinguishes the uploaded release from earlier preparation packages.
 
 The production change from 0.10.0 groups the first two AVX-512 FFT stages for
 compiler vectorization, retaining the actual twiddles and scalar mul/add/sub
@@ -50,8 +52,8 @@ from main. Tracked duplicate evidence is retained: Git already deduplicates
 identical blobs, and removing those files would break historical manifests.
 
 Final repository checks, Rust 1.89 compatibility, packaged consumers and clean
-publication dry-run results are retained under `runs/release-0.10.1/` after
-execution. Cargo source versions and lockfiles remain at 0.10.1. CI configuration
+publication dry-run results are retained under `runs/release-0.10.1/`.
+Cargo source versions and lockfiles remain at 0.10.1. CI configuration
 is retained, but GitHub Actions is not dispatched; commits use `[skip ci]`.
 
 All seven required local gates passed: 1,186 library tests (seven existing
@@ -71,8 +73,34 @@ commands, toolchains and the separate dirty preparation-package hashes. Those
 archives are not upload artifacts; the clean commit is packaged again before
 publication.
 
-## Publication status
+## Registry receipt
 
-Registry 0.10.1 was absent at the initial check. A clean release source commit,
-verified package archive, registry checksum/download, annotated tag and actual
-registry README-example checks will be recorded after successful upload.
+Registry 0.10.1 was absent at the initial check. The clean release commit was
+packaged again and passed `cargo publish --dry-run --locked --registry crates-io`
+before actual upload. The uploaded/downloaded archive is **469,482 bytes**:
+
+```text
+SHA-256: 4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3
+```
+
+The crates.io API checksum, downloaded archive and clean pre-upload package
+match. All 187 shipped files are UTF-8 text, with no tests, recordings or lab
+artifacts. All 179 runtime Rust files, README, CHANGELOG, license/notices and
+original Cargo manifest byte-match the release commit. Packaged VCS metadata
+identifies that clean commit. The normalized manifest declares Rust 1.89, MIT,
+zero runtime/build dependencies and no build script.
+
+The annotated tag and its remote peeled commit were verified. The exact README
+example passed against **registry 0.10.1** on Rust 1.97.1 and MSRV 1.89.0,
+printing `1 channel at 48000 Hz`. Its consumer lockfile names the registry
+source and the same published checksum; no local path or Git patch substitutes
+for the registry crate.
+
+[Machine-readable verification](runs/release-0.10.1/verification.json),
+[downloaded source verification](runs/release-0.10.1/registry-source-verification.json),
+[publication log](runs/release-0.10.1/publish.log),
+[registry README checks](runs/release-0.10.1/registry-readme-checks.json) and
+[cleanup manifest](runs/release-0.10.1/cleanup.json) retain the full evidence.
+This receipt follow-up changes evidence outside the published package. GitHub
+Actions was not dispatched, and no consumer deployment or default change was
+performed.

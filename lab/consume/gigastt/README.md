@@ -131,8 +131,10 @@ python3 lab/consume/gigastt/http_reference.py \
 ## Consumer adapter handoff
 
 The complete [adapter.patch](adapter.patch) targets gigastt commit
-`49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf`, pinning unpublished syom **0.10.1**
-to Git revision `3e540231c9d71e3534be1ef856a91cf419efaead`.
+`49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf`, pinning the qualified pre-release
+source of syom **0.10.1** to Git revision `3e540231c9d71e3534be1ef856a91cf419efaead`.
+The registry release is verified separately; this measured patch has not been
+silently changed to a registry dependency.
 It includes nine files: the consumer manifest/lockfile, `aac.rs`, `aac/input.rs`,
 `aac/probe.rs`, and the new `aac/pull.rs`, `aac/buffered.rs`, `aac/adts_pull.rs`
 and `aac/adts_pull_tests.rs` modules. The

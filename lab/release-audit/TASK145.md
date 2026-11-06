@@ -2,6 +2,8 @@
 
 The subsequent [detailed review and tooling refactor](TASK145-REVIEW.md) leaves
 these historical measurements, their source pins and evidence index unchanged.
+[Registry 0.10.1 publication](RELEASE-0.10.1.md) is recorded separately; candidate
+labels below describe the state when these measurements were collected.
 
 This investigation targets the optional gigastt AAC adapter and its native
 decoder cost. The starting codec was published **syom 0.10.0**, source

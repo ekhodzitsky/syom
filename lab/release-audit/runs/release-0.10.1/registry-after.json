@@ -1,0 +1,68 @@
+{
+  "version": {
+    "id": 3729281,
+    "crate": "syom",
+    "num": "0.10.1",
+    "dl_path": "/api/v1/crates/syom/0.10.1/download",
+    "readme_path": "/api/v1/crates/syom/0.10.1/readme",
+    "updated_at": "2026-11-06T10:58:01.577068Z",
+    "created_at": "2026-11-06T10:58:01.577068Z",
+    "downloads": 0,
+    "features": {},
+    "yanked": false,
+    "yank_message": null,
+    "lib_links": null,
+    "license": "MIT",
+    "links": {
+      "dependencies": "/api/v1/crates/syom/0.10.1/dependencies",
+      "version_downloads": "/api/v1/crates/syom/0.10.1/downloads",
+      "authors": "/api/v1/crates/syom/0.10.1/authors"
+    },
+    "crate_size": 469482,
+    "published_by": {
+      "id": 405429,
+      "login": "ekhodzitsky",
+      "name": "Evgeny Khodzitsky",
+      "avatar": "https://avatars.githubusercontent.com/u/45710942?v=4",
+      "url": "https://github.com/ekhodzitsky",
+      "github_username_matches": true,
+      "created_at": "2018-12-08T10:37:41Z"
+    },
+    "audit_actions": [
+      {
+        "action": "publish",
+        "user": {
+          "id": 405429,
+          "login": "ekhodzitsky",
+          "name": "Evgeny Khodzitsky",
+          "avatar": "https://avatars.githubusercontent.com/u/45710942?v=4",
+          "url": "https://github.com/ekhodzitsky",
+          "github_username_matches": true,
+          "created_at": "2018-12-08T10:37:41Z"
+        },
+        "time": "2026-11-06T10:58:01.577068Z"
+      }
+    ],
+    "checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+    "rust_version": "1.89",
+    "has_lib": true,
+    "bin_names": [],
+    "edition": "2024",
+    "description": "AAC to planar f32. LC, HE-AAC, AAC-LD. ADTS, M4A, LATM. Zero deps.",
+    "homepage": "https://github.com/ekhodzitsky/syom",
+    "documentation": "https://docs.rs/syom",
+    "repository": "https://github.com/ekhodzitsky/syom",
+    "trustpub_data": null,
+    "linecounts": {
+      "languages": {
+        "Rust": {
+          "code_lines": 38045,
+          "comment_lines": 964,
+          "files": 179
+        }
+      },
+      "total_code_lines": 38045,
+      "total_comment_lines": 964
+    }
+  }
+}

@@ -1,5 +1,8 @@
 # TASK-145 solution review and refactor — 2026-11-06
 
+The later [0.10.1 registry receipt](RELEASE-0.10.1.md) records publication.
+Candidate labels below retain this review's original pre-publication context.
+
 The performance-qualified decoder and consumer adapter remain unchanged.
 This review found reproducible weaknesses in the qualification tools and
 test coverage, fixed them, and replayed the original evidence successfully.
