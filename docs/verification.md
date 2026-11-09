@@ -9,15 +9,16 @@
 |---|---|---|
 | Registry syom 0.10.1 | Published 2026-11-06 | AVX-512 FFT update; [archive, source/tag and registry checks](../lab/release-audit/RELEASE-0.10.1.md) |
 | Registry syom 0.10.2 | Published 2026-11-09 | Standard iTunSMPB fixes; [source, archive and registry checks](../lab/release-audit/RELEASE-0.10.2.md) |
-| Checkout syom 0.10.3 | Release candidate, not yet published | Fractional M4A edit durations; [audit and consumer verification](../lab/release-audit/ISSUE-11.md) |
+| Registry syom 0.10.3 | Published 2026-11-09 | Fractional M4A edit durations; [source, archive and registry checks](../lab/release-audit/RELEASE-0.10.3.md) |
 
 Version 0.10.2 contains the standard iTunSMPB fixes. Version 0.10.1 can
 return padded audio for Apple M4A files whose only trim metadata is iTunSMPB;
 its own generated tags round-trip but use the wrong field order. Regenerate
 old malformed tags when upgrading, and recreate cached checkpoint blobs.
 
-As checked on 2026-11-09, `syom = "0.10"` selects published 0.10.2,
-including these fixes. The [changelog](../CHANGELOG.md) records the changes;
+As checked on 2026-11-09, `syom = "0.10"` selects published 0.10.3,
+including these fixes and fractional M4A edit-duration handling.
+The [changelog](../CHANGELOG.md) records the changes;
 the registry README examples passed on Rust 1.97.1 and 1.89.0.
 A validated checkout, a published crate and a deployed consumer are separate
 states.
@@ -29,6 +30,11 @@ runs formatting, offline Python policies, line/changelog checks, Clippy,
 library/integration tests and doctests on Linux x64/ARM64, macOS ARM64
 and Windows x64. A separate job tests Rust 1.89; Linux x64 audits the package.
 The macOS job also runs the isolated native Apple gapless lane.
+
+[Run 42686059672](https://github.com/ekhodzitsky/syom/actions/runs/42686059672)
+passed Linux x64/ARM64, Windows x64, macOS ARM64 and MSRV for `b4b3124`,
+including native Apple execution. Release `v0.10.3` has identical runtime
+source and Cargo versions; only its README installation pin differs.
 
 [Run 42588281199](https://github.com/ekhodzitsky/syom/actions/runs/42588281199)
 passed for `d3f33d4` on 2026-11-09, including native Apple execution.
@@ -70,7 +76,7 @@ resolutions remain available as compact summaries; routine stdout and superseded
 runs are omitted. These are bounded tests, not exhaustive safety
 or full ISO conformance certification.
 
-The published release has its own [registry receipt](../lab/release-audit/RELEASE-0.10.2.md).
+The published release has its own [registry receipt](../lab/release-audit/RELEASE-0.10.3.md).
 The [TASK-145 qualification](../lab/release-audit/TASK145.md) covers its exact
 Git-pinned library and a separate gigastt adapter patch. Two CPU 1 confirmations
 pass the six-case timing gate and 29 PCM cases retain exact bits.

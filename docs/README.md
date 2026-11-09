@@ -1,9 +1,10 @@
 # syom documentation
 
 [Overview and examples](../README.md#examples) ·
-[Published 0.10.2 API guide](https://docs.rs/syom/0.10.2/syom/guide/)
+[Published 0.10.3 API guide](https://docs.rs/syom/0.10.3/syom/guide/)
 
-Use published 0.10.2 for the documented API and standard Apple gapless fixes.
+Use published 0.10.3 for the documented API, standard Apple gapless fixes
+and fractional M4A edit-duration handling.
 The release verification records the exact source, archive and tested scope.
 [Release versus checkout](verification.md#release-and-checkout).
 
@@ -14,7 +15,7 @@ The release verification records the exact source, archive and tested scope.
 | Install and run a complete example | [Examples](../README.md#examples) and [install](../README.md#install) |
 | Choose a reader, output layout or streaming API | [Usage](usage-and-validation.md#choose-an-api) |
 | Check supported profiles and containers | [Format matrix](usage-and-validation.md#formats-and-channel-layout) |
-| Encode/decode, limits, borrowed PCM and raw AUs | [Published API examples](https://docs.rs/syom/0.10.2/syom/guide/) · [checkout source guide](../src/guide.rs) |
+| Encode/decode, limits, borrowed PCM and raw AUs | [Published API examples](https://docs.rs/syom/0.10.3/syom/guide/) · [checkout source guide](../src/guide.rs) |
 | Acquire an exact M4A interval | [Seeking and prefix replay](usage-and-validation.md#exact-interval-acquisition-since-090) |
 | Save native LC decoder state or inspect completion | [Checkpoint contract](persistent-checkpoints.md) |
 | Understand priming and tag behavior | [Gapless timing](usage-and-validation.md#gapless-timing) |
@@ -42,6 +43,7 @@ remain separate.
 | Record | Scope |
 |---|---|
 | [Documentation audit, 2026-11-09](audit/readme-2026-11-09.json) | README/reference structure, current status, links and published examples |
+| [0.10.3 registry receipt](../lab/release-audit/RELEASE-0.10.3.md) | Fractional M4A edits, source/tag, hosted checks and registry verification |
 | [0.10.2 registry receipt](../lab/release-audit/RELEASE-0.10.2.md) | Gapless fixes, source/tag, archive and registry examples |
 | [0.10.1 registry receipt](../lab/release-audit/RELEASE-0.10.1.md) | Published source/tag, archive and registry examples |
 | [Gapless repeat audit](../lab/release-audit/runs/issue9-reaudit-20261109/audit.json) | 0.10.2 tag handling and native Apple interoperability |

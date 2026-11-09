@@ -1,5 +1,9 @@
 # Fractional M4A edit duration qualification
 
+The fixes qualified below shipped in [syom 0.10.3](RELEASE-0.10.3.md).
+The candidate versions, source identities and measurements below retain
+their original pre-publication scope.
+
 2026-11-09, Linux x86_64 only. Unreleased changes on syom
 `a61cc6748c3e20087cbba749d060e5d3a3677d37` (package version remains
 0.10.2); this is not a published release. No Windows, macOS or ARM run.
