@@ -37,6 +37,14 @@ class IgnorePolicyTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(self.ignored(name))
 
+    def test_routine_audit_logs_are_ignored(self):
+        for name in ['docs/audit/runs/example.log',
+                     'docs/audit/runs/example/00.log',
+                     'lab/release-audit/runs/example.log',
+                     'lab/release-audit/runs/example/fuzz/worker.log']:
+            with self.subTest(name=name):
+                self.assertTrue(self.ignored(name))
+
     def test_safe_templates_and_shared_configuration_remain_visible(self):
         for name in ['.env.example', '.env.sample', 'lab/demo/.env.template',
                      'credentials.example.json', 'public.pem', '.cargo/config.toml',
@@ -48,7 +56,7 @@ class IgnorePolicyTests(unittest.TestCase):
         for name in ['src/goldens/example.m4a', 'src/goldens/example.mp4',
                      'lab/frame960/vectors/example.m4a', 'src/goldens/reference.s16',
                      'corpus/fuzz/truncated.bin', 'lab/release-audit/runs/example.json',
-                     'lab/release-audit/runs/example.log', 'lab/native-reference.f32']:
+                     'lab/reviewed-failure.log', 'lab/native-reference.f32']:
             with self.subTest(name=name):
                 self.assertFalse(self.ignored(name))
 

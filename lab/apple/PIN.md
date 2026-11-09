@@ -6,6 +6,25 @@ Linux build. This pin records what a qualifying host must supply and the
 exact pins to capture once one is available. No cell here is executed on
 the current host — see [REPORT.md](REPORT.md).
 
+## Gapless interoperability lane (2026-11-09)
+
+`python3 lab/apple/gapless.py --out target/apple-gapless` runs on macOS.
+The CI macOS lane generates two deterministic LC WAV inputs (44.1 kHz
+stereo and 48 kHz mono), runs native afconvert, records frontend/framework
+and OS identities, independently extracts iTunSMPB counts, and disables
+any edit list without moving payload bytes. The isolated Rust consumer
+checks tag-only decode, probe, slice/seekable streaming, presentation
+completion and exact seeking against those counts and each other.
+
+Only report.json is uploaded as the `apple-gapless-macos-arm64` artifact.
+Generated audio remains in ignored output. `--self-test` exercises the
+consumer on Linux using an authored syom fixture and explicitly records
+`native_executed: false`; it is not Apple validation. Offline evidence-reader
+tests run with the Python policy suite.
+
+This narrow interoperability lane does not fulfil the historical quality,
+timing, HE/PS or blind-listening qualification below.
+
 ## What counts as "Apple AAC"
 
 The encoder is `AppleAAC` inside CoreAudio

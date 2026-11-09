@@ -3,8 +3,9 @@
 [User documentation](docs/README.md) · [Release verification](lab/release-audit/RELEASE-0.10.1.md)
 
 Start with [AGENTS.md](AGENTS.md), the canonical development and validation
-policy. Hosted GitHub checks are paused; validate locally and use `[skip ci]`
-in pushed commit messages until the maintainer lifts that restriction.
+policy. Validate locally before pushing; the enabled GitHub workflow checks
+the supported hosts and the isolated macOS Apple gapless lane. See
+[actual results and scope](docs/verification.md#hosted-checks).
 
 ## Local setup
 
@@ -50,7 +51,8 @@ Linux results do not establish Windows, macOS or ARM parity.
 | Purpose | Command or entry point | Outputs and tracked-file effects |
 |---|---|---|
 | Required local checks | [AGENTS.md](AGENTS.md#development-workflow) | Cargo writes build/test artifacts under `target/`; `cargo fmt --check` checks formatting without rewriting sources. |
-| Published README example | `python3 scripts/check-readme-example.py` and `--msrv` | Pins the stated registry version, builds a disposable app under `target/`, and checks actual stdout; optional `--offline` uses cached dependencies. Does not rewrite tracked files. |
+| Documentation links | `python3 scripts/check-doc-links.py` | Checks maintained entry-point links and local Markdown anchors, including repository URLs; no network requests. |
+| Published README examples | `python3 scripts/check-readme-example.py` and `--msrv` | Pins the stated registry version, compiles every Rust example, runs those not marked `no_run`, and checks stdout. Disposable apps stay under `target/`; `--offline` uses cached dependencies. |
 | Library-line coverage | `cargo llvm-cov --lib` with the [recorded exclusions](lab/baseline/COVERAGE.md#local-measurement-2026-11-02) | Requires cargo-llvm-cov and llvm-tools; creates instrumented output under `target/`. Keep source revision, metric and exclusions with retained reports. Not a hosted-CI run. |
 | Offline tooling tests | `python3 -m unittest discover -s scripts -p 'test_*.py'` | Exercises package, size, ignore and corpus/acquisition policies using synthetic local inputs. |
 | Package audit | `python3 scripts/check-package.py` | Builds and extracts `target/package/syom-<version>.crate`, runs packaged guide doctests; may update Cargo's index/cache. It does not publish. |
@@ -73,9 +75,14 @@ with semantic versioning. Describe the behavior changed, validation run,
 and any remaining limitation. Preserve dated measurements with their
 source revisions and workload definitions.
 
+Keep validation summaries compact: commands, source identity, toolchain,
+exit codes and meaningful totals. Store routine stdout and duplicate runs in
+`target/` or CI artifacts. See the [evidence policy](docs/repository-layout.md#before-staging)
+before retaining raw diagnostics or measurements in Git.
+
 For documentation changes affecting onboarding, verify the actual
-[README quick start](README.md#quick-start) against its stated published
-dependency. The opt-in checker extracts that code and expected output,
+[README examples](README.md#examples) against their stated published
+dependency. The checker extracts the code and first expected output,
 pins the stated release, and rebuilds a disposable app under `target/`:
 
 ```sh
@@ -86,8 +93,14 @@ python3 scripts/check-readme-example.py --msrv
 Use `--offline` when the crate and toolchains are already cached. The
 checker shares the root build cache and does not rewrite tracked files.
 A local path dependency does not validate the registry example. This
-check is intentionally separate from offline unit tests; it does not infer
+check is also a separate Linux/MSRV CI step; offline unit tests do not
+fetch registry dependencies. It does not infer
 registry publication status or make candidate-only APIs part of a release.
+
+Keep runnable examples self-contained. The first example declares its exact
+expected stdout; later runnable examples use assertions and no stdout.
+Use `rust,no_run` for an example that needs a user's file: it is compiled
+against the release but not executed by the checker.
 
 Before proposing a release, check that the README, changelog, package
 version and qualification report agree about what is published and what

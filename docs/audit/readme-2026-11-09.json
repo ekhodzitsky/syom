@@ -1,0 +1,128 @@
+{
+  "date": "2026-11-09",
+  "base_commit": "d3f33d49b035156273b926d62aae371b5aa77ee6",
+  "scope": "Maintained entry points and user/developer guides. Historical archives are preserved, not exhaustively relinted.",
+  "references": [
+    {
+      "repository": "ryf",
+      "revision": "6582f80acc0891b19df129db1694364a8ea845e1",
+      "readme_sha256": "771559ba468279a3379e3fc2aaba3e085ea6ce241418dd58cf4819b25c16c1ee"
+    },
+    {
+      "repository": "agent-youtube",
+      "revision": "bcd606c2ed8742c5e0fade0b4bfd4023e66bfcb1",
+      "readme_sha256": "5b4eca1e1503af07b74f54d00f0c83eae3eaaef1c8227cbfb228f4df7fa3e02e"
+    }
+  ],
+  "findings": [
+    {
+      "id": "D1",
+      "problem": "The root mixed setup/status detail before user workflows.",
+      "resolution": "Adapt the short opening, examples-first flow, capabilities, comparison, install and scope from ryf/agent-youtube; copy no unrelated capabilities or measurements.",
+      "status": "resolved"
+    },
+    {
+      "id": "D2",
+      "problem": "Current entry points still claimed Actions were paused and required skip-ci.",
+      "resolution": "Align the maintained guides and contributor policy with enabled hosted checks. Preserve dated historical reports unchanged.",
+      "status": "resolved"
+    },
+    {
+      "id": "D3",
+      "problem": "Published 0.10.1 and unpublished gapless changes share a Cargo version.",
+      "resolution": "Distinguish archive versus checkout, pin the published API guide/examples, and record actual registry source/checksum resolution.",
+      "status": "resolved"
+    },
+    {
+      "id": "D4",
+      "problem": "The lab index still said no native Apple host was available.",
+      "resolution": "Link actual two-cell macOS LC gapless results; keep broader quality/timing/HE and mobile-runtime qualification distinct.",
+      "status": "resolved"
+    },
+    {
+      "id": "D5",
+      "problem": "Usage mixed task guidance, release notes and historical validation.",
+      "resolution": "Separate usage from verification, retain negative consumer findings, and preserve old section anchors as relocation pointers.",
+      "status": "resolved"
+    },
+    {
+      "id": "D6",
+      "problem": "The example checker accepted exactly one Rust block and did not report resolved archive provenance.",
+      "resolution": "Compile all three Rust examples against exact crates.io 0.10.1, execute two, type-check no_run file I/O, verify registry/checksum, and check MSRV with disposable apps under target/.",
+      "status": "resolved"
+    },
+    {
+      "id": "D7",
+      "problem": "There was no maintained-doc link/anchor gate.",
+      "resolution": "Add offline verification of local links, anchors, aliases, linked images and repository URLs mapped to this checkout; exercise failures and enable policy/CI checks.",
+      "status": "resolved"
+    },
+    {
+      "id": "D8",
+      "problem": "Dated coverage and earlier platform gaps were blended with current status.",
+      "resolution": "Move 92.71% and 93.88% measurements/exclusions into verification, remove the stale-coverage badge, and distinguish pinned hosted runs from the main badge.",
+      "status": "resolved"
+    },
+    {
+      "id": "D9",
+      "problem": "Checkpoint wording could imply automatic source authentication or tag-only eligibility.",
+      "resolution": "Make caller source/options/exact-build authentication explicit and distinguish the release edit-list boundary from the checkout tag window; tag-only checkpoint exclusion remains.",
+      "status": "resolved"
+    },
+    {
+      "id": "D10",
+      "problem": "The root integration table named syom 0.10.0 while 0.10.1 was published.",
+      "resolution": "Update the integration row only. Retain peer review date 2026-11-02 and original 0.8.0 timings, including the unfavorable HE v2 cell; claim no new benchmark or ranking.",
+      "status": "resolved"
+    },
+    {
+      "id": "D11",
+      "problem": "Root README is also the crate rustdoc landing page; bare repository-file URLs can resolve relative to the API site instead of the repository.",
+      "resolution": "Use repository URLs for root README source/license/benchmark/contributor links. The offline checker maps these URLs to checkout files and validates their targets.",
+      "status": "resolved"
+    }
+  ],
+  "compatibility_anchors": {
+    "readme": [
+      "quick-start",
+      "choosing-a-library",
+      "measured-decoding-time",
+      "status-and-limits"
+    ],
+    "usage": [
+      "validation-and-integration",
+      "badges-and-measurement-gaps"
+    ]
+  },
+  "distribution": {
+    "version": "0.10.1",
+    "created_at": "2026-11-06T10:58:01.577068Z",
+    "yanked": false,
+    "checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+    "registry_check": "https://crates.io/api/v1/crates/syom",
+    "published_api": "https://docs.rs/syom/0.10.1/syom/",
+    "both_http_status": 200
+  },
+  "validation_boundaries": [
+    "Link checking validates the checkout, including mapped GitHub main URLs; new unmerged pages need not already be on remote main.",
+    "External peer facts remain the pinned 2026-11-02 source review, not latest-release recommendations.",
+    "The file example is compiled, not executed against an unspecified user file.",
+    "Two self-contained examples run against the registry archive, separately from checkout doctests.",
+    "Runtime codec source, Cargo versions, lockfiles, fixtures and historical measurements are unchanged.",
+    "No new codec speed, coverage, quality or mobile-runtime measurement is claimed."
+  ],
+  "validation": {
+    "checks": "runs/readme-2026-11-09/checks.json",
+    "render": "runs/readme-2026-11-09/render.json",
+    "maintained_pages": 11,
+    "local_links": 218,
+    "external_links_not_checked": 27,
+    "python_tests": 85,
+    "library_tests": 1205,
+    "doctests": 31,
+    "readme_examples_compiled": 3,
+    "readme_examples_executed": 2,
+    "registry_version": "0.10.1",
+    "registry_msrv": "1.89.0"
+  }
+}

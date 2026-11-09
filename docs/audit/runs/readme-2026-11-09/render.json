@@ -1,0 +1,23 @@
+{
+  "renderer": "GitHub Markdown API, gfm context ekhodzitsky/syom",
+  "source_sha256": "0dd99e00bd863ce5db13a4f479917553d04179e095d12926e2142a5f252582d7",
+  "html_sha256": "c56dc941ac9889f9623ffe08460ddb7676550d740757f2fa17403bd2c1c813d5",
+  "h1": 1,
+  "h2": 7,
+  "tables": 3,
+  "code_blocks": 5,
+  "highlight": [
+    "highlight highlight-source-rust",
+    "highlight highlight-source-rust",
+    "highlight highlight-source-rust",
+    "highlight highlight-source-toml",
+    "highlight highlight-source-shell"
+  ],
+  "explicit_ids": [
+    "user-content-quick-start",
+    "user-content-choosing-a-library",
+    "user-content-measured-decoding-time",
+    "user-content-status-and-limits"
+  ],
+  "scope": "Rendered markup structure and syntax highlighting; not a browser pixel/layout test."
+}

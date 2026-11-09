@@ -1,0 +1,292 @@
+{
+  "base_commit": "78165c4cbacc775f79be05d0f0a2ae0700f35ea7",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "machine": "x86_64",
+  "status": "unreleased repeat audit",
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 3.666
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.834,
+      "python_tests": 72
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.034
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.021
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 6.27
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 39.129,
+      "test_results": [
+        "test result: ok. 1205 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 21.95s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.93s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 1.378,
+      "test_results": [
+        "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.71s"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 2.959,
+      "result": "OK: 193 files, 472301 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script"
+    },
+    {
+      "command": [
+        "cargo",
+        "+1.89.0",
+        "test",
+        "--lib",
+        "gapless"
+      ],
+      "exit_code": 0,
+      "seconds": 10.177,
+      "test_results": [
+        "test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 1181 filtered out; finished in 0.80s"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "lab/consume/run.py"
+      ],
+      "exit_code": 0,
+      "seconds": 10.334,
+      "test_results": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+      ],
+      "result": {
+        "all_cells_passed": true,
+        "package_compressed_bytes": 472301,
+        "bytes_decode": {
+          "speech_channels": 1,
+          "full_channels": 2,
+          "rate": 48000,
+          "snr_db": [
+            39.3,
+            43.6
+          ]
+        },
+        "raw_au": {
+          "asc_bytes": 2,
+          "access_units": 11,
+          "samples": 11264
+        },
+        "sink_encode": {
+          "write_calls": 49,
+          "bytes": 17010,
+          "byte_exact": true,
+          "m4a_samples": 48000,
+          "priming": 1024
+        },
+        "bounded_streaming": {
+          "modes": [
+            "abr",
+            "cbr"
+          ],
+          "chunk_bytes": 1319,
+          "samples": 480000,
+          "bit_equal_to_one_shot": true,
+          "duration_seconds": 10,
+          "cap_seconds": 5,
+          "over_cap_error": "TooLong",
+          "warmed_reset_allocations": 0,
+          "warmed_tagged_reset_cumulative_bytes": 0
+        },
+        "consumer_extract": {
+          "m4a_bytes": 33666,
+          "native_rate": 48000,
+          "native_valid_samples": 96000,
+          "output_s16le_bytes": 64000,
+          "output_rate": 16000,
+          "output_channels": 1,
+          "one_shot_allocations": 470,
+          "one_shot_heap_bytes": 1608426,
+          "processes": 0,
+          "temp_files": 0,
+          "wav_wraps": 0
+        },
+        "layout": {
+          "channels": 2,
+          "rate": 48000,
+          "samples": 96000,
+          "priming": 1024
+        },
+        "probe": {
+          "exact_samples": 96000,
+          "priming": 1024,
+          "remainder": 256
+        },
+        "borrowed_encode": {
+          "byte_exact": true,
+          "bytes": 33485
+        },
+        "exact_seek": {
+          "replayed_access_units": 24,
+          "payload_bytes": 16524,
+          "native_differences": 0,
+          "foreign_position": "rejected",
+          "budget_check": "before_io"
+        },
+        "checkpoint": {
+          "native_samples": 44113,
+          "state_bytes": 8422,
+          "resume_bit_identical": true
+        },
+        "error_handling": "Typed errors and reset recovery passed; truncated ADTS tail drops 1024 samples as documented.",
+        "bounded_presentation_regression_tests": 1
+      }
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--manifest-path",
+        "lab/apple/gapless/Cargo.toml",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.053
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--manifest-path",
+        "lab/apple/gapless/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 1.162
+    },
+    {
+      "command": [
+        "cargo",
+        "+1.89.0",
+        "check",
+        "--manifest-path",
+        "lab/apple/gapless/Cargo.toml",
+        "--locked"
+      ],
+      "exit_code": 0,
+      "seconds": 3.33
+    },
+    {
+      "command": [
+        "python3",
+        "lab/apple/gapless.py",
+        "--self-test",
+        "--out",
+        "target/apple-gapless-self-test"
+      ],
+      "exit_code": 0,
+      "seconds": 6.704
+    },
+    {
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--manifest-path",
+        "lab/fuzz/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "seconds": 7.643
+    },
+    {
+      "command": [
+        "python3",
+        "lab/release-audit/run_fuzz.py",
+        "--seconds",
+        "30",
+        "--out",
+        "target/issue9-fuzz"
+      ],
+      "exit_code": 0,
+      "seconds": 30.368,
+      "result": "Four workers passed; see fuzz/fuzz-summary.json for observed counts and seeds."
+    }
+  ],
+  "final_checks_passed": true,
+  "native_status": "Not executed on local Linux; authored self-test only. The PR macOS artifact contains actual native results.",
+  "sources_sha256": {
+    ".github/workflows/ci.yml": "3432bb2cb16bb16e80516e03ec1c58757eeca5655866a30d7bdce8e465de533d",
+    "lab/apple/gapless/Cargo.lock": "8e63cacb015355a4978745d88fb8ab06ab4fc37da33ebf8d51e9b6bc35291363",
+    "lab/apple/gapless/Cargo.toml": "40ad429425c1d76b54d4df8b2a21fdda0cceabcd3e9e6c205ccbece848478cb3",
+    "lab/apple/gapless/src/main.rs": "2cad3177594b71a9e5f9385c4fa2a3de0803f5f958deffcc987131e4ec1edf8d",
+    "lab/apple/gapless.py": "0c42cb22eb9c022c0b827904211e5d5c437e884ff0a2fa660e20d6cd7440bca0",
+    "scripts/test_apple_gapless.py": "8b3e0544b99fd2375e1eecb150659d1d0c2ebe395bc0d10ad3b8d40772cfb68c",
+    "src/gapless/audit_tests.rs": "b14e24e21e9f444a04758db343579ddc5bc7ef6f80caeaad6c606291cf8d1657",
+    "src/gapless/tags.rs": "85e5f960e3b5120e6deb8480bd6a861d340ea7553b9e600dc883f46f4aef2cdf",
+    "src/gapless.rs": "85307764f2b813ee46324cee0e8d9c9a2599dda94a5560ca0863ca898aff0c43",
+    "src/isomp4/gapless.rs": "928e1aee7cf1692ac252dc160bbec36c1c8deb1200f6e8f4081af48e15fdeb95"
+  },
+  "package_sha256": "ee5be1be79a5531568dc795b6288077cf45e3f89ed05355ef3fe9ae69050ea75",
+  "evidence_retention": "Compact historical summary; routine stdout omitted. Commands, exit codes, test totals and source identities retained."
+}

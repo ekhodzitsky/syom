@@ -55,6 +55,8 @@ jobs:
         run: cargo fmt --check
       - name: offline Python policy tests
         run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: documentation links
+        run: python scripts/check-doc-links.py
       - name: file size
         run: python scripts/check-file-size.py
       - name: changelog
@@ -68,6 +70,17 @@ jobs:
       - name: package audit
         if: matrix.host == 'linux-x64'
         run: python scripts/check-package.py
+      - name: published README examples
+        if: matrix.host == 'linux-x64'
+        run: python scripts/check-readme-example.py
+      - name: Apple encoder gapless interoperability
+        if: matrix.host == 'macos-arm64'
+        run: python lab/apple/gapless.py --out target/apple-gapless
+      - uses: actions/upload-artifact@v4
+        if: always() && matrix.host == 'macos-arm64'
+        with:
+          name: apple-gapless-macos-arm64
+          path: target/apple-gapless/report.json
 
   msrv:
     name: msrv 1.89
@@ -77,5 +90,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "1.89"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: library tests on the declared minimum
         run: cargo +1.89 test --lib --tests
+      - name: published README examples on the declared minimum
+        run: python scripts/check-readme-example.py --msrv

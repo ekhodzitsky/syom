@@ -3,8 +3,9 @@
 This comparison covers Rust AAC decoding into application PCM, including
 container acquisition and output layout where the adapter performs them.
 It is a pinned snapshot, not a ranking of the latest releases. The root
-README integration table retains a published syom 0.10.0 snapshot; the current
-crate is 0.10.1. The archived timings below remain attributed to syom 0.8.0
+README integration table names published syom 0.10.1; peer facts retain their
+2026-11-02 review date. This is separate from the checkout's unreleased gapless
+fixes. The archived timings below remain attributed to syom 0.8.0
 and must not be relabeled as measurements of later releases.
 
 [Documentation index](README.md) ·

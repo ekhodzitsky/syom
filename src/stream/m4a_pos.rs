@@ -1,15 +1,14 @@
-//! Presentation-sample seeking on a seekable M4A (`elst` + codec preroll).
+//! Presentation-sample seeking on M4A (edit/tag window + codec preroll).
 
 use std::io::{self, Read, Seek, SeekFrom};
 
 use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
 use crate::error::{AacError, Result};
-use crate::isomp4::{self, AacTrack, TrackBoxes, load_track_boxes};
+use crate::isomp4::AacTrack;
 use crate::options::{ChannelMode, DecodeOptions};
 use crate::stream::{Frame, StreamInfo};
 
-use super::m4a::map_m4a_parse_err;
 #[path = "m4a_pos_au.rs"]
 mod au;
 #[path = "m4a_pos_checkpoint.rs"]
@@ -18,6 +17,8 @@ mod checkpoint;
 pub(super) mod completion;
 #[path = "m4a_pos_exact.rs"]
 mod exact;
+#[path = "m4a_pos_open.rs"]
+mod open;
 pub use completion::PresentationCompletion;
 pub use exact::{ExactSeekHistory, ExactSeekPlan, ExactSeekPosition};
 
@@ -40,14 +41,6 @@ fn read_exact<R: Read>(r: &mut R, buf: &mut [u8]) -> Result<()> {
 #[must_use]
 pub fn preroll_aus(sbr: bool) -> u64 {
     if sbr { 0 } else { 2 }
-}
-
-fn samples_per_au(asc: &AudioSpecificConfig) -> u64 {
-    // LC is 1024 or 960; HE output is twice the core when the ASC rate is.
-    // ER AAC LD is one 512- or 480-sample frame.
-    let core = u64::from(asc.frame_samples.max(1));
-    let sr = u64::from(asc.sample_rate.max(1));
-    core.saturating_mul(u64::from(asc.output_sample_rate)) / sr
 }
 
 /// Seekable M4A source: presentation-sample `seek` with codec preroll.
@@ -90,6 +83,7 @@ pub struct M4aSeek<R> {
     exact_failed: bool,
     source_identity: std::sync::Arc<()>,
     checkpoint_gapless_safe: bool,
+    gapless: Option<crate::gapless::Delay>,
     checkpoint_clean: bool,
     checkpoint_restored: bool,
     checkpoint_source_tag: u64,
@@ -98,85 +92,6 @@ pub struct M4aSeek<R> {
 }
 
 impl<R: Read + Seek> M4aSeek<R> {
-    /// Parse `moov` and sit at presentation 0 (elst skip still to apply).
-    pub fn open(mut reader: R, opts: DecodeOptions) -> Result<Self> {
-        opts.validate()?;
-        let boxes = load_track_boxes(&mut reader, &opts.memory)?;
-        let tagged = match &boxes {
-            TrackBoxes::Flat { moov, .. } | TrackBoxes::Frag { moov, .. } => {
-                moov.windows(b"iTunSMPB".len()).any(|w| w == b"iTunSMPB")
-            }
-        };
-        let track = match boxes {
-            TrackBoxes::Flat { moov, file_len } => {
-                isomp4::parse_aac_track_with_len(&moov, file_len, &opts.memory)
-                    .map_err(map_m4a_parse_err)?
-            }
-            TrackBoxes::Frag {
-                moov, moofs, mdats, ..
-            } => isomp4::frag::track_from_parts(&moov, &moofs, &mdats, &opts.memory)?,
-        };
-        let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
-        let out_rate = asc.output_sample_rate;
-        if out_rate == 0 || out_rate > opts.max_sample_rate {
-            return Err(AacError::sample_rate(out_rate, opts.max_sample_rate));
-        }
-        let spf = samples_per_au(&asc).max(1);
-        let (skip, play_opt) = track.edit_window(out_rate)?;
-        let skip = skip as u64;
-        let coded = spf.saturating_mul(track.frames.len() as u64);
-        let play = match play_opt {
-            Some(p) => p as u64,
-            None => coded.saturating_sub(skip),
-        };
-        let mono = matches!(opts.channel_mode, ChannelMode::Mono);
-        let n_ch = if mono {
-            1
-        } else {
-            u32::from(asc.channel_configuration).max(1)
-        };
-        opts.memory.check_output(n_ch, track.total_samples)?;
-        // LD overlap is one 512-sample frame. LC mono/stereo needs two
-        // (measured); HE/PS replays from the start because of in-band SBR.
-        let preroll = if asc.aot == crate::engine::asc::AOT_LD {
-            1
-        } else {
-            preroll_aus(asc.sbr_present)
-        };
-        let checkpoint_gapless_safe = track.has_elst || !tagged;
-        let checkpoint_source_tag = checkpoint::source_tag(&track);
-        let mut s = Self {
-            reader,
-            track,
-            asc,
-            opts,
-            dec: StreamDecoder::new(),
-            scratch: Vec::new(),
-            next_frame: 0,
-            discard_left: skip as usize,
-            play_left: play,
-            pos: 0,
-            skip,
-            play,
-            samples_per_au: spf,
-            preroll,
-            locked: None,
-            mono,
-            noise_free_prefix: 0,
-            exact_mode: false,
-            exact_failed: false,
-            source_identity: std::sync::Arc::new(()),
-            checkpoint_gapless_safe,
-            checkpoint_clean: true,
-            checkpoint_restored: false,
-            checkpoint_source_tag,
-            #[cfg(test)]
-            last_seek_aus: 0,
-        };
-        s.reset_codec();
-        Ok(s)
-    }
-
     fn reset_codec(&mut self) {
         self.checkpoint_restored = false;
         self.exact_mode = false;
@@ -381,8 +296,14 @@ impl<R: Read + Seek> M4aSeek<R> {
             layout: self.dec.last_meta().layout,
             aac_frames,
             samples: samples_out,
-            priming: self.track.has_elst.then_some(self.skip),
-            remainder: self.track.unplayed_tail(self.skip, self.pos),
+            priming: self
+                .gapless
+                .map(|d| d.priming)
+                .or_else(|| self.track.has_elst.then_some(self.skip)),
+            remainder: self
+                .gapless
+                .map(|d| d.remainder)
+                .or_else(|| self.track.unplayed_tail(self.skip, self.pos)),
             presentation_completion: self.presentation_completion(),
         })
     }

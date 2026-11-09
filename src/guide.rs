@@ -202,7 +202,10 @@
 //!
 //! Untagged ADTS and LATM leave duration and trim `Unknown`. A leading
 //! `iTunSMPB` tag whose sample counts equal the frames in the buffer
-//! fills both.
+//! fills both. Flat M4A also reports a standard Apple freeform tag when its
+//! counts match the selected track's AAC packet grid, even if mdhd duration
+//! is missing or stale. An edit list takes precedence. Presentation seeking
+//! applies the same tag window; tag-only persistent checkpoints stay excluded.
 //!
 //! ## Persistent LC process restart (since 0.10.0)
 //!

@@ -1,0 +1,225 @@
+{
+  "platform": "macOS-26.7.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "native_executed": true,
+  "status": "passed",
+  "commands": [
+    {
+      "args": [
+        "sw_vers"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "afconvert",
+        "-hf"
+      ],
+      "exit_code": 2,
+      "allowed_exit_codes": [
+        0,
+        2
+      ]
+    },
+    {
+      "args": [
+        "rustc",
+        "-vV"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "afconvert",
+        "-f",
+        "m4af",
+        "-d",
+        "aac",
+        "-b",
+        "256000",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-44100-2ch.wav",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-44100-2ch.m4a"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "afinfo",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-44100-2ch.m4a"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/runner/work/syom/syom/lab/apple/gapless/Cargo.toml",
+        "--",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-44100-2ch-no-elst.m4a",
+        "2112",
+        "416",
+        "352800",
+        "44100"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "afconvert",
+        "-f",
+        "m4af",
+        "-d",
+        "aac",
+        "-b",
+        "128000",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-48000-1ch.wav",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-48000-1ch.m4a"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "afinfo",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-48000-1ch.m4a"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    },
+    {
+      "args": [
+        "cargo",
+        "run",
+        "--release",
+        "--locked",
+        "--manifest-path",
+        "/Users/runner/work/syom/syom/lab/apple/gapless/Cargo.toml",
+        "--",
+        "/Users/runner/work/syom/syom/target/apple-gapless/lc-48000-1ch-no-elst.m4a",
+        "2112",
+        "51",
+        "48013",
+        "48000"
+      ],
+      "exit_code": 0,
+      "allowed_exit_codes": [
+        0
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "name": "lc-44100-2ch",
+      "rate": 44100,
+      "channels": 2,
+      "samples": 352800,
+      "tag": {
+        "data_type": 1,
+        "text": " 00000000 00000840 000001A0 0000000000056220 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000",
+        "priming": 2112,
+        "remainder": 416,
+        "samples": 352800
+      },
+      "edits_removed": 0,
+      "afinfo": "File:           /Users/runner/work/syom/syom/target/apple-gapless/lc-44100-2ch.m4a\nFile type ID:   m4af\nNum Tracks:     1\n----\nData format:     2 ch,  44100 Hz, aac  (0x00000000) 0 bits/channel, 0 bytes/packet, 1024 frames/packet, 0 bytes/frame\n                no channel layout.\nestimated duration: 8.000000 sec\naudio bytes: 130123\naudio packets: 347\nbit rate: 129197 bits per second\npacket size upper bound: 709\nmaximum packet size: 709\naudio data file offset: 4096\noptimized\naudio 352800 valid frames + 2112 priming + 416 remainder = 355328\nsource bit depth: I16\nformat list:\n[ 0] format:\t  2 ch,  44100 Hz, aac  (0x00000000) 0 bits/channel, 0 bytes/packet, 1024 frames/packet, 0 bytes/frame\nChannel layout: Stereo (L R)\n----\n",
+      "source_sha256": "0e8485110c61d588fd9ac4642e954d6ba6ddb2d9841fdb60c4133080cf8dffb8",
+      "encoded_sha256": "58d4459e65e428dddb2440287fbc0f02d8a5593e65d4f7c1e5f86513888b8d5e",
+      "tested_sha256": "58d4459e65e428dddb2440287fbc0f02d8a5593e65d4f7c1e5f86513888b8d5e",
+      "consumer": {
+        "samples": 352800,
+        "priming": 2112,
+        "remainder": 416,
+        "rate": 44100,
+        "channels": 2,
+        "paths_bit_identical": true
+      }
+    },
+    {
+      "name": "lc-48000-1ch",
+      "rate": 48000,
+      "channels": 1,
+      "samples": 48013,
+      "tag": {
+        "data_type": 1,
+        "text": " 00000000 00000840 00000033 000000000000BB8D 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000",
+        "priming": 2112,
+        "remainder": 51,
+        "samples": 48013
+      },
+      "edits_removed": 0,
+      "afinfo": "File:           /Users/runner/work/syom/syom/target/apple-gapless/lc-48000-1ch.m4a\nFile type ID:   m4af\nNum Tracks:     1\n----\nData format:     1 ch,  48000 Hz, aac  (0x00000000) 0 bits/channel, 0 bytes/packet, 1024 frames/packet, 0 bytes/frame\n                no channel layout.\nestimated duration: 1.000271 sec\naudio bytes: 14490\naudio packets: 49\nbit rate: 110892 bits per second\npacket size upper bound: 374\nmaximum packet size: 374\naudio data file offset: 4096\noptimized\naudio 48013 valid frames + 2112 priming + 51 remainder = 50176\nsource bit depth: I16\nformat list:\n[ 0] format:\t  1 ch,  48000 Hz, aac  (0x00000000) 0 bits/channel, 0 bytes/packet, 1024 frames/packet, 0 bytes/frame\nChannel layout: Mono\n----\n",
+      "source_sha256": "4afbdcdd447dbdffc6e5492fa20e27f8cb6fe601087439738f79dad185f01b01",
+      "encoded_sha256": "86ef3456ae68f1fd5875fb8bdbf9e67231d82b6831f3b0ae0a691817ea4b8acd",
+      "tested_sha256": "86ef3456ae68f1fd5875fb8bdbf9e67231d82b6831f3b0ae0a691817ea4b8acd",
+      "consumer": {
+        "samples": 48013,
+        "priming": 2112,
+        "remainder": 51,
+        "rate": 48000,
+        "channels": 1,
+        "paths_bit_identical": true
+      }
+    }
+  ],
+  "sw_vers": "ProductName:\t\tmacOS\nProductVersion:\t\t26.7.2\nBuildVersion:\t\t25G332\n",
+  "afconvert_sha256": "d5b54a71b328061195fbff3a765b9247390e3c7a1cf0bb4e772d0bf318c8a3d9",
+  "audio_toolbox": {
+    "BuildMachineOSBuild": "23A344017",
+    "CFBundleDevelopmentRegion": "English",
+    "CFBundleExecutable": "AudioToolbox",
+    "CFBundleIdentifier": "com.apple.audio.toolbox.AudioToolbox",
+    "CFBundleInfoDictionaryVersion": "6.0",
+    "CFBundleName": "AudioToolbox",
+    "CFBundlePackageType": "FMWK",
+    "CFBundleShortVersionString": "1.14",
+    "CFBundleSignature": "????",
+    "CFBundleSupportedPlatforms": [
+      "MacOSX"
+    ],
+    "CFBundleVersion": "1.14",
+    "DTCompiler": "com.apple.compilers.llvm.clang.1_0",
+    "DTPlatformBuild": "25G325",
+    "DTPlatformName": "macosx",
+    "DTPlatformVersion": "26.7.1",
+    "DTSDKBuild": "25G325",
+    "DTSDKName": "macosx26.7.internal",
+    "DTXcode": "2630",
+    "DTXcodeBuild": "17E6107",
+    "LSMinimumSystemVersion": "26.7"
+  },
+  "format_probe": {
+    "exit_code": 2,
+    "accepted_exit_codes": [
+      0,
+      2
+    ],
+    "listing_marker": "Audio file and data formats:",
+    "listing_sha256": "647a690daf7f0bbad918c86c39b1a630e20951df5cac218ed2d1f8e9de13869b"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "run": "https://github.com/ekhodzitsky/syom/actions/runs/42587495743",
+  "source_commit": "cf7d1e5c7f13743fd4f20e532b169d7daf53047b",
+  "scope": "Cross-path f32 equality within syom, not against AudioToolbox PCM. AAC-LC only; no HE/PS, quality or timing qualification."
+}

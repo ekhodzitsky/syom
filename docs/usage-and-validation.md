@@ -1,33 +1,34 @@
-# Usage and validation
+# Using syom
 
-[Documentation index](README.md) · [First example](../README.md#quick-start)
+[Documentation](README.md) · [Examples](../README.md#examples) ·
+[Verification and release status](verification.md)
 
-The published 0.10.1 crate uses `syom = "0.10"`; this patch optimizes AVX-512 FFT
-stages without changing the API, dependencies or Rust minimum. Its
-[release verification](../lab/release-audit/RELEASE-0.10.1.md) records publication
-separately from local qualification.
-Exact interval planning and logical seek positions were introduced in
-0.9.0; the existing `seek` API remains available. Version 0.10.0 adds
-[persistent LC state and strict completion](persistent-checkpoints.md).
+syom returns planar `f32` at the native sample rate. The published API guide is
+pinned to [0.10.1](https://docs.rs/syom/0.10.1/syom/guide/); the
+[checkout guide](../src/guide.rs) includes unpublished behavior fixes.
+[Release and checkout](verification.md#release-and-checkout) explains the gapless
+boundary. The API names below exist in the published release.
 
-## API guide
+## Choose an API
 
-The [published guide](https://docs.rs/syom/latest/syom/guide/) contains a
-compiling example for each task. Migration and source documentation are in
-[the checkout's guide](../src/guide.rs).
+| Task | Entry point | Important boundary |
+|---|---|---|
+| Decode bytes, preserving coded channels | `decode_with(bytes, &DecodeOptions::audio())` | Planar `f32`; no resampling |
+| Read a file | `read_with(path, options)` | M4A uses seekable input; other supported transports use the byte path |
+| Mix speech to mono | `decode(bytes)` / `read(path)` | Bounded speech defaults; non-LFE mean |
+| Decode incoming chunks | `Decoder::feed` then `finish` | ADTS, LATM/LOAS, fragmented MP4; callbacks borrow PCM |
+| Stream flat M4A from a reader | `decode_seek_streaming` | Requires `Read + Seek`; loads metadata and one compressed AU |
+| Seek in native presentation samples | `M4aSeek` | Exact history can require prefix replay |
+| Inspect metadata without PCM | `probe` | Duration/trim certainty is explicit; metadata is not source authentication |
+| Encode a complete buffer | `encode` / `encode_with` | LC by default; container/profile options are explicit |
+| Encode incrementally | `Encoder::feed` then `finish` | Callback AUs borrow encoder storage; raw output needs caller metadata |
+| Use your own transport | `Decoder::from_asc` / `decode_au` | Caller supplies ASC and AU boundaries |
+| Persist qualified native LC state | `M4aSeek::checkpoint` / `restore_checkpoint` | Source/options/build authentication belongs to the caller |
 
-| Task | Guide section |
-|---|---|
-| One-call encode/decode, speech vs full fidelity | 1 |
-| Borrowed PCM, `Read` / `Write` / `Seek` | 2 |
-| Priming, tail, exact length | 3 |
-| Push `Encoder` / `Decoder`, bounded memory | 4 |
-| Raw access units and `AudioSpecificConfig` | 5 |
-| Probe, sample-exact M4A seek | 6 |
-| LC, quality VBR, HE v1/v2, surround | 7 |
-| Limits and typed errors | 8 |
-| Profiles and containers | 9 |
-| Behaviour changes since 0.6.0 | 10 |
+Every push feed must be finished. Copy borrowed frames if they must outlive a
+callback. A callback error fails a push instance; `reset` reuses its storage.
+See [compiling API examples](https://docs.rs/syom/0.10.1/syom/guide/) for
+`Read`/`Write`, raw AUs, encoding options, memory budgets and typed errors.
 
 ## Formats and channel layout
 
@@ -40,104 +41,65 @@ compiling example for each task. Migration and source documentation are in
 | HE v1/v2 encode | Yes | Yes | Yes | No |
 | AAC-LD encode (512) | No | Yes | Yes | No |
 
-LC encode is the default; M/S is per-band. `with_he`, `with_he_v2` and
-`with_ld` are opt-in. ADTS cannot signal AAC-LD. Fragmented MP4 supports
-one unencrypted AAC track and bounded init/fragment processing; see the
-[profile and container contract](../src/guide.rs).
+LC encode defaults to 128 kbps ABR and per-band M/S. `with_he`, `with_he_v2`
+and `with_ld` are opt-in; ADTS cannot signal LD. Bounded fragmented MP4
+supports one unencrypted AAC track. Push decode needs its init segment before
+fragments; flat M4A remains random-access. See the [format contract](../src/guide.rs).
 
 Surround LC uses 3, 4, 5, 6 or 8 planes (`channel_configuration` 3–7).
 Seven planes have no supported layout. `DecodeOptions::audio()` keeps
-coded channels; `decode()` uses the speech mono mix (non-LFE mean).
-The speech defaults cap duration at the sample budget for two hours at
-48 kHz; higher sample rates consume that same budget sooner. There is
-no resampling. HE output uses the extension's output rate, twice its core
-rate for the supported half-rate-core streams.
+coded channels; `decode()` uses the speech mono mix. The speech duration
+budget is two hours at 48 kHz; higher rates consume the same sample budget
+sooner. There is no resampling. Supported HE output can run at twice the
+core rate; reported PCM uses the output rate.
 
-## Exact interval acquisition since 0.9.0
+## Install from a checkout
 
-For the registry release:
-
-```toml
-[dependencies]
-syom = "0.10"
-```
-
-To develop against a local checkout at `../syom`:
+The registry dependency is `syom = "0.10"`. To evaluate this checkout's
+unreleased changes with a sibling directory:
 
 ```toml
 [dependencies]
 syom = { version = "0.10", path = "../syom" }
 ```
 
-`exact_seek_plan` and budgeted `seek_exact` cover LC/LD mono/stereo
-interval consumers. Every nonempty exact plan requires the coded prefix
-from access unit zero; arbitrary cold sparse seeking is not qualified.
-Logical positions are source-bound and restore by replay, not by restoring
-an opaque DSP checkpoint. [The guide](../src/guide.rs) explains borrowed
-byte ranges, native presentation coordinates, restore and resource limits.
-The old `seek` API remains available.
+The path selects local sources; the matching version does not turn those
+sources into the published archive. [Installation](../README.md#install) and
+[release verification](verification.md#release-and-checkout) distinguish them.
+
+## Exact interval acquisition since 0.9.0
+
+`exact_seek_plan` and budgeted `seek_exact` cover LC/LD mono/stereo intervals.
+Every nonempty exact plan needs the coded prefix from AU zero. Arbitrary cold
+sparse seeking is not qualified. The older `seek` API remains available.
+
+`save_exact_position` is source-instance-bound and restores by replay, not by
+importing DSP state. Persistent checkpoints are a different contract. Follow
+[checkpoint eligibility, binding and completion](persistent-checkpoints.md)
+and the [source guide](../src/guide.rs) for native coordinates, borrowed byte
+ranges and resource limits.
+
+## Gapless timing
+
+One-shot ADTS encode writes a delay tag; LATM/LOAS has no equivalent tag and
+retains whole-frame padding. M4A edit lists take precedence over tags.
+The checkout's standard Apple tag reader validates counts against the AAC
+packet grid, while tag-only persistent checkpoints stay excluded.
+Published 0.10.1 has the [known iTunSMPB limitation](verification.md#release-and-checkout).
+
+Push ADTS applies modest tag edges before final length confirmation under its
+bounded-memory contract; finish reports trim only when counts match. Push
+fragmented MP4 does not consume iTunSMPB. A complete bounded one-shot or
+seekable MP4 path has a different input scope. See the [source guide](../src/guide.rs).
 
 ## Validation and integration
 
-[Release 0.10.1 verification](../lab/release-audit/RELEASE-0.10.1.md) records
-the published archive checksum, clean source commit/tag and actual registry
-quick-start checks on Rust 1.97.1 and MSRV 1.89. It also records the required
-local tests, package/consumer checks, cold-stack regressions and fuzz results.
-
-The [0.10.1 consumer qualification](../lab/release-audit/TASK145.md) covers the
-exact Git-pinned library plus its separate gigastt adapter patch. Two CPU 1
-confirmations pass the six-case timing gate and 29 PCM cases retain exact bits.
-A CPU 0 scan failure remains unexplained. The raw HTTP equality canary remains
-false; independent presentation references explain the accepted differences,
-and admission/load/fault gates pass. Split-mode RSS remains higher than the
-standard decoder. The [subsequent audit](../lab/release-audit/TASK145-REVIEW.md)
-strengthens verification without rewriting those measurements.
-
-This is not a deployed consumer or a general speed/accuracy ranking. Historical
-prepublication qualifications retain their original versions and status below.
-
-### Historical consumer checks
-
-The historical [0.8.1 qualification](../lab/release-audit/CANDIDATE-0.8.1.md)
-passed 19 cases from 16 recordings against FFmpeg and the actual gigastt
-decode adapter. The [published release](../lab/release-audit/PUBLISHED-0.8.1.md)
-includes the padded-LC allocation fix and PNS-history preservation during
-M4A seek. Those source revisions and recordings remain historical evidence,
-not a new run on the current checkout.
-
-The [paired HTTP ASR canary](../lab/release-audit/HTTP-CANARY-0.8.1.md)
-matched normalized transcripts and durations on 32 speech-format cases.
-The [local load/fault qualification](../lab/release-audit/HTTP-LOAD-0.8.1.md)
-passed 224 measured requests per binary at 1/2/4/8 clients, including queue
-and watchdog timeouts and recovery after client cancellation. Those checks
-use the original consumer snapshot. The maintained
-[opt-in gigastt integration](https://github.com/ekhodzitsky/gigastt/pull/442)
-has [separate refactored-adapter qualification](https://github.com/ekhodzitsky/gigastt/blob/c64de2e19997ba7c4ecfe1f184488f85274a5b1f/docs/measurements/aac-20261029/README.md).
-
-Cold/stateful seeks can replay the prefix; verified noise-free LC/LD
-prefixes retain short preroll. Tagged/untagged LC ABR/CBR packaged-consumer
-checks allocate zero times after warmup. The
-[0.9.0 candidate qualification](../lab/release-audit/REPORT.md#candidate-090--cold-start-fix)
-records local checks, exact decoded/encoded comparisons, parser/state fuzz
-and cold 128 KiB release-stack regressions. No Windows/macOS/ARM parity,
-physical-device runtime result, full ISO conformance, listening superiority
-or live-service deployment follows from those Linux checks.
+Validation moved to [release status and evidence](verification.md): registry
+receipts, current hosted/native checks, consumer qualifications and remaining
+measurement gaps. Historical reports retain their original source identities.
 
 ## Badges and measurement gaps
 
-Registry version, monthly downloads and published API docs badges describe
-the distribution channel, not the development candidate or a user count.
-The `main` CI badge displays the last hosted workflow state. Hosted runs
-are paused to preserve capacity; the configured workflow and Rust 1.89 job
-remain in [.github/workflows/ci.yml](../.github/workflows/ci.yml).
-MSRV is declared in [Cargo.toml](../Cargo.toml) and locally tested for the
-release; the badge does not claim a new hosted run.
-
-The [2026-11-02 local library-line report](../lab/baseline/COVERAGE.md#local-measurement-2026-11-02)
-measures **25802 / 27830 lines (92.71%)** on the recorded runtime sources.
-It excludes `_tests.rs` files, integration tests, doctests, benches,
-dependencies and std. Branch/MC/DC coverage was not enabled. The badge
-links to that dated source-pinned report; it is not a rolling hosted score.
-The earlier 2026-09-29 result of 93.88% and its original scope are preserved
-in the same report. Different source populations make those percentages
-unsuitable for a direct coverage-regression claim.
+See [badge sources and dated coverage](verification.md#badges-and-measurement-gaps).
+These anchors remain for links from earlier reports; verification has one
+maintained home rather than duplicated status paragraphs.

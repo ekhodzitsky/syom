@@ -1,6 +1,7 @@
 //! File-level `iTunSMPB`: ADTS tag round-trip, split feeds, and an M4A
 //! with the tag and no `elst`.
 
+use crate::gapless::test_support::{append_tag, find_edts, m4a_tag_no_elst};
 use crate::gapless::{self, Delay};
 use crate::{
     AacError, DecodeOptions, Decoder, EncodeOptions, Encoder, Frame, ProbeContainer, ProbeDuration,
@@ -41,6 +42,8 @@ fn lc_1124_adts_trims_to_the_source_and_keeps_the_impulse() -> Result<()> {
     let opts = EncodeOptions::adts();
     let adts = encode_with(&[&pcm], 48_000, &opts)?;
     assert!(adts.starts_with(b"ID3"));
+    let expected = b"iTunSMPB\0 00000000 00000400 0000039C 0000000000000464";
+    assert!(adts.windows(expected.len()).any(|w| w == expected));
     let dec = decode(&adts)?;
     assert_eq!(dec.channels[0].len(), 1124);
     assert_eq!(dec.priming, Some(1024));
@@ -245,100 +248,6 @@ fn au_bytes_match_wrap_adts_au() -> Result<()> {
     Ok(())
 }
 
-/// Drop `edts` from a one-shot M4A and append an `iTunSMPB` string in `udta`.
-fn m4a_tag_no_elst(pcm: &[f32], delay: &Delay) -> Result<Vec<u8>> {
-    let mut file = encode_with(&[&pcm], 48_000, &EncodeOptions::m4a())?;
-    let (at, len, ancestors) = find_edts(&file).ok_or_else(|| AacError::format("no edts"))?;
-    for anc in &ancestors {
-        let sz = u32::from_be_bytes(
-            file[*anc..*anc + 4]
-                .try_into()
-                .map_err(|_| AacError::format("box"))?,
-        ) as usize;
-        file[*anc..*anc + 4].copy_from_slice(&((sz - len) as u32).to_be_bytes());
-    }
-    file.drain(at..at + len);
-    let text = format!("iTunSMPB{}", gapless::itunsmpb_value(delay));
-    append_udta(&mut file, text.as_bytes())?;
-    Ok(file)
-}
-
-fn append_udta(file: &mut Vec<u8>, payload: &[u8]) -> Result<()> {
-    let moov = top_box(file, b"moov").ok_or_else(|| AacError::format("no moov"))?;
-    let sz = u32::from_be_bytes(
-        file[moov..moov + 4]
-            .try_into()
-            .map_err(|_| AacError::format("box"))?,
-    ) as usize;
-    let total = 8 + payload.len();
-    let mut udta = Vec::with_capacity(total);
-    udta.extend_from_slice(&(total as u32).to_be_bytes());
-    udta.extend_from_slice(b"udta");
-    udta.extend_from_slice(payload);
-    let end = moov + sz;
-    file.splice(end..end, udta);
-    file[moov..moov + 4].copy_from_slice(&((sz + total) as u32).to_be_bytes());
-    Ok(())
-}
-
-fn top_box(data: &[u8], typ: &[u8; 4]) -> Option<usize> {
-    let mut c = 0usize;
-    while c + 8 <= data.len() {
-        let sz = u32::from_be_bytes(data[c..c + 4].try_into().ok()?) as usize;
-        if sz < 8 || c + sz > data.len() {
-            return None;
-        }
-        if &data[c + 4..c + 8] == typ {
-            return Some(c);
-        }
-        c += sz;
-    }
-    None
-}
-
-fn find_edts(data: &[u8]) -> Option<(usize, usize, Vec<usize>)> {
-    fn rec(data: &[u8], pos: usize, ancestors: &mut Vec<usize>) -> Option<(usize, usize)> {
-        let sz = u32::from_be_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
-        if sz < 8 || pos + sz > data.len() {
-            return None;
-        }
-        let typ = &data[pos + 4..pos + 8];
-        if typ == b"edts" {
-            return Some((pos, sz));
-        }
-        if typ == b"moov" || typ == b"trak" {
-            ancestors.push(pos);
-            let mut c = pos + 8;
-            let end = pos + sz;
-            while c + 8 <= end {
-                let child = u32::from_be_bytes(data.get(c..c + 4)?.try_into().ok()?) as usize;
-                if child < 8 || c + child > end {
-                    return None;
-                }
-                if let Some(found) = rec(data, c, ancestors) {
-                    return Some(found);
-                }
-                c += child;
-            }
-            ancestors.pop();
-        }
-        None
-    }
-    let mut c = 0usize;
-    let mut ancestors = Vec::new();
-    while c + 8 <= data.len() {
-        let sz = u32::from_be_bytes(data.get(c..c + 4)?.try_into().ok()?) as usize;
-        if sz < 8 || c + sz > data.len() {
-            return None;
-        }
-        if let Some(found) = rec(data, c, &mut ancestors) {
-            return Some((found.0, found.1, ancestors));
-        }
-        c += sz;
-    }
-    None
-}
-
 #[test]
 fn m4a_without_elst_trims_from_itunsmpb() -> Result<()> {
     let pcm = impulse(1124);
@@ -351,6 +260,18 @@ fn m4a_without_elst_trims_from_itunsmpb() -> Result<()> {
     assert_eq!(dec.priming, Some(1024));
     assert_eq!(dec.remainder, Some(924));
     assert_eq!(peak(&dec.channels[0]), 0);
+    let mut streamed = Vec::new();
+    let info = crate::decode_seek_streaming(
+        std::io::Cursor::new(&file),
+        &DecodeOptions::unbounded(),
+        |f| {
+            streamed.extend_from_slice(f.planar[0]);
+            Ok(())
+        },
+    )?;
+    assert_eq!(streamed, dec.channels[0]);
+    assert_eq!(info.priming, dec.priming);
+    assert_eq!(info.remainder, dec.remainder);
     let mut bare = encode_with(&[&pcm], 48_000, &EncodeOptions::m4a())?;
     let (at, len, ancestors) = find_edts(&bare).ok_or_else(|| AacError::format("no edts"))?;
     for anc in &ancestors {
@@ -365,5 +286,50 @@ fn m4a_without_elst_trims_from_itunsmpb() -> Result<()> {
     let open = decode(&bare)?;
     assert_eq!(open.channels[0].len(), 3 * 1024);
     assert_eq!(open.priming, None);
+    Ok(())
+}
+
+#[test]
+fn apple_itunsmpb_example_has_the_documented_counts() -> Result<()> {
+    let mut file = b"\0\0\0\x08moov".to_vec();
+    append_tag(
+        &mut file,
+        b" 00000000 00000840 000001A0 0000000000056220 00000000",
+    )?;
+    assert_eq!(
+        gapless::itunsmpb_in(&file),
+        Some(Delay {
+            priming: 2112,
+            remainder: 416,
+            source: 352800
+        })
+    );
+    Ok(())
+}
+
+#[test]
+fn m4a_probe_uses_only_matching_itunsmpb_without_elst() -> Result<()> {
+    let pcm = impulse(1124);
+    let delay = gapless::delay_lc(1124);
+    let file = m4a_tag_no_elst(&pcm, &delay)?;
+    let meta = probe(&file)?;
+    assert_eq!(meta.duration, ProbeDuration::Exact { samples: 1124 });
+    assert_eq!(
+        meta.trim,
+        ProbeTrim::Exact {
+            priming: 1024,
+            remainder: 924
+        }
+    );
+    for source in [1125, u64::MAX] {
+        let stale = Delay { source, ..delay };
+        let file = m4a_tag_no_elst(&pcm, &stale)?;
+        assert_eq!(probe(&file)?.trim, ProbeTrim::Unknown);
+        assert_eq!(decode(&file)?.priming, None);
+    }
+    let mut edited = encode_with(&[&pcm], 48_000, &EncodeOptions::m4a())?;
+    append_tag(&mut edited, b" 00000000 00000000 0000079C 0000000000000464")?;
+    assert_eq!(probe(&edited)?.trim, meta.trim);
+    assert_eq!(decode(&edited)?.priming, Some(1024));
     Ok(())
 }

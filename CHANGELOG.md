@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Read and write the reserved leading iTunSMPB field before priming and
+  remainder, so standard Apple tags trim M4A/ADTS correctly (#9). M4A probe
+  reports the tagged presentation duration and trim when the counts match
+  the selected track's AAC packet grid and no edit list takes precedence.
+  Presentation seeking applies the same validated tag window, including
+  completion and priming/remainder reporting; persistent checkpoints remain
+  excluded for tag-only sources.
+  Parse only the Apple freeform metadata item within its box boundaries,
+  including 64-bit box headers; reject ambiguous items and malformed fields.
+  Recognised tags with malformed values still count toward ambiguity, for
+  both MP4 and ID3, rather than selecting a value by item/frame order.
+  Honour ID3v2.3 frame sizes and actual 960/480-sample core/rate geometry.
+  Tags previously
+  written in syom's incorrect field order are no longer interpreted as that
+  private layout; regenerate them for interoperable gapless playback.
+
 ### Changed
+
+- Rework the README around runnable examples, decode/encode scope, pinned
+  comparisons and installation. Separate usage from release/checkout
+  verification, update resumed CI and native Apple evidence, and retain
+  dated measurements. Check maintained documentation links and all README
+  Rust examples, including the published dependency on MSRV.
+
+- Add an isolated macOS CI interoperability lane using native afconvert
+  output, independently inspected sample counts and tag-only playback
+  through decode, probe, streaming and exact presentation seeking.
 
 - Freeze oversized Rust modules behind exact, documented line ceilings instead
   of filename-prefix exemptions. Validate the source and packaged Cargo

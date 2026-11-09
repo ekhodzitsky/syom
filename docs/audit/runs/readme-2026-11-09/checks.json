@@ -1,0 +1,178 @@
+{
+  "base_commit": "d3f33d49b035156273b926d62aae371b5aa77ee6",
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Final documentation, workflow and verification tools. Codec runtime source unchanged.",
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 2.909
+    },
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_*.py"
+      ],
+      "exit_code": 0,
+      "seconds": 7.519,
+      "python_tests": 85
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-doc-links.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.046,
+      "result": {
+        "local_links_checked": 218,
+        "external_links_not_checked": 27,
+        "errors": []
+      },
+      "pages_checked": 11
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-file-size.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.026
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-changelog.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.023
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 5.615
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--lib",
+        "--tests"
+      ],
+      "exit_code": 0,
+      "seconds": 38.816,
+      "test_results": [
+        "test result: ok. 1205 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 18.44s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s",
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s",
+        "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.71s"
+      ]
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--doc"
+      ],
+      "exit_code": 0,
+      "seconds": 1.028,
+      "test_results": [
+        "test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.59s"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-package.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.621,
+      "result": "OK: 193 files, 472783 bytes compressed (budget 524288), rust-version 1.89, no dependencies, no build script"
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-readme-example.py",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 1.139,
+      "result": {
+        "registry_version": "0.10.1",
+        "registry_source": "registry+https://github.com/rust-lang/crates.io-index",
+        "registry_checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+        "msrv": false,
+        "example_set_sha256": "39382e38634973dc39cf7bfb2c1ad5f0fb9270af848e09372237c50e581bd02c",
+        "compiled_examples": 3,
+        "result": "pass",
+        "executed_examples": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/check-readme-example.py",
+        "--msrv",
+        "--offline"
+      ],
+      "exit_code": 0,
+      "seconds": 1.729,
+      "result": {
+        "registry_version": "0.10.1",
+        "registry_source": "registry+https://github.com/rust-lang/crates.io-index",
+        "registry_checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+        "msrv": true,
+        "example_set_sha256": "39382e38634973dc39cf7bfb2c1ad5f0fb9270af848e09372237c50e581bd02c",
+        "compiled_examples": 3,
+        "result": "pass",
+        "executed_examples": [
+          1,
+          3
+        ]
+      }
+    }
+  ],
+  "sources_sha256": {
+    ".github/workflows/ci.yml": "9902d3a5aa6446ee1fdc91e2170e549828293dd6924de48d36e9a552ec74056b",
+    "AGENTS.md": "f259ce4c7a06ccba0a7eed9ca0869a03c83373a84cea7b8fd4bcd4e9f34a7c88",
+    "CHANGELOG.md": "7243f5d055edadc998b3814798f7a4797fdf5340b05662e5a1c9c1a1eb0f5388",
+    "CONTRIBUTING.md": "6d5889b473981fb4605b55cd3c45f87dcfc3813d520e54885af1314a34c83981",
+    "README.md": "0dd99e00bd863ce5db13a4f479917553d04179e095d12926e2142a5f252582d7",
+    "docs/README.md": "3a312e0fe4906a3f9493827b809041716d84c527c7347526bed3246126bf965b",
+    "docs/comparison.md": "9fecd840612ae4a2302a2fcb956c1cfa278cd1f7eb66b31b1cccf1f93e1ecf10",
+    "docs/persistent-checkpoints.md": "2254a8ad243578d603403fbb247ae882800ffe9067ccbdb9c05bc639dedc338d",
+    "docs/repository-layout.md": "093e66ea65b94998421c1ea777091ded9032975e2e390de66417a6f10e63e82e",
+    "docs/usage-and-validation.md": "f1c57f95d08715ce57dd2c78aaaa2c6249dacb4515bec07af8e80a3de1130b9d",
+    "docs/verification.md": "17016d3cd55e3a70fd7a5e9dc83abb6cb19352044c31058707cbd1fc3d19b08d",
+    "lab/README.md": "64bf40c309d1d6bf81eba7b6f1cfb99a3c0ae506cb9c6e8fedc6b06a7b261f3c",
+    "scripts/check-doc-links.py": "7bb49b3643bb910fdf6aec618a167ea4e6fb73c02dd74620cce4ca94881b77e8",
+    "scripts/check-readme-example.py": "d68d3cb1337387c6b6d5ae331832d4e7a56fe5bbf49177faf4da5363f5482720",
+    "scripts/test_check_doc_links.py": "af2a105a764bd0076d670cd646d72c43bd59005df93003aa06cea01e256bf6ce",
+    "scripts/test_check_readme_example.py": "380df8213372d858def850d72597af6c5bba7dfecd446cb47759f78a787bd04f"
+  },
+  "package_sha256": "8fc3442d2a70baf7dcb3d3011e731faf5f8f35531279ade53ecdc7be7831ed42",
+  "final_checks_passed": true,
+  "evidence_retention": "Compact historical summary; routine stdout omitted. Commands, exit codes, test totals and source identities retained."
+}

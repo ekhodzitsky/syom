@@ -7,6 +7,7 @@ pub fn generated() -> Vec<(String, Vec<u8>)> {
         "generated-cbr".into(),
         syom::encode_with(&[&pcm], 48_000, &EncodeOptions::adts().with_cbr(true)).unwrap(),
     )];
+    out.push(("apple-gapless-lc".into(), apple_gapless_seed(&pcm[..4083])));
     for aot in [1, 3, 4] {
         let raw = profile_au(aot);
         let size = raw.len() + 7;
@@ -30,6 +31,44 @@ pub fn generated() -> Vec<(String, Vec<u8>)> {
         out.push((format!("authored-aot-{aot}"), bytes));
     }
     out
+}
+
+fn apple_gapless_seed(pcm: &[f32]) -> Vec<u8> {
+    fn bx(typ: &[u8; 4], body: &[u8]) -> Vec<u8> {
+        let mut out = ((body.len() + 8) as u32).to_be_bytes().to_vec();
+        out.extend_from_slice(typ);
+        out.extend_from_slice(body);
+        out
+    }
+    let mut file = syom::encode_with(&[pcm], 48_000, &EncodeOptions::m4a()).unwrap();
+    let elst = file.windows(4).position(|w| w == b"elst").unwrap();
+    file[elst..elst + 4].copy_from_slice(b"free");
+    let mut item = bx(b"mean", b"\0\0\0\0com.apple.iTunes");
+    item.extend(bx(b"name", b"\0\0\0\0iTunSMPB"));
+    let mut text = b"\0\0\0\x01\0\0\0\0".to_vec();
+    let remainder = (1024 - pcm.len() % 1024) % 1024;
+    text.extend_from_slice(
+        format!(" 00000000 00000400 {remainder:08X} {:016X}", pcm.len(),).as_bytes(),
+    );
+    item.extend(bx(b"data", &text));
+    let mut meta = vec![0; 4];
+    meta.extend(bx(b"ilst", &bx(b"----", &item)));
+    let udta = bx(b"udta", &bx(b"meta", &meta));
+    let moov = file.windows(4).position(|w| w == b"moov").unwrap() - 4;
+    let size = u32::from_be_bytes(file[moov..moov + 4].try_into().unwrap()) as usize;
+    assert_eq!(moov + size, file.len());
+    file[moov..moov + 4].copy_from_slice(&((size + udta.len()) as u32).to_be_bytes());
+    file.extend(udta);
+    let dec = syom::decode_with(&file, &DecodeOptions::audio()).unwrap();
+    assert_eq!(dec.channels[0].len(), pcm.len());
+    assert_eq!(dec.priming, Some(1024));
+    assert_eq!(
+        syom::probe(&file).unwrap().duration,
+        syom::ProbeDuration::Exact {
+            samples: pcm.len() as u64
+        }
+    );
+    file
 }
 
 pub fn paths() -> [&'static str; 3] {
@@ -72,7 +111,7 @@ struct Bits(Vec<u8>, usize);
 impl Bits {
     fn put(&mut self, v: u32, n: usize) {
         for i in (0..n).rev() {
-            if self.1 % 8 == 0 {
+            if self.1.is_multiple_of(8) {
                 self.0.push(0);
             }
             let last = self.0.len() - 1;

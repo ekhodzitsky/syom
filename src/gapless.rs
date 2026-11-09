@@ -20,6 +20,15 @@ use crate::error::{AacError, Result};
 /// One-shot decode still checks the tag against the decoded length.
 pub(crate) const MAX_PUSH_GAP: u64 = 4096;
 
+#[cfg(test)]
+mod audit_tests;
+#[cfg(test)]
+#[path = "gapless/fixtures_tests.rs"]
+pub(crate) mod test_support;
+
+#[cfg(test)]
+mod text_tests;
+
 /// Encoder delay record, in decoded samples at the output rate.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Delay {
@@ -27,6 +36,32 @@ pub(crate) struct Delay {
     pub remainder: u64,
     pub source: u64,
 }
+
+impl Delay {
+    pub(crate) fn coded_samples(self) -> Option<u64> {
+        self.priming
+            .checked_add(self.source)?
+            .checked_add(self.remainder)
+    }
+
+    /// Exact arithmetic: an overflowing record can never validate a window.
+    pub(crate) fn matches(self, coded: u64) -> bool {
+        coded > 0 && self.coded_samples() == Some(coded)
+    }
+
+    pub(crate) fn matches_frames(self, frames: u64, samples_per_frame: u64) -> bool {
+        frames
+            .checked_mul(samples_per_frame)
+            .is_some_and(|n| self.matches(n))
+    }
+}
+
+mod text;
+
+mod tags;
+pub(crate) use crate::isomp4::itunsmpb_in;
+pub(crate) use tags::{Tag, Tags};
+pub(crate) use text::{itunsmpb_value, parse_text};
 
 /// What a leading ID3 tag is, without copying its body.
 pub(crate) enum Id3At {
@@ -119,14 +154,6 @@ pub(crate) fn strip_id3(data: &[u8]) -> &[u8] {
     }
 }
 
-/// The twelve-field text ffmpeg writes, leading space included.
-pub(crate) fn itunsmpb_value(d: &Delay) -> String {
-    format!(
-        " {:08X} {:08X} {:08X} {:016X} 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000",
-        d.priming, d.remainder, 0u32, d.source
-    )
-}
-
 fn build_id3(delay: &Delay) -> Vec<u8> {
     let value = itunsmpb_value(delay);
     let mut body = Vec::with_capacity(1 + 9 + value.len());
@@ -191,10 +218,9 @@ pub(crate) fn id3_at(data: &[u8], budget: u64) -> Result<Id3At> {
     let Some(body) = unsyncsafe(&data[6..10]) else {
         return Ok(Id3At::Absent);
     };
-    // v2.3 stores a plain size. Accept it only when it still fits the budget
-    // and the high bit of each byte was clear (same shape as syncsafe).
+    // Both versions use a syncsafe tag size; frame sizes differ below.
     let mut total = 10u64.saturating_add(u64::from(body));
-    if flags & 0x10 != 0 {
+    if major == 4 && flags & 0x10 != 0 {
         total = total.saturating_add(10);
     }
     if total > budget {
@@ -219,37 +245,40 @@ pub(crate) fn id3_at(data: &[u8], budget: u64) -> Result<Id3At> {
         None
     } else {
         let end = 10 + body as usize;
-        gapless_in_tag(&data[10..end])
+        gapless_in_tag(&data[10..end], major)
     };
     Ok(Id3At::Ready { len, delay })
 }
 
-fn gapless_in_tag(body: &[u8]) -> Option<Delay> {
+fn gapless_in_tag(body: &[u8], major: u8) -> Option<Delay> {
+    let mut tags = Tags::default();
     let mut pos = 0usize;
     while pos + 10 <= body.len() {
         let id = &body[pos..pos + 4];
-        let size = unsyncsafe(&body[pos + 4..pos + 8])?;
+        let bytes = body[pos + 4..pos + 8].try_into().ok()?;
+        let size = if major == 3 {
+            u32::from_be_bytes(bytes)
+        } else {
+            unsyncsafe(&bytes)?
+        };
         let format_flags = body[pos + 9];
         pos += 10;
-        let size = size as usize;
-        if pos + size > body.len() {
-            return None;
-        }
-        let frame = &body[pos..pos + size];
-        pos += size;
+        let end = pos.checked_add(usize::try_from(size).ok()?)?;
+        let frame = body.get(pos..end)?;
+        pos = end;
         if format_flags != 0 {
             continue;
         }
         if (id == b"TXXX" || id == b"COMM")
-            && let Some(d) = text_delay(id, frame)
+            && let Some(tag) = text_delay(id, frame)
         {
-            return Some(d);
+            tags.add(tag);
         }
     }
-    None
+    tags.delay()
 }
 
-fn text_delay(id: &[u8], frame: &[u8]) -> Option<Delay> {
+fn text_delay(id: &[u8], frame: &[u8]) -> Option<Tag> {
     let enc = *frame.first()?;
     if enc != 0 && enc != 3 {
         return None;
@@ -265,61 +294,9 @@ fn text_delay(id: &[u8], frame: &[u8]) -> Option<Delay> {
     if &frame[p..p + rel] != b"iTunSMPB" {
         return None;
     }
-    parse_window(&frame[p + rel + 1..])
-}
-
-fn parse_window(w: &[u8]) -> Option<Delay> {
-    let mut i = 0usize;
-    while i < w.len() {
-        if let Some(d) = parse_at(w, i) {
-            return Some(d);
-        }
-        i += 1;
-    }
-    None
-}
-
-fn parse_at(w: &[u8], mut i: usize) -> Option<Delay> {
-    if i < w.len() && w[i] == b' ' {
-        i += 1;
-    }
-    let priming = hex_n(w, &mut i, 8)?;
-    if w.get(i) != Some(&b' ') {
-        return None;
-    }
-    i += 1;
-    let remainder = hex_n(w, &mut i, 8)?;
-    if w.get(i) != Some(&b' ') {
-        return None;
-    }
-    i += 1;
-    let _ignored = hex_n(w, &mut i, 8)?;
-    if w.get(i) != Some(&b' ') {
-        return None;
-    }
-    i += 1;
-    let source = hex_n(w, &mut i, 16)?;
-    Some(Delay {
-        priming,
-        remainder,
-        source,
+    Some(Tag {
+        delay: parse_text(&frame[p + rel + 1..]),
     })
-}
-
-fn hex_n(w: &[u8], p: &mut usize, n: usize) -> Option<u64> {
-    let bytes = w.get(*p..*p + n)?;
-    let mut v = 0u64;
-    for &c in bytes {
-        let d = match c {
-            b'0'..=b'9' => c - b'0',
-            b'a'..=b'f' => c - b'a' + 10,
-            b'A'..=b'F' => c - b'A' + 10,
-            _ => return None,
-        };
-        v = (v << 4) | u64::from(d);
-    }
-    *p += n;
-    Some(v)
 }
 
 /// Complete ADTS frame count, or [`None`] when a byte falls outside a frame.
@@ -338,63 +315,13 @@ pub(crate) fn exact_adts_frames(data: &[u8]) -> Option<u64> {
     Some(n)
 }
 
-/// Decoded samples one AAC frame yields for this ASC.
-pub(crate) fn output_frame_samples(aot: u8, sbr: bool, ps: bool) -> u64 {
-    if sbr || ps {
-        2048
-    } else if aot == 23 {
-        512
+/// Decoded samples per access unit, including 960/480 cores and SBR rate ratios.
+pub(crate) fn output_frame_samples(asc: &crate::engine::asc::AudioSpecificConfig) -> u64 {
+    let scaled = u64::from(asc.frame_samples) * u64::from(asc.output_sample_rate);
+    let rate = u64::from(asc.sample_rate);
+    if rate == 0 || scaled % rate != 0 {
+        0
     } else {
-        1024
+        scaled / rate
     }
-}
-
-/// `iTunSMPB` inside a `moov` (the buffer may be a whole file or the box).
-pub(crate) fn itunsmpb_in(data: &[u8]) -> Option<Delay> {
-    let body = moov_payload(data)?;
-    let key = b"iTunSMPB";
-    let mut from = 0usize;
-    while let Some(rel) = find_bytes(&body[from..], key) {
-        let at = from + rel + key.len();
-        let end = at.saturating_add(180).min(body.len());
-        if let Some(d) = body.get(at..end).and_then(parse_window) {
-            return Some(d);
-        }
-        from = at;
-        if from >= body.len() {
-            break;
-        }
-    }
-    None
-}
-
-fn moov_payload(data: &[u8]) -> Option<&[u8]> {
-    if data.len() >= 8 && &data[4..8] == b"moov" {
-        return box_body(data, 0);
-    }
-    let mut pos = 0usize;
-    while pos + 8 <= data.len() {
-        let size32 = u32::from_be_bytes(data[pos..pos + 4].try_into().ok()?) as usize;
-        if size32 < 8 || pos.saturating_add(size32) > data.len() {
-            return None;
-        }
-        let typ = &data[pos + 4..pos + 8];
-        if typ == b"moov" {
-            return Some(&data[pos + 8..pos + size32]);
-        }
-        pos += size32;
-    }
-    None
-}
-
-fn box_body(data: &[u8], pos: usize) -> Option<&[u8]> {
-    let size = u32::from_be_bytes(data.get(pos..pos + 4)?.try_into().ok()?) as usize;
-    if size < 8 || pos + size > data.len() {
-        return None;
-    }
-    Some(&data[pos + 8..pos + size])
-}
-
-fn find_bytes(hay: &[u8], needle: &[u8]) -> Option<usize> {
-    hay.windows(needle.len()).position(|w| w == needle)
 }

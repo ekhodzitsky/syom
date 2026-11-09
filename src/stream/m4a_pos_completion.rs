@@ -63,11 +63,11 @@ pub(crate) fn classify(
 }
 
 impl<R: Read + Seek> M4aSeek<R> {
-    /// Whether this source declares a bounded edit-list presentation. Missing
-    /// or open-ended duration is not an independently verified source length.
+    /// Whether an edit list or a count-validated gapless tag bounds the
+    /// presentation. Missing or open-ended duration stays unbounded.
     #[must_use]
     pub fn bounded_presentation(&self) -> bool {
-        self.track.bounded_presentation()
+        self.track.bounded_presentation() || self.gapless.is_some()
     }
 
     /// Native output rate declared by this source's AudioSpecificConfig.

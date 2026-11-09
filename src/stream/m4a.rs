@@ -90,14 +90,8 @@ where
     if !track.has_elst
         && let Some(d) = gapless
     {
-        let spf = crate::gapless::output_frame_samples(asc.aot, asc.sbr_present, asc.ps_present);
-        let coded = (track.frames.len() as u64).saturating_mul(spf);
-        let sum = d
-            .priming
-            .saturating_add(d.source)
-            .saturating_add(d.remainder);
-        if spf > 0
-            && coded == sum
+        let spf = crate::gapless::output_frame_samples(&asc);
+        if d.matches_frames(track.frames.len() as u64, spf)
             && let (Ok(skip), Ok(play)) = (usize::try_from(d.priming), usize::try_from(d.source))
         {
             skip_left = skip;

@@ -56,7 +56,7 @@ fn fail_au(_: syom::EncodedFrame<'_>) -> syom::Result<()> {
 fn decode_step(dec: &mut syom::Decoder, src: &[u8], rng: &mut u32) {
     match next_u32(rng) % 6 {
         0 | 1 => {
-            let n = 1 + (next_u32(rng) as usize) % src.len().max(1).min(64);
+            let n = 1 + (next_u32(rng) as usize) % src.len().clamp(1, 64);
             let off = (next_u32(rng) as usize) % src.len().max(1);
             let end = (off + n).min(src.len());
             let _ = dec.feed(&src[off..end], drop_frame);
