@@ -147,7 +147,7 @@ For a new project:
 ```sh
 cargo new syom-demo --bin
 cd syom-demo
-cargo add syom@0.10.2
+cargo add syom@0.10.3
 ```
 
 Put an example above in `src/main.rs` and run `cargo run --release`.
