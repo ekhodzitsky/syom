@@ -333,15 +333,15 @@ fn tagged_without_edit(source_samples: usize, stale: bool) -> Vec<u8> {
     if stale {
         delay.source += 1;
     }
-    let text = format!("iTunSMPB{}", crate::gapless::itunsmpb_value(&delay));
-    let moov = tag(&bytes, b"moov") - 4;
-    let old_size = u32::from_be_bytes(bytes[moov..moov + 4].try_into().unwrap());
-    assert_eq!(moov + old_size as usize, bytes.len());
-    let size = 8 + text.len();
-    bytes.extend_from_slice(&(size as u32).to_be_bytes());
-    bytes.extend_from_slice(b"udta");
-    bytes.extend_from_slice(text.as_bytes());
-    bytes[moov..moov + 4].copy_from_slice(&(old_size + size as u32).to_be_bytes());
+    crate::gapless::test_support::append_tag(
+        &mut bytes,
+        format!(
+            " 00000000 {:08X} {:08X} {:016X}",
+            delay.priming, delay.remainder, delay.source
+        )
+        .as_bytes(),
+    )
+    .unwrap();
     bytes
 }
 
@@ -361,8 +361,13 @@ fn matching_gapless_tag_is_bounded_but_stale_tag_is_not_completion_proof() {
             indexed_end_reached: true
         }
     );
-    // Seekable playback deliberately does not apply unqualified tag-only trim.
-    let mut seek = M4aSeek::open(Cursor::new(valid), opts).unwrap();
+    // The same count-validated window bounds seekable playback.
+    let mut seek = M4aSeek::open(Cursor::new(valid), opts.clone()).unwrap();
+    let info = seek.decode(|_| Ok(())).unwrap();
+    assert_eq!(info.samples, 5000);
+    assert!(seek.bounded_presentation());
+    assert!(seek.presentation_complete());
+    let mut seek = M4aSeek::open(Cursor::new(stale), opts).unwrap();
     seek.decode(|_| Ok(())).unwrap();
     assert!(!seek.bounded_presentation());
     assert!(!seek.presentation_complete());

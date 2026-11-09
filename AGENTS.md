@@ -1,16 +1,14 @@
 # Development workflow
 
-GitHub Actions capacity is currently limited. Develop and validate locally;
-do not dispatch GitHub CI until the maintainer explicitly lifts this restriction.
-Use `[skip ci]` in commit messages when pushing so the existing push/PR workflows
-do not consume Actions capacity. Keep the workflow configuration available for
-when hosted checks resume.
+GitHub Actions checks are enabled. Develop and validate locally before pushing,
+then use the existing push/PR workflows to check the supported hosts.
 
 Before committing code, run the applicable local checks:
 
 ```sh
 cargo fmt --check
 python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 scripts/check-doc-links.py
 python3 scripts/check-file-size.py
 python3 scripts/check-changelog.py
 cargo clippy --all-targets -- -D warnings
@@ -23,6 +21,11 @@ Use the declared minimum Rust version for compatibility-sensitive changes.
 Run the relevant isolated consumer/fuzz labs for decoder or streaming changes;
 retain reproducible results and state which platforms were actually tested.
 Local Linux checks do not establish Windows/macOS/ARM parity.
+
+Retain compact validation summaries: commands, source identities, toolchains,
+exit codes and meaningful totals. Keep routine successful stdout, empty logs and
+duplicate runs in ignored `target/` or CI artifacts. Commit raw diagnostics or
+measurements only when they contain essential evidence a summary cannot retain.
 
 Keep Cargo versions, lockfiles and CHANGELOG.md consistent. Use semantic
 versioning, preserve historical measurements, and distinguish a validated

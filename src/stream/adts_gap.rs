@@ -85,12 +85,7 @@ impl AdtsGap {
         let (Some(frames), Some(d)) = (self.predict.take(), self.candidate.take()) else {
             return;
         };
-        let coded = frames.saturating_mul(spf as u64);
-        let sum = d
-            .priming
-            .saturating_add(d.source)
-            .saturating_add(d.remainder);
-        if spf == 0 || coded != sum {
+        if !d.matches_frames(frames, spf as u64) {
             return;
         }
         self.install(d);
@@ -124,11 +119,12 @@ impl AdtsGap {
         if !self.windowed {
             return (None, None);
         }
-        let sum = self
-            .tag_priming
-            .saturating_add(self.tag_source)
-            .saturating_add(self.tag_remainder);
-        if samples_decoded == sum {
+        let d = Delay {
+            priming: self.tag_priming,
+            remainder: self.tag_remainder,
+            source: self.tag_source,
+        };
+        if d.matches(samples_decoded) {
             (Some(self.tag_priming), Some(self.tag_remainder))
         } else {
             (None, None)
@@ -143,6 +139,9 @@ impl AdtsGap {
     }
 
     fn install(&mut self, d: Delay) {
+        if d.coded_samples().is_none() {
+            return;
+        }
         let (Ok(skip), Ok(play)) = (usize::try_from(d.priming), usize::try_from(d.source)) else {
             return;
         };

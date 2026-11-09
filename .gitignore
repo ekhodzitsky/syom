@@ -1,4 +1,7 @@
 /target
+# Routine audit output stays in target/ or CI artifacts; keep summaries in Git.
+/docs/audit/runs/**/*.log
+/lab/release-audit/runs/**/*.log
 # Local planning and agent state; AGENTS.md remains the shared workflow.
 /.serena/
 /.codex/

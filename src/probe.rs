@@ -10,9 +10,13 @@ use crate::engine::error::Error as EngineError;
 use crate::engine::latm::{LOAS_SYNC, MuxCfg};
 use crate::error::{AacError, Result, UnsupportedFeature};
 use crate::gapless::Delay;
-use crate::isomp4::{convert_units, find_moov_slice, parse_aac_meta, sniff_is_isobmff};
+use crate::isomp4::sniff_is_isobmff;
+
 use crate::layout::{self, Channel, FrameMeta, Layout, mpeg_channels};
 use crate::sniff::{sniff_is_adts, sniff_is_latm};
+use m4a::probe_m4a;
+
+mod m4a;
 
 /// Advertised transport the probe locked onto.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,8 +50,9 @@ pub enum ProbeDuration {
 
 /// Encoder delay and unplayed tail. An ADTS `iTunSMPB` tag reports
 /// [`Self::Exact`] only when its counts match the buffered frames (1024
-/// or 2048 samples each). An M4A edit list reports [`Self::Exact`]. A
-/// stale tag, untagged ADTS, and LATM stay [`Self::Unknown`].
+/// or 2048 samples each). An M4A edit list or a standard iTunSMPB item
+/// whose counts match the declared AAC packet grid reports [`Self::Exact`].
+/// A stale tag, untagged ADTS, and LATM stay [`Self::Unknown`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ProbeTrim {
@@ -181,11 +186,7 @@ fn tag_fits(d: &Delay, data: &[u8]) -> bool {
     let Some(frames) = crate::gapless::exact_adts_frames(data) else {
         return false;
     };
-    let sum = d
-        .priming
-        .saturating_add(d.source)
-        .saturating_add(d.remainder);
-    frames > 0 && (frames.saturating_mul(1024) == sum || frames.saturating_mul(2048) == sum)
+    d.matches_frames(frames, 1024) || d.matches_frames(frames, 2048)
 }
 
 fn probe_latm(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
@@ -215,102 +216,6 @@ fn probe_latm(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
         ProbeDuration::Unknown,
         ProbeTrim::Unknown,
     )
-}
-
-fn probe_m4a(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
-    if crate::isomp4::frag::is_fragmented(data) {
-        return probe_fmp4(data, mem);
-    }
-    let moov = find_moov_slice(data, mem)?;
-    let track = parse_aac_meta(moov, mem)?;
-    let (asc, _) = AudioSpecificConfig::parse(&track.asc).map_err(AacError::from)?;
-    let (duration, trim) = m4a_timing(&track, asc.output_sample_rate)?;
-    from_asc(ProbeContainer::M4a, &asc, mem, duration, trim)
-}
-
-/// Bounded fMP4 (TASK-124): the init `moov` carries ASC, rates and the
-/// optional priming edit; the coded length lives in the fragments, so
-/// duration stays `Unknown` unless the edit caps it.
-fn probe_fmp4(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
-    let moov = find_moov_slice(data, mem)?;
-    let init = crate::isomp4::frag::parse_init(moov, mem)?;
-    let (asc, _) = AudioSpecificConfig::parse(&init.asc).map_err(AacError::from)?;
-    let out_rate = asc.output_sample_rate;
-    let (duration, trim) = if init.has_elst {
-        let priming = convert_units(
-            init.edit_start,
-            out_rate,
-            init.media_timescale,
-            "elst media_time",
-        )?;
-        let duration = if init.edit_duration == 0 {
-            ProbeDuration::Unknown // DASH init: written before the duration
-        } else {
-            ProbeDuration::Exact {
-                samples: convert_units(
-                    init.edit_duration,
-                    out_rate,
-                    init.movie_timescale,
-                    "elst duration",
-                )?,
-            }
-        };
-        (
-            duration,
-            ProbeTrim::Exact {
-                priming,
-                remainder: 0,
-            },
-        )
-    } else {
-        (ProbeDuration::Unknown, ProbeTrim::Unknown)
-    };
-    from_asc(ProbeContainer::M4a, &asc, mem, duration, trim)
-}
-
-fn m4a_timing(
-    track: &crate::isomp4::AacMeta,
-    output_rate: u32,
-) -> Result<(ProbeDuration, ProbeTrim)> {
-    if track.has_elst {
-        let samples = convert_units(
-            track.edit_duration,
-            output_rate,
-            track.movie_timescale,
-            "elst duration",
-        )?;
-        let priming = convert_units(
-            track.edit_start,
-            output_rate,
-            track.media_timescale,
-            "elst media_time",
-        )?;
-        let remainder = if track.media_duration != 0 && track.media_timescale != 0 {
-            let coded = convert_units(
-                track.media_duration,
-                output_rate,
-                track.media_timescale,
-                "mdhd duration",
-            )?;
-            coded.saturating_sub(priming).saturating_sub(samples)
-        } else {
-            0
-        };
-        Ok((
-            ProbeDuration::Exact { samples },
-            ProbeTrim::Exact { priming, remainder },
-        ))
-    } else if track.media_duration != 0 && track.media_timescale != 0 {
-        let samples = convert_units(
-            track.media_duration,
-            output_rate,
-            track.media_timescale,
-            "mdhd duration",
-        )?;
-        Ok((ProbeDuration::Exact { samples }, ProbeTrim::Unknown))
-    } else {
-        Ok((ProbeDuration::Unknown, ProbeTrim::Unknown))
-    }
 }
 
 fn from_asc(

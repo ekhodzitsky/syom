@@ -1,0 +1,80 @@
+{
+  "seconds_per_worker": 30,
+  "workers": [
+    {
+      "name": "release-syom_fuzz-2801",
+      "command": [
+        "lab/fuzz/target/release/syom_fuzz",
+        "--seconds",
+        "30",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2801",
+        "--crash-dir",
+        "target/issue9-fuzz/crashes/release-syom_fuzz-2801"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 30.142,
+      "iters": 1306,
+      "wall_ms": 30077,
+      "panics": 0
+    },
+    {
+      "name": "release-syom_fuzz-2802",
+      "command": [
+        "lab/fuzz/target/release/syom_fuzz",
+        "--seconds",
+        "30",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2802",
+        "--crash-dir",
+        "target/issue9-fuzz/crashes/release-syom_fuzz-2802"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 30.292,
+      "iters": 1191,
+      "wall_ms": 30250,
+      "panics": 0
+    },
+    {
+      "name": "release-syom_fuzz_state-2801",
+      "command": [
+        "lab/fuzz/target/release/syom_fuzz_state",
+        "--seconds",
+        "30",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2801"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 30.145,
+      "iters": 33394,
+      "wall_ms": 30078,
+      "panics": 0
+    },
+    {
+      "name": "release-syom_fuzz_state-2802",
+      "command": [
+        "lab/fuzz/target/release/syom_fuzz_state",
+        "--seconds",
+        "30",
+        "--iters",
+        "1000000000",
+        "--seed",
+        "2802"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 30.089,
+      "iters": 38667,
+      "wall_ms": 30020,
+      "panics": 0
+    }
+  ],
+  "child_cpu_seconds": 120.21803200000001,
+  "platform": "Linux x86_64",
+  "reproduction": "cargo build --release --manifest-path lab/fuzz/Cargo.toml; run each worker command from the repository root. Wall-limited iteration counts vary."
+}

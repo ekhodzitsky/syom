@@ -6,6 +6,10 @@ This API is available in syom 0.10.0 and later. Version 0.9.0 does not expose
 it. It supports native AAC-LC continuation after process restart; it does not
 restore application jobs or resamplers.
 
+The API exists in published 0.10.1. This checkout also changes tag-only M4A
+presentation behavior; matching Cargo versions do not identify identical
+builds. [Release versus checkout](verification.md#release-and-checkout).
+
 `M4aSeek::save_exact_position` remains a source-instance-bound logical position.
 Its restore replays history under an explicit AU budget. It contains no DSP
 state and cannot be serialized. Persistent LC state is a separate, qualified
@@ -23,7 +27,7 @@ with mono output from mono or stereo input. Both channel filterbanks and PNS
 history are retained, including the previous window shapes. Initial positions,
 unfinished priming, partially consumed AUs and presentation EOF cannot be saved.
 HE/SBR/PS, PCE, coupling, profile prediction, other frame grids/rates, split
-output and unsafe tag-only gapless metadata are excluded. In-band state is
+output and tag-only sources without an edit list are excluded. In-band state is
 checked after each decoded AU; opening an eligible ASC does not certify all
 future payloads. Once a read/codec or unsupported-history fault has been seen,
 that source handle stays checkpoint-ineligible even after an ordinary seek.
@@ -90,6 +94,11 @@ required AU. Unfinished priming, a whole movie tick, at least one millisecond or
 a missing frame are errors. Known bounded push-fMP4 presentations require exact
 completion; push has no complete lifetime AU index to justify rounding. Unknown
 or open-ended fragments remain explicit instead of claiming completion.
+
+Published 0.10.1 derives the seek-source boundary from the edit list.
+The checkout also applies a standard count-validated iTunSMPB window and
+reports it as bounded. This does not make tag-only sources eligible for
+persistent checkpoints.
 
 Completion validates the requested presentation, not source authenticity or
 unused indexed padding after its cap. Seeking directly to an end position is

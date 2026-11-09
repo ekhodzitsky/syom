@@ -1,0 +1,84 @@
+{
+  "base_commit": "78165c4cbacc775f79be05d0f0a2ae0700f35ea7",
+  "status": "unreleased repeat audit",
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "medium",
+      "problem": "MP4 duplicate detection counted only successfully parsed values. A second recognised item with malformed text, missing/unsupported data or repeated identity fields disappeared, permitting the remaining value to trim.",
+      "reproduced_before_fix": true,
+      "resolution": "Separate recognised identity from usable delay. Shared Tags states are Missing, Single (including unusable), and Ambiguous. Invalid recognised items participate in duplicate detection.",
+      "tests": [
+        "a_malformed_second_mp4_tag_is_still_ambiguous",
+        "malformed_fields_cannot_hide_a_recognised_second_mp4_item"
+      ]
+    },
+    {
+      "id": "R2",
+      "severity": "medium",
+      "problem": "ID3 selected the first readable COMM/TXXX value; duplicate recognised values were accepted by frame order rather than the same conservative MP4 policy.",
+      "reproduced_before_fix": true,
+      "resolution": "Scan all supported ID3 frames and feed the same shared Tags accumulator, including malformed recognised values. Ambiguous tags do not arm trimming or establish exact probe metadata.",
+      "tests": [
+        "duplicate_id3_tags_are_not_selected_by_frame_order"
+      ]
+    }
+  ],
+  "validation_gap": {
+    "problem": "Previous validation had no execution of afconvert despite the original issue being Apple interoperability.",
+    "resolution": "Add an isolated macOS CI lane generating two LC sources with afconvert, independently extracting sample counts, preserving native bytes while disabling any edit list, and checking all channels across decode/probe/streaming/presentation/exact seek.",
+    "native_executed_locally": false,
+    "self_test": "Linux authored fixture only; native_executed is explicitly false.",
+    "native_artifact": "apple-gapless-macos-arm64/report.json on the PR workflow; inspect native_executed, status and per-cell results.",
+    "scope": "LC 44.1 kHz stereo and 48 kHz mono. No HE/PS, codec-quality, timing or listening qualification is implied."
+  },
+  "harness_verification": [
+    "Five offline Python tests cover independent evidence-reader bounds, duplicate rejection, raw-text rejection, native data-type preservation, and edit-only byte changes.",
+    "The Rust consumer compares every output channel using f32 bit representations, validates source/rate/channel/count geometry, and verifies exact seeking."
+  ],
+  "prior_failure": {
+    "observation": "Initial package audit failed inside cargo package; wrapper suppressed Cargo diagnostics. Direct cargo package and a subsequent check-package passed without packaging-policy changes. Underlying transient cause was not established. All required checks are repeated under final/.",
+    "verification": "final/checks.json"
+  },
+  "boundaries": [
+    "Malformed or duplicated recognised tags are conservatively ignored; no legacy-layout guessing.",
+    "Unrecognisable encoding/identity is not inferred from raw bytes.",
+    "Persistent tag-only checkpoints and push fMP4 tag policy remain as previously documented.",
+    "Metadata probing validates declared geometry, not source authenticity."
+  ],
+  "native_harness_followup": {
+    "run": "https://github.com/ekhodzitsky/syom/actions/runs/42586797730",
+    "source_commit": "62aa8f319d1dc2adbb0d6389a7131eb36cee64f3",
+    "observation": "Native afconvert -hf exited 2 and wrote its complete format listing to stderr. Native AAC conversion had not executed; all preceding macOS checks passed.",
+    "resolution": "Accept only 0/2 for this explicit help probe, require the expected listing marker, retain the diagnostic excerpt and accepted exit codes in the compact evidence. Conversion commands still require zero. Offline regression verifies that help status cannot relax conversion errors.",
+    "evidence": "native-help-failure.json"
+  },
+  "hosted_native_result": {
+    "status": "passed",
+    "run": "https://github.com/ekhodzitsky/syom/actions/runs/42587495743",
+    "source_commit": "cf7d1e5c7f13743fd4f20e532b169d7daf53047b",
+    "report": "native-macos-arm64.json",
+    "scope": "Actual macOS ARM64 26.7.2 (25G332), native afconvert AAC-LC. Both files natively lacked elst and were tested byte-for-byte unchanged.",
+    "cells": [
+      {
+        "name": "lc-44100-2ch",
+        "rate": 44100,
+        "channels": 2,
+        "samples": 352800,
+        "priming": 2112,
+        "remainder": 416,
+        "paths_bit_identical": true
+      },
+      {
+        "name": "lc-48000-1ch",
+        "rate": 48000,
+        "channels": 1,
+        "samples": 48013,
+        "priming": 2112,
+        "remainder": 51,
+        "paths_bit_identical": true
+      }
+    ],
+    "limitation": "Cross-path native f32 bit equality is within syom, not a PCM comparison against AudioToolbox. No HE/PS, quality or timing qualification."
+  }
+}

@@ -1,5 +1,31 @@
 # TASK-10 Apple AAC quality and delay — report
 
+## 2026-11-09: narrow native gapless interoperability
+
+[CI run 42587495743](https://github.com/ekhodzitsky/syom/actions/runs/42587495743)
+passed on macOS ARM64 26.7.2 (25G332), source commit `cf7d1e5`.
+The actual afconvert frontend/backend identities, commands, input/output
+hashes, native afinfo output and per-path results are retained in
+[native-macos-arm64.json](../release-audit/runs/issue9-reaudit-20261109/native-macos-arm64.json).
+
+| Native LC input | Valid samples | Priming | Remainder |
+|---|---:|---:|---:|
+| 44.1 kHz stereo | 352800 | 2112 | 416 |
+| 48 kHz mono | 48013 | 2112 | 51 |
+
+Both original Apple files already lacked an edit list; the tested bytes
+equal the native encoded bytes. Decode, probe, slice/seekable streaming,
+presentation completion and exact seeking matched the native sample counts.
+All channels were bit-identical across syom playback paths. This is not a
+PCM comparison against AudioToolbox and does not complete the historical
+quality, timing, HE/PS or blind-listening qualification below.
+
+The first native lane stopped before encoding because `afconvert -hf`
+returns help on stderr with status 2; its compact failure diagnosis and the
+explicit harness fix are recorded in the same repeat-audit directory.
+
+## Historical 2026-09-22 qualification status
+
 Recorded 2026-09-22 on Linux x86_64. **No Apple AAC cell was executed.
 This is not a pass; qualification is pending.**
 

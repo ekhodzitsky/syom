@@ -81,7 +81,7 @@ fn mutate(src: &[u8], s: &mut u32) -> Vec<u8> {
         }
         _ => {
             let n = 1 + (next_u32(s) as usize) % 8;
-            out.extend(std::iter::repeat(next_u32(s) as u8).take(n));
+            out.extend(std::iter::repeat_n(next_u32(s) as u8, n));
         }
     }
     out.truncate(MAX_LEN);
@@ -168,7 +168,7 @@ fn main() {
             harvest(&buf);
             let (asc, au) = &raw[n as usize % raw.len()];
             let mutated = mutate(au, &mut rng);
-            let config = if n % 2 == 0 {
+            let config = if n.is_multiple_of(2) {
                 mutate(asc, &mut rng)
             } else {
                 asc.clone()

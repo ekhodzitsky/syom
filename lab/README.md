@@ -13,14 +13,17 @@ Each experiment has its own prerequisites, source pins, output paths and scope.
 | Question | Record |
 |---|---|
 | What was published? | [0.10.1 source, tag, checksum and registry checks](release-audit/RELEASE-0.10.1.md) |
+| What changed since publication? | [Release/checkout boundary and hosted checks](../docs/verification.md#release-and-checkout) |
+| Did native Apple tag-only playback run? | [macOS LC gapless report](apple/REPORT.md#2026-11-09-narrow-native-gapless-interoperability) |
 | How did the real consumer behave? | [TASK-145 decoder/HTTP/load qualification](release-audit/TASK145.md) and [audit](release-audit/TASK145-REVIEW.md) |
 | What is the checkpoint contract? | [User contract](../docs/persistent-checkpoints.md) and [0.10.0 qualification](release-audit/TASK144.md) |
 | Which corpus and provenance are available? | [Committed inventory](../corpus/README.md) |
-| Which platforms were actually exercised? | [Platform records](baseline/PLATFORM.md) and [mobile limits](mobile/REPORT.md) |
+| Which platforms were actually exercised? | [Hosted source/host records](../docs/verification.md#hosted-checks), [earlier platform records](baseline/PLATFORM.md) and [mobile limits](mobile/REPORT.md) |
 
 The current crate is published; the optional consumer patch is a separately
 qualified handoff, not a deployment. Linux checks do not establish other-platform
-parity. CPU 0 variability, the raw HTTP equality failure and higher split-mode
+parity; later [hosted results](../docs/verification.md#hosted-checks) cover their
+recorded source/hosts. CPU 0 variability, the raw HTTP equality failure and higher split-mode
 RSS remain in the consumer report. The accepted presentation differences use
 independent references, not a waived equality result.
 
@@ -43,7 +46,7 @@ independent references, not a waived equality result.
 | [consume](consume/) | consumer flows and kover/sluh call patterns against the packaged crate | [Report](consume/REPORT.md) |
 | [listen](listen/) | preregistered MUSHRA/BS.1116 protocol (dry-run only) | [Pin](listen/PIN.md) · [Report](listen/REPORT.md) |
 | [fuzz](fuzz/) | std mutational parser + stateful stream fuzz | [Pin](fuzz/PIN.md) · [Report](fuzz/REPORT.md) |
-| [apple](apple/) | Apple AudioToolbox/CoreAudio (no authorized host; cell pending) | [Pin](apple/PIN.md) · [Report](apple/REPORT.md) |
+| [apple](apple/) | Native LC gapless CI smoke; broader quality/timing/HE qualification pending | [Pin](apple/PIN.md) · [Report](apple/REPORT.md) |
 | [aacjs](aacjs/) | AAC.js 0.1.3 / Aurora.js 0.4.9 browser-JS LC peer | [Pin](aacjs/PIN.md) · [Report](aacjs/REPORT.md) |
 | [profiles](profiles/) | LD/ELD/USAC feasibility: FDK v2.0.3, libxaac v0.1.13, exhale v1.2.2 | [Pin](profiles/PIN.md) · [Report](profiles/REPORT.md) |
 | [oxideav](oxideav/) | oxideav-aac 0.1.7, pure-Rust LC + HE v1 encoder peer | [Pin](oxideav/PIN.md) · [Report](oxideav/REPORT.md) |

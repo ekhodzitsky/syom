@@ -15,7 +15,7 @@ make discovery and tool defaults worse.
 | `scripts/` | Repository verification and corpus tooling | Standard-library tooling, policy configuration and synthetic regression tests |
 | `corpus/` | Fixture inventory and provenance | Manifests and documented minimal regression inputs; natural recordings stay local |
 | `lab/` | Isolated experiments and qualification | Drivers, manifests, pins and reviewed text evidence, including relevant failures |
-| `.github/` | Hosted workflow configuration | Retained configuration; Actions remain paused until explicitly resumed |
+| `.github/` | Hosted checks | Active platform/MSRV workflows and isolated native Apple gapless validation |
 | `target/` | Disposable build and check output | Nothing: ignored caches, packages and temporary runs |
 | Local assistant/planning state | Machine-specific work | Nothing: ignored `backlog/`, assistant directories and local bindings |
 
@@ -40,6 +40,14 @@ Do not apply blanket extension bans to them. Inspect content, provenance and
 size before adding evidence. Preserve historical measurements and failures;
 remove or consolidate an archive only with an inventory of references and a
 reproducible replacement. Do not rewrite old measurements to look current.
+
+For new validation, retain compact summaries with commands, source identities,
+toolchains, exit codes and meaningful totals. Routine successful stdout, empty
+logs and repeated runs belong in ignored `target/` or CI artifacts. Raw failure
+diagnostics or measurements belong in Git only when summarizing would lose
+essential evidence. Renaming routine logs to JSON does not change this rule.
+The audit run directories ignore new `.log` files; existing historical evidence
+remains tracked. Review any essential raw evidence as an explicit exception.
 
 ## Worktrees and cleanup
 

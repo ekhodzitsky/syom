@@ -1,0 +1,21 @@
+{
+  "platform": "macOS-26.7.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "native_executed": false,
+  "status": "failed",
+  "commands": [
+    {
+      "args": [
+        "afconvert",
+        "-hf"
+      ],
+      "exit_code": 2,
+      "stderr_excerpt": "Audio file and data formats:"
+    }
+  ],
+  "cells": [],
+  "sw_vers": "ProductName:\t\tmacOS\nProductVersion:\t\t26.7.2\nBuildVersion:\t\t25G332\n",
+  "diagnosis": "The help probe returned a valid format listing on stderr with status 2; the harness required zero and stopped before native AAC conversion.",
+  "resolution": "Accept 0 or 2 only for the help probe and validate its listing marker. Encoding still requires zero.",
+  "run": "https://github.com/ekhodzitsky/syom/actions/runs/42586797730"
+}

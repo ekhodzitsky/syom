@@ -1,0 +1,11 @@
+[package]
+name = "syom-apple-gapless"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.89"
+publish = false
+
+[dependencies]
+syom = { path = "../../.." }
+
+[workspace]

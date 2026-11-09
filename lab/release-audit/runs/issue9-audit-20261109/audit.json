@@ -1,0 +1,109 @@
+{
+  "base_commit": "410332b6d2e2e119838bcc15bc0e9e9d0f286ae9",
+  "status": "unreleased audit follow-up; not a publication",
+  "findings": [
+    {
+      "id": "A1",
+      "severity": "high",
+      "problem": "M4A probe validated a tag against mdhd instead of the selected AAC packet count, both accepting stale tags and rejecting correct tags with stale/absent mdhd.",
+      "resolution": "Read a structurally bounded stsz count without allocating a sample index; share exact packet-grid validation with decoding.",
+      "regressions": [
+        "probe_uses_packet_count_even_when_mdhd_is_absent_or_stale",
+        "matching_mdhd_cannot_validate_a_tag_for_a_different_packet_count",
+        "missing_or_incomplete_size_table_does_not_prove_tag_counts"
+      ],
+      "reproduced_before_fix": true,
+      "status": "fixed"
+    },
+    {
+      "id": "A2",
+      "severity": "high",
+      "problem": "A raw 180-byte scan could borrow iTunSMPB text from unrelated or sibling MP4 metadata and apply an unintended trim.",
+      "resolution": "Use the existing bounded box iterator and require moov/udta/meta/ilst/---- with matching mean/name and a UTF-8 data value; ignore duplicates and ambiguous items.",
+      "regressions": [
+        "unrelated_metadata_cannot_supply_a_gapless_window",
+        "an_item_cannot_borrow_text_from_a_sibling_box",
+        "duplicate_items_and_wrong_namespace_or_data_type_are_ignored"
+      ],
+      "reproduced_before_fix": true,
+      "status": "fixed"
+    },
+    {
+      "id": "A3",
+      "severity": "medium",
+      "problem": "The separate gapless MP4 walker did not support 64-bit moov headers even though the demuxer supported them.",
+      "resolution": "Reuse the demuxer box reader rather than maintaining a second header parser.",
+      "regressions": [
+        "a_large_moov_header_preserves_tagged_decode_and_probe"
+      ],
+      "reproduced_before_fix": true,
+      "status": "fixed"
+    },
+    {
+      "id": "A4",
+      "severity": "medium",
+      "problem": "ID3v2.3 frame sizes were interpreted as v2.4 syncsafe integers, dropping ordinary long COMM/TXXX values.",
+      "resolution": "Select big-endian or syncsafe frame lengths by version, use checked frame bounds, and limit footer handling to v2.4.",
+      "regressions": [
+        "independent_id3v23_and_v24_comments_and_text_trim_in_all_chunkings"
+      ],
+      "reproduced_before_fix": true,
+      "status": "fixed"
+    },
+    {
+      "id": "A5",
+      "severity": "medium",
+      "problem": "Presentation-sample M4aSeek playback ignored tag-only trim while one-shot and seekable streaming applied it.",
+      "resolution": "Apply the same validated window at open; report its priming/remainder and bounded completion. Keep persistent checkpoints excluded for tag-only sources.",
+      "regressions": [
+        "presentation_seek_uses_the_same_tag_window_as_one_shot",
+        "tag_only_seek_keeps_persistent_checkpoints_excluded"
+      ],
+      "reproduced_before_fix": true,
+      "status": "fixed"
+    },
+    {
+      "id": "A6",
+      "severity": "medium",
+      "problem": "Tag validation used hard-coded 1024/2048/512 packet sizes instead of actual ASC frame length and output/core rate ratio.",
+      "resolution": "Share ASC-derived packet geometry, including 960/480 cores and downsampled output.",
+      "regressions": [
+        "a_960_core_uses_its_actual_packet_grid_for_tag_validation",
+        "packet_grid_tracks_short_cores_and_actual_output_rate"
+      ],
+      "reproduced_before_fix": false,
+      "evidence": "Confirmed by source inspection; 960-core decode/probe regression and parsed 480-core ASC arithmetic are tested after the change.",
+      "status": "fixed"
+    },
+    {
+      "id": "A7",
+      "severity": "medium",
+      "problem": "Text scanning could restart inside malformed fields; saturating arithmetic was duplicated across acceptance paths.",
+      "resolution": "Parse four exact-width fields at the value start with a reserved zero; centralize checked totals and packet multiplication. Invalid/overflowing candidates cannot arm push trimming.",
+      "regressions": [
+        "text_fields_have_exact_widths_and_do_not_resynchronise",
+        "full_width_source_and_checked_totals_never_wrap_or_saturate",
+        "writer_emits_the_entire_standard_twelve_field_value"
+      ],
+      "reproduced_before_fix": false,
+      "evidence": "Source audit of the old resynchronising parser and saturating validation; direct format/arithmetic regressions protect the new policy.",
+      "status": "fixed"
+    }
+  ],
+  "refactoring": [
+    "Separate the text codec and MP4 metadata reader.",
+    "Reuse the existing box iterator and keep metadata probing allocation-independent of declared frame counts.",
+    "Move metadata-only AAC selection and M4aSeek opening into focused modules.",
+    "Share independent standard MP4 fixtures across tests; keep fixtures out of the package.",
+    "Add a generated Apple-layout M4A seed to both isolated fuzz harnesses."
+  ],
+  "boundaries": [
+    "Legacy incorrect syom field order is deliberately not guessed.",
+    "Only the documented Apple freeform UTF-8 item is read; arbitrary raw udta strings are not gapless metadata.",
+    "Push fragmented MP4 still does not consume iTunSMPB; bounded one-shot/seekable paths do.",
+    "Push ADTS still applies modest tags before final length confirmation by its existing streaming contract.",
+    "Probe validates declared metadata geometry, not payload authenticity or successful full decode.",
+    "No local afconvert or AudioToolbox execution. End-to-end 960-core fixture tested; 480-core change tested via parsed ASC geometry, not a new external decoder vector."
+  ],
+  "harness_cleanup": "Four pre-existing isolated Clippy style lints were corrected without changing mutation distributions; Rust 1.89 and final fuzz rerun passed."
+}

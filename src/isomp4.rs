@@ -176,18 +176,6 @@ impl AacTrack {
     }
 }
 
-/// ASC + container timing without a sample-table index (TASK-54 probe).
-#[derive(Debug)]
-pub(crate) struct AacMeta {
-    pub asc: Vec<u8>,
-    pub edit_start: u64,
-    pub edit_duration: u64,
-    pub movie_timescale: u32,
-    pub media_timescale: u32,
-    pub media_duration: u64,
-    pub has_elst: bool,
-}
-
 /// 4-byte box type.
 type FourCc = [u8; 4];
 
@@ -734,18 +722,6 @@ fn parse_stsd_asc(body: &[u8]) -> Result<Vec<u8>> {
     extract_asc(body, children)
 }
 
-fn parse_stbl_asc(data: &[u8], stbl: BoxHdr) -> Result<Vec<u8>> {
-    for child in BoxIter::new(data, stbl.content_start, stbl.content_end) {
-        let (hdr, typ) = child?;
-        if &typ == b"stsd" {
-            return parse_stsd_asc(&data[hdr.content_start..hdr.content_end]);
-        }
-    }
-    Err(AacError::format(
-        "isomp4: no AAC sample description (stsd/mp4a)",
-    ))
-}
-
 /// Supported `elst`: no entries, or exactly one playable entry
 /// (`media_time >= 0`, `media_rate = 1`). Empty edits, multiple edits,
 /// other rates, and unknown versions are errors — never a silent prefix skip.
@@ -873,50 +849,6 @@ fn parse_mdia(
             timescale,
             duration: media_duration,
         }))
-    } else {
-        Ok(None)
-    }
-}
-
-fn parse_mdia_meta(
-    data: &[u8],
-    mdia: BoxHdr,
-    mem: &MemoryBudgets,
-) -> Result<Option<(Vec<u8>, u32, u64)>> {
-    fence_depth(mem, 3)?;
-    let mut is_sound = false;
-    let mut asc = None;
-    let mut timescale = 0u32;
-    let mut media_duration = 0u64;
-    for child in BoxIter::new(data, mdia.content_start, mdia.content_end) {
-        let (hdr, typ) = child?;
-        match &typ {
-            b"hdlr" => {
-                let handler = data
-                    .get(hdr.content_start + 8..hdr.content_start + 12)
-                    .ok_or_else(|| AacError::format("isomp4: truncated hdlr"))?;
-                is_sound = handler == b"soun";
-            }
-            b"mdhd" => {
-                let body = &data[hdr.content_start..hdr.content_end];
-                timescale = parse_mdhd_timescale(body)?;
-                media_duration = parse_mdhd_duration(body).unwrap_or(0);
-            }
-            b"minf" => {
-                for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
-                    let (shdr, styp) = sub?;
-                    if &styp == b"stbl" {
-                        fence_depth(mem, 4)?;
-                        asc = Some(parse_stbl_asc(data, shdr)?);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-    if is_sound {
-        let asc = asc.ok_or_else(|| AacError::format("isomp4: sound track without stbl"))?;
-        Ok(Some((asc, timescale, media_duration)))
     } else {
         Ok(None)
     }
@@ -1092,90 +1024,6 @@ pub(crate) fn parse_aac_track_with_len(
     })
 }
 
-/// ASC + `mdhd`/`elst` timing. Does not allocate `stsz`/`stco`/`stts`.
-pub(crate) fn parse_aac_meta(data: &[u8], mem: &MemoryBudgets) -> Result<AacMeta> {
-    fence_depth(mem, 0)?;
-    let mut moov = None;
-    for top in BoxIter::new(data, 0, data.len()) {
-        let (hdr, typ) = top?;
-        if typ == BOX_MOOV {
-            moov = Some(hdr);
-        } else if typ == BOX_MOOF || typ == BOX_MVEX {
-            return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
-        }
-    }
-    let moov = moov.ok_or_else(|| AacError::format("isomp4: no moov box"))?;
-    fence_depth(mem, 1)?;
-    let mut track = None;
-    let mut movie_timescale = 0u32;
-    for child in BoxIter::new(data, moov.content_start, moov.content_end) {
-        let (hdr, typ) = child?;
-        if typ == BOX_MVEX {
-            return Err(AacError::format("isomp4: fragmented MP4 is not supported"));
-        } else if &typ == b"mvhd" {
-            movie_timescale = parse_mvhd_timescale(&data[hdr.content_start..hdr.content_end])?;
-        } else if typ == BOX_TRAK {
-            if track.is_some() {
-                continue;
-            }
-            fence_depth(mem, 2)?;
-            let mut edit_start = 0u64;
-            let mut edit_duration = 0u64;
-            let mut has_elst = false;
-            let mut mdia_track = None;
-            for sub in BoxIter::new(data, hdr.content_start, hdr.content_end) {
-                let (shdr, styp) = sub?;
-                match &styp {
-                    b"edts" => {
-                        fence_depth(mem, 3)?;
-                        for ed in BoxIter::new(data, shdr.content_start, shdr.content_end) {
-                            let (ehdr, etyp) = ed?;
-                            if &etyp == b"elst" {
-                                fence_depth(mem, 4)?;
-                                if let Some((start, dur)) =
-                                    parse_elst(&data[ehdr.content_start..ehdr.content_end], mem)?
-                                {
-                                    edit_start = start;
-                                    edit_duration = dur;
-                                    has_elst = true;
-                                }
-                            }
-                        }
-                    }
-                    b"mdia" => match parse_mdia_meta(data, shdr, mem) {
-                        Ok(Some(t)) => mdia_track = Some(t),
-                        Ok(None) => {}
-                        Err(e @ AacError::Limit { .. }) => return Err(e),
-                        Err(_) => {}
-                    },
-                    _ => {}
-                }
-            }
-            if let Some((asc, media_timescale, media_duration)) = mdia_track {
-                track = Some((
-                    asc,
-                    media_timescale,
-                    edit_start,
-                    edit_duration,
-                    media_duration,
-                    has_elst,
-                ));
-            }
-        }
-    }
-    let (asc, media_timescale, edit_start, edit_duration, media_duration, has_elst) =
-        track.ok_or_else(|| AacError::format("isomp4: no AAC audio track found"))?;
-    Ok(AacMeta {
-        asc,
-        edit_start,
-        edit_duration,
-        movie_timescale,
-        media_timescale,
-        media_duration,
-        has_elst,
-    })
-}
-
 /// Locate a complete `moov` in a slice. Skips `mdat` by declared size so a
 /// prefix that does not contain media still probes. Incomplete headers and
 /// a missing `moov` are [`AacError::NeedMore`].
@@ -1269,6 +1117,11 @@ pub(crate) use io::{TrackBoxes, load_track_boxes};
 
 #[path = "isomp4_frag.rs"]
 pub(crate) mod frag;
+
+mod meta;
+pub(crate) use meta::{AacMeta, parse_aac_meta};
+mod gapless;
+pub(crate) use gapless::itunsmpb_in;
 
 #[cfg(test)]
 #[path = "isomp4_struct_tests.rs"]
