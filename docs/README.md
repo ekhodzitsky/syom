@@ -1,7 +1,7 @@
 # syom documentation
 
 [Overview and examples](../README.md#examples) ·
-[Published 0.10.1 API guide](https://docs.rs/syom/0.10.1/syom/guide/)
+[0.10.2 API guide](https://docs.rs/syom/0.10.2/syom/guide/)
 
 Use the published crate for its documented API. This checkout also contains
 unreleased gapless fixes; the Cargo version alone does not identify them.
@@ -14,7 +14,7 @@ unreleased gapless fixes; the Cargo version alone does not identify them.
 | Install and run a complete example | [Examples](../README.md#examples) and [install](../README.md#install) |
 | Choose a reader, output layout or streaming API | [Usage](usage-and-validation.md#choose-an-api) |
 | Check supported profiles and containers | [Format matrix](usage-and-validation.md#formats-and-channel-layout) |
-| Encode/decode, limits, borrowed PCM and raw AUs | [Published API examples](https://docs.rs/syom/0.10.1/syom/guide/) · [checkout source guide](../src/guide.rs) |
+| Encode/decode, limits, borrowed PCM and raw AUs | [Published API examples](https://docs.rs/syom/0.10.2/syom/guide/) · [checkout source guide](../src/guide.rs) |
 | Acquire an exact M4A interval | [Seeking and prefix replay](usage-and-validation.md#exact-interval-acquisition-since-090) |
 | Save native LC decoder state or inspect completion | [Checkpoint contract](persistent-checkpoints.md) |
 | Understand priming and tag behavior | [Gapless timing](usage-and-validation.md#gapless-timing) |
@@ -43,7 +43,7 @@ remain separate.
 |---|---|
 | [Documentation audit, 2026-11-09](audit/readme-2026-11-09.json) | README/reference structure, current status, links and published examples |
 | [0.10.1 registry receipt](../lab/release-audit/RELEASE-0.10.1.md) | Published source/tag, archive and registry examples |
-| [Gapless repeat audit](../lab/release-audit/runs/issue9-reaudit-20261109/audit.json) | Unreleased tag handling and native Apple interoperability |
+| [Gapless repeat audit](../lab/release-audit/runs/issue9-reaudit-20261109/audit.json) | 0.10.2 tag handling and native Apple interoperability |
 | [TASK-145 qualification](../lab/release-audit/TASK145.md) · [review](../lab/release-audit/TASK145-REVIEW.md) | Exact 0.10.1 candidate and downstream adapter; not a deployment |
 | [TASK-144](../lab/release-audit/TASK144.md) | Persistent LC state and strict completion before 0.10.0 publication |
 | [Earlier release records](../lab/release-audit/REPORT.md#release-evidence-index) | Original 0.10.0, 0.9.0, 0.8.1 and 0.8.0 scopes |

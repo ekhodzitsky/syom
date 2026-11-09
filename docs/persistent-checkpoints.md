@@ -6,9 +6,9 @@ This API is available in syom 0.10.0 and later. Version 0.9.0 does not expose
 it. It supports native AAC-LC continuation after process restart; it does not
 restore application jobs or resamplers.
 
-The API exists in published 0.10.1. This checkout also changes tag-only M4A
-presentation behavior; matching Cargo versions do not identify identical
-builds. [Release versus checkout](verification.md#release-and-checkout).
+Version 0.10.2 also corrects tag-only M4A presentation behavior. Cached
+checkpoint blobs from older versions must be recreated; restoration is bound
+to the exact codec version. [Release versus checkout](verification.md#release-and-checkout).
 
 `M4aSeek::save_exact_position` remains a source-instance-bound logical position.
 Its restore replays history under an explicit AU budget. It contains no DSP
@@ -95,8 +95,8 @@ a missing frame are errors. Known bounded push-fMP4 presentations require exact
 completion; push has no complete lifetime AU index to justify rounding. Unknown
 or open-ended fragments remain explicit instead of claiming completion.
 
-Published 0.10.1 derives the seek-source boundary from the edit list.
-The checkout also applies a standard count-validated iTunSMPB window and
+Version 0.10.1 derives the seek-source boundary from the edit list.
+Version 0.10.2 also applies a standard count-validated iTunSMPB window and
 reports it as bounded. This does not make tag-only sources eligible for
 persistent checkpoints.
 

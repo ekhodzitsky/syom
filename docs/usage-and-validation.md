@@ -3,11 +3,11 @@
 [Documentation](README.md) · [Examples](../README.md#examples) ·
 [Verification and release status](verification.md)
 
-syom returns planar `f32` at the native sample rate. The published API guide is
-pinned to [0.10.1](https://docs.rs/syom/0.10.1/syom/guide/); the
-[checkout guide](../src/guide.rs) includes unpublished behavior fixes.
+syom returns planar `f32` at the native sample rate. The API guide is
+pinned to [0.10.2](https://docs.rs/syom/0.10.2/syom/guide/); the
+[checkout guide](../src/guide.rs) describes this source tree.
 [Release and checkout](verification.md#release-and-checkout) explains the gapless
-boundary. The API names below exist in the published release.
+boundary. The API names below are available in 0.10.2.
 
 ## Choose an API
 
@@ -27,7 +27,7 @@ boundary. The API names below exist in the published release.
 
 Every push feed must be finished. Copy borrowed frames if they must outlive a
 callback. A callback error fails a push instance; `reset` reuses its storage.
-See [compiling API examples](https://docs.rs/syom/0.10.1/syom/guide/) for
+See [compiling API examples](https://docs.rs/syom/0.10.2/syom/guide/) for
 `Read`/`Write`, raw AUs, encoding options, memory budgets and typed errors.
 
 ## Formats and channel layout
@@ -83,9 +83,9 @@ ranges and resource limits.
 
 One-shot ADTS encode writes a delay tag; LATM/LOAS has no equivalent tag and
 retains whole-frame padding. M4A edit lists take precedence over tags.
-The checkout's standard Apple tag reader validates counts against the AAC
+The 0.10.2 standard Apple tag reader validates counts against the AAC
 packet grid, while tag-only persistent checkpoints stay excluded.
-Published 0.10.1 has the [known iTunSMPB limitation](verification.md#release-and-checkout).
+Version 0.10.1 has the [known iTunSMPB limitation](verification.md#release-and-checkout).
 
 Push ADTS applies modest tag edges before final length confirmation under its
 bounded-memory contract; finish reports trim only when counts match. Push

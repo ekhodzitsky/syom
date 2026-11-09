@@ -8,18 +8,17 @@
 | Source | Status | What the evidence covers |
 |---|---|---|
 | Registry syom 0.10.1 | Published 2026-11-06 | AVX-512 FFT update; [archive, source/tag and registry checks](../lab/release-audit/RELEASE-0.10.1.md) |
-| This checkout | Unreleased changes under the same Cargo version | Standard iTunSMPB field order, bounded metadata parsing, duplicate-tag handling, probe and presentation-seek consistency |
+| syom 0.10.2 candidate | Publication pending | Standard iTunSMPB field order, bounded metadata parsing, duplicate-tag handling, probe and presentation-seek consistency |
 
-As checked on 2026-11-09, `syom = "0.10"` selects published 0.10.1. It does
-not install the checkout's gapless fixes. Published 0.10.1 can return padded
-audio for Apple M4A files whose only trim metadata is iTunSMPB; its own
-generated tags round-trip but use the wrong field order. Regenerate old
-malformed tags when adopting the corrected implementation.
+Version 0.10.2 contains the standard iTunSMPB fixes. Version 0.10.1 can
+return padded audio for Apple M4A files whose only trim metadata is iTunSMPB;
+its own generated tags round-trip but use the wrong field order. Regenerate
+old malformed tags when upgrading, and recreate cached checkpoint blobs.
 
-Use a [local dependency](usage-and-validation.md#install-from-a-checkout)
-to evaluate the checkout. The [changelog](../CHANGELOG.md) records these
-changes under Unreleased. A validated checkout, a published crate and a
-deployed consumer are separate states.
+The [changelog](../CHANGELOG.md) records the 0.10.2 changes. Publication and
+registry example checks are pending until the release candidate is uploaded.
+A validated checkout, a published crate and a deployed consumer are separate
+states.
 
 ## Hosted checks
 
