@@ -1,6 +1,6 @@
 # Contributing to syom
 
-[User documentation](docs/README.md) · [Release verification](lab/release-audit/RELEASE-0.10.1.md)
+[User documentation](docs/README.md) · [Release verification](lab/release-audit/RELEASE-0.10.2.md)
 
 Start with [AGENTS.md](AGENTS.md), the canonical development and validation
 policy. Validate locally before pushing; the enabled GitHub workflow checks

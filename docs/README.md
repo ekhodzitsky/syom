@@ -1,7 +1,7 @@
 # syom documentation
 
 [Overview and examples](../README.md#examples) ·
-[0.10.2 API guide](https://docs.rs/syom/0.10.2/syom/guide/)
+[Published 0.10.2 API guide](https://docs.rs/syom/0.10.2/syom/guide/)
 
 Use the published crate for its documented API. This checkout also contains
 unreleased gapless fixes; the Cargo version alone does not identify them.
@@ -42,6 +42,7 @@ remain separate.
 | Record | Scope |
 |---|---|
 | [Documentation audit, 2026-11-09](audit/readme-2026-11-09.json) | README/reference structure, current status, links and published examples |
+| [0.10.2 registry receipt](../lab/release-audit/RELEASE-0.10.2.md) | Gapless fixes, source/tag, archive and registry examples |
 | [0.10.1 registry receipt](../lab/release-audit/RELEASE-0.10.1.md) | Published source/tag, archive and registry examples |
 | [Gapless repeat audit](../lab/release-audit/runs/issue9-reaudit-20261109/audit.json) | 0.10.2 tag handling and native Apple interoperability |
 | [TASK-145 qualification](../lab/release-audit/TASK145.md) · [review](../lab/release-audit/TASK145-REVIEW.md) | Exact 0.10.1 candidate and downstream adapter; not a deployment |

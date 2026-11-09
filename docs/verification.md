@@ -8,15 +8,16 @@
 | Source | Status | What the evidence covers |
 |---|---|---|
 | Registry syom 0.10.1 | Published 2026-11-06 | AVX-512 FFT update; [archive, source/tag and registry checks](../lab/release-audit/RELEASE-0.10.1.md) |
-| syom 0.10.2 candidate | Publication pending | Standard iTunSMPB field order, bounded metadata parsing, duplicate-tag handling, probe and presentation-seek consistency |
+| Registry syom 0.10.2 | Published 2026-11-09 | Standard iTunSMPB fixes; [source, archive and registry checks](../lab/release-audit/RELEASE-0.10.2.md) |
 
 Version 0.10.2 contains the standard iTunSMPB fixes. Version 0.10.1 can
 return padded audio for Apple M4A files whose only trim metadata is iTunSMPB;
 its own generated tags round-trip but use the wrong field order. Regenerate
 old malformed tags when upgrading, and recreate cached checkpoint blobs.
 
-The [changelog](../CHANGELOG.md) records the 0.10.2 changes. Publication and
-registry example checks are pending until the release candidate is uploaded.
+As checked on 2026-11-09, `syom = "0.10"` selects published 0.10.2,
+including these fixes. The [changelog](../CHANGELOG.md) records the changes;
+the registry README examples passed on Rust 1.97.1 and 1.89.0.
 A validated checkout, a published crate and a deployed consumer are separate
 states.
 
@@ -68,7 +69,7 @@ resolutions remain available as compact summaries; routine stdout and superseded
 runs are omitted. These are bounded tests, not exhaustive safety
 or full ISO conformance certification.
 
-The published release has its own [registry receipt](../lab/release-audit/RELEASE-0.10.1.md).
+The published release has its own [registry receipt](../lab/release-audit/RELEASE-0.10.2.md).
 The [TASK-145 qualification](../lab/release-audit/TASK145.md) covers its exact
 Git-pinned library and a separate gigastt adapter patch. Two CPU 1 confirmations
 pass the six-case timing gate and 29 PCM cases retain exact bits.

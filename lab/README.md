@@ -12,7 +12,7 @@ Each experiment has its own prerequisites, source pins, output paths and scope.
 
 | Question | Record |
 |---|---|
-| What was published? | [0.10.1 source, tag, checksum and registry checks](release-audit/RELEASE-0.10.1.md) |
+| What was published? | [0.10.2 source, tag, checksum and registry checks](release-audit/RELEASE-0.10.2.md) |
 | What changed since publication? | [Release/checkout boundary and hosted checks](../docs/verification.md#release-and-checkout) |
 | Did native Apple tag-only playback run? | [macOS LC gapless report](apple/REPORT.md#2026-11-09-narrow-native-gapless-interoperability) |
 | How did the real consumer behave? | [TASK-145 decoder/HTTP/load qualification](release-audit/TASK145.md) and [audit](release-audit/TASK145-REVIEW.md) |
