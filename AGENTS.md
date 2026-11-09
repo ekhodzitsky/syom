@@ -27,6 +27,13 @@ exit codes and meaningful totals. Keep routine successful stdout, empty logs and
 duplicate runs in ignored `target/` or CI artifacts. Commit raw diagnostics or
 measurements only when they contain essential evidence a summary cannot retain.
 
+Before every commit and push, inspect `git status --short`, `git diff` and
+`git diff --cached`. Include only files needed for the requested change.
+Do not commit or push temporary files, scratch notes, local agent state,
+generated caches/build output, routine logs, duplicate reports or unrelated
+changes. Keep disposable output in ignored `target/` or CI artifacts. A file
+being unignored does not make it suitable for Git; review every added file.
+
 Keep Cargo versions, lockfiles and CHANGELOG.md consistent. Use semantic
 versioning, preserve historical measurements, and distinguish a validated
 candidate from a published release. Commit completed changes and push them
