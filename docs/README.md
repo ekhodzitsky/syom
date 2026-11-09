@@ -3,8 +3,8 @@
 [Overview and examples](../README.md#examples) ·
 [Published 0.10.2 API guide](https://docs.rs/syom/0.10.2/syom/guide/)
 
-Use the published crate for its documented API. This checkout also contains
-unreleased gapless fixes; the Cargo version alone does not identify them.
+Use published 0.10.2 for the documented API and standard Apple gapless fixes.
+The release verification records the exact source, archive and tested scope.
 [Release versus checkout](verification.md#release-and-checkout).
 
 ## Use syom

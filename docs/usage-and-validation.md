@@ -55,8 +55,8 @@ core rate; reported PCM uses the output rate.
 
 ## Install from a checkout
 
-The registry dependency is `syom = "0.10"`. To evaluate this checkout's
-unreleased changes with a sibling directory:
+The registry dependency is `syom = "0.10"`. To evaluate local changes
+with a sibling checkout:
 
 ```toml
 [dependencies]
