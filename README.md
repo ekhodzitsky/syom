@@ -96,7 +96,7 @@ LC defaults to 128 kbps ABR with per-band M/S. Quality VBR, HE v1/v2,
 AAC-LD and surround LC are opt-in. Output: ADTS, M4A or LATM/LOAS;
 push encoding can return raw AUs. No fragmented-MP4 encoding.
 AAC-LD encode uses 512-sample frames and cannot use ADTS.
-[Encoding guide](https://docs.rs/syom/0.10.2/syom/guide/).
+[Encoding guide](https://docs.rs/syom/0.10.3/syom/guide/).
 
 <a id="choosing-a-library"></a>
 
@@ -106,7 +106,7 @@ Pinned integration snapshot; peer versions were reviewed on 2026-11-02.
 
 | Library | Integration boundary | HE v1/v2 decode |
 |---|---|---|
-| syom 0.10.2 | Built-in AAC containers; planar `f32` | Yes |
+| syom 0.10.3 | Built-in AAC containers; planar `f32` | Yes |
 | rusty_aac 2.0.1 | Caller demuxes M4A; interleaved `f32` | Yes |
 | Symphonia 0.6.1 | Multi-format media pipeline | LC core only |
 | oxideav-aac 0.1.7 | AAC codec using oxideav-core; interleaved `i16` | Yes |
@@ -119,7 +119,7 @@ describe the pinned versions and limitations, including LD support.
 
 ## Decoding measurements
 
-Historical **syom 0.8.0** medians, not measurements of 0.10.2. Lower is better.
+Historical **syom 0.8.0** medians, not measurements of 0.10.3. Lower is better.
 
 | ADTS workload | syom 0.8.0 | rusty_aac 2.0.1 | Symphonia 0.6.1 |
 |---|---:|---:|---:|
@@ -139,7 +139,7 @@ differ. The busy-host results vary by profile and establish no quality ranking.
 syom = "0.10"
 ```
 
-Rust **1.89+**. Version: **0.10.2**. No runtime crates, build script
+Rust **1.89+**. Version: **0.10.3**. No runtime crates, build script
 or native codec backend.
 
 For a new project:
@@ -158,6 +158,10 @@ their own input.
 
 ## Scope
 
+**0.10.3 accepts fractional M4A edit durations**, including ffmpeg's
+millisecond movie clock at 44.1 kHz. Small rounded overhangs are capped
+at the available media; missing packets remain errors.
+
 **0.10.2 fixes standard Apple iTunSMPB handling** and aligns decoding,
 probe and presentation seeking for tag-only M4A. Regenerate tags written
 with syom's older incorrect field order. [Release verification](https://github.com/ekhodzitsky/syom/blob/main/docs/verification.md#release-and-checkout).
@@ -175,7 +179,7 @@ remain open. Encoder quality leadership is unproven.
 [Validation and dated coverage](https://github.com/ekhodzitsky/syom/blob/main/docs/verification.md).
 
 [Documentation](https://github.com/ekhodzitsky/syom/blob/main/docs/README.md) ·
-[API guide](https://docs.rs/syom/0.10.2/syom/guide/) ·
+[API guide](https://docs.rs/syom/0.10.3/syom/guide/) ·
 [Contributing](https://github.com/ekhodzitsky/syom/blob/main/CONTRIBUTING.md) ·
 [Changelog](https://github.com/ekhodzitsky/syom/blob/main/CHANGELOG.md) ·
 [Issues](https://github.com/ekhodzitsky/syom/issues) ·

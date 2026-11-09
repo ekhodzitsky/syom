@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.3] - 2026-11-09
+
+### Fixed
+
+- Accept M4A edit durations that fall between output samples, including
+  ffmpeg's millisecond movie clock at 44.1 kHz (#11). Round durations down
+  and cap sub-tick, sub-millisecond overhang at the available media after
+  priming. Decode, streaming, probe and presentation seeking share the same
+  window; flat files report completion against that capped window.
+  Fragmented MP4 also accepts fractional durations without assuming an
+  available-media bound. Media-time offsets must still convert exactly;
+  missing packets and larger duration inconsistencies remain errors.
+  Compare the original fractional duration when checking EOF tolerance,
+  accept quantized `mdhd` durations for edit bounds, and report flat-file
+  remainder in output samples even when the media clock differs.
+  Treat the version-specific all-one `mdhd` duration as unknown, so it
+  cannot overflow or supply a false media bound.
+
+### Changed
+
+- Persistent checkpoints remain bound to the exact codec version. Recreate
+  cached checkpoint blobs when upgrading to 0.10.3; cross-version restoration
+  is unsupported.
+
 ## [0.10.2] - 2026-11-09
 
 ### Fixed

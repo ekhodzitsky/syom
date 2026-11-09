@@ -9,6 +9,7 @@
 |---|---|---|
 | Registry syom 0.10.1 | Published 2026-11-06 | AVX-512 FFT update; [archive, source/tag and registry checks](../lab/release-audit/RELEASE-0.10.1.md) |
 | Registry syom 0.10.2 | Published 2026-11-09 | Standard iTunSMPB fixes; [source, archive and registry checks](../lab/release-audit/RELEASE-0.10.2.md) |
+| Checkout syom 0.10.3 | Release candidate, not yet published | Fractional M4A edit durations; [audit and consumer verification](../lab/release-audit/ISSUE-11.md) |
 
 Version 0.10.2 contains the standard iTunSMPB fixes. Version 0.10.1 can
 return padded audio for Apple M4A files whose only trim metadata is iTunSMPB;

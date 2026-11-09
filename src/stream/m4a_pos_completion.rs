@@ -36,6 +36,7 @@ pub(crate) fn classify(
     track: &AacTrack,
     skip: u64,
     left: Option<u64>,
+    delivered: u64,
     index_end: bool,
     rate: u32,
 ) -> PresentationCompletion {
@@ -50,7 +51,7 @@ pub(crate) fn classify(
             indexed_end_reached: index_end,
         },
         Some(0) => PresentationCompletion::Complete,
-        Some(left) if index_end && track.rounded_presentation_tail(left, rate) => {
+        Some(left) if index_end && track.rounded_presentation_tail(delivered, rate) => {
             PresentationCompletion::Rounded {
                 missing_samples: left,
             }
@@ -99,6 +100,7 @@ impl<R: Read + Seek> M4aSeek<R> {
             &self.track,
             self.discard_left as u64,
             self.bounded_presentation().then_some(self.play_left),
+            self.pos,
             self.next_frame == self.track.frames.len(),
             self.asc.output_sample_rate,
         )

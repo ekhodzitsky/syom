@@ -36,8 +36,7 @@ pub(super) fn unsupported<T>(reason: &'static str) -> Result<T> {
 }
 
 impl Fmp4Init {
-    /// Push-mode edit window (TASK-125): same rules as
-    /// [`AacTrack::edit_window`] with `edit_open_end` always on (a DASH init
+    /// Like [`AacTrack::edit_window`] with `edit_open_end` always on (a DASH init
     /// declares priming before the media duration is known).
     pub(crate) fn edit_window(&self, sample_rate: u32) -> Result<(usize, Option<usize>)> {
         if !self.has_elst {
@@ -52,12 +51,13 @@ impl Fmp4Init {
         if self.edit_duration == 0 {
             return Ok((skip, None));
         }
-        let play = convert_exact(
+        let play = usize::try_from(super::duration_samples(
             self.edit_duration,
             sample_rate,
             self.movie_timescale,
-            "elst duration",
-        )?;
+            None,
+        )?)
+        .map_err(|_| AacError::format("isomp4: elst duration exceeds usize"))?;
         Ok((skip, Some(play)))
     }
 }

@@ -303,7 +303,7 @@ impl<R: Read + Seek> M4aSeek<R> {
             remainder: self
                 .gapless
                 .map(|d| d.remainder)
-                .or_else(|| self.track.unplayed_tail(self.skip, self.pos)),
+                .or_else(|| self.track.unplayed_tail(self.skip, self.pos, sample_rate)),
             presentation_completion: self.presentation_completion(),
         })
     }

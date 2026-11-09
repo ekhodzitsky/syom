@@ -22,7 +22,7 @@
 //! Boxes parsed: `ftyp` (sniff only), `moov/trak/mdia/minf/stbl`, `hdlr`
 //! (handler `soun`), `mvhd`/`mdhd` (timescale and duration), `edts`/`elst`
 //! (one supported edit: priming `media_time` and presentation duration;
-//! empty/multiple/non-1.0/inexact edits are errors),
+//! empty/multiple/non-1.0 edits and inexact media-time offsets are errors),
 //! `stsd` (`mp4a` entry → `esds` → ES_Descriptor(0x03) →
 //! DecoderConfigDescriptor(0x04) → DecoderSpecificInfo(0x05) = ASC),
 //! `stts` (total sample count for the duration budget), `stsc`, `stsz`,
@@ -34,6 +34,9 @@
 
 use crate::budgets::{BudgetKind, MemoryBudgets, check_planned};
 use crate::error::{AacError, Result};
+
+mod timing;
+pub(crate) use timing::{available_samples, duration_samples};
 
 fn fence_entries(mem: &MemoryBudgets, count: u64, bytes_per: u64) -> Result<()> {
     mem.check_index(count, bytes_per)
@@ -91,8 +94,8 @@ impl AacTrack {
     }
 
     /// `(skip, play)` at `sample_rate`. `play = None` means no end trim.
-    /// Inexact timescale conversion, missing timescale, and overflow error
-    /// instead of a silent prefix skip.
+    /// Media-time offsets must convert exactly; movie durations round down.
+    /// Missing timescales and overflow remain errors.
     pub(crate) fn edit_window(&self, sample_rate: u32) -> Result<(usize, Option<usize>)> {
         if !self.has_elst {
             return Ok((0, None));
@@ -106,12 +109,23 @@ impl AacTrack {
         if self.edit_open_end && self.edit_duration == 0 {
             return Ok((skip, None));
         }
-        let play = convert_exact(
+        let available = if self.edit_open_end {
+            None
+        } else {
+            available_samples(
+                self.media_duration,
+                self.edit_start,
+                sample_rate,
+                self.media_timescale,
+            )?
+        };
+        let play = usize::try_from(duration_samples(
             self.edit_duration,
             sample_rate,
             self.movie_timescale,
-            "elst duration",
-        )?;
+            available,
+        )?)
+        .map_err(|_| AacError::format("isomp4: elst duration exceeds usize"))?;
         Ok((skip, Some(play)))
     }
 
@@ -121,34 +135,50 @@ impl AacTrack {
         self.has_elst && !(self.edit_open_end && self.edit_duration == 0)
     }
 
-    /// A fully decoded index can undershoot a rounded edit duration by less
-    /// than one movie-clock tick and less than one millisecond. This never
-    /// authorizes a missing AU or an unfinished priming skip.
-    pub(crate) fn rounded_presentation_tail(&self, left: u64, sample_rate: u32) -> bool {
+    /// Compare the original rational edit duration with the absolute delivered
+    /// presentation position. The caller separately proves indexed EOF and
+    /// completed priming; no metadata conversion needs to be repeated here.
+    pub(crate) fn rounded_presentation_tail(&self, delivered: u64, sample_rate: u32) -> bool {
         self.bounded_presentation()
-            && self.movie_timescale != 0
-            && left > 0
-            && u128::from(left) * u128::from(self.movie_timescale.max(1000))
-                < u128::from(sample_rate)
+            && timing::rounded_duration_tail(
+                self.edit_duration,
+                sample_rate,
+                self.movie_timescale,
+                delivered,
+            )
     }
 
-    /// Presentation length in media units: `elst.segment_duration` converted
-    /// with checked movie→media timescale. `None` if a timescale is missing
-    /// or the multiply overflows.
+    /// Presentation length in media units, rounded down from the movie clock
+    /// and capped for sub-tick rounding against the available media duration.
+    /// `None` if a timescale is missing or checked conversion fails.
     #[must_use]
+    #[cfg(test)]
     pub(crate) fn presentation_samples(&self) -> Option<u64> {
-        if self.movie_timescale == 0 {
-            return None;
-        }
-        self.edit_duration
-            .checked_mul(u64::from(self.media_timescale))?
-            .checked_div(u64::from(self.movie_timescale))
+        let available = if self.edit_open_end {
+            None
+        } else {
+            available_samples(
+                self.media_duration,
+                self.edit_start,
+                self.media_timescale,
+                self.media_timescale,
+            )
+            .ok()?
+        };
+        duration_samples(
+            self.edit_duration,
+            self.media_timescale,
+            self.movie_timescale,
+            available,
+        )
+        .ok()
     }
 
     /// Unplayed tail: `mdhd.duration − priming − presentation`. `None` when
     /// presentation is unknown or the counts underflow (coded vs presentation
     /// must not be swapped).
     #[must_use]
+    #[cfg(test)]
     pub(crate) fn remainder_samples(&self) -> Option<u64> {
         let valid = self.presentation_samples()?;
         self.media_duration
@@ -156,11 +186,15 @@ impl AacTrack {
             .checked_sub(valid)
     }
 
-    /// Tail reported on a finished decode. A flat edit uses the container
-    /// counts. An open fragment edit (DASH `segment_duration` 0) has no
-    /// container cap, so the tail is whatever of `total_samples` was not
-    /// emitted after priming.
-    pub(crate) fn unplayed_tail(&self, skip: u64, samples_out: u64) -> Option<u64> {
+    /// Tail reported in output samples. Fragment counts already describe the
+    /// decoded output; flat mdhd counts must be rescaled before subtracting
+    /// the absolute presentation position (including earlier seeked samples).
+    pub(crate) fn unplayed_tail(
+        &self,
+        skip: u64,
+        samples_out: u64,
+        sample_rate: u32,
+    ) -> Option<u64> {
         if !self.has_elst {
             return None;
         }
@@ -171,7 +205,15 @@ impl AacTrack {
                     .saturating_sub(samples_out),
             )
         } else {
-            self.remainder_samples()
+            available_samples(
+                self.media_duration,
+                self.edit_start,
+                sample_rate,
+                self.media_timescale,
+            )
+            .ok()
+            .flatten()?
+            .checked_sub(samples_out)
         }
     }
 }
@@ -784,11 +826,14 @@ fn parse_mdhd_duration(body: &[u8]) -> Result<u64> {
     let version = *body
         .first()
         .ok_or_else(|| AacError::format("isomp4: truncated mdhd"))?;
-    match version {
-        0 => Ok(u64::from(read_u32(body, 16)?)),
-        1 => read_u64(body, 24),
-        _ => Err(AacError::format("isomp4: unsupported mdhd version")),
-    }
+    let (duration, unknown) = match version {
+        0 => (u64::from(read_u32(body, 16)?), u64::from(u32::MAX)),
+        1 => (read_u64(body, 24)?, u64::MAX),
+        _ => return Err(AacError::format("isomp4: unsupported mdhd version")),
+    };
+    // All-one bits mean unknown, not a usable media bound. Normalize to the
+    // same absent-duration representation as a missing or zero mdhd duration.
+    Ok(if duration == unknown { 0 } else { duration })
 }
 
 fn parse_mvhd_timescale(body: &[u8]) -> Result<u32> {

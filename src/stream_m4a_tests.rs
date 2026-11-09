@@ -163,14 +163,245 @@ fn unsupported_elst_is_format_not_prefix_skip() {
 }
 
 #[test]
-fn inexact_elst_timescale_is_format() {
+fn fractional_edit_duration_is_rounded_down() -> Result<()> {
     let mut m4a = encode_m4a_n(1025);
-    // duration * 48000 / 44100 is not an integer.
     let body = find_box_body(&m4a, b"mvhd").expect("mvhd");
     m4a[body + 12..body + 16].copy_from_slice(&44_100u32.to_be_bytes());
-    let err = crate::decode_with(&m4a, &DecodeOptions::unbounded()).unwrap_err();
-    assert!(
-        err.to_string().contains("integer"),
-        "inexact convert: {err}"
+    let opts = DecodeOptions::unbounded();
+    let one = crate::decode_with(&m4a, &opts)?;
+    assert_eq!(one.channels[0].len(), 1115); // floor(1025 * 48000 / 44100)
+    let streamed = collect_slice(&m4a, &opts)?;
+    assert_eq_collected(&one, &streamed, "fractional edit");
+    Ok(())
+}
+
+#[test]
+fn fractional_duration_over_a_full_tick_is_incomplete() -> Result<()> {
+    use std::io::Cursor;
+    let mut m4a = crate::encode_with(&[vec![0.1f32; 1]], 44_100, &crate::EncodeOptions::m4a())?;
+    let body = find_box_body(&m4a, b"mvhd").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&2000u32.to_be_bytes());
+    patch_elst_field(&mut m4a, 8, 3); // 66.15 samples
+    patch_elst_field(&mut m4a, 12, 2004); // 44 samples available after skip
+    let opts = DecodeOptions::audio();
+    // 22.15 missing samples exceeds the 22.05-sample movie tick.
+    for err in [
+        crate::decode_with(&m4a, &opts).unwrap_err(),
+        crate::decode_seek_streaming(Cursor::new(&m4a), &opts, |_| Ok(())).unwrap_err(),
+    ] {
+        assert!(
+            err.to_string().contains("incomplete M4A presentation"),
+            "{err}"
+        );
+    }
+    let mut seek = crate::M4aSeek::open(Cursor::new(&m4a), opts)?;
+    assert!(seek.decode(|_| Ok(())).is_err());
+    assert!(!seek.presentation_complete());
+    Ok(())
+}
+
+#[test]
+fn fractional_mdhd_duration_does_not_reject_a_valid_edit() -> Result<()> {
+    let mut m4a = crate::encode_with(&[vec![0.1f32; 1024]], 44_100, &crate::EncodeOptions::m4a())?;
+    let body = find_box_body(&m4a, b"mdhd").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&1000u32.to_be_bytes());
+    m4a[body + 16..body + 20].copy_from_slice(&47u32.to_be_bytes()); // 2072.7 samples
+    patch_elst_field(&mut m4a, 12, 0);
+    let opts = DecodeOptions::audio();
+    assert_eq!(crate::decode_with(&m4a, &opts)?.channels[0].len(), 1024);
+    assert_eq!(
+        crate::probe(&m4a)?.trim,
+        crate::ProbeTrim::Exact {
+            priming: 0,
+            remainder: 1048,
+        }
     );
+    Ok(())
+}
+
+#[test]
+fn fractional_edit_trim_is_reported_in_output_samples() -> Result<()> {
+    use std::io::Cursor;
+    let mut m4a = crate::encode_with(&[vec![0.1f32; 1025]], 44_100, &crate::EncodeOptions::m4a())?;
+    let body = find_box_body(&m4a, b"mvhd").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&1000u32.to_be_bytes());
+    let body = find_box_body(&m4a, b"mdhd").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&22_050u32.to_be_bytes());
+    m4a[body + 16..body + 20].copy_from_slice(&1536u32.to_be_bytes());
+    let body = find_box_body(&m4a, b"stts").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&512u32.to_be_bytes());
+    patch_elst_field(&mut m4a, 8, 11); // 485.1 output samples, 242.55 media ticks
+    patch_elst_field(&mut m4a, 12, 512);
+    let opts = DecodeOptions::audio();
+    let one = crate::decode_with(&m4a, &opts)?;
+    assert_eq!(one.channels[0].len(), 485);
+    assert_eq!(one.priming, Some(1024));
+    assert_eq!(one.remainder, Some(1563)); // 3072 - 1024 - 485
+    assert_eq!(
+        crate::probe(&m4a)?.trim,
+        crate::ProbeTrim::Exact {
+            priming: 1024,
+            remainder: 1563,
+        }
+    );
+    let streamed = crate::decode_seek_streaming(Cursor::new(&m4a), &opts, |_| Ok(()))?;
+    assert_eq!(streamed.remainder, one.remainder);
+    let mut seek = crate::M4aSeek::open(Cursor::new(&m4a), opts)?;
+    seek.seek_exact(480, u64::MAX)?;
+    assert_eq!(seek.decode(|_| Ok(()))?.remainder, one.remainder);
+    Ok(())
+}
+
+#[test]
+fn unknown_mdhd_duration_does_not_bound_a_fractional_edit() -> Result<()> {
+    use std::io::Cursor;
+    for version in [1u8, 0] {
+        let mut m4a =
+            crate::encode_with(&[vec![0.1f32; 1024]], 44_100, &crate::EncodeOptions::m4a())?;
+        // The encoder writes moov after mdat; growing mdhd preserves all AU offsets.
+        let body = find_box_body(&m4a, b"mdhd").unwrap();
+        if version == 1 {
+            let headers = [b"moov", b"trak", b"mdia", b"mdhd"]
+                .map(|kind| find_box_body(&m4a, kind).unwrap() - 8);
+            for at in headers {
+                let size = u32::from_be_bytes(m4a[at..at + 4].try_into().unwrap());
+                m4a[at..at + 4].copy_from_slice(&(size + 12).to_be_bytes());
+            }
+            let mut header = vec![1u8, 0, 0, 0];
+            header.extend_from_slice(&[0; 16]);
+            header.extend_from_slice(&22_050u32.to_be_bytes());
+            header.extend_from_slice(&u64::MAX.to_be_bytes());
+            m4a.splice(body..body + 20, header);
+        } else {
+            m4a[body + 12..body + 16].copy_from_slice(&22_050u32.to_be_bytes());
+            m4a[body + 16..body + 20].copy_from_slice(&u32::MAX.to_be_bytes());
+        }
+        let body = find_box_body(&m4a, b"stts").unwrap();
+        m4a[body + 12..body + 16].copy_from_slice(&512u32.to_be_bytes());
+        let body = find_box_body(&m4a, b"mvhd").unwrap();
+        m4a[body + 12..body + 16].copy_from_slice(&1000u32.to_be_bytes());
+        patch_elst_field(&mut m4a, 8, 23); // floor(23 ms * 44100) = 1014
+        patch_elst_field(&mut m4a, 12, 0);
+        let opts = DecodeOptions::audio();
+        let one = crate::decode_with(&m4a, &opts)?;
+        assert_eq!(one.channels[0].len(), 1014);
+        assert_eq!(one.remainder, None, "unknown mdhd v{version} tail");
+        let p = crate::probe(&m4a)?;
+        assert_eq!(p.duration, crate::ProbeDuration::Exact { samples: 1014 });
+        assert_eq_collected(&one, &collect_slice(&m4a, &opts)?, "unknown duration");
+        let info = crate::decode_seek_streaming(Cursor::new(&m4a), &opts, |_| Ok(()))?;
+        assert_eq!(info.samples, 1014);
+        assert_eq!(info.remainder, None);
+        let mut seek = crate::M4aSeek::open(Cursor::new(&m4a), opts)?;
+        assert_eq!(seek.presentation_len(), 1014);
+        seek.seek_exact(1000, u64::MAX)?;
+        assert_eq!(seek.decode(|_| Ok(()))?.samples, 14);
+        assert!(seek.presentation_complete());
+    }
+    Ok(())
+}
+
+#[test]
+fn movie_tick_rounding_agrees_across_flat_m4a_apis() -> Result<()> {
+    use crate::{M4aSeek, ProbeDuration, ProbeTrim};
+    use std::io::Cursor;
+
+    for (n, ticks, skip, expected) in [(54_419, 1234, 1024, 54_419), (11_264, 279, 0, 12_288)] {
+        let mut m4a = crate::encode_with(&[vec![0.1f32; n]], 44_100, &crate::EncodeOptions::m4a())?;
+        let body = find_box_body(&m4a, b"mvhd").unwrap();
+        m4a[body + 12..body + 16].copy_from_slice(&1000u32.to_be_bytes());
+        patch_elst_field(&mut m4a, 8, ticks);
+        patch_elst_field(&mut m4a, 12, skip);
+        let opts = DecodeOptions::audio();
+        let one = crate::decode_with(&m4a, &opts)?;
+        assert_eq!(one.channels[0].len(), expected);
+        assert_eq_collected(&one, &collect_slice(&m4a, &opts)?, "movie tick");
+        let mut pcm = Vec::new();
+        let info = crate::decode_seek_streaming(Cursor::new(&m4a), &opts, |f| {
+            pcm.extend_from_slice(f.planar[0]);
+            Ok(())
+        })?;
+        assert_eq!(pcm, one.channels[0]);
+        assert_eq!(info.samples, expected as u64);
+        let p = crate::probe(&m4a)?;
+        assert_eq!(
+            p.duration,
+            ProbeDuration::Exact {
+                samples: expected as u64
+            }
+        );
+        let track = crate::isomp4::parse_aac_track_with(&m4a, &opts.memory)?;
+        let remainder = track.media_duration - u64::from(skip) - expected as u64;
+        assert_eq!(
+            p.trim,
+            ProbeTrim::Exact {
+                priming: u64::from(skip),
+                remainder
+            }
+        );
+        assert_eq!(track.presentation_samples(), Some(expected as u64));
+        assert_eq!(track.remainder_samples(), Some(remainder));
+        let mut seek = M4aSeek::open(Cursor::new(&m4a), opts)?;
+        assert_eq!(seek.presentation_len(), expected as u64);
+        assert_eq!(
+            seek.seek_exact(expected as i64 - 17, u64::MAX)?,
+            expected as u64 - 17
+        );
+        let mut tail = Vec::new();
+        seek.decode(|f| {
+            tail.extend_from_slice(f.planar[0]);
+            Ok(())
+        })?;
+        assert_eq!(tail, one.channels[0][expected - 17..]);
+        assert!(seek.presentation_complete());
+    }
+    Ok(())
+}
+
+#[test]
+fn fractional_media_time_stays_an_error() {
+    let mut m4a = encode_m4a_n(1025);
+    let body = find_box_body(&m4a, b"mdhd").unwrap();
+    m4a[body + 12..body + 16].copy_from_slice(&44_100u32.to_be_bytes());
+    let err = crate::decode_with(&m4a, &DecodeOptions::audio()).unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("elst media_time is not an integer")
+    );
+    assert!(
+        crate::probe(&m4a)
+            .unwrap_err()
+            .to_string()
+            .contains("elst media_time")
+    );
+}
+
+#[test]
+fn fractional_fragment_duration_matches_push_probe_and_indexed_decode() -> Result<()> {
+    let mut bytes = include_bytes!("goldens/fmp4_dash_init.m4s").to_vec();
+    bytes.extend_from_slice(include_bytes!("goldens/fmp4_dash_seg1.m4s"));
+    let body = find_box_body(&bytes, b"mvhd").unwrap();
+    bytes[body + 12..body + 16].copy_from_slice(&44_100u32.to_be_bytes());
+    patch_elst_field(&mut bytes, 8, 1025);
+    let opts = DecodeOptions::audio();
+    let one = crate::decode_with(&bytes, &opts)?;
+    assert_eq!(one.channels[0].len(), 1115);
+    assert_eq!(
+        crate::probe(&bytes)?.duration,
+        crate::ProbeDuration::Exact { samples: 1115 }
+    );
+    let mut decoder = crate::Decoder::new(opts);
+    let mut pcm = Vec::new();
+    for chunk in bytes.chunks(137) {
+        decoder.feed(chunk, |f| {
+            pcm.extend_from_slice(f.planar[0]);
+            Ok(())
+        })?;
+    }
+    decoder.finish(|f| {
+        pcm.extend_from_slice(f.planar[0]);
+        Ok(())
+    })?;
+    assert_eq!(pcm, one.channels[0]);
+    Ok(())
 }

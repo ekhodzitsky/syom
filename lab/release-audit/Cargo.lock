@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "syom"
-version = "0.10.2"
+version = "0.10.3"
 
 [[package]]
 name = "syom-release-audit"

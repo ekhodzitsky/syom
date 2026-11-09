@@ -233,6 +233,12 @@ fn mdhd_duration_and_mvhd_timescale_are_checked() {
     mdhd1.extend_from_slice(&48_000u32.to_be_bytes());
     mdhd1.extend_from_slice(&30720u64.to_be_bytes());
     assert_eq!(ok(parse_mdhd_duration(&mdhd1)), 30720);
+    mdhd[16..20].copy_from_slice(&u32::MAX.to_be_bytes());
+    mdhd1[24..32].copy_from_slice(&u64::MAX.to_be_bytes());
+    assert_eq!(ok(parse_mdhd_duration(&mdhd)), 0, "v0 unknown duration");
+    assert_eq!(ok(parse_mdhd_duration(&mdhd1)), 0, "v1 unknown duration");
+    mdhd1[24..32].copy_from_slice(&u64::from(u32::MAX).to_be_bytes());
+    assert_eq!(ok(parse_mdhd_duration(&mdhd1)), u64::from(u32::MAX));
     assert!(parse_mdhd_duration(&[3u8, 0, 0, 0]).is_err());
 
     let mut mvhd = vec![0u8; 4];
@@ -278,4 +284,111 @@ fn presentation_and_remainder_use_checked_arithmetic() {
         swapped.remainder_samples().is_none(),
         "coded < priming+valid must not wrap"
     );
+}
+
+#[test]
+fn reported_movie_tick_examples_have_consistent_windows() {
+    for (duration, start, media_duration, expected) in [
+        (1234, 1024, 55_443, 54_419),
+        (257_208, 0, 11_342_848, 11_342_848),
+    ] {
+        let track = AacTrack {
+            asc: Vec::new(),
+            frames: Vec::new(),
+            total_samples: media_duration,
+            edit_start: start,
+            edit_duration: duration,
+            movie_timescale: 1000,
+            media_timescale: 44_100,
+            media_duration,
+            has_elst: true,
+            edit_open_end: false,
+        };
+        assert_eq!(
+            track.edit_window(44_100).unwrap(),
+            (start as usize, Some(expected as usize))
+        );
+        assert_eq!(track.presentation_samples(), Some(expected));
+        assert_eq!(
+            track.remainder_samples(),
+            Some(media_duration - start - expected)
+        );
+        // HE output uses the same time window at twice the media rate.
+        assert_eq!(
+            track.edit_window(88_200).unwrap(),
+            (
+                start as usize * 2,
+                Some(if start == 0 {
+                    expected as usize * 2
+                } else {
+                    108_838
+                })
+            )
+        );
+    }
+}
+
+#[test]
+fn movie_duration_rounding_checks_clocks_overflow_and_tolerance() {
+    use super::timing::duration_samples;
+    assert_eq!(duration_samples(1, 44_100, 1000, None).unwrap(), 44);
+    assert_eq!(duration_samples(2, 44_100, 1000, None).unwrap(), 88);
+    assert_eq!(duration_samples(3, 44_100, 1000, None).unwrap(), 132);
+    assert_eq!(
+        duration_samples(279, 44_100, 1000, Some(12_288)).unwrap(),
+        12_288
+    );
+    // A full clock tick, a full millisecond, or a large mismatch is not rounding.
+    assert_eq!(duration_samples(101, 1000, 1000, Some(100)).unwrap(), 101);
+    assert_eq!(duration_samples(11, 1000, 100, Some(100)).unwrap(), 110);
+    assert_eq!(
+        duration_samples(1000, 44_100, 1000, Some(100)).unwrap(),
+        44_100
+    );
+    assert!(duration_samples(0, 44_100, 0, None).is_err());
+    assert!(duration_samples(0, 0, 1000, None).is_err());
+    assert!(duration_samples(u64::MAX, 44_100, 1000, None).is_err());
+}
+
+#[test]
+fn duration_conversion_keeps_valid_wide_products_and_exact_tail_bounds() {
+    use super::timing::{available_samples, duration_samples, rounded_duration_tail};
+    assert_eq!(
+        duration_samples(u64::MAX, 44_100, 44_100, None).unwrap(),
+        u64::MAX
+    );
+    assert_eq!(
+        available_samples(u64::MAX, 1, 44_100, 44_100).unwrap(),
+        Some(u64::MAX - 1)
+    );
+    assert_eq!(available_samples(0, 0, 44_100, 0).unwrap(), None);
+    assert_eq!(available_samples(1, 2, 44_100, 44_100).unwrap(), None);
+    assert!(!rounded_duration_tail(3, 44_100, 2000, 44)); // 22.15 > 22.05
+    assert!(rounded_duration_tail(3, 44_100, 2000, 45)); // 21.15 < 22.05
+    assert!(!rounded_duration_tail(u64::MAX, u32::MAX, u32::MAX, 0));
+
+    // Independently check both strict rational inequalities around native
+    // sample and clock boundaries, including clocks coarser than a millisecond.
+    for rate in [22_050u32, 44_100, 48_000, 88_200] {
+        for clock in [100u32, 1000, 2000, 44_100, 48_000] {
+            for ticks in 1..20u64 {
+                let product = u128::from(ticks) * u128::from(rate);
+                let end = (product / u128::from(clock)) as u64;
+                for delivered in end.saturating_sub(50)..=end + 1 {
+                    let valid = product
+                        .checked_sub(u128::from(delivered) * u128::from(clock))
+                        .is_some_and(|delta| {
+                            delta > 0
+                                && delta < u128::from(rate)
+                                && delta * 1000 < u128::from(rate) * u128::from(clock)
+                        });
+                    assert_eq!(
+                        rounded_duration_tail(ticks, rate, clock, delivered),
+                        valid,
+                        "rate={rate} clock={clock} ticks={ticks} delivered={delivered}"
+                    );
+                }
+            }
+        }
+    }
 }

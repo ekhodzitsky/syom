@@ -46,24 +46,14 @@ fn bounded_m4a_eof_is_not_success_when_declared_presentation_is_too_long() {
 
 #[test]
 fn exact_and_subtick_completion_never_pad_pcm() {
+    // Flat mdhd bounds now clamp a rounded movie duration before decoding,
+    // so a fully delivered window is Complete rather than Rounded.
     let base = fixture();
     let actual = available(&base);
     for (clock, ticks, expected) in [
         (48_000, actual as u32, Completion::Complete),
-        (
-            1_000,
-            actual.div_ceil(48) as u32,
-            Completion::Rounded {
-                missing_samples: actual.div_ceil(48) * 48 - actual,
-            },
-        ),
-        (
-            2_000,
-            actual.div_ceil(24) as u32,
-            Completion::Rounded {
-                missing_samples: actual.div_ceil(24) * 24 - actual,
-            },
-        ),
+        (1_000, actual.div_ceil(48) as u32, Completion::Complete),
+        (2_000, actual.div_ceil(24) as u32, Completion::Complete),
     ] {
         let mut bytes = base.clone();
         window(&mut bytes, clock, ticks);
@@ -86,6 +76,34 @@ fn exact_and_subtick_completion_never_pad_pcm() {
         assert_eq!(seek.presentation_completion(), expected);
         assert!(seek.presentation_complete());
     }
+}
+
+#[test]
+fn rounded_flat_duration_without_mdhd_bound_still_needs_indexed_eof() {
+    let mut bytes = fixture();
+    let actual = available(&bytes);
+    window(&mut bytes, 1000, actual.div_ceil(48) as u32);
+    field(&mut bytes, b"mdhd", 20, 0); // no available-media duration to clamp against
+    let opts = DecodeOptions::audio();
+    let expected = Completion::Rounded {
+        missing_samples: actual.div_ceil(48) * 48 - actual,
+    };
+    let info = crate::decode_seek_streaming(Cursor::new(&bytes), &opts, |_| Ok(())).unwrap();
+    assert_eq!(info.samples, actual);
+    assert_eq!(info.presentation_completion, expected);
+    let mut seek = M4aSeek::open(Cursor::new(&bytes), opts).unwrap();
+    for start in [actual - 17, actual - 1] {
+        seek.seek_exact(start as i64, u64::MAX).unwrap();
+        let info = seek.decode(|_| Ok(())).unwrap();
+        assert_eq!(info.samples, actual - start);
+        assert_eq!(seek.position(), actual);
+        assert_eq!(info.presentation_completion, expected);
+    }
+    // Exact seek requests one sample at its target; physical EOF cannot
+    // supply that sample even when the rounded presentation extends beyond it.
+    assert!(seek.seek_exact(actual as i64, u64::MAX).is_err());
+    assert_eq!(seek.position(), actual);
+    assert_eq!(seek.presentation_completion(), expected);
 }
 
 #[test]

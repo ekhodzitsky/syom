@@ -4,7 +4,7 @@ use super::{Probe, ProbeContainer, ProbeDuration, ProbeTrim, from_asc};
 use crate::budgets::MemoryBudgets;
 use crate::engine::asc::AudioSpecificConfig;
 use crate::error::{AacError, Result};
-use crate::isomp4::{convert_units, find_moov_slice, parse_aac_meta};
+use crate::isomp4::{convert_units, duration_samples, find_moov_slice, parse_aac_meta};
 
 pub(super) fn probe_m4a(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
     if crate::isomp4::frag::is_fragmented(data) {
@@ -55,11 +55,11 @@ fn probe_fmp4(data: &[u8], mem: &MemoryBudgets) -> Result<Probe> {
             ProbeDuration::Unknown // DASH init: written before the duration
         } else {
             ProbeDuration::Exact {
-                samples: convert_units(
+                samples: duration_samples(
                     init.edit_duration,
                     out_rate,
                     init.movie_timescale,
-                    "elst duration",
+                    None,
                 )?,
             }
         };
@@ -81,29 +81,25 @@ fn m4a_timing(
     output_rate: u32,
 ) -> Result<(ProbeDuration, ProbeTrim)> {
     if track.has_elst {
-        let samples = convert_units(
-            track.edit_duration,
-            output_rate,
-            track.movie_timescale,
-            "elst duration",
-        )?;
         let priming = convert_units(
             track.edit_start,
             output_rate,
             track.media_timescale,
             "elst media_time",
         )?;
-        let remainder = if track.media_duration != 0 && track.media_timescale != 0 {
-            let coded = convert_units(
-                track.media_duration,
-                output_rate,
-                track.media_timescale,
-                "mdhd duration",
-            )?;
-            coded.saturating_sub(priming).saturating_sub(samples)
-        } else {
-            0
-        };
+        let available = crate::isomp4::available_samples(
+            track.media_duration,
+            track.edit_start,
+            output_rate,
+            track.media_timescale,
+        )?;
+        let samples = duration_samples(
+            track.edit_duration,
+            output_rate,
+            track.movie_timescale,
+            available,
+        )?;
+        let remainder = available.map_or(0, |left| left.saturating_sub(samples));
         Ok((
             ProbeDuration::Exact { samples },
             ProbeTrim::Exact { priming, remainder },

@@ -3,8 +3,8 @@
 //! of `media_time` then a cap of `segment_duration` at the output rate —
 //! frames fully inside the skip region are still decoded (SBR/IMDCT overlap)
 //! but not emitted; a partial frame emits `plane[skip..skip+play]`. Empty
-//! edits, multiple edits, non-1.0 rates, and inexact timescale conversion
-//! are errors, not a silent prefix skip.
+//! edits, multiple edits, non-1.0 rates, and inexact media-time offsets
+//! are errors. Movie-clock durations round down to whole output samples.
 
 use crate::engine::asc::AudioSpecificConfig;
 use crate::engine::decode::StreamDecoder;
@@ -214,6 +214,7 @@ where
         &track,
         skip_left as u64,
         play_left.map(|n| n as u64),
+        samples_out,
         aac_frames == track.frames.len() as u64,
         out_rate,
     );
@@ -232,7 +233,7 @@ where
         .or_else(|| track.has_elst.then_some(skip0 as u64));
     let remainder = applied
         .map(|d| d.remainder)
-        .or_else(|| track.unplayed_tail(skip0 as u64, samples_out));
+        .or_else(|| track.unplayed_tail(skip0 as u64, samples_out, sample_rate));
     Ok(StreamInfo {
         sample_rate,
         core_rate: dec.last_core_rate(),
